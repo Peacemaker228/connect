@@ -1,0 +1,11 @@
+import { ReactNode } from 'react';
+import { Meta } from '@storybook/react';
+import { NTree } from '../models';
+declare const meta: Meta<NTree.TProps>;
+export default meta;
+export declare const Default: import('@storybook/csf').AnnotatedStoryFn<import('@storybook/react').ReactRenderer, NTree.TProps>;
+export declare const Basic: import('@storybook/csf').AnnotatedStoryFn<import('@storybook/react').ReactRenderer, NTree.TProps>;
+export declare const CustomizeIcon: import('@storybook/csf').AnnotatedStoryFn<import('@storybook/react').ReactRenderer, NTree.TProps>;
+export declare const CustomizeOpenCollapseIcon: import('@storybook/csf').AnnotatedStoryFn<import('@storybook/react').ReactRenderer, NTree.TProps>;
+export declare const CustomizeTitle: import('@storybook/csf').AnnotatedStoryFn<import('@storybook/react').ReactRenderer, NTree.TProps>;
+export declare const EmbeddedExample: (argTypes: NTree.TProps) => ReactNode;

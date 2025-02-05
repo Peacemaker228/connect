@@ -1,0 +1,10 @@
+import { Meta, StoryObj } from '@storybook/react';
+import { AnyObject } from '../models';
+import { Table } from '../Table';
+import { BorderTitleFooterTable, CustomFilterPanelTable, DefaultTable, EditableCellTable, EllipsisColumnTable, EllipsisWithTooltipTable, ExpandableTable, FilterInTreeTable, FilterSearchTable, FilterSorterTable, FixedColumnsAndHeaderTable, FixedColumnsTable, FixedHeaderTable, GroupedColumnsTable, HiddenColumnsTable, MultipleSorterTable, NestedTables, ResetFiltersTable, ResponsiveColumnsTable, SelectionOperationTable, SelectionTable, SizedTable, SpanTable, TreeDataTable } from './components';
+import { DataType } from './models';
+type LocalMeta<T extends AnyObject = DataType> = Meta<typeof Table<T>>;
+declare const meta: LocalMeta;
+export default meta;
+export type Story<T extends AnyObject = DataType> = StoryObj<LocalMeta<T>>;
+export { CustomFilterPanelTable, EditableCellTable, DefaultTable, EllipsisColumnTable, EllipsisWithTooltipTable, ExpandableTable, FilterInTreeTable, FilterSearchTable, FilterSorterTable, FixedColumnsAndHeaderTable, FixedColumnsTable, FixedHeaderTable, GroupedColumnsTable, HiddenColumnsTable, MultipleSorterTable, NestedTables, BorderTitleFooterTable, ResetFiltersTable, ResponsiveColumnsTable, SelectionOperationTable, SelectionTable, SpanTable, SizedTable, TreeDataTable, };
