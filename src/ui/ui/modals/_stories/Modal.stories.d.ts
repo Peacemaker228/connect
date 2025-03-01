@@ -1,0 +1,68 @@
+import { Meta } from '@storybook/react';
+import { ModalProps } from '../common';
+declare const meta: Meta<ModalProps>;
+export default meta;
+export declare const Default: import('@storybook/csf').AnnotatedStoryFn<import('@storybook/react').ReactRenderer, ModalProps>;
+export declare const WithCustomTitle: import('@storybook/csf').AnnotatedStoryFn<import('@storybook/react').ReactRenderer, ModalProps>;
+export declare const WithConfirmLoading: import('@storybook/csf').AnnotatedStoryFn<import('@storybook/react').ReactRenderer, ModalProps>;
+export declare const WithLoading: import('@storybook/csf').AnnotatedStoryFn<import('@storybook/react').ReactRenderer, ModalProps>;
+export declare const WithCustomFooter: import('@storybook/csf').AnnotatedStoryFn<import('@storybook/react').ReactRenderer, ModalProps>;
+export declare const NonClosableOnMaskClick: import('@storybook/csf').AnnotatedStoryFn<import('@storybook/react').ReactRenderer, ModalProps>;
+export declare const CenteredModal: import('@storybook/csf').AnnotatedStoryFn<import('@storybook/react').ReactRenderer, ModalProps>;
+export declare const IconModal: import('@storybook/csf').AnnotatedStoryFn<import('@storybook/react').ReactRenderer, ModalProps>;
+export declare const IconModalType: import('@storybook/csf').AnnotatedStoryFn<import('@storybook/react').ReactRenderer, ModalProps>;
+export declare const ShowUseModal: {
+    (args: ModalProps): import("react/jsx-runtime").JSX.Element;
+    args: {
+        icon: import("react/jsx-runtime").JSX.Element;
+        title: string;
+        children: string;
+        okText: string;
+        okType: string;
+        modalType: string;
+        isOpen?: boolean | undefined;
+        isConfirmLoading?: boolean | undefined;
+        isLoading?: boolean | undefined;
+        closable?: (boolean | ({
+            closeIcon?: React.ReactNode;
+        } & import('react').AriaAttributes)) | undefined;
+        onOk?: ((e: import('react').MouseEvent<HTMLButtonElement>) => void) | undefined;
+        onCancel?: ((e: import('react').MouseEvent<HTMLButtonElement>) => void) | undefined;
+        afterClose?: (() => void) | undefined;
+        afterOpenChange?: ((isOpen: boolean) => void) | undefined;
+        centered?: boolean | undefined;
+        width?: string | number | undefined;
+        footer?: import('react').ReactNode | ((originNode: React.ReactNode, extra: {
+            OkBtn: import('react').FC;
+            CancelBtn: import('react').FC;
+        }) => React.ReactNode);
+        cancelText?: import('react').ReactNode;
+        maskClosable?: boolean | undefined;
+        forceRender?: boolean | undefined;
+        okButtonProps?: import("@/ui").NButton.TProps | undefined;
+        cancelButtonProps?: import("@/ui").NButton.TProps | undefined;
+        destroyOnClose?: boolean | undefined;
+        style?: import('react').CSSProperties | undefined;
+        wrapClassName?: string | undefined;
+        maskTransitionName?: string | undefined;
+        transitionName?: string | undefined;
+        className?: string | undefined;
+        rootClassName?: string | undefined;
+        classNames?: {
+            header?: string;
+            body?: string;
+            footer?: string;
+            mask?: string;
+            wrapper?: string;
+        } | undefined;
+        getContainer?: (string | HTMLElement | (() => HTMLElement) | false) | undefined;
+        zIndex?: number | undefined;
+        mask?: boolean | undefined;
+        keyboard?: boolean | undefined;
+        prefixCls?: string | undefined;
+        closeIcon?: import('react').ReactNode;
+        modalRender?: ((node: import('react').ReactNode) => import('react').ReactNode) | undefined;
+        focusTriggerAfterClose?: boolean | undefined;
+        mousePosition?: import('../common').MousePosition | undefined;
+    };
+};

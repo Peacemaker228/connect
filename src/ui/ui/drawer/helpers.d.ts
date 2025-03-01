@@ -1,0 +1,21 @@
+import { default as React, Dispatch, SetStateAction } from 'react';
+import { ExtendedThemeConfig } from '../../providers/theme-provider';
+import { NDrawer } from './models';
+type ResizeParams = NDrawer.TProps & {
+    setInitialWidth: Dispatch<SetStateAction<number>>;
+    setInitialX: Dispatch<SetStateAction<number>>;
+    setInitialHeight: Dispatch<SetStateAction<number>>;
+    setInitialY: Dispatch<SetStateAction<number>>;
+    drawerWidth: number;
+    drawerHeight: number;
+    initialWidth: number;
+    initialHeight: number;
+    initialX: number;
+    initialY: number;
+    setDrawerWidth: Dispatch<SetStateAction<number>>;
+    setDrawerHeight: Dispatch<SetStateAction<number>>;
+};
+export declare const handleMouseDown: (event: React.MouseEvent<HTMLDivElement>, params: ResizeParams) => void;
+export declare const handleMouseMove: (event: MouseEvent, params: ResizeParams) => void;
+export declare const handleSizeChange: (propSize: NDrawer.TProps["size"], handleChangeState: (object: { [k in "drawerWidth" | "drawerHeight"]?: number; }) => void, theme: ExtendedThemeConfig) => void;
+export {};

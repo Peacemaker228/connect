@@ -1,0 +1,10 @@
+import { Meta } from '@storybook/react';
+import { Image } from '../Image';
+import { NImage } from '../models';
+declare const _default: Meta<typeof Image>;
+export default _default;
+export declare const DefaultImage: import('@storybook/csf').AnnotatedStoryFn<import('@storybook/react').ReactRenderer, NImage.TImageProps>;
+export declare const FallbackImage: import('@storybook/csf').AnnotatedStoryFn<import('@storybook/react').ReactRenderer, NImage.TImageProps>;
+export declare const CustomPreviewImage: import('@storybook/csf').AnnotatedStoryFn<import('@storybook/react').ReactRenderer, NImage.TImageProps>;
+export declare const DefaultPreviewGroup: import('@storybook/csf').AnnotatedStoryFn<import('@storybook/react').ReactRenderer, NImage.TPreviewGroupProps>;
+export declare const OneImagePreviewGroup: import('@storybook/csf').AnnotatedStoryFn<import('@storybook/react').ReactRenderer, NImage.TPreviewGroupProps>;
