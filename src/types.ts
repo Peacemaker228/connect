@@ -1,10 +1,11 @@
-import { Server, Member, Profile } from '@prisma/client'
+import { Server, Member, Profile, Channel } from '@prisma/client'
 import { Server as NetServer, Socket } from 'net'
 import { Server as SocketIOServer } from 'socket.io'
 import { NextApiResponse } from 'next'
 
 export type TServerMembersProfiles = Server & {
   members: (Member & { profile: Profile })[]
+  channels: Channel[]
 }
 
 export enum EGeneral {
@@ -22,3 +23,12 @@ export type NextApiResponseServerIo = NextApiResponse & {
 }
 
 export type TChannelConversation = 'channel' | 'conversation'
+
+export enum ELocales {
+  EN = 'en',
+  RU = 'ru',
+}
+
+export enum ECookiesKeys {
+  NEXT_LOCALE = 'NEXT_LOCALE',
+}

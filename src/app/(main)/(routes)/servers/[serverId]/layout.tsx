@@ -1,9 +1,9 @@
 import React, { FC, PropsWithChildren } from 'react'
-import { currentProfile } from '@/lib/current-profile'
-import { db } from '@/lib/db'
+import { currentProfile } from '@/lib/shared/utils/current-profile'
+import { db } from '@/lib/shared/utils/db'
 import { redirect } from 'next/navigation'
-import { ERoutes } from '@/lib/routes'
-import { ServerSidebar } from '@/components/server'
+import { ERoutes } from '@/lib/shared/utils/routes'
+import { ServerSidebar } from '@/lib/server-list/features'
 
 interface IServerIdLayoutProps {
   params: Promise<{ serverId: string }>
@@ -35,7 +35,7 @@ const ServerIdLayout: FC<PropsWithChildren<IServerIdLayoutProps>> = async ({ chi
       <div className="hidden md:flex h-full w-60 z-20 flex-col fixed inset-y-0">
         <ServerSidebar serverId={serverId} />
       </div>
-      <main className="h-full md:pl-60">{children}</main>
+      <main className="pt-1 h-full md:pl-60">{children}</main>
     </div>
   )
 }

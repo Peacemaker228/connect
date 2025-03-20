@@ -5,7 +5,7 @@ const config: Config = {
   darkMode: ['class'],
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/lib/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
@@ -51,6 +51,18 @@ const config: Config = {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
+        mainOrange: 'var(--orange-ax)',
+        grayBD: '#BDBDBD',
+        gray21: '#212121',
+        gray1E: '#1E1E1E',
+        red4F: '#FF4D4F',
+      },
+      backgroundColor: {
+        mainOrange: 'var(--orange-ax)',
+        grayBD: '#BDBDBD',
+        gray21: '#212121',
+        gray1E: '#1E1E1E',
+        red4F: '#FF4D4F',
       },
       borderRadius: {
         lg: 'var(--radius)',
