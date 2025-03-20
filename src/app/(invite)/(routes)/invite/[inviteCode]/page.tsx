@@ -1,58 +1,36 @@
-import { FC } from 'react'
-import { currentProfile } from '@/lib/current-profile'
-import { redirect } from 'next/navigation'
-import { ERoutes } from '@/lib/routes'
-import { db } from '@/lib/db'
+'use client'
 
-interface IInvitePageProps {
-  params: Promise<{
-    inviteCode: string
-  }>
-}
+import { useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { Spinner } from '@/lib/shared/ui/spinner'
+import { ErrorComponent } from '@/lib/shared/ui/error-component'
+import { useJoinByInvite } from '@/lib/shared/data-access/server/api-socket'
+import { ERoutes } from '@/lib/shared/utils/routes'
 
-const InvitePage: FC<IInvitePageProps> = async ({ params }) => {
-  const { inviteCode } = await params
-  const profile = await currentProfile()
+const InvitePage = () => {
+  const router = useRouter()
+  const params = useParams()
+  const inviteCode = params?.inviteCode
 
-  if (!profile) {
-    // TODO: чекнуть и исправить если что
-    return redirect(ERoutes.SIGN_IN)
-  }
+  const { mutate: handleInvite, isError, isPending } = useJoinByInvite()
 
-  if (!inviteCode) {
-    redirect(ERoutes.MAIN_PAGE)
-  }
-
-  const existingServer = await db.server.findFirst({
-    where: {
-      inviteCode,
-      members: {
-        some: {
-          profileId: profile.id,
-        },
+  useEffect(() => {
+    handleInvite(inviteCode as string, {
+      onSuccess: ({ redirectUrl }) => {
+        router.push(redirectUrl)
       },
-    },
-  })
+      onError: () => {
+        router.push(ERoutes.MAIN_PAGE)
+      },
+    })
+  }, [handleInvite, inviteCode, router])
 
-  if (existingServer) {
-    redirect(`${ERoutes.SERVERS}/${existingServer.id}`)
+  if (isPending) {
+    return <Spinner />
   }
 
-  const server = await db.server.update({
-    where: {
-      inviteCode,
-    },
-    data: {
-      members: {
-        create: {
-          profileId: profile.id,
-        },
-      },
-    },
-  })
-
-  if (server) {
-    redirect(`${ERoutes.SERVERS}/${server.id}`)
+  if (isError) {
+    return <ErrorComponent />
   }
 
   return null

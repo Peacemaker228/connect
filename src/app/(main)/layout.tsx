@@ -1,5 +1,5 @@
 import React, { PropsWithChildren } from 'react'
-import { NavigationSidebar } from '@/components/navigation'
+import { NavigationSidebar } from '@/lib/navigation/features'
 
 const MainLayout = async ({ children }: PropsWithChildren) => {
   return (

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { currentProfile } from '@/lib/current-profile'
+import { currentProfile } from '@/lib/shared/utils/current-profile'
 import { getServerId } from '@/app/api/utils'
-import { db } from '@/lib/db'
+import { db } from '@/lib/shared/utils/db'
 import { MemberRole } from '@prisma/client'
 import { EGeneral } from '@/types'
 

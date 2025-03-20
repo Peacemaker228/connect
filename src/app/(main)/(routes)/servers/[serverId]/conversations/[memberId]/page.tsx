@@ -1,11 +1,11 @@
 import React, { FC } from 'react'
-import { currentProfile } from '@/lib/current-profile'
-import { ERoutes } from '@/lib/routes'
+import { currentProfile } from '@/lib/shared/utils/current-profile'
+import { ERoutes } from '@/lib/shared/utils/routes'
 import { redirect } from 'next/navigation'
-import { db } from '@/lib/db'
-import { getOrCreateConversation } from '@/lib/conversation'
-import { ChatHeader, ChatInput, ChatMessages } from '@/components/chat'
-import { MediaRoom } from '@/components/media-room'
+import { db } from '@/lib/shared/utils/db'
+import { getOrCreateConversation } from '@/lib/shared/utils/conversation'
+import { ChatHeader, ChatInput, ChatMessages } from '@/lib/chat/features'
+import { MediaRoom } from '@/lib/shared/features/media-room'
 
 interface IMemberIdPageProps {
   params: Promise<{

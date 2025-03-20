@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { currentProfile } from '@/lib/current-profile'
-import { db } from '@/lib/db'
+import { currentProfile } from '@/lib/shared/utils/current-profile'
+import { db } from '@/lib/shared/utils/db'
 
 export const PATCH = async (req: Request, { params }: { params: Promise<{ serverId: string }> }) => {
   try {

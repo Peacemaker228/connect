@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { currentProfile } from '@/lib/current-profile'
+import { currentProfile } from '@/lib/shared/utils/current-profile'
 import { DirectMessage } from '@prisma/client'
-import { db } from '@/lib/db'
+import { db } from '@/lib/shared/utils/db'
 
 const MESSAGE_BATCH_SIZE = 10
 

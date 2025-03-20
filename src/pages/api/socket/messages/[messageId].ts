@@ -1,7 +1,7 @@
 import { NextApiRequest } from 'next'
 import { NextApiResponseServerIo } from '@/types'
-import { currentProfilePages } from '@/lib/current-profile-pages'
-import { db } from '@/lib/db'
+import { currentProfilePages } from '@/lib/shared/utils/current-profile-pages'
+import { db } from '@/lib/shared/utils/db'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponseServerIo) {
   if (req.method !== 'DELETE' && req.method !== 'PATCH') {

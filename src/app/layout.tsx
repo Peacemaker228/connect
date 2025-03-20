@@ -3,8 +3,11 @@ import './globals.css'
 import React, { PropsWithChildren } from 'react'
 import { Open_Sans } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
-import { ThemeProvider, ModalProvider, SocketProvider, QueryProvider } from '@/components/providers'
-import { cn } from '@/lib/utils'
+import { ThemeProvider, ModalProvider, SocketProvider, QueryProvider } from '@/lib/shared/providers'
+import { cn } from '@/lib/shared/utils/utils'
+import { Toaster } from '@/lib/shared/ui/toaster'
+import { getLocale, getMessages } from 'next-intl/server'
+import { NextIntlClientProvider } from 'next-intl'
 
 const font = Open_Sans({ subsets: ['latin'] })
 
@@ -13,11 +16,14 @@ export const metadata: Metadata = {
   description: 'Meetings',
 }
 
-export default function RootLayout({ children }: Readonly<PropsWithChildren>) {
+export default async function RootLayout({ children }: Readonly<PropsWithChildren>) {
+  const locale = await getLocale()
+  const messages = await getMessages()
+
   return (
     <ClerkProvider afterSignOutUrl={'/'} signInFallbackRedirectUrl={'/'} signUpFallbackRedirectUrl={'/'}>
-      <html lang="en" suppressHydrationWarning>
-        <body className={cn(font.className, 'bg-white dark:bg-[#313338]')}>
+      <html lang={locale} suppressHydrationWarning>
+        <body className={cn(font.className, 'bg-white dark:bg-[#232428]')}>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
@@ -25,8 +31,13 @@ export default function RootLayout({ children }: Readonly<PropsWithChildren>) {
             disableTransitionOnChange
             storageKey="ax-connect-theme">
             <SocketProvider>
-              <ModalProvider />
-              <QueryProvider>{children}</QueryProvider>
+              <Toaster />
+              <QueryProvider>
+                <NextIntlClientProvider messages={messages}>
+                  <ModalProvider />
+                  {children}
+                </NextIntlClientProvider>
+              </QueryProvider>
             </SocketProvider>
           </ThemeProvider>
         </body>
