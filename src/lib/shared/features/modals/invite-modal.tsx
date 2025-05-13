@@ -1,6 +1,5 @@
 'use client'
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/lib/shared/ui/dialog'
 import { Input } from '@/lib/shared/ui/input'
 import { Button } from '@/lib/shared/ui/button'
 import axios from 'axios'
@@ -10,6 +9,7 @@ import { Check, Copy, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useOrigin } from '@/lib/shared/utils/hooks/use-origin'
+import { Modal, Title } from '@axenix/ui-kit'
 
 export const InviteModal = () => {
   const [copied, setCopied] = useState(false)
@@ -47,35 +47,30 @@ export const InviteModal = () => {
   }
 
   return (
-    <Dialog open={isModalOpen} onOpenChange={onClose}>
-      <DialogContent className="p-0 overflow-hidden">
-        <DialogHeader className="pt-8 px-6">
-          <DialogTitle className="text-2xl text-center">{t('title')}</DialogTitle>
-        </DialogHeader>
-        <div className="p-6">
-          <Label className="uppercase text-xs font-bold text-zinc-500 dark:text-greyBD">{t('label')}</Label>
-          <div className="flex items-center mt-2 gap-x-2">
-            <Input
-              disabled={isLoading}
-              className="bg-zinc-300/50 border-0 focus-visible:ring-0 text-black focus-visible:ring-offset-0"
-              value={inviteUrl}
-              onChange={() => {}}
-            />
-            <Button disabled={isLoading} size="icon" onClick={onCopy}>
-              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            </Button>
-          </div>
-          <Button
-            onClick={onNew}
+    <Modal isOpen={isModalOpen} onCancel={onClose} title={<Title level={2}>{t('title')}</Title>}>
+      <div className="p-6">
+        <Label className="uppercase text-xs font-bold text-zinc-500 dark:text-greyBD">{t('label')}</Label>
+        <div className="flex items-center mt-2 gap-x-2">
+          <Input
             disabled={isLoading}
-            variant={'link'}
-            size={'sm'}
-            className={'text-xs text-zinc-500 mt-4'}>
-            {t('link')}
-            <RefreshCw className="w-4 h-4 ml-2" />
+            className="bg-zinc-300/50 border-0 focus-visible:ring-0 text-black focus-visible:ring-offset-0"
+            value={inviteUrl}
+            onChange={() => {}}
+          />
+          <Button disabled={isLoading} size="icon" onClick={onCopy}>
+            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+        <Button
+          onClick={onNew}
+          disabled={isLoading}
+          variant={'link'}
+          size={'sm'}
+          className={'text-xs text-zinc-500 mt-4'}>
+          {t('link')}
+          <RefreshCw className="w-4 h-4 ml-2" />
+        </Button>
+      </div>
+    </Modal>
   )
 }

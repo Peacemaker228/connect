@@ -1,19 +1,11 @@
 'use client'
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/lib/shared/ui/dialog'
-import { Button } from '@/lib/shared/ui/button'
 import axios from 'axios'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { Button, Modal, Title } from '@axenix/ui-kit'
 
 export const LeaveServerModal = () => {
   const { isOpen, onClose, type, data } = useModal()
@@ -45,30 +37,27 @@ export const LeaveServerModal = () => {
   }
 
   return (
-    <Dialog open={isModalOpen} onOpenChange={onClose}>
-      <DialogContent className="p-0 overflow-hidden">
-        <DialogHeader className="pt-8 px-6">
-          <DialogTitle className="text-2xl text-center">{t('title')}</DialogTitle>
-          <DialogDescription className="text-center text-zinc-500">
-            {t('description')} <span className="font-semibold text-mainOrange">{server?.name}</span>?
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="bg-gray-100 dark:bg-inherit px-6 py-4">
-          <div className="flex items-center justify-between w-full">
-            <Button disabled={isLoading} onClick={onClose} variant="ghost">
-              {commonTrans('Cancel')}
-            </Button>
-            <Button
-              disabled={isLoading}
-              variant="primary"
-              onClick={() => {
-                return handleSubmit()
-              }}>
-              {commonTrans('Confirm')}
-            </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <Modal
+      isOpen={isModalOpen}
+      onCancel={onClose}
+      title={<Title level={2}>{t('title')}</Title>}
+      footer={
+        <div className="flex items-center justify-between w-full">
+          <Button disabled={isLoading} onClick={onClose}>
+            {commonTrans('Cancel')}
+          </Button>
+          <Button
+            disabled={isLoading}
+            type="primary"
+            className={'bg-red-500'}
+            onClick={() => {
+              return handleSubmit()
+            }}>
+            {commonTrans('Confirm')}
+          </Button>
+        </div>
+      }>
+      {t('description')} <span className="font-semibold text-mainOrange">{server?.name}</span>?
+    </Modal>
   )
 }

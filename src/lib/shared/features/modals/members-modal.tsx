@@ -23,6 +23,7 @@ import axios from 'axios'
 import qs from 'query-string'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { Modal, Title } from '@axenix/ui-kit'
 
 const roleIconMap: Record<MemberRole, ReactNode | null> = {
   GUEST: null,
@@ -92,74 +93,67 @@ export const MembersModal = () => {
   }
 
   return (
-    <Dialog open={isModalOpen} onOpenChange={onClose}>
-      <DialogContent className="overflow-hidden">
-        <DialogHeader className="pt-8 px-6">
-          <DialogTitle className="text-2xl text-center">{t('title')}</DialogTitle>
-          <DialogDescription className="text-center text-zinc-500 dark:text-grayBD">
-            {t('description')}: {server?.members?.length}
-          </DialogDescription>
-        </DialogHeader>
-        <ScrollArea className="mt-8 max-h-[420px] pr-6">
-          {server?.members?.map((m) => (
-            <div key={m.id} className="flex items-center gap-x-2 mb-6">
-              <UserAvatar src={m.profile.imageUrl} />
-              <div className="flex flex-col gap-y-1">
-                <div className="text-xs font-semibold flex items-center gap-x-1">
-                  {m.profile.name}
-                  {roleIconMap[m.role]}
-                </div>
-                <p className="text-xs text-zinc-500 dark:text-grayBD">{m.profile.email}</p>
+    <Modal isOpen={isModalOpen} onCancel={onClose} title={<Title level={2}>{t('title')}</Title>}>
+      {t('description')}: {server?.members?.length}
+      <ScrollArea className="mt-8 max-h-[420px] pr-6">
+        {server?.members?.map((m) => (
+          <div key={m.id} className="flex items-center gap-x-2 mb-6">
+            <UserAvatar src={m.profile.imageUrl} />
+            <div className="flex flex-col gap-y-1">
+              <div className="text-xs font-semibold flex items-center gap-x-1">
+                {m.profile.name}
+                {roleIconMap[m.role]}
               </div>
-              {server.profileId !== m.profileId && loadingId !== m.id && (
-                <div className="ml-auto">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger>
-                      <MoreVertical className="h-4 w-4 text-zinc-500" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent side={'left'} className="dark:bg-[#212121]">
-                      <DropdownMenuSub>
-                        <DropdownMenuSubTrigger className="flex items-center">
-                          <ShieldQuestion className="w-4 h-4 mr-2" />
-                          <span>{commonTrans('role.title')}</span>
-                        </DropdownMenuSubTrigger>
-                        <DropdownMenuPortal>
-                          <DropdownMenuSubContent className={'dark:bg-[#212121]'}>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                return handleRoleChange(m.id, MemberRole.GUEST)
-                              }}>
-                              <Shield className="h-4 w-4 mr-2" />
-                              {commonTrans('role.GUEST')}
-                              {m.role === MemberRole.GUEST && <Check className="w-4 h-4 ml-auto" />}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                return handleRoleChange(m.id, MemberRole.MODERATOR)
-                              }}>
-                              <ShieldCheck className="h-4 w-4 mr-2" />
-                              {commonTrans('role.MODERATOR')}
-                              {m.role === MemberRole.MODERATOR && <Check className="w-4 h-4 ml-auto" />}
-                            </DropdownMenuItem>
-                          </DropdownMenuSubContent>
-                        </DropdownMenuPortal>
-                      </DropdownMenuSub>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => {
-                          return handleKick(m.id)
-                        }}>
-                        <GavelIcon className="h-4 w-4 mr-2" /> {t('kick')}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              )}
-              {loadingId === m.id && <Loader2 className="animate-spin h-4 w-4 text-zinc-500 ml-auto" />}
+              <p className="text-xs text-zinc-500 dark:text-grayBD">{m.profile.email}</p>
             </div>
-          ))}
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
+            {server.profileId !== m.profileId && loadingId !== m.id && (
+              <div className="ml-auto">
+                <DropdownMenu>
+                  <DropdownMenuTrigger>
+                    <MoreVertical className="h-4 w-4 text-zinc-500" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side={'left'} className="dark:bg-[#212121]">
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="flex items-center">
+                        <ShieldQuestion className="w-4 h-4 mr-2" />
+                        <span>{commonTrans('role.title')}</span>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuSubContent className={'dark:bg-[#212121]'}>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              return handleRoleChange(m.id, MemberRole.GUEST)
+                            }}>
+                            <Shield className="h-4 w-4 mr-2" />
+                            {commonTrans('role.GUEST')}
+                            {m.role === MemberRole.GUEST && <Check className="w-4 h-4 ml-auto" />}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              return handleRoleChange(m.id, MemberRole.MODERATOR)
+                            }}>
+                            <ShieldCheck className="h-4 w-4 mr-2" />
+                            {commonTrans('role.MODERATOR')}
+                            {m.role === MemberRole.MODERATOR && <Check className="w-4 h-4 ml-auto" />}
+                          </DropdownMenuItem>
+                        </DropdownMenuSubContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuSub>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => {
+                        return handleKick(m.id)
+                      }}>
+                      <GavelIcon className="h-4 w-4 mr-2" /> {t('kick')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
+            {loadingId === m.id && <Loader2 className="animate-spin h-4 w-4 text-zinc-500 ml-auto" />}
+          </div>
+        ))}
+      </ScrollArea>
+    </Modal>
   )
 }

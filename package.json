@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "ax-connect",
   "version": "0.1.0",
   "private": true,
@@ -14,7 +15,7 @@
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
-    "@axenix/ui-kit": "file:packages/axenix-ui-kit-0.113.3.tgz",
+    "@axenix/ui-kit": "file:packages/axenix-ui-kit-0.121.0.tgz",
     "@clerk/nextjs": "^6.0.2",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",

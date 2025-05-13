@@ -8,18 +8,10 @@ import { useRouter } from 'next/navigation'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { messageFileSchema } from '@/lib/shared/data-access/chat/models/messageFileSchema'
 import qs from 'query-string'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/lib/shared/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/lib/shared/ui/form'
 import { FileUpload } from '@/lib/shared/features/file-upload'
-import { Button } from '@/lib/shared/ui/button'
 import { useTranslations } from 'next-intl'
+import { Button, Modal, Text, Title } from '@axenix/ui-kit'
 
 export const MessageFileModal = () => {
   const router = useRouter()
@@ -64,40 +56,38 @@ export const MessageFileModal = () => {
   }
 
   return (
-    <Dialog open={isModalOpen} onOpenChange={handleClose}>
-      <DialogContent className="bg-white text-black p-0 overflow-hidden">
-        <DialogHeader className="pt-8 px-6">
-          <DialogTitle className="text-2xl text-center">{t('title')}</DialogTitle>
-          <DialogDescription className="text-zinc-500 text-center">{t('description')}</DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
-            <div className="space-y-8 px-6">
-              <div className="flex items-start justify-center text-center">
-                <FormField
-                  control={form.control}
-                  name="fileUrl"
-                  render={({ field }) => {
-                    return (
-                      <FormItem>
-                        <FormControl>
-                          <FileUpload onChangeAction={field.onChange} endpoint={'messageFile'} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )
-                  }}
-                />
-              </div>
+    <Modal
+      isOpen={isModalOpen}
+      onCancel={handleClose}
+      title={<Title level={2}>{t('title')}</Title>}
+      footer={
+        <Button htmlType="submit" type="primary" disabled={isLoading}>
+          {commonTrans('Send')}
+        </Button>
+      }>
+      <Text className="text-zinc-500 text-center">{t('description')}</Text>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+          <div className="space-y-8 px-6">
+            <div className="flex items-start justify-center text-center">
+              <FormField
+                control={form.control}
+                name="fileUrl"
+                render={({ field }) => {
+                  return (
+                    <FormItem>
+                      <FormControl>
+                        <FileUpload onChangeAction={field.onChange} endpoint={'messageFile'} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )
+                }}
+              />
             </div>
-            <DialogFooter className="bg-gray-100 dark:bg-[#1E1E1E] px-6 py-4">
-              <Button type="submit" variant="primary" disabled={isLoading}>
-                {commonTrans('Send')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          </div>
+        </form>
+      </Form>
+    </Modal>
   )
 }
