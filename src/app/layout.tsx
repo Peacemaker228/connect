@@ -1,13 +1,12 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import React, { PropsWithChildren } from 'react'
+import '@axenix/ui-kit/css'
 import { Open_Sans } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
-import { ThemeProvider, ModalProvider, SocketProvider, QueryProvider } from '@/lib/shared/providers'
 import { cn } from '@/lib/shared/utils/utils'
-import { Toaster } from '@/lib/shared/ui/toaster'
 import { getLocale, getMessages } from 'next-intl/server'
 import { NextIntlClientProvider } from 'next-intl'
+import { ClientProviders } from '@/lib/shared/providers/client-providers'
 
 const font = Open_Sans({ subsets: ['latin'] })
 
@@ -16,7 +15,7 @@ export const metadata: Metadata = {
   description: 'Meetings',
 }
 
-export default async function RootLayout({ children }: Readonly<PropsWithChildren>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const locale = await getLocale()
   const messages = await getMessages()
 
@@ -24,22 +23,9 @@ export default async function RootLayout({ children }: Readonly<PropsWithChildre
     <ClerkProvider afterSignOutUrl={'/'} signInFallbackRedirectUrl={'/'} signUpFallbackRedirectUrl={'/'}>
       <html lang={locale} suppressHydrationWarning>
         <body className={cn(font.className, 'bg-white dark:bg-[#232428]')}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-            storageKey="ax-connect-theme">
-            <SocketProvider>
-              <Toaster />
-              <QueryProvider>
-                <NextIntlClientProvider messages={messages}>
-                  <ModalProvider />
-                  {children}
-                </NextIntlClientProvider>
-              </QueryProvider>
-            </SocketProvider>
-          </ThemeProvider>
+          <NextIntlClientProvider messages={messages}>
+            <ClientProviders>{children}</ClientProviders>
+          </NextIntlClientProvider>
         </body>
       </html>
     </ClerkProvider>
