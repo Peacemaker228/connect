@@ -61,13 +61,13 @@ export const MessageFileModal = () => {
       onCancel={handleClose}
       title={<Title level={2}>{t('title')}</Title>}
       footer={
-        <Button htmlType="submit" type="primary" disabled={isLoading}>
+        <Button onClick={form.handleSubmit(handleSubmit)} htmlType="submit" type="primary" disabled={isLoading}>
           {commonTrans('Send')}
         </Button>
       }>
       <Text className="text-zinc-500 text-center">{t('description')}</Text>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+        <form className="space-y-8">
           <div className="space-y-8 px-6">
             <div className="flex items-start justify-center text-center">
               <FormField

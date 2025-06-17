@@ -28,12 +28,17 @@ export const ServerModal: FC<IServerModalProps> = ({ isModalOpen, isLoading, onC
       onCancel={onClose}
       title={<Title level={2}>{t('title')}</Title>}
       footer={
-        <Button htmlType="submit" type="primary" disabled={isLoading} className="w-full">
+        <Button
+          onClick={form.handleSubmit(onSubmitAction)}
+          htmlType="submit"
+          type="primary"
+          disabled={isLoading}
+          className="w-full">
           {commonTrans('Create')}
         </Button>
       }>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmitAction)} className="space-y-8">
+        <form className="space-y-8">
           <div className="space-y-8 px-6">
             <div className="flex items-start justify-center text-center">
               <FormField

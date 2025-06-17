@@ -12,6 +12,19 @@ body,
     height: 100%;
 }
 
+.ant-typography {
+    color: #fff !important;
+}
+
+.ant-modal-content, .ant-modal-header {
+    background-color: #1e1e1e !important;
+    color: #fff !important;
+}
+
+.ant-modal-close {
+    color: #fff !important;
+}
+
 @layer utilities {
     .overflow-wrap-anywhere {
         overflow-wrap: anywhere;

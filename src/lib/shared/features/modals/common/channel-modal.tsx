@@ -34,13 +34,18 @@ export const ChannelModal: FC<IChannelModalProps> = ({
       isOpen={isOpen}
       onCancel={onClose}
       footer={
-        <Button htmlType="submit" type="primary" disabled={isLoading} className={'w-full'}>
+        <Button
+          onClick={form.handleSubmit(onSubmit)}
+          htmlType="submit"
+          type="primary"
+          disabled={isLoading}
+          className={'w-full'}>
           {type === 'create' ? commonTrans('Create') : commonTrans('Save')}
         </Button>
       }
       title={<Title level={2}>{type === 'create' ? t('create') : `${t('edit')} ${t('channel')}`}</Title>}>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form className="space-y-8">
           <div className="space-y-8 px-6">
             <FormField
               control={form.control}
