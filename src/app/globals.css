@@ -12,12 +12,16 @@ body,
     height: 100%;
 }
 
+:root {
+    --background-modal: #1e1e1e;
+}
+
 .ant-typography {
     color: #fff !important;
 }
 
 .ant-modal-content, .ant-modal-header {
-    background-color: #1e1e1e !important;
+    background-color: var(--background-modal) !important;
     color: #fff !important;
 }
 

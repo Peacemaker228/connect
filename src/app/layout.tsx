@@ -7,6 +7,7 @@ import { cn } from '@/lib/shared/utils/utils'
 import { getLocale, getMessages } from 'next-intl/server'
 import { NextIntlClientProvider } from 'next-intl'
 import { ClientProviders } from '@/lib/shared/providers/client-providers'
+import { ReactNode } from 'react'
 
 const font = Open_Sans({ subsets: ['latin'] })
 
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
   description: 'Meetings',
 }
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const locale = await getLocale()
   const messages = await getMessages()
 

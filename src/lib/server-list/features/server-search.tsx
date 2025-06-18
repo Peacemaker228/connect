@@ -86,8 +86,6 @@ export const ServerSearch: FC<IServerSearchProps> = ({ data }) => {
           placeholder={t('Search.placeholder')}
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
-          // TODO: fix ui kit
-          // @ts-ignore
           prefix={<SearchOutlined />}
           size="large"
           style={{ marginBottom: '16px' }}
