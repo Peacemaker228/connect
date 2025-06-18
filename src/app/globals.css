@@ -14,20 +14,25 @@ body,
 
 :root {
     --background-modal: #1e1e1e;
+    --color-white: #ffffff;
 }
 
+/* antd styles */
+
 .ant-typography {
-    color: #fff !important;
+    color: var(--color-white) !important;
 }
 
 .ant-modal-content, .ant-modal-header {
     background-color: var(--background-modal) !important;
-    color: #fff !important;
+    color: var(--color-white) !important;
 }
 
 .ant-modal-close {
-    color: #fff !important;
+    color: var(--color-white) !important;
 }
+
+/*end antd styles*/
 
 @layer utilities {
     .overflow-wrap-anywhere {
