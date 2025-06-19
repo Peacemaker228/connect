@@ -14,10 +14,22 @@ export const initialProfile = async () => {
     return profile
   }
 
+  const name = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName} ${user.lastName}`
+    }
+
+    if (user?.username) {
+      return user.username
+    }
+
+    return 'USER'
+  }
+
   return db.profile.create({
     data: {
       userId: user!.id,
-      name: `${user?.firstName ?? 'Имя'} ${user?.lastName ?? 'Фамилия'}`,
+      name: name(),
       imageUrl: user?.imageUrl ?? '',
       email: user?.emailAddresses[0].emailAddress ?? '',
     },
