@@ -26,7 +26,6 @@ export const EmojiPickerCustom: FC<IEmojiPickerCustomProps> = ({ onChangeAction 
         <Picker
           data={data}
           theme={resolvedTheme}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onEmojiSelect={(e: any) => {
             onChangeAction(e.native)
           }}

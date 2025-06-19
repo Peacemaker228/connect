@@ -17,7 +17,7 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, chatId }) => {
   const [token, setToken] = useState('')
 
   useEffect(() => {
-    if (!user?.username && (!user?.firstName || !user.lastName)) return
+    if (!user?.username && !user?.firstName && !user?.lastName) return
 
     const name = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username
 
@@ -48,8 +48,12 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, chatId }) => {
       token={token}
       connect={true}
       video={video}
-      audio={audio}>
-      <VideoConference />
+      audio={audio}
+      lang={'ru-RU'}
+      onDisconnected={(reason) => {
+        console.log(reason)
+      }}>
+      <VideoConference lang={'ru-RU'} />
     </LiveKitRoom>
   )
 }
