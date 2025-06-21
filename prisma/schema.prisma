@@ -64,6 +64,7 @@ model Member {
   conversationsInitiated Conversation[] @relation("MemberOne")
   conversationsReceived  Conversation[] @relation("MemberTwo")
 
+  @@unique([profileId, serverId])
   @@index([profileId])
   @@index([serverId])
 }

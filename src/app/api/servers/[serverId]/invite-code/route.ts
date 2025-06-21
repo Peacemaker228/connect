@@ -3,7 +3,7 @@ import { currentProfile } from '@/lib/shared/utils/current-profile'
 import { db } from '@/lib/shared/utils/db'
 import { v4 as uuidV4 } from 'uuid'
 
-export const PATCH = async (req: Request, { params }: { params: Promise<{ serverId: string }> }) => {
+export const PATCH = async (_req: Request, { params }: { params: Promise<{ serverId: string }> }) => {
   try {
     const profile = await currentProfile()
 

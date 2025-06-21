@@ -30,6 +30,7 @@ export const useServersSocket = (serverId: string | undefined) => {
         title: 'Вы были исключены из сервера',
         variant: 'destructive',
       })
+
       router.push(ERoutes.MAIN_PAGE)
     }
     // TODO: добавить обновление списка серверов юзера, если в одном из них его исключили

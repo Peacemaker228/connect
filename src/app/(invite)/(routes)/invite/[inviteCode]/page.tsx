@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Spinner } from '@/lib/shared/ui/spinner'
 import { ErrorComponent } from '@/lib/shared/ui/error-component'
@@ -9,30 +9,33 @@ import { ERoutes } from '@/lib/shared/utils/routes'
 
 const InvitePage = () => {
   const router = useRouter()
-  const params = useParams()
-  const inviteCode = params?.inviteCode
+  const { inviteCode } = useParams() as { inviteCode?: string }
 
-  const { mutate: handleInvite, isError, isPending } = useJoinByInvite()
+  const hasJoinedRef = useRef(false)
+
+  const { mutateAsync: joinByInvite, isError, isPending } = useJoinByInvite()
 
   useEffect(() => {
-    handleInvite(inviteCode as string, {
-      onSuccess: ({ redirectUrl }) => {
+    if (!inviteCode || hasJoinedRef.current) return
+
+    // TODO: без рефа запрос отсылается дважды даже в prod (bun run start) (интересно почему)
+    hasJoinedRef.current = true
+
+    const join = async () => {
+      try {
+        const { redirectUrl } = await joinByInvite(inviteCode)
         router.push(redirectUrl)
-      },
-      onError: () => {
+      } catch (err) {
+        console.error('Invite failed:', err)
         router.push(ERoutes.MAIN_PAGE)
-      },
-    })
-  }, [handleInvite, inviteCode, router])
+      }
+    }
 
-  if (isPending) {
-    return <Spinner />
-  }
+    void join()
+  }, [inviteCode, joinByInvite, router])
 
-  if (isError) {
-    return <ErrorComponent />
-  }
-
+  if (isPending) return <Spinner />
+  if (isError) return <ErrorComponent />
   return null
 }
 

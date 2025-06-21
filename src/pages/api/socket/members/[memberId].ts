@@ -20,8 +20,17 @@ const getProfileAndServerId = async (req: NextApiRequest) => {
 
   return { profile, serverId }
 }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const updateServerMembers = async (serverId: string, profileId: string, memberId: string, data: any) => {
+const updateServerMembers = async ({
+  serverId,
+  profileId,
+  data,
+}: {
+  serverId: string
+  profileId: string
+  // TODO: попробовать убрать any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any
+}) => {
   return db.server.update({
     where: {
       id: serverId,
@@ -93,17 +102,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
 
     if (req.method === 'DELETE') {
       // DELETE logic: Remove member
-      const server = await updateServerMembers(serverId as string, profile.id, memberId as string, {
-        deleteMany: {
-          id: memberId,
-          profileId: {
-            not: profile.id,
+      const server = await updateServerMembers({
+        serverId: serverId as string,
+        profileId: profile.id,
+        data: {
+          deleteMany: {
+            id: memberId,
+            profileId: {
+              not: profile.id,
+            },
           },
         },
       })
 
       if (res.socket.server.io) {
         const io = res.socket.server.io
+        // TODO: баг в паре с хуком по пути: src/lib/shared/data-access/server-list-sidebar/use-servers-socket.ts
         // TODO: проблема с сокетами: вызывается только первый emit
         // io.emit('server:members', {
         //   action: 'member_deleted',
@@ -126,15 +140,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
         return res.status(400).json({ error: 'Role is required' })
       }
 
-      const server = await updateServerMembers(serverId as string, profile.id, memberId as string, {
-        update: {
-          where: {
-            id: memberId,
-            profileId: {
-              not: profile.id,
+      const server = await updateServerMembers({
+        serverId: serverId as string,
+        profileId: profile.id,
+        data: {
+          update: {
+            where: {
+              id: memberId,
+              profileId: {
+                not: profile.id,
+              },
             },
+            data: { role },
           },
-          data: { role },
         },
       })
 

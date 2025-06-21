@@ -1,8 +1,8 @@
 {
   "name": "ax-connect",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.0.1",
   "type": "module",
+  "private": true,
   "scripts": {
     "dev": "bun next dev",
     "build": "bun next build",
