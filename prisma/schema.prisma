@@ -20,6 +20,8 @@ model Profile {
   servers  Server[]
   members  Member[]
   channels Channel[]
+
+  @@map("profile")
 }
 
 model Server {
@@ -38,6 +40,7 @@ model Server {
   updatedAt DateTime @updatedAt
 
   @@index([profileId])
+  @@map("server")
 }
 
 enum MemberRole {
@@ -67,6 +70,7 @@ model Member {
   @@unique([profileId, serverId])
   @@index([profileId])
   @@index([serverId])
+  @@map("member")
 }
 
 enum ChannelType {
@@ -92,6 +96,7 @@ model Channel {
 
   @@index([profileId])
   @@index([serverId])
+  @@map("channel")
 }
 
 model Message {
@@ -113,6 +118,7 @@ model Message {
 
   @@index([channelId])
   @@index([memberId])
+  @@map("message")
 }
 
 model Conversation {
@@ -129,6 +135,7 @@ model Conversation {
   @@unique([memberOneId, memberTwoId])
   @@index([memberTwoId])
   @@index([memberOneId])
+  @@map("conversation")
 }
 
 model DirectMessage {
@@ -149,4 +156,5 @@ model DirectMessage {
 
   @@index([memberId])
   @@index([conversationId])
+  @@map("directmessage")
 }
