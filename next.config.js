@@ -12,6 +12,8 @@ const nextConfig = {
       },
     ],
   },
+  // Необходимо для работы tauri
+  output: 'export',
 }
 
 export default withNextIntl(nextConfig)
