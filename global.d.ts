@@ -12,3 +12,14 @@ type Messages = typeof en | typeof ru
 declare global {
   type IntlMessages = Messages
 }
+
+declare global {
+  interface Window {
+    electron?: {
+      shell?: {
+        openExternal: (url: string) => void
+      }
+      onClerkSession?: (callback: (sessionId: string) => void) => void
+    }
+  }
+}

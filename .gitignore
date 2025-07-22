@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/dist
 /.pnp
 .pnp.*
 .yarn/*
@@ -40,3 +41,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 bun.lockb
+
+# clerk configuration (can include secrets)
+/.clerk
