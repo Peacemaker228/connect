@@ -71,7 +71,7 @@ export const ServerSidebar: FC<IServerSidebarProps> = ({ serverId }) => {
   ]
 
   return (
-    <div className="flex flex-col h-full text-primary w-full dark:bg-[#2B2D31] bg-[#F2F3F5] mt-1">
+    <div className="flex flex-col h-full text-primary w-full dark:bg-[#2B2D31] bg-[#F2F3F5]">
       {isLoading && !server && <Spinner />}
       {isError && !server && <ErrorComponent />}
       {server && (
