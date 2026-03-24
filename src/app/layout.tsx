@@ -23,10 +23,16 @@ export default async function RootLayout({ children }: Readonly<PropsWithChildre
   const locale = await getLocale()
   const messages = await getMessages()
 
+  const clerkProxyUrl = process.env.NEXT_PUBLIC_CLERK_PROXY_URL
+
   return (
     <html lang={locale} suppressHydrationWarning>
       <body className={cn(font.className, 'bg-white dark:bg-[#232428]')}>
-        <ClerkProvider afterSignOutUrl={'/'} signInFallbackRedirectUrl={'/'} signUpFallbackRedirectUrl={'/'}>
+        <ClerkProvider
+          {...(clerkProxyUrl ? { proxyUrl: clerkProxyUrl } : {})}
+          afterSignOutUrl="/"
+          signInFallbackRedirectUrl="/"
+          signUpFallbackRedirectUrl="/">
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
