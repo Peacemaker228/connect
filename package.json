@@ -9,14 +9,20 @@
     "dev:full": "concurrently \"bun run dev:back\" \"bun run dev:front\"",
     "dev:desktop": "concurrently \"bun run dev\" \"bun run electron\"",
     "electron": "electron electron/main.js",
+
     "dev": "bun next dev",
-    "build": "bun next build",
+    "build:web": "bun next build",
     "build:server": "tsc -p tsconfig.server.json",
-    "build:electron": "bun run build && bun run build:server && electron-builder",
-    "start": "bun next start",
+    "build": "bun run build:web && bun run build:server",
+
+    "start:web": "bun next start -p 3000",
+    "start:back": "node dist/server.js",
+
     "lint": "next lint",
+
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:migrate:reset": "prisma migrate reset",
     "prisma:dbpush": "prisma db push",
     "prisma:studio": "prisma studio"
