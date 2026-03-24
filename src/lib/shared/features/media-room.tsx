@@ -41,6 +41,8 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, chatId }) => {
     )
   }
 
+  console.log('token', token)
+
   return (
     <LiveKitRoom
       data-lk-theme="default"
