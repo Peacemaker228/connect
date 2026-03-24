@@ -5,6 +5,7 @@ import { ActionTooltip } from '@/lib/shared/features/action-tooltip'
 import { cn } from '@/lib/shared/utils/utils'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { getUploadValueParts } from '@/lib/shared/utils/upload-file'
 
 interface INavigationItemProps {
   id: string
@@ -15,6 +16,7 @@ interface INavigationItemProps {
 export const NavigationItem: FC<INavigationItemProps> = ({ id, imageUrl, name }) => {
   const params = useParams()
   const router = useRouter()
+  const { fileUrl } = getUploadValueParts(imageUrl, 'serverImage')
 
   const handleServerClick = () => {
     router.push(`/servers/${id}`)
@@ -34,7 +36,7 @@ export const NavigationItem: FC<INavigationItemProps> = ({ id, imageUrl, name })
           className={cn(
             'relative group flex mx-3 h-[48px] w-[48px] rounded-[24px] overflow-hidden group-hover:rounded-[16px] transition-all',
           )}>
-          <Image src={imageUrl} fill alt={'Channel'} />
+          <Image src={fileUrl} fill alt={'Channel'} />
         </div>
       </button>
     </ActionTooltip>
