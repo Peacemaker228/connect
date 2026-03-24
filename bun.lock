@@ -9,7 +9,7 @@
         "@hookform/resolvers": "^3.9.1",
         "@livekit/components-react": "^2.6.7",
         "@livekit/components-styles": "^1.1.4",
-        "@prisma/client": "5.21.1",
+        "@prisma/client": "5.22.0",
         "@radix-ui/react-avatar": "^1.1.1",
         "@radix-ui/react-dialog": "^1.1.2",
         "@radix-ui/react-dropdown-menu": "^2.1.2",
@@ -64,7 +64,7 @@
         "eslint-config-next": "15.0.1",
         "postcss": "^8",
         "prettier": "^3.3.3",
-        "prisma": "^5.21.1",
+        "prisma": "5.22.0",
         "tailwindcss": "^3.4.1",
         "ts-node": "^10.9.2",
         "typescript": "^5.8.3",
@@ -456,7 +456,7 @@
 
     "@pkgjs/parseargs": ["@pkgjs/parseargs@0.11.0", "", {}, "sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg=="],
 
-    "@prisma/client": ["@prisma/client@5.21.1", "", { "peerDependencies": { "prisma": "*" }, "optionalPeers": ["prisma"] }, "sha512-3n+GgbAZYjaS/k0M03yQsQfR1APbr411r74foknnsGpmhNKBG49VuUkxIU6jORgvJPChoD4WC4PqoHImN1FP0w=="],
+    "@prisma/client": ["@prisma/client@5.22.0", "", { "peerDependencies": { "prisma": "*" }, "optionalPeers": ["prisma"] }, "sha512-M0SVXfyHnQREBKxCgyo7sffrKttwE6R8PMq330MIUF0pTwjUhLbW84pFDlf06B27XyCR++VtjugEnIHdr07SVA=="],
 
     "@prisma/debug": ["@prisma/debug@5.22.0", "", {}, "sha512-AUt44v3YJeggO2ZU5BkXI7M4hu9BF2zzH2iF2V5pyXT/lRTyWiElZ7It+bRH1EshoMRxHgpYg4VB6rCM+mG5jQ=="],
 
