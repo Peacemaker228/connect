@@ -16,10 +16,10 @@ declare global {
 declare global {
   interface Window {
     electron?: {
-      shell?: {
-        openExternal: (url: string) => void
-      }
-      onClerkSession?: (callback: (sessionId: string) => void) => void
+      isDesktop: boolean
+      openExternal: (url: string) => Promise<boolean>
+      onDeepLink?: (callback: (payload: { url: string; sessionId: string | null }) => void) => (() => void) | void
+      onClerkSession?: (callback: (sessionId: string) => void) => (() => void) | void
     }
   }
 }
