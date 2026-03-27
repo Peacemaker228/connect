@@ -14,7 +14,9 @@ const DEV_RETRY_DELAY_MS = 1000
 const ALLOWED_PERMISSIONS = new Set(['camera', 'microphone', 'media', 'notifications', 'fullscreen'])
 
 let mainWindow = null
-let pendingDeepLink = null
+let pendingNavigationPath = null
+let pendingSessionId = null
+let isRendererReady = false
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -67,7 +69,8 @@ const getInitialRendererUrl = () => {
     return rendererUrl
   }
 
-  const initialPath = process.env.ELECTRON_INITIAL_PATH || DEFAULT_INITIAL_PATH
+  const initialPath = pendingNavigationPath || process.env.ELECTRON_INITIAL_PATH || DEFAULT_INITIAL_PATH
+  pendingNavigationPath = null
   const url = new URL(rendererUrl)
 
   if (url.pathname === '/' || url.pathname === '') {
@@ -75,6 +78,44 @@ const getInitialRendererUrl = () => {
   }
 
   return url.toString()
+}
+
+const getAppPathFromDeepLink = (urlString) => {
+  try {
+    const url = new URL(urlString)
+
+    if (url.protocol !== `${APP_PROTOCOL}:`) {
+      return null
+    }
+
+    if (url.hostname === 'invite') {
+      const inviteCode = url.pathname.replace(/^\/+/, '')
+
+      if (inviteCode) {
+        return `/invite/${inviteCode}`
+      }
+    }
+
+    const pathFromQuery = url.searchParams.get('path')
+
+    if (pathFromQuery?.startsWith('/')) {
+      return pathFromQuery
+    }
+
+    return null
+  } catch {
+    return null
+  }
+}
+
+const getRendererNavigationUrl = (appPath) => {
+  const rendererUrl = getRendererUrl()
+
+  if (!isHttpUrl(rendererUrl)) {
+    return rendererUrl
+  }
+
+  return new URL(appPath, rendererUrl).toString()
 }
 
 const getSessionIdFromDeepLink = (urlString) => {
@@ -85,21 +126,38 @@ const getSessionIdFromDeepLink = (urlString) => {
   }
 }
 
-const sendDeepLinkToRenderer = (urlString) => {
-  if (!mainWindow || mainWindow.isDestroyed()) {
-    pendingDeepLink = urlString
+const sendSessionToRenderer = (sessionId) => {
+  if (!sessionId) {
     return
   }
 
-  const payload = {
-    url: urlString,
-    sessionId: getSessionIdFromDeepLink(urlString),
+  if (!mainWindow || mainWindow.isDestroyed() || !isRendererReady) {
+    pendingSessionId = sessionId
+    return
   }
 
-  mainWindow.webContents.send('desktop:deep-link', payload)
+  mainWindow.webContents.send('clerk:session', sessionId)
+}
 
-  if (payload.sessionId) {
-    mainWindow.webContents.send('clerk:session', payload.sessionId)
+const handleDeepLink = (urlString) => {
+  const appPath = getAppPathFromDeepLink(urlString)
+  const sessionId = getSessionIdFromDeepLink(urlString)
+
+  if (appPath) {
+    pendingNavigationPath = appPath
+  }
+
+  if (sessionId) {
+    pendingSessionId = sessionId
+  }
+
+  if (mainWindow && !mainWindow.isDestroyed() && appPath) {
+    void mainWindow.loadURL(getRendererNavigationUrl(appPath))
+    return
+  }
+
+  if (sessionId) {
+    sendSessionToRenderer(sessionId)
   }
 }
 
@@ -234,6 +292,8 @@ const loadRenderer = async () => {
 }
 
 const createWindow = async () => {
+  isRendererReady = false
+
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
@@ -252,6 +312,10 @@ const createWindow = async () => {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show()
+  })
+
+  mainWindow.webContents.on('did-start-loading', () => {
+    isRendererReady = false
   })
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -273,16 +337,9 @@ const createWindow = async () => {
     }
   })
 
-  mainWindow.webContents.on('did-finish-load', () => {
-    if (pendingDeepLink) {
-      const deepLink = pendingDeepLink
-      pendingDeepLink = null
-      sendDeepLinkToRenderer(deepLink)
-    }
-  })
-
   mainWindow.on('closed', () => {
     mainWindow = null
+    isRendererReady = false
   })
 
   await loadRenderer()
@@ -299,7 +356,7 @@ if (!singleInstanceLock) {
     const deepLink = extractDeepLinkFromArgv(argv)
 
     if (deepLink) {
-      sendDeepLinkToRenderer(deepLink)
+      handleDeepLink(deepLink)
     }
   })
 }
@@ -311,6 +368,16 @@ ipcMain.handle('desktop:open-external', async (_event, url) => {
 
   await shell.openExternal(url)
   return true
+})
+
+ipcMain.on('desktop:renderer-ready', () => {
+  isRendererReady = true
+
+  if (pendingSessionId) {
+    const sessionId = pendingSessionId
+    pendingSessionId = null
+    sendSessionToRenderer(sessionId)
+  }
 })
 
 app.whenReady().then(async () => {
@@ -341,13 +408,13 @@ app.whenReady().then(async () => {
   const startupDeepLink = extractDeepLinkFromArgv(process.argv)
 
   if (startupDeepLink) {
-    sendDeepLinkToRenderer(startupDeepLink)
+    handleDeepLink(startupDeepLink)
   }
 })
 
 app.on('open-url', (event, url) => {
   event.preventDefault()
-  sendDeepLinkToRenderer(url)
+  handleDeepLink(url)
 })
 
 app.on('window-all-closed', () => {

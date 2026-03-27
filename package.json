@@ -101,6 +101,14 @@
   "build": {
     "appId": "com.axconnect.desktop",
     "productName": "AxConnect",
+    "protocols": [
+      {
+        "name": "AxConnect",
+        "schemes": [
+          "axconnect"
+        ]
+      }
+    ],
     "npmRebuild": false,
     "nodeGypRebuild": false,
     "directories": {
@@ -116,6 +124,14 @@
         "nsis"
       ],
       "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     }
   }
 }

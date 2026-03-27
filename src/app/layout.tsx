@@ -6,6 +6,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { ThemeProvider, ModalProvider, QueryProvider } from '@/lib/shared/providers'
 import { cn } from '@/lib/shared/utils/utils'
 import { Toaster } from '@/lib/shared/ui/toaster'
+import { DesktopDeepLinkHandler } from '@/lib/shared/features/desktop-deep-link-handler'
 import { getLocale, getMessages } from 'next-intl/server'
 import { NextIntlClientProvider } from 'next-intl'
 
@@ -42,6 +43,7 @@ export default async function RootLayout({ children }: Readonly<PropsWithChildre
             <Toaster />
             <QueryProvider>
               <NextIntlClientProvider messages={messages}>
+                <DesktopDeepLinkHandler />
                 <ModalProvider />
                 {children}
               </NextIntlClientProvider>

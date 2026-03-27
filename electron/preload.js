@@ -3,6 +3,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 contextBridge.exposeInMainWorld('electron', {
   isDesktop: true,
   openExternal: (url) => ipcRenderer.invoke('desktop:open-external', url),
+  notifyReady: () => ipcRenderer.send('desktop:renderer-ready'),
   onDeepLink: (callback) => {
     const listener = (_event, payload) => callback(payload)
 
