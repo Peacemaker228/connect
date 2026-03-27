@@ -6,3 +6,11 @@ export enum ERoutes {
   CHANNELS = '/channels',
   CONVERSATIONS = '/conversations',
 }
+
+export const getSignInRedirectUrl = (targetPath: string) => {
+  const searchParams = new URLSearchParams({
+    redirect_url: targetPath,
+  })
+
+  return `${ERoutes.SIGN_IN}?${searchParams.toString()}`
+}

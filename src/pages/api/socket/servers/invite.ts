@@ -1,6 +1,6 @@
 import { NextApiRequest } from 'next'
 import { db } from '@/lib/shared/utils/db'
-import { ERoutes } from '@/lib/shared/utils/routes'
+import { ERoutes, getSignInRedirectUrl } from '@/lib/shared/utils/routes'
 import { NextApiResponseServerIo } from '@/types'
 import { currentProfilePages } from '@/lib/shared/utils/current-profile-pages'
 import { Prisma } from '@prisma/client'
@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
   const profile = await currentProfilePages(req)
 
   if (!profile) {
-    return res.status(401).json({ redirectUrl: ERoutes.SIGN_IN })
+    return res.status(401).json({ redirectUrl: getSignInRedirectUrl(`/invite/${inviteCode}`) })
   }
 
   try {

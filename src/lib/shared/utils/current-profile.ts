@@ -1,14 +1,12 @@
-import { auth } from '@clerk/nextjs/server'
-import { db } from '@/lib/shared/utils/db'
+import { currentUser } from '@clerk/nextjs/server'
+import { ensureProfile } from '@/lib/shared/utils/ensure-profile'
 
 export const currentProfile = async () => {
-  const { userId } = await auth()
+  const user = await currentUser()
 
-  if (!userId) return null
+  if (!user) {
+    return null
+  }
 
-  return db.profile.findUnique({
-    where: {
-      userId,
-    },
-  })
+  return ensureProfile(user)
 }
