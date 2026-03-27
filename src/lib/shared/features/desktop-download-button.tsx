@@ -24,7 +24,7 @@ export const DesktopDownloadButton = ({ compact = false, className }: IDesktopDo
   }
 
   return (
-    <Button asChild className={className} size={compact ? 'icon' : 'sm'} variant={'primary'}>
+    <Button asChild className={className} size={compact ? 'icon' : 'sm'} variant={'default'}>
       <a href={getDesktopDownloadUrl()} rel="noreferrer" target="_blank">
         <Download className="h-4 w-4" />
         {!compact && <span>{t('DownloadDesktop')}</span>}
