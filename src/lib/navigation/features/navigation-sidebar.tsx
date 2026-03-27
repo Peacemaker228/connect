@@ -2,6 +2,7 @@
 
 import { Separator } from '@/lib/shared/ui/separator'
 import { ScrollArea } from '@/lib/shared/ui/scroll-area'
+import { DesktopDownloadButton } from '@/lib/shared/features/desktop-download-button'
 import { ThemeToggle } from '@/lib/shared/features/theme-toggle'
 import { useParams } from 'next/navigation'
 import { LocaleToggle } from '@/lib/shared/ui/locale-toggle'
@@ -29,6 +30,7 @@ export const NavigationSidebar = () => {
         ))}
       </ScrollArea>
       <div className={'pb3 mt-auto flex items-center flex-col gap-y-4'}>
+        <DesktopDownloadButton compact />
         <ThemeToggle />
         <LocaleToggle />
       </div>

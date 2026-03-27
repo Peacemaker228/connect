@@ -18,7 +18,7 @@ const InvitePage = () => {
   useEffect(() => {
     if (!inviteCode || hasJoinedRef.current) return
 
-    // TODO: без рефа запрос отсылается дважды даже в prod (bun run start) (интересно почему)
+    // TODO: без рефа запрос отсылается дважды даже в prod (интересно почему)
     hasJoinedRef.current = true
 
     const join = async () => {
