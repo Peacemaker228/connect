@@ -7,8 +7,8 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const APP_PROTOCOL = 'axconnect'
-const DEFAULT_DEV_URL = 'http://localhost:3000'
-const DEFAULT_INITIAL_PATH = '/sign-in'
+const DEFAULT_DEV_URL = 'http://localhost:3005'
+const DEFAULT_INITIAL_PATH = '/'
 const DEV_LOAD_RETRIES = 60
 const DEV_RETRY_DELAY_MS = 1000
 const ALLOWED_PERMISSIONS = new Set(['camera', 'microphone', 'media', 'notifications', 'fullscreen'])
@@ -60,12 +60,6 @@ const getRendererUrl = () => {
   return config.productionUrl || process.env.ELECTRON_RENDERER_URL || process.env.NEXT_PUBLIC_SITE_URL || ''
 }
 
-const getInitialPath = () => {
-  const config = app.isPackaged ? readDesktopConfig() : null
-
-  return config?.initialPath || process.env.ELECTRON_INITIAL_PATH || DEFAULT_INITIAL_PATH
-}
-
 const getInitialRendererUrl = () => {
   const rendererUrl = getRendererUrl()
 
@@ -73,7 +67,7 @@ const getInitialRendererUrl = () => {
     return rendererUrl
   }
 
-  const initialPath = getInitialPath()
+  const initialPath = process.env.ELECTRON_INITIAL_PATH || DEFAULT_INITIAL_PATH
   const url = new URL(rendererUrl)
 
   if (url.pathname === '/' || url.pathname === '') {

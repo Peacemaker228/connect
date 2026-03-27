@@ -1,33 +1,54 @@
 # Desktop (Electron)
 
-## Что это
+## Как это устроено
 
-Desktop-версия работает как безопасная Electron-оболочка поверх существующего web-приложения.
+Desktop-версия в этом проекте — это Electron-оболочка поверх существующего Next.js приложения.
 
-## Dev
+- `Electron` отвечает за нативное окно, preload, deep links и desktop permissions.
+- `Next.js` продолжает рендерить интерфейс и выполнять серверные роуты.
+- В `dev` Electron открывает локальный адрес `http://localhost:3005`.
+- В `production` packaged app открывает URL из `electron/app-config.json`.
 
-- Запуск: `bun run dev:desktop`
-- Desktop dev-сервер поднимается на `http://localhost:3005`
-- Первой страницей открывается `/sign-in`, чтобы не упираться в защищённый корневой маршрут до авторизации
-- При необходимости URL можно переопределить через `ELECTRON_RENDERER_URL`
+## Зачем нужен отдельный dev-сервер
 
-## Production build
+Electron сам по себе не рендерит ваш React/Next проект из исходников.
+Он просто открывает URL внутри desktop-окна.
 
-- Укажите URL развернутого приложения в `electron/app-config.json`
-- Соберите приложение: `bun run build:desktop`
+Поэтому для `dev` нужно два процесса:
 
-Пример `electron/app-config.json`:
+- `bun run dev:desktop:web` — поднимает локальный Next dev server на `3005`
+- `bun run dev:desktop:app` — запускает Electron и открывает этот URL
+
+Общий запуск:
+
+```bash
+bun run dev:desktop
+```
+
+Порт `3005` выбран специально, чтобы не конфликтовать с обычным web-dev на `3000`.
+
+## Конфиг production
+
+Файл `electron/app-config.json` нужен только для packaged desktop build.
+В dev-режиме он не используется.
+
+Пример:
 
 ```json
 {
-  "productionUrl": "https://your-connect.example.com",
-  "initialPath": "/sign-in"
+  "productionUrl": "https://your-connect.example.com"
 }
 ```
 
-## Что уже включено
+## Команды
+
+- `bun run dev:desktop` — desktop dev
+- `bun run build:desktop` — сборка Windows desktop installer
+- `bun run start:desktop` — локальный запуск Electron из исходников
+
+## Что уже сделано
 
 - безопасный `preload`
-- поддержка deep link `axconnect://`
-- проброс `session_id` в renderer для будущего desktop-auth flow
+- обработка `axconnect://` deep links
+- проброс `session_id` в renderer для будущего desktop auth flow
 - разрешения на камеру и микрофон только для origin приложения
