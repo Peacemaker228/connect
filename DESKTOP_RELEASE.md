@@ -1,178 +1,168 @@
 # Desktop Release
 
-## Цель
+## Что это за схема
 
-Простой production-процесс для desktop-версии без автообновлений и без отдельной desktop-инфраструктуры.
+- Web production уже работает на `https://ax-connect.ru`.
+- Desktop-приложение — это `Electron`-оболочка, которая использует тот же production web как backend.
+- На Ubuntu-сервере не нужно запускать `Electron` как сервис.
+- Пользователям нужно только скачать и установить `.exe`.
 
-Текущая схема:
+## Что уже настроено
 
-- production web уже работает на `https://ax-connect.ru`
-- desktop-приложение использует этот же production web как backend
-- пользователи скачивают `.exe` и запускают его локально на Windows
+- В `electron/app-config.json` указан production URL: `https://ax-connect.ru`.
+- На фронте ссылка на desktop по умолчанию ведёт на `/downloads/AxConnect-Setup-latest.exe`.
+- `nginx` может раздавать installer по адресу `https://ax-connect.ru/downloads/...`.
+- Команда `bun run release:desktop` проверяет конфиг и собирает installer.
+- Версии в `package.json` и `electron/package.json` должны совпадать.
 
-## Как это работает
+## Какой формат релизов используем
 
-Desktop build не запускается на Ubuntu-сервере как сервис.
+Храним два файла:
 
-Ubuntu-сервер нужен только для web-приложения:
+- версионный: `AxConnect-Setup-0.0.2.exe`
+- стабильный: `AxConnect-Setup-latest.exe`
 
-- `Nginx`
-- `PM2`
-- `Next.js`
-- `Clerk`
-- `Prisma / DB`
-- `UploadThing`
-- `LiveKit`
+Пользователям всегда даём ссылку на `latest`.
+Версионный файл нужен для истории и отката.
 
-Electron нужен только как клиентская desktop-оболочка.
+## Порядок релиза
 
-## Что нужно один раз
+### 1. Обновить версию
 
-Проверить `electron/app-config.json`:
-
-```json
-{
-  "productionUrl": "https://ax-connect.ru"
-}
-```
-
-## Релизный процесс
-
-### 1. Поднять версию
-
-Перед релизом обновить версию в:
+Подними версию в двух файлах:
 
 - `package.json`
 - `electron/package.json`
 
-Версии должны совпадать. Это также проверяется командой `bun run release:desktop`.
+Пример:
 
-Минимальная схема версий:
+- `0.0.1` → `0.0.2`
 
-- `0.0.1`
-- `0.0.2`
-- `0.0.3`
+### 2. Собрать installer
 
-### 2. Собрать desktop release
-
-На Windows-машине выполнить:
+На Windows-машине выполни:
 
 ```bash
 bun run release:desktop
 ```
 
-Что делает команда:
-
-- проверяет `electron/app-config.json`
-- собирает Windows installer
-
-Результат:
+На выходе будет файл:
 
 - `dist-desktop/AxConnect-Setup-<version>.exe`
 
-### 3. Smoke test перед рассылкой
+Пример:
 
-Минимально проверить:
+- `dist-desktop/AxConnect-Setup-0.0.2.exe`
+
+### 3. Прогнать быстрый smoke-check
+
+Перед публикацией проверь:
 
 - приложение открывается
 - логин работает
-- открываются серверы и каналы
-- отправляются сообщения
-- работают файлы
-- работают микрофон и камера
-- подключается звонок
+- каналы и чаты открываются
+- сообщения отправляются
+- файлы загружаются
+- звонок работает
+- микрофон и камера запрашиваются корректно
+- в приложении показывается правильная версия
 
-### 4. Выложить installer
+### 4. Залить файл на сервер
 
-Самый простой вариант — отдавать его с существующего сервера.
+Залей версионный файл:
 
-Пример стабильного URL:
+```bash
+scp dist-desktop/AxConnect-Setup-0.0.2.exe user@server:/var/www/ax-connect-downloads/
+```
+
+Обнови стабильный файл:
+
+```bash
+ssh user@server "cp /var/www/ax-connect-downloads/AxConnect-Setup-0.0.2.exe /var/www/ax-connect-downloads/AxConnect-Setup-latest.exe"
+```
+
+### 5. Проверить ссылку
+
+Проверь в браузере:
 
 - `https://ax-connect.ru/downloads/AxConnect-Setup-latest.exe`
 
-Именно этот URL удобно использовать на фронте, чтобы не менять ссылку при каждом релизе.
+### 6. Передать ссылку команде
 
-## Простой вариант публикации на сервере
+Пользователям даётся одна стабильная ссылка:
 
-### Вариант A — отдельная папка на сервере
+- `https://ax-connect.ru/downloads/AxConnect-Setup-latest.exe`
 
-Например:
+## Настройка `nginx`
 
-```bash
-sudo mkdir -p /var/www/ax-connect-downloads
-```
+Это делается один раз. На каждый новый релиз менять `nginx` не нужно.
 
-Загрузка файла:
-
-```bash
-scp dist-desktop/AxConnect-Setup-0.0.1.exe user@server:/var/www/ax-connect-downloads/
-```
-
-Обновление стабильной ссылки:
-
-```bash
-scp dist-desktop/AxConnect-Setup-0.0.1.exe user@server:/var/www/ax-connect-downloads/AxConnect-Setup-latest.exe
-```
-
-Пример Nginx location:
+Добавь в `server { ... }` блок сайта:
 
 ```nginx
+location = /downloads/AxConnect-Setup-latest.exe {
+    alias /var/www/ax-connect-downloads/AxConnect-Setup-latest.exe;
+    default_type application/octet-stream;
+    add_header Content-Disposition "attachment";
+    add_header Cache-Control "no-store";
+    try_files $uri =404;
+}
+
 location /downloads/ {
     alias /var/www/ax-connect-downloads/;
+    default_type application/octet-stream;
     types {
         application/octet-stream exe;
     }
-    add_header Content-Disposition attachment;
+    add_header Content-Disposition "attachment";
+    add_header Cache-Control "no-store";
+    try_files $uri =404;
 }
 ```
 
-После изменения:
+После изменения конфига:
 
 ```bash
 sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-### Вариант B — любое файловое хранилище
+## Папка на сервере
 
-Можно временно выкладывать `.exe` в S3, Google Drive, Яндекс Диск или другой внутренний storage.
+Если её ещё нет:
 
-## Что давать тестировщикам
+```bash
+sudo mkdir -p /var/www/ax-connect-downloads
+```
 
-- ссылку на `.exe`
-- короткую инструкцию по установке
-- список, что проверить
+## Что не нужно делать
 
-Пример инструкции:
+- не нужно запускать `Electron` через `pm2` на Ubuntu
+- не нужно поднимать отдельный desktop backend
+- не нужно менять фронтовую ссылку на каждом релизе
+- не нужно править `nginx` на каждом релизе
 
-1. Скачать installer
-2. Установить приложение
-3. Если Windows покажет предупреждение, нажать "Подробнее" → "Все равно выполнить"
-4. Войти в приложение и пройти smoke-check
+## Текущий релизный цикл
 
-## Когда выпускать новый релиз
-
-При любом наборе desktop-изменений:
+На практике цикл такой:
 
 1. поднять версию
-2. собрать новый `.exe`
-3. перезалить файл
-4. отправить новую ссылку команде
+2. выполнить `bun run release:desktop`
+3. залить версионный `.exe`
+4. обновить `AxConnect-Setup-latest.exe`
+5. проверить ссылку
+6. отдать ссылку команде
 
-Если используется стабильный URL `AxConnect-Setup-latest.exe`, ссылка для пользователей не меняется.
+## Ограничения текущего решения
 
-## Ограничения текущего простого варианта
-
-- нет автообновлений
-- нет code signing
+- пока нет auto-update
+- пока нет code signing
 - Windows может показывать SmartScreen warning
 - desktop зависит от доступности `https://ax-connect.ru`
 
-## Следующий этап улучшения
+## Что можно улучшить позже
 
-Когда простой вариант подтвердится на тестах, следующий логичный шаг:
-
-- добавить страницу скачивания на сайте
-- автоматизировать выпуск installer
+- автоматизировать upload на сервер
+- добавить страницу релизов
 - добавить code signing
-- позже добавить auto-update
+- добавить auto-update
