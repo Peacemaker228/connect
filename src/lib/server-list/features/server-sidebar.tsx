@@ -127,7 +127,7 @@ export const ServerSidebar: FC<IServerSidebarProps> = ({ serverId }) => {
               )}
               {!!members?.length && (
                 <div className="mb-2">
-                  <ServerSection sectionType={'member'} role={role} label={'Members'} server={server} />
+                  <ServerSection sectionType={'member'} role={role} label={t('Members')} server={server} />
                   {members.map((m) => (
                     <ServerMember key={m.id} member={m} server={server} />
                   ))}

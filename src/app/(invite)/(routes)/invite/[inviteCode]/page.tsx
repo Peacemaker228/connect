@@ -121,6 +121,7 @@ const InvitePage = () => {
         <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#1a1b1f] p-6 text-white shadow-2xl">
           <h1 className="text-2xl font-semibold">{t('title')}</h1>
           <p className="mt-3 text-sm leading-6 text-zinc-300">{t('description')}</p>
+          <p className="mt-3 text-xs leading-5 text-zinc-400">{t('desktopAccountHint')}</p>
           <div className="mt-6 flex flex-col gap-3">
             <Button className="w-full" onClick={continueInBrowser}>
               {t('continueInBrowser')}
