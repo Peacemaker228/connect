@@ -2,9 +2,14 @@ import { initialProfile } from '@/lib/shared/utils/initial-profile'
 import { db } from '@/lib/shared/utils/db'
 import { redirect } from 'next/navigation'
 import { InitialModal } from '@/lib/shared/features/modals/initial-modal'
+import { ERoutes } from '@/lib/shared/utils/routes'
 
 const SetupPage = async () => {
   const profile = await initialProfile()
+
+  if (!profile) {
+    redirect(ERoutes.SIGN_IN)
+  }
 
   const server = await db.server.findFirst({
     where: {
