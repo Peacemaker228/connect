@@ -5,7 +5,6 @@ import localFont from 'next/font/local'
 import { ClerkProvider } from '@clerk/nextjs'
 import { ThemeProvider, ModalProvider, QueryProvider } from '@/lib/shared/providers'
 import { cn } from '@/lib/shared/utils/utils'
-import { AppVersionBadge } from '@/lib/shared/ui/app-version-badge'
 import { Toaster } from '@/lib/shared/ui/toaster'
 import { getLocale, getMessages } from 'next-intl/server'
 import { NextIntlClientProvider } from 'next-intl'
@@ -45,7 +44,6 @@ export default async function RootLayout({ children }: Readonly<PropsWithChildre
               <NextIntlClientProvider messages={messages}>
                 <ModalProvider />
                 {children}
-                <AppVersionBadge />
               </NextIntlClientProvider>
             </QueryProvider>
           </ThemeProvider>

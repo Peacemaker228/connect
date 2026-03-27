@@ -5,6 +5,7 @@ import { UserAvatar } from '@/lib/shared/features/user-avatar'
 import { SocketIndicator } from '@/lib/shared/features/socket-indicator'
 import { TChannelConversation } from '@/types'
 import { ChatVideoButton } from '@/lib/chat/features/chat-video-button'
+import { AppVersionBadge } from '@/lib/shared/ui/app-version-badge'
 
 interface IChatHeaderProps {
   serverId: string
@@ -20,9 +21,10 @@ export const ChatHeader: FC<IChatHeaderProps> = ({ imageUrl, name, type, serverI
       {type === 'channel' && <Hash className="w-5 h-5 text-zinc-500 dark:text-zinc-400 mr-2" />}
       {type === 'conversation' && imageUrl && <UserAvatar src={imageUrl} className="h-8 w-8 md:h-8 md:w-8 mr-2" />}
       <p className="font-semibold text-sm text-black dark:text-white">{name}</p>
-      <div className="ml-auto flex items-center">
+      <div className="ml-auto flex items-center gap-4">
         {type === 'conversation' && <ChatVideoButton />}
         <SocketIndicator />
+        <AppVersionBadge />
       </div>
     </div>
   )
