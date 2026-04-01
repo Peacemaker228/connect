@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react'
 import { LiveKitRoom, VideoConference } from '@livekit/components-react'
 import '@livekit/components-styles'
 import { MediaDeviceFailure, Room } from 'livekit-client'
+import { getProfileName } from '@/lib/shared/utils/get-profile-name'
 import { toast } from '@/lib/shared/utils/hooks/use-toast'
 
 interface IMediaRoomProps {
@@ -63,7 +64,11 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, chatId }) => {
   useEffect(() => {
     if (!user?.username && !user?.firstName && !user?.lastName) return
 
-    const name = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username
+    const name = getProfileName({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      username: user.username,
+    })
 
     ;(async () => {
       try {
