@@ -5,23 +5,24 @@
   "main": "electron/main.js",
   "private": true,
   "scripts": {
+    "prepare:desktop:build-info": "node electron/generate-build-info.mjs",
     "dev:front": "next dev -p 3001",
     "dev:back": "bun run build:server && node dist/server.js",
     "dev:full": "concurrently \"bun run dev:back\" \"bun run dev:front\"",
     "dev:desktop:web": "bun next dev -p 3005",
-    "dev:desktop:app": "node electron/dev-launcher.mjs",
+    "dev:desktop:app": "bun run prepare:desktop:build-info && node electron/dev-launcher.mjs",
     "dev:desktop": "concurrently \"bun run dev:desktop:web\" \"bun run dev:desktop:app\"",
-    "electron": "electron .",
+    "electron": "bun run prepare:desktop:build-info && electron .",
     "dev": "bun next dev",
     "build:web": "bun next build",
     "build:server": "tsc -p tsconfig.server.json",
     "build": "bun run build:web && bun run build:server",
     "start:web": "bun next start -p 3000",
     "start:back": "node dist/server.js",
-    "start:desktop": "electron .",
+    "start:desktop": "bun run prepare:desktop:build-info && electron .",
     "clean:desktop": "node -e \"require('fs').rmSync('dist-desktop', { recursive: true, force: true })\"",
     "check:desktop:config": "node electron/validate-production-config.mjs",
-    "build:desktop": "bun run clean:desktop && electron-builder --publish never",
+    "build:desktop": "bun run prepare:desktop:build-info && bun run clean:desktop && electron-builder --publish never",
     "release:desktop": "bun run check:desktop:config && bun run build:desktop",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
@@ -101,6 +102,7 @@
   "build": {
     "appId": "com.axconnect.desktop",
     "productName": "AxConnect",
+    "icon": "electron/assets/icon.ico",
     "protocols": [
       {
         "name": "AxConnect",
@@ -119,6 +121,7 @@
       "**/*"
     ],
     "win": {
+      "icon": "electron/assets/icon.ico",
       "signAndEditExecutable": false,
       "target": [
         "nsis"

@@ -3,16 +3,8 @@ import { contextBridge, ipcRenderer } from 'electron'
 contextBridge.exposeInMainWorld('electron', {
   isDesktop: true,
   openExternal: (url) => ipcRenderer.invoke('desktop:open-external', url),
+  getBuildInfo: () => ipcRenderer.invoke('desktop:get-build-info'),
   notifyReady: () => ipcRenderer.send('desktop:renderer-ready'),
-  onDeepLink: (callback) => {
-    const listener = (_event, payload) => callback(payload)
-
-    ipcRenderer.on('desktop:deep-link', listener)
-
-    return () => {
-      ipcRenderer.removeListener('desktop:deep-link', listener)
-    }
-  },
   onClerkSession: (callback) => {
     const listener = (_event, sessionId) => callback(sessionId)
 

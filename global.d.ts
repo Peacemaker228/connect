@@ -18,8 +18,15 @@ declare global {
     electron?: {
       isDesktop: boolean
       openExternal: (url: string) => Promise<boolean>
+      getBuildInfo?: () => Promise<{
+        version: string
+        commitHash: string | null
+        shortCommitHash: string | null
+        branch: string | null
+        isDirty: boolean
+        builtAt: string
+      } | null>
       notifyReady?: () => void
-      onDeepLink?: (callback: (payload: { url: string; sessionId: string | null }) => void) => (() => void) | void
       onClerkSession?: (callback: (sessionId: string) => void) => (() => void) | void
     }
   }

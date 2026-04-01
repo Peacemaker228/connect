@@ -21,6 +21,7 @@
 # production
 /build
 /dist-desktop
+/electron/build-info.json
 
 # misc
 .DS_Store
