@@ -1,22 +1,37 @@
 'use client'
 
+import { useEffect } from 'react'
 import { Separator } from '@/lib/shared/ui/separator'
 import { ScrollArea } from '@/lib/shared/ui/scroll-area'
 import { DesktopDownloadButton } from '@/lib/shared/features/desktop-download-button'
 import { ThemeToggle } from '@/lib/shared/features/theme-toggle'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { LocaleToggle } from '@/lib/shared/ui/locale-toggle'
 import { useServersSocket } from '@/lib/shared/data-access/server-list-sidebar/use-servers-socket'
 import { useGetServers } from '@/lib/shared/data-access/server/api'
 import { NavigationItem, NavigationAction } from '@/lib/navigation/features'
+import { ERoutes } from '@/lib/shared/utils/routes'
 
 export const NavigationSidebar = () => {
+  const router = useRouter()
   const params = useParams<{ serverId: string }>()
   const serverId = params?.serverId
 
   const { data: servers } = useGetServers()
 
   useServersSocket(serverId)
+
+  useEffect(() => {
+    if (!serverId || !servers) {
+      return
+    }
+
+    const hasCurrentServer = servers.some((server) => server.id === serverId)
+
+    if (!hasCurrentServer) {
+      router.replace(ERoutes.MAIN_PAGE)
+    }
+  }, [router, serverId, servers])
 
   return (
     <div className="space-y-4 flex flex-col items-center h-full text-primary dark:bg-[#2B2D31] bg-[#E3E5E8] py-3 border-r-2 border-neutral-200 dark:border-neutral-800">

@@ -14,6 +14,7 @@ import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { ERoutes } from '@/lib/shared/utils/routes'
 
 export const LeaveServerModal = () => {
   const { isOpen, onClose, type, data } = useModal()
@@ -35,8 +36,7 @@ export const LeaveServerModal = () => {
       await axios.patch(`/api/socket/servers/${server.id}/leave`)
 
       onClose()
-      router.refresh()
-      router.push('/')
+      router.replace(ERoutes.MAIN_PAGE)
     } catch (err) {
       console.log(err)
     } finally {

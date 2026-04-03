@@ -10,6 +10,7 @@ import { Server } from '@prisma/client'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { serverFormSchema } from '@/lib/shared/data-access/server/models/serverModalSchema'
 import { ServerModal } from '@/lib/shared/features/modals/common/server-modal'
+import { ERoutes } from '@/lib/shared/utils/routes'
 
 export const CreateServerModal = () => {
   const router = useRouter()
@@ -43,8 +44,7 @@ export const CreateServerModal = () => {
 
       form.reset()
       onClose()
-      router.push(`/servers/${createdServer.id}`)
-      router.refresh()
+      router.push(`${ERoutes.SERVERS}/${createdServer.id}`)
       queryClient.invalidateQueries({ queryKey: ['servers'] })
     } catch (err) {
       console.log(err)

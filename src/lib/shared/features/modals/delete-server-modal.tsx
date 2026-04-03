@@ -5,6 +5,7 @@ import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { DeleteModal } from '@/lib/shared/features/modals/common/delete-modal'
+import { ERoutes } from '@/lib/shared/utils/routes'
 
 export const DeleteServerModal = () => {
   const { isOpen, onClose, type, data } = useModal()
@@ -24,8 +25,7 @@ export const DeleteServerModal = () => {
       await axios.delete(`/api/servers/${server.id}`)
 
       onClose()
-      router.refresh()
-      router.push('/')
+      router.replace(ERoutes.MAIN_PAGE)
     } catch (err) {
       console.log(err)
     } finally {
