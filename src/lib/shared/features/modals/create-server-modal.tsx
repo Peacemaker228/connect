@@ -5,12 +5,15 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
+import { Server } from '@prisma/client'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { serverFormSchema } from '@/lib/shared/data-access/server/models/serverModalSchema'
 import { ServerModal } from '@/lib/shared/features/modals/common/server-modal'
 
 export const CreateServerModal = () => {
   const router = useRouter()
+  const queryClient = useQueryClient()
 
   const form = useForm({
     resolver: zodResolver(serverFormSchema),
@@ -28,11 +31,21 @@ export const CreateServerModal = () => {
 
   const handleSubmit = async (data: z.infer<typeof serverFormSchema>) => {
     try {
-      await axios.post('/api/servers', data)
+      const { data: createdServer } = await axios.post<Server>('/api/servers', data)
+
+      queryClient.setQueryData<Server[]>(['servers'], (servers = []) => {
+        if (servers.some((server) => server.id === createdServer.id)) {
+          return servers
+        }
+
+        return [...servers, createdServer]
+      })
 
       form.reset()
       onClose()
+      router.push(`/servers/${createdServer.id}`)
       router.refresh()
+      queryClient.invalidateQueries({ queryKey: ['servers'] })
     } catch (err) {
       console.log(err)
     }
