@@ -46,6 +46,7 @@ export const PATCH = async (req: Request, { params }: { params: Promise<{ server
     }
 
     const { name, imageUrl } = await req.json()
+    const normalizedImageUrl = typeof imageUrl === 'string' ? imageUrl : undefined
 
     const server = await db.server.update({
       where: {
@@ -54,7 +55,7 @@ export const PATCH = async (req: Request, { params }: { params: Promise<{ server
       },
       data: {
         name,
-        imageUrl,
+        imageUrl: normalizedImageUrl,
       },
     })
 

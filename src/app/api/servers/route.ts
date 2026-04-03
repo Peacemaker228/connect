@@ -8,6 +8,7 @@ import { EGeneral } from '@/types'
 export const POST = async (req: Request) => {
   try {
     const { name, imageUrl } = await req.json()
+    const normalizedImageUrl = typeof imageUrl === 'string' ? imageUrl : ''
 
     const profile = await currentProfile()
 
@@ -19,7 +20,7 @@ export const POST = async (req: Request) => {
       data: {
         profileId: profile.id,
         name,
-        imageUrl,
+        imageUrl: normalizedImageUrl,
         inviteCode: uuidV4(),
         channels: {
           create: [
