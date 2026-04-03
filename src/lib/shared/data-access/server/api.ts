@@ -8,6 +8,13 @@ export const useGetServer = (serverId: string) => {
     queryKey: ['server', serverId],
     queryFn: () => axios.get<TServerMembersProfiles>(`/api/servers/${serverId}`).then((res) => res.data),
     enabled: !!serverId,
+    retry: (failureCount, error) => {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        return false
+      }
+
+      return failureCount < 2
+    },
   })
 }
 

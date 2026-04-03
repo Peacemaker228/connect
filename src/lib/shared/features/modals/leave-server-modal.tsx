@@ -15,10 +15,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { ERoutes } from '@/lib/shared/utils/routes'
+import { useQueryClient } from '@tanstack/react-query'
+import { Server } from '@prisma/client'
 
 export const LeaveServerModal = () => {
   const { isOpen, onClose, type, data } = useModal()
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [isLoading, setIsLoading] = useState(false)
   const t = useTranslations('Modals.LeaveServerModal')
   const commonTrans = useTranslations('Common')
@@ -35,8 +38,17 @@ export const LeaveServerModal = () => {
 
       await axios.patch(`/api/socket/servers/${server.id}/leave`)
 
+      const nextServers = queryClient.setQueryData<Server[]>(['servers'], (servers = []) => {
+        return servers.filter((item) => item.id !== server.id)
+      })
+
+      queryClient.removeQueries({ queryKey: ['server', server.id], exact: true })
+      queryClient.invalidateQueries({ queryKey: ['servers'] })
+
+      const nextServerId = nextServers?.[0]?.id
+
       onClose()
-      router.replace(ERoutes.MAIN_PAGE)
+      router.replace(nextServerId ? `${ERoutes.SERVERS}/${nextServerId}` : ERoutes.MAIN_PAGE)
     } catch (err) {
       console.log(err)
     } finally {

@@ -40,13 +40,13 @@ const ServerIdPage: FC<IServerIdPageProps> = async ({ params }) => {
   })
 
   if (!server) {
-    return null
+    return redirect(ERoutes.MAIN_PAGE)
   }
 
   const initialChannel = server?.channels[0]
 
   if (!initialChannel || initialChannel?.name !== EGeneral.GENERAL) {
-    return null
+    return redirect(ERoutes.MAIN_PAGE)
   }
 
   return redirect(`${ERoutes.SERVERS}/${serverId}${ERoutes.CHANNELS}/${initialChannel.id}`)
