@@ -9,10 +9,13 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Server } from '@prisma/client'
 import { serverFormSchema } from '@/lib/shared/data-access/server/models/serverModalSchema'
 import { ServerModal } from '@/lib/shared/features/modals/common/server-modal'
+import { useState } from 'react'
+import { ERoutes } from '@/lib/shared/utils/routes'
 
 export const InitialModal = () => {
   const router = useRouter()
   const queryClient = useQueryClient()
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
   const form = useForm({
     resolver: zodResolver(serverFormSchema),
@@ -22,7 +25,7 @@ export const InitialModal = () => {
     },
   })
 
-  const isLoading = form.formState.isSubmitting
+  const isLoading = form.formState.isSubmitting || isRedirecting
 
   const handleSubmit = async (data: z.infer<typeof serverFormSchema>) => {
     try {
@@ -36,12 +39,11 @@ export const InitialModal = () => {
         return [...servers, createdServer]
       })
 
-      form.reset()
-
-      router.push(`/servers/${createdServer.id}`)
-      router.refresh()
+      setIsRedirecting(true)
+      router.replace(`${ERoutes.SERVERS}/${createdServer.id}`)
       queryClient.invalidateQueries({ queryKey: ['servers'] })
     } catch (err) {
+      setIsRedirecting(false)
       console.log(err)
     }
   }

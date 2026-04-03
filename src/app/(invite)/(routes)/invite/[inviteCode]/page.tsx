@@ -2,7 +2,7 @@
 
 import axios from 'axios'
 import { useAuth } from '@clerk/nextjs'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Spinner } from '@/lib/shared/ui/spinner'
@@ -22,6 +22,7 @@ const InvitePage = () => {
 
   const hasJoinedRef = useRef(false)
   const hasTriedDesktopOpenRef = useRef(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
   const { mutateAsync: joinByInvite, isError, isPending } = useJoinByInvite()
   const signInRedirectUrl = inviteCode ? getSignInRedirectUrl(`/invite/${inviteCode}`) : ERoutes.SIGN_IN
   const desktopInviteUrl = inviteCode ? getDesktopInviteUrl(inviteCode) : '#'
@@ -53,6 +54,7 @@ const InvitePage = () => {
 
     if (!userId && isDesktop) {
       hasJoinedRef.current = true
+      setIsRedirecting(true)
       router.replace(signInRedirectUrl)
       return
     }
@@ -62,6 +64,7 @@ const InvitePage = () => {
     const join = async () => {
       try {
         const { redirectUrl } = await joinByInvite(inviteCode)
+        setIsRedirecting(true)
         router.replace(redirectUrl)
       } catch (error) {
         console.error('Invite failed:', error)
@@ -70,11 +73,13 @@ const InvitePage = () => {
           const redirectUrl = error.response?.data?.redirectUrl
 
           if (redirectUrl) {
+            setIsRedirecting(true)
             router.replace(redirectUrl)
             return
           }
         }
 
+        setIsRedirecting(true)
         router.replace(ERoutes.MAIN_PAGE)
       }
     }
@@ -88,12 +93,14 @@ const InvitePage = () => {
     }
 
     if (!userId) {
+      setIsRedirecting(true)
       router.replace(signInRedirectUrl)
       return
     }
 
     try {
       const { redirectUrl } = await joinByInvite(inviteCode)
+      setIsRedirecting(true)
       router.replace(redirectUrl)
     } catch (error) {
       console.error('Invite failed:', error)
@@ -102,16 +109,18 @@ const InvitePage = () => {
         const redirectUrl = error.response?.data?.redirectUrl
 
         if (redirectUrl) {
+          setIsRedirecting(true)
           router.replace(redirectUrl)
           return
         }
       }
 
+      setIsRedirecting(true)
       router.replace(ERoutes.MAIN_PAGE)
     }
   }
 
-  if (!isLoaded || isPending) {
+  if (!isLoaded || isPending || isRedirecting) {
     return <Spinner />
   }
 
