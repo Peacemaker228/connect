@@ -18,6 +18,7 @@ declare global {
     electron?: {
       isDesktop: boolean
       openExternal: (url: string) => Promise<boolean>
+      writeClipboardText?: (text: string) => Promise<boolean>
       getBuildInfo?: () => Promise<{
         version: string
         commitHash: string | null
