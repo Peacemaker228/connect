@@ -122,7 +122,6 @@
     ],
     "win": {
       "icon": "electron/assets/icon.ico",
-      "signAndEditExecutable": false,
       "target": [
         "nsis"
       ],
