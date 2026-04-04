@@ -5,6 +5,9 @@ const ns = {
   continueInBrowser: 'Продолжить в браузере',
   openInDesktop: 'Открыть в desktop-приложении',
   downloadDesktop: 'Скачать desktop-приложение',
+  invalidTitle: 'Ссылка-приглашение недействительна или устарела',
+  invalidDescription: 'Эта ссылка больше не существует или была заменена. Попросите новую ссылку-приглашение.',
+  backToHome: 'Вернуться на главную страницу',
 }
 
 export default ns

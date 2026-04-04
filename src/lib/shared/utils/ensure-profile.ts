@@ -1,4 +1,5 @@
 import { db } from '@/lib/shared/utils/db'
+import { getProfileName } from '@/lib/shared/utils/get-profile-name'
 
 type ClerkEmailAddress = {
   emailAddress: string
@@ -11,18 +12,6 @@ type ClerkUserLike = {
   username: string | null
   imageUrl: string | null
   emailAddresses: ClerkEmailAddress[]
-}
-
-const getProfileName = (user: ClerkUserLike) => {
-  if (user.firstName && user.lastName) {
-    return `${user.firstName} ${user.lastName}`
-  }
-
-  if (user.username) {
-    return user.username
-  }
-
-  return 'USER'
 }
 
 export const ensureProfile = async (user: ClerkUserLike) => {
