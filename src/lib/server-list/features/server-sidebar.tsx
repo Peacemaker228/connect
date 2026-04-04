@@ -1,6 +1,6 @@
 'use client'
 
-import { FC } from 'react'
+import { FC, useEffect } from 'react'
 import { ScrollArea } from '@/lib/shared/ui/scroll-area'
 import { ChannelType } from '@prisma/client'
 import { Hash, Mic, Settings, Video } from 'lucide-react'
@@ -18,9 +18,11 @@ import { Spinner } from '@/lib/shared/ui/spinner'
 import { ErrorComponent } from '@/lib/shared/ui/error-component'
 import { UserButton } from '@clerk/nextjs'
 import { useTranslations } from 'next-intl'
-import { useGetServer } from '@/lib/shared/data-access/server/api'
+import { useGetServer, useGetServers } from '@/lib/shared/data-access/server/api'
 import { useSidebarSocket } from '@/lib/shared/data-access/navigation-sidebar/use-sidebar-socket'
 import { useGetProfile } from '@/lib/shared/data-access/user/api'
+import { useRouter } from 'next/navigation'
+import { ERoutes } from '@/lib/shared/utils/routes'
 
 interface IServerSidebarProps {
   serverId: string
@@ -33,12 +35,29 @@ const iconMap = {
 }
 
 export const ServerSidebar: FC<IServerSidebarProps> = ({ serverId }) => {
+  const router = useRouter()
   const { data: server, isLoading, isError } = useGetServer(serverId)
+  const { data: servers, isLoading: isServersLoading } = useGetServers()
   const t = useTranslations('ServerSidebar')
 
   useSidebarSocket(serverId)
 
   const { profile } = useGetProfile()
+
+  useEffect(() => {
+    if (!serverId || isServersLoading || !servers) {
+      return
+    }
+
+    const hasCurrentServer = servers.some((item) => item.id === serverId)
+
+    if (hasCurrentServer) {
+      return
+    }
+
+    const fallbackServerId = servers[0]?.id
+    router.replace(fallbackServerId ? `${ERoutes.SERVERS}/${fallbackServerId}` : ERoutes.MAIN_PAGE)
+  }, [router, serverId, servers, isServersLoading])
 
   const textChannels = server?.channels.filter(({ type }) => type === ChannelType.TEXT)
   const audioChannels = server?.channels.filter(({ type }) => type === ChannelType.AUDIO)

@@ -5,11 +5,17 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
+import { Server } from '@prisma/client'
 import { serverFormSchema } from '@/lib/shared/data-access/server/models/serverModalSchema'
 import { ServerModal } from '@/lib/shared/features/modals/common/server-modal'
+import { useState } from 'react'
+import { ERoutes } from '@/lib/shared/utils/routes'
 
 export const InitialModal = () => {
   const router = useRouter()
+  const queryClient = useQueryClient()
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
   const form = useForm({
     resolver: zodResolver(serverFormSchema),
@@ -19,17 +25,25 @@ export const InitialModal = () => {
     },
   })
 
-  const isLoading = form.formState.isSubmitting
+  const isLoading = form.formState.isSubmitting || isRedirecting
 
   const handleSubmit = async (data: z.infer<typeof serverFormSchema>) => {
     try {
-      await axios.post('/api/servers', data)
+      const { data: createdServer } = await axios.post<Server>('/api/servers', data)
 
-      form.reset()
+      queryClient.setQueryData<Server[]>(['servers'], (servers = []) => {
+        if (servers.some((server) => server.id === createdServer.id)) {
+          return servers
+        }
 
-      router.refresh()
-      window.location.reload()
+        return [...servers, createdServer]
+      })
+
+      setIsRedirecting(true)
+      router.replace(`${ERoutes.SERVERS}/${createdServer.id}`)
+      queryClient.invalidateQueries({ queryKey: ['servers'] })
     } catch (err) {
+      setIsRedirecting(false)
       console.log(err)
     }
   }

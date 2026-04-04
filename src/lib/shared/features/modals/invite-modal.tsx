@@ -24,12 +24,35 @@ export const InviteModal = () => {
 
   const inviteUrl = `${origin}/invite/${server?.inviteCode}`
 
-  const onCopy = () => {
-    navigator.clipboard.writeText(inviteUrl)
+  const setCopiedState = () => {
     setCopied(true)
     setTimeout(() => {
       setCopied(false)
     }, 1000)
+  }
+
+  const onCopy = async () => {
+    try {
+      if (window.electron?.isDesktop) {
+        const writeClipboardText = window.electron.writeClipboardText
+
+        if (!writeClipboardText) {
+          throw new Error('Desktop clipboard API is unavailable')
+        }
+
+        const isCopied = await writeClipboardText(inviteUrl)
+
+        if (!isCopied) {
+          throw new Error('Desktop clipboard write rejected')
+        }
+      } else {
+        await navigator.clipboard.writeText(inviteUrl)
+      }
+
+      setCopiedState()
+    } catch (error) {
+      console.error('[invite-modal][copy]', error)
+    }
   }
 
   const onNew = async () => {

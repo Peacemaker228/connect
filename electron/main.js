@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { app, BrowserWindow, desktopCapturer, ipcMain, session, shell } from 'electron'
+import { app, BrowserWindow, clipboard, desktopCapturer, ipcMain, session, shell } from 'electron'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -688,6 +688,21 @@ ipcMain.handle('desktop:open-external', async (_event, url) => {
   }
 
   await shell.openExternal(url)
+  return true
+})
+
+ipcMain.handle('desktop:write-clipboard', async (event, text) => {
+  if (typeof text !== 'string') {
+    return false
+  }
+
+  const senderUrl = event.senderFrame?.url || event.sender?.getURL?.() || ''
+
+  if (!isTrustedOrigin(senderUrl)) {
+    return false
+  }
+
+  clipboard.writeText(text)
   return true
 })
 

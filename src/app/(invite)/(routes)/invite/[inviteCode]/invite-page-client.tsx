@@ -2,7 +2,7 @@
 
 import axios from 'axios'
 import { useAuth } from '@clerk/nextjs'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Spinner } from '@/lib/shared/ui/spinner'
@@ -31,6 +31,7 @@ export const InvitePageClient = ({
 
   const hasJoinedRef = useRef(false)
   const hasTriedDesktopOpenRef = useRef(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
   const { mutateAsync: joinByInvite, isError, isPending } = useJoinByInvite()
   const desktopSignInRedirectUrl = getSignInRedirectUrl(`/invite/${inviteCode}`)
   const browserSignInRedirectUrl = getSignInRedirectUrl(`/invite/${inviteCode}?mode=browser`)
@@ -39,6 +40,7 @@ export const InvitePageClient = ({
   const joinInvite = useCallback(async () => {
     try {
       const { redirectUrl } = await joinByInvite(inviteCode)
+      setIsRedirecting(true)
       router.replace(redirectUrl)
     } catch (error) {
       console.error('Invite failed:', error)
@@ -47,11 +49,13 @@ export const InvitePageClient = ({
         const redirectUrl = error.response?.data?.redirectUrl
 
         if (redirectUrl) {
+          setIsRedirecting(true)
           router.replace(redirectUrl)
           return
         }
       }
 
+      setIsRedirecting(true)
       router.replace(ERoutes.MAIN_PAGE)
     }
   }, [inviteCode, joinByInvite, router])
@@ -88,6 +92,7 @@ export const InvitePageClient = ({
     if (isDesktop) {
       if (!userId) {
         hasJoinedRef.current = true
+        setIsRedirecting(true)
         router.replace(desktopSignInRedirectUrl)
         return
       }
@@ -103,6 +108,7 @@ export const InvitePageClient = ({
 
     if (!userId) {
       hasJoinedRef.current = true
+      setIsRedirecting(true)
       router.replace(browserSignInRedirectUrl)
       return
     }
@@ -127,6 +133,7 @@ export const InvitePageClient = ({
     }
 
     if (!userId) {
+      setIsRedirecting(true)
       router.replace(browserSignInRedirectUrl)
       return
     }
@@ -134,7 +141,7 @@ export const InvitePageClient = ({
     await joinInvite()
   }
 
-  if (!isLoaded || isPending) {
+  if (!isLoaded || isPending || isRedirecting) {
     return <Spinner />
   }
 
