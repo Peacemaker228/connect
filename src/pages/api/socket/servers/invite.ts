@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
   const profile = await currentProfilePages(req)
 
   if (!profile) {
-    return res.status(401).json({ redirectUrl: getSignInRedirectUrl(`/invite/${inviteCode}`) })
+    return res.status(401).json({ redirectUrl: getSignInRedirectUrl(`/invite/${inviteCode}?mode=browser`) })
   }
 
   try {
