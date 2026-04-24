@@ -1,8 +1,8 @@
-import { db } from '@/lib/shared/utils/db'
-import { MemberRole } from '@prisma/client'
-import { EGeneral, NextApiResponseServerIo } from '@/types'
 import { NextApiRequest } from 'next'
+
 import { currentProfilePages } from '@/lib/shared/utils/current-profile-pages'
+import { readBackendApiResponse, requestBackendApi } from '@/lib/shared/utils/backend-api'
+import { EGeneral, NextApiResponseServerIo } from '@/types'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponseServerIo) {
   const { method } = req
@@ -38,81 +38,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
         return res.status(400).json({ error: 'Name cannot be "general"' })
       }
 
-      const server = await db.server.update({
-        where: {
-          id: serverId as string,
-          members: {
-            some: {
-              profileId: profile.id,
-              role: {
-                in: [MemberRole.ADMIN, MemberRole.MODERATOR],
-              },
-            },
-          },
-        },
-        data: {
-          channels: {
-            update: {
-              where: {
-                id: channelId,
-                NOT: { name: EGeneral.GENERAL },
-              },
-              data: { name, type },
-            },
-          },
+      const response = await requestBackendApi({
+        path: `/api/channels/${channelId}?serverId=${encodeURIComponent(serverId as string)}`,
+        method: 'PATCH',
+        body: req.body,
+        headers: {
+          'x-profile-id': profile.id,
         },
       })
+      const parsedResponse = await readBackendApiResponse(response)
 
-      if (res.socket.server.io) {
-        const io = res.socket.server.io
-
-        const channelKey = `server:${serverId}:channels`
-
-        io.emit(channelKey, {
+      if (parsedResponse.status === 200 && res.socket.server.io) {
+        res.socket.server.io.emit(`server:${serverId}:channels`, {
           action: 'channel_updated',
           channel: { id: channelId, name, type },
         })
       }
 
-      return res.status(200).json(server)
-    }
-
-    if (method === 'DELETE') {
-      const server = await db.server.update({
-        where: {
-          id: serverId as string,
-          members: {
-            some: {
-              profileId: profile.id,
-              role: {
-                in: [MemberRole.ADMIN, MemberRole.MODERATOR],
-              },
-            },
-          },
-        },
-        data: {
-          channels: {
-            delete: {
-              id: channelId,
-              name: { not: EGeneral.GENERAL },
-            },
-          },
-        },
-      })
-
-      if (res.socket.server.io) {
-        const io = res.socket.server.io
-
-        const channelKey = `server:${serverId}:channels`
-
-        io.emit(channelKey, {
-          action: 'channel_deleted',
-          channelId,
-        })
+      if (parsedResponse.isJson) {
+        return res.status(parsedResponse.status).json(parsedResponse.data)
       }
 
-      return res.status(200).json(server)
+      return res.status(parsedResponse.status).send(parsedResponse.data)
     }
+
+    const response = await requestBackendApi({
+      path: `/api/channels/${channelId}?serverId=${encodeURIComponent(serverId as string)}`,
+      method: 'DELETE',
+      headers: {
+        'x-profile-id': profile.id,
+      },
+    })
+    const parsedResponse = await readBackendApiResponse(response)
+
+    if (parsedResponse.status === 200 && res.socket.server.io) {
+      res.socket.server.io.emit(`server:${serverId}:channels`, {
+        action: 'channel_deleted',
+        channelId,
+      })
+    }
+
+    if (parsedResponse.isJson) {
+      return res.status(parsedResponse.status).json(parsedResponse.data)
+    }
+
+    return res.status(parsedResponse.status).send(parsedResponse.data)
   } catch (err) {
     console.error(`[CHANNEL_${method}]`, err)
     return res.status(500).json({ error: 'Internal Server Error' })

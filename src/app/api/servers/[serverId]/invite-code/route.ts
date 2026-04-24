@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { currentProfile } from '@/lib/shared/utils/current-profile'
-import { db } from '@/lib/shared/utils/db'
-import { v4 as uuidV4 } from 'uuid'
+import { requestBackendApi, toNextProxyResponse } from '@/lib/shared/utils/backend-api'
 
 export const PATCH = async (_req: Request, { params }: { params: Promise<{ serverId: string }> }) => {
   try {
@@ -17,17 +16,15 @@ export const PATCH = async (_req: Request, { params }: { params: Promise<{ serve
       return new NextResponse('Server ID Missing', { status: 400 })
     }
 
-    const server = await db.server.update({
-      where: {
-        id: serverId,
-        profileId: profile.id,
-      },
-      data: {
-        inviteCode: uuidV4(),
+    const response = await requestBackendApi({
+      path: `/api/servers/${serverId}/invite-code`,
+      method: 'PATCH',
+      headers: {
+        'x-profile-id': profile.id,
       },
     })
 
-    return NextResponse.json(server)
+    return toNextProxyResponse(response)
   } catch (err) {
     console.log('[Server_ID_PATCH]', err)
 

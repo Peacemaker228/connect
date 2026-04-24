@@ -1,6 +1,6 @@
 import { currentProfile } from '@/lib/shared/utils/current-profile'
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/shared/utils/db'
+import { requestBackendApi, toNextProxyResponse } from '@/lib/shared/utils/backend-api'
 
 export const DELETE = async (req: Request, { params }: { params: Promise<{ serverId: string }> }) => {
   try {
@@ -16,14 +16,15 @@ export const DELETE = async (req: Request, { params }: { params: Promise<{ serve
       return new NextResponse('Server ID Missing', { status: 400 })
     }
 
-    const server = await db.server.delete({
-      where: {
-        id: serverId,
-        profileId: profile.id,
+    const response = await requestBackendApi({
+      path: `/api/servers/${serverId}`,
+      method: 'DELETE',
+      headers: {
+        'x-profile-id': profile.id,
       },
     })
 
-    return NextResponse.json(server)
+    return toNextProxyResponse(response)
   } catch (err) {
     console.log('[Server_ID_DELETE]', err)
 
@@ -45,21 +46,16 @@ export const PATCH = async (req: Request, { params }: { params: Promise<{ server
       return new NextResponse('Server ID Missing', { status: 400 })
     }
 
-    const { name, imageUrl } = await req.json()
-    const normalizedImageUrl = typeof imageUrl === 'string' ? imageUrl : undefined
-
-    const server = await db.server.update({
-      where: {
-        id: serverId,
-        profileId: profile.id,
-      },
-      data: {
-        name,
-        imageUrl: normalizedImageUrl,
+    const response = await requestBackendApi({
+      path: `/api/servers/${serverId}`,
+      method: 'PATCH',
+      body: await req.json(),
+      headers: {
+        'x-profile-id': profile.id,
       },
     })
 
-    return NextResponse.json(server)
+    return toNextProxyResponse(response)
   } catch (err) {
     console.log('[Server_ID_PATCH]', err)
 
@@ -79,32 +75,14 @@ export const GET = async (req: Request, { params }: { params: Promise<{ serverId
       return new Response('Server ID Missing', { status: 400 })
     }
 
-    const server = await db.server.findUnique({
-      where: {
-        id: serverId,
-      },
-      include: {
-        channels: {
-          orderBy: {
-            createdAt: 'asc',
-          },
-        },
-        members: {
-          include: {
-            profile: true,
-          },
-          orderBy: {
-            role: 'asc',
-          },
-        },
+    const response = await requestBackendApi({
+      path: `/api/servers/${serverId}`,
+      headers: {
+        'x-profile-id': profile.id,
       },
     })
 
-    if (!server) {
-      return new Response('Server not found', { status: 404 })
-    }
-
-    return NextResponse.json(server)
+    return toNextProxyResponse(response)
   } catch (err) {
     console.log('[SERVER_GET]', err)
     return new NextResponse('Internal Error', { status: 500 })

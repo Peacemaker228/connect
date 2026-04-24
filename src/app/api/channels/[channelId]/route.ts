@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import { currentProfile } from '@/lib/shared/utils/current-profile'
-import { db } from '@/lib/shared/utils/db'
-import { EGeneral } from '@/types'
-import { MemberRole } from '@prisma/client'
+import { requestBackendApi, toNextProxyResponse } from '@/lib/shared/utils/backend-api'
 
 export const PATCH = async (req: Request, { params }: { params: Promise<{ channelId: string }> }) => {
   try {
@@ -10,12 +8,6 @@ export const PATCH = async (req: Request, { params }: { params: Promise<{ channe
 
     if (!profile) {
       return new NextResponse('Unauthorized', { status: 401 })
-    }
-
-    const { name, type } = await req.json()
-
-    if (name === EGeneral.GENERAL) {
-      return new NextResponse('Name cannot be "general"', { status: 400 })
     }
 
     const serverId = new URL(req.url).searchParams.get('serverId')
@@ -30,37 +22,16 @@ export const PATCH = async (req: Request, { params }: { params: Promise<{ channe
       return new NextResponse('Channel ID Missing', { status: 400 })
     }
 
-    const server = await db.server.update({
-      where: {
-        id: serverId,
-        members: {
-          some: {
-            profileId: profile.id,
-            role: {
-              in: [MemberRole.ADMIN, MemberRole.MODERATOR],
-            },
-          },
-        },
-      },
-      data: {
-        channels: {
-          update: {
-            where: {
-              id: channelId,
-              NOT: {
-                name: EGeneral.GENERAL,
-              },
-            },
-            data: {
-              name,
-              type,
-            },
-          },
-        },
+    const response = await requestBackendApi({
+      path: `/api/channels/${channelId}?serverId=${encodeURIComponent(serverId)}`,
+      method: 'PATCH',
+      body: await req.json(),
+      headers: {
+        'x-profile-id': profile.id,
       },
     })
 
-    return NextResponse.json(server)
+    return toNextProxyResponse(response)
   } catch (err) {
     console.log('[Channel_ID_DELETE]', err)
     return new NextResponse('Internal Error', { status: 500 })
@@ -87,31 +58,15 @@ export const DELETE = async (req: Request, { params }: { params: Promise<{ chann
       return new NextResponse('Channel ID Missing', { status: 400 })
     }
 
-    const server = await db.server.update({
-      where: {
-        id: serverId,
-        members: {
-          some: {
-            profileId: profile.id,
-            role: {
-              in: [MemberRole.ADMIN, MemberRole.MODERATOR],
-            },
-          },
-        },
-      },
-      data: {
-        channels: {
-          delete: {
-            id: channelId,
-            name: {
-              not: EGeneral.GENERAL,
-            },
-          },
-        },
+    const response = await requestBackendApi({
+      path: `/api/channels/${channelId}?serverId=${encodeURIComponent(serverId)}`,
+      method: 'DELETE',
+      headers: {
+        'x-profile-id': profile.id,
       },
     })
 
-    return NextResponse.json(server)
+    return toNextProxyResponse(response)
   } catch (err) {
     console.log('[Channel_ID_DELETE]', err)
     return new NextResponse('Internal Error', { status: 500 })
