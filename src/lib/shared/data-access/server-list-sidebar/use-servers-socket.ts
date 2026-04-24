@@ -3,8 +3,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useSocket } from '../../providers'
 import { ERoutes } from '@app-core/routing/routes'
 import { useRouter } from 'next/navigation'
-import { useGetProfile } from '@/lib/shared/data-access/user/api'
-import { useGetServer } from '@/lib/shared/data-access/server/api'
+import { useGetProfile } from '@sdk/queries/profile'
+import { useGetServer } from '@sdk/queries/server'
 import { useToast } from '@/lib/shared/utils/hooks/use-toast'
 
 export const useServersSocket = (serverId: string | undefined) => {

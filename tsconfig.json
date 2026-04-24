@@ -20,7 +20,8 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@app-core/*": ["./packages/app-core/src/*"]
+      "@app-core/*": ["./packages/app-core/src/*"],
+      "@sdk/*": ["./packages/sdk/src/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "dist/server.js", "electron/main.js"],
