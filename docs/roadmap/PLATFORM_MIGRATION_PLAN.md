@@ -153,9 +153,10 @@ connect/
     coturn/
     mediasoup/
   docs/
-    PLATFORM_MIGRATION_PLAN.md
-    ARCHITECTURE.md
-    BOUNDARIES.md
+    roadmap/
+      PLATFORM_MIGRATION_PLAN.md
+      ARCHITECTURE.md
+      BOUNDARIES.md
 ```
 
 ## 7. Current State Snapshot
@@ -525,8 +526,8 @@ connect/
 - перестать принимать архитектурные решения по месту
 
 Что делаем:
-- создаём `docs/ARCHITECTURE.md`
-- создаём `docs/BOUNDARIES.md`
+- создаём `docs/roadmap/ARCHITECTURE.md`
+- создаём `docs/roadmap/BOUNDARIES.md`
 - описываем backend modules
 - фиксируем contracts:
   - `AuthProvider`

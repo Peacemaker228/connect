@@ -16,8 +16,8 @@
 
 Перед началом любой работы исполнитель обязан считать следующими документами:
 
-1. [PLATFORM_MIGRATION_PLAN.md](./PLATFORM_MIGRATION_PLAN.md)
-2. [FIRST_MIGRATION_PR.md](./FIRST_MIGRATION_PR.md)
+1. [PLATFORM_MIGRATION_PLAN.md](../roadmap/PLATFORM_MIGRATION_PLAN.md)
+2. [FIRST_MIGRATION.md](../waves/FIRST_MIGRATION.md)
 
 Если между локальными идеями исполнителя и этими документами есть конфликт, приоритет у документов.
 
@@ -135,7 +135,7 @@
 
 Исполнитель обязан открыть и прочитать только релевантные разделы:
 - `PLATFORM_MIGRATION_PLAN.md`
-- `FIRST_MIGRATION_PR.md`
+- `FIRST_MIGRATION.md`
 
 Нельзя работать по памяти, если есть риск потерять контекст.
 
@@ -330,8 +330,8 @@
 
 ## Relevant Docs
 
-- docs/PLATFORM_MIGRATION_PLAN.md
-- docs/FIRST_MIGRATION_PR.md
+- docs/roadmap/PLATFORM_MIGRATION_PLAN.md
+- docs/waves/FIRST_MIGRATION.md
 - <другие документы, если нужны>
 
 ## Files to Inspect First
