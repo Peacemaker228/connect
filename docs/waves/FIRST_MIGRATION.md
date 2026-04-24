@@ -30,6 +30,7 @@
 1. `SEGMENT 001` — `app-core seed extraction`
 2. `SEGMENT 002` — `sdk seed extraction`
 3. `SEGMENT 003` — `ui seed extraction`
+4. `SEGMENT 004` — `provider contracts`
 
 Каждый сегмент:
 - идёт отдельным PR
@@ -68,19 +69,19 @@
 - [x] добавлены и используются `@app-core/*`, `@sdk/*`, `@ui/*`
 - [x] старые пути сохранены как shim/re-export слой
 - [x] зафиксированы `ARCHITECTURE.md` и `BOUNDARIES.md`
-- [ ] введены contracts/adapters для `AuthProvider`, `StorageProvider`, `MediaProvider`, `RealtimeProvider`
+- [x] введены contracts для `AuthProvider`, `StorageProvider`, `MediaProvider`, `RealtimeProvider`
 
 Коротко:
-- `FIRST_MIGRATION` закрывает только безопасную extraction-часть `Stage 1`
-- `Stage 1` в целом закрывается только после документов и adapter/contracts слоя
+- `FIRST_MIGRATION` теперь закрывает весь `Stage 1`
+- следующий большой шаг — `Stage 2`, то есть `apps/api` и `Nest skeleton`
 
 ## What Comes Next
 
 Правильная последовательность после `FIRST_MIGRATION` такая:
 
-1. Закрыть оставшийся хвост `Stage 1`
-2. Перейти к `Stage 2`: поднять `apps/api` и `Nest skeleton`
-3. Перейти к `Stage 3`: начать перенос `invite/server/channel/member` domain
+1. Перейти к `Stage 2`: поднять `apps/api` и `Nest skeleton`
+2. Перейти к `Stage 3`: начать перенос `invite/server/channel/member` domain
+3. Не перескакивать сразу к runtime/domain migration без backend foundation
 
 ## References
 
@@ -92,3 +93,4 @@
 - [SEGMENT_BRIEF_001_APP_CORE_SEED.md](../delegation/briefs/SEGMENT_BRIEF_001_APP_CORE_SEED.md)
 - [SEGMENT_BRIEF_002_SDK_SEED.md](../delegation/briefs/SEGMENT_BRIEF_002_SDK_SEED.md)
 - [SEGMENT_BRIEF_003_UI_SEED.md](../delegation/briefs/SEGMENT_BRIEF_003_UI_SEED.md)
+- [SEGMENT_BRIEF_004_PROVIDER_CONTRACTS.md](../delegation/briefs/SEGMENT_BRIEF_004_PROVIDER_CONTRACTS.md)

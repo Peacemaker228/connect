@@ -14,6 +14,8 @@
 - [delegation/briefs/SEGMENT_BRIEF_001_APP_CORE_SEED.md](./delegation/briefs/SEGMENT_BRIEF_001_APP_CORE_SEED.md)
 - [delegation/briefs/SEGMENT_BRIEF_002_SDK_SEED.md](./delegation/briefs/SEGMENT_BRIEF_002_SDK_SEED.md)
 - [delegation/briefs/SEGMENT_BRIEF_003_UI_SEED.md](./delegation/briefs/SEGMENT_BRIEF_003_UI_SEED.md)
+- [delegation/briefs/SEGMENT_BRIEF_004_PROVIDER_CONTRACTS.md](./delegation/briefs/SEGMENT_BRIEF_004_PROVIDER_CONTRACTS.md)
+- [delegation/briefs/SEGMENT_BRIEF_005_NEST_SKELETON.md](./delegation/briefs/SEGMENT_BRIEF_005_NEST_SKELETON.md)
 
 ## Recommended Reading Order
 
