@@ -9,7 +9,7 @@ import { Spinner } from '@/lib/shared/ui/spinner'
 import { ErrorComponent } from '@/lib/shared/ui/error-component'
 import { Button } from '@/lib/shared/ui/button'
 import { useJoinByInvite } from '@/lib/shared/data-access/server/api-socket'
-import { ERoutes, getSignInRedirectUrl } from '@/lib/shared/utils/routes'
+import { ERoutes, getSignInRedirectUrl } from '@app-core/routing/routes'
 import { getDesktopInviteUrl } from '@/lib/shared/utils/desktop-deep-link'
 import { getDesktopDownloadUrl } from '@/lib/shared/utils/desktop-download'
 

@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
-import { serverFormSchema } from '@/lib/shared/data-access/server/models/serverModalSchema'
+import { serverFormSchema } from '@app-core/schemas/server-form-schema'
 import { ServerModal } from '@/lib/shared/features/modals/common/server-modal'
 import { useCallback, useEffect } from 'react'
 

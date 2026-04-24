@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { cn } from '@/lib/shared/utils/utils'
 import { UserAvatar } from '@/lib/shared/features/user-avatar'
 import { roleIconMap } from '@/lib/shared/utils/role-icon-map'
-import { ERoutes } from '@/lib/shared/utils/routes'
+import { ERoutes } from '@app-core/routing/routes'
 
 interface IServerMemberProps {
   member: Member & { profile: Profile }

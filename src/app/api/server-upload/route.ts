@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { utapi } from '@/lib/server/uploadthing'
-import { UploadEndpoint } from '@/lib/shared/utils/upload-file'
+import { UploadEndpoint } from '@app-core/files/upload-file'
 
 export const runtime = 'nodejs'
 

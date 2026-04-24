@@ -8,7 +8,7 @@ import { Button } from '@/lib/shared/ui/button'
 import { FC } from 'react'
 import { UseFormReturn } from 'react-hook-form'
 import { z } from 'zod'
-import { serverFormSchema } from '@/lib/shared/data-access/server/models/serverModalSchema'
+import { serverFormSchema } from '@app-core/schemas/server-form-schema'
 import { useTranslations } from 'next-intl'
 
 interface IServerModalProps {

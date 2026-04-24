@@ -1,6 +1,6 @@
 import React, { FC } from 'react'
 import { currentProfile } from '@/lib/shared/utils/current-profile'
-import { ERoutes } from '@/lib/shared/utils/routes'
+import { ERoutes } from '@app-core/routing/routes'
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/shared/utils/db'
 import { getOrCreateConversation } from '@/lib/shared/utils/conversation'

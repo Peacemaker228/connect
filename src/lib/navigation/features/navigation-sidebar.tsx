@@ -10,7 +10,7 @@ import { LocaleToggle } from '@/lib/shared/ui/locale-toggle'
 import { useServersSocket } from '@/lib/shared/data-access/server-list-sidebar/use-servers-socket'
 import { useGetServers } from '@/lib/shared/data-access/server/api'
 import { NavigationItem, NavigationAction } from '@/lib/navigation/features'
-import { ERoutes } from '@/lib/shared/utils/routes'
+import { ERoutes } from '@app-core/routing/routes'
 
 export const NavigationSidebar = () => {
   const router = useRouter()

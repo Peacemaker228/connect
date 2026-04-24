@@ -7,7 +7,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { cn } from '@/lib/shared/utils/utils'
 import { EGeneral } from '@/types'
 import { ActionTooltip } from '@/lib/shared/features/action-tooltip'
-import { ERoutes } from '@/lib/shared/utils/routes'
+import { ERoutes } from '@app-core/routing/routes'
 import { useTranslations } from 'next-intl'
 import { TModalType, useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 

@@ -1,8 +1,1 @@
-import { z } from 'zod'
-
-export const serverFormSchema = z.object({
-  name: z.string().min(1, {
-    message: 'Server name is required.',
-  }),
-  imageUrl: z.string(),
-})
+export { serverFormSchema } from '@app-core/schemas/server-form-schema'

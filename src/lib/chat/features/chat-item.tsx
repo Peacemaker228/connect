@@ -17,11 +17,11 @@ import { Button } from '@/lib/shared/ui/button'
 import qs from 'query-string'
 import axios from 'axios'
 import { useParams, useRouter } from 'next/navigation'
-import { ERoutes } from '@/lib/shared/utils/routes'
+import { ERoutes } from '@app-core/routing/routes'
 import { useTranslations } from 'next-intl'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
-import { chatInputSchema, IChatInputSchema } from '@/lib/chat/data-access/models/chatInputSchema'
-import { getUploadValueParts } from '@/lib/shared/utils/upload-file'
+import { chatInputSchema, IChatInputSchema } from '@app-core/schemas/chat-input-schema'
+import { getUploadValueParts } from '@app-core/files/upload-file'
 
 interface IChatItemProps {
   id: string
