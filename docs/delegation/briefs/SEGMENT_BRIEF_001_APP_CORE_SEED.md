@@ -20,9 +20,9 @@
 ## Source of Truth
 
 Перед началом работы исполнитель обязан прочитать:
-- [PLATFORM_MIGRATION_PLAN.md](./PLATFORM_MIGRATION_PLAN.md)
-- [FIRST_MIGRATION_PR.md](./FIRST_MIGRATION_PR.md)
-- [DELEGATION_AGENT_GUIDE.md](./DELEGATION_AGENT_GUIDE.md)
+- [PLATFORM_MIGRATION_PLAN.md](../../roadmap/PLATFORM_MIGRATION_PLAN.md)
+- [FIRST_MIGRATION.md](../../waves/FIRST_MIGRATION.md)
+- [DELEGATION_AGENT_GUIDE.md](../DELEGATION_AGENT_GUIDE.md)
 
 ## In Scope
 
