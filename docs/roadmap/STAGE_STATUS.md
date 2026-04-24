@@ -3,7 +3,7 @@
 ## Current Read Model
 
 - `PLATFORM_MIGRATION_PLAN.md` = master plan
-- `FIRST_MIGRATION.md` = текущая волна внутри `Stage 1`
+- `waves/*.md` = completed/current waves by stage
 - `SEGMENT_BRIEF_*` = конкретные PR внутри волны
 
 ## Status by Stage
@@ -23,7 +23,7 @@ Remaining:
 
 ### Stage 1. Internal Decoupling
 
-Status: `in progress`
+Status: `done`
 
 Done:
 - `packages/app-core` seed extraction
@@ -31,23 +31,27 @@ Done:
 - `packages/ui` seed extraction
 - `@app-core/*`, `@sdk/*`, `@ui/*`
 - shim/re-export слой в старых путях
-
-Remaining:
 - `AuthProvider` contract
 - `StorageProvider` contract
 - `MediaProvider` contract
 - `RealtimeProvider` contract
-- contracts/adapters слой поверх уже зафиксированных boundaries
+
+Remaining:
+- none at contract-definition level
 
 ### Stage 2. Nest Foundation
 
-Status: `not started`
+Status: `done`
 
-Planned:
+Done:
 - `apps/api`
 - `Nest` skeleton
 - config/logger/health
 - base module scaffold
+- realtime scaffold
+
+Remaining:
+- none at foundation level
 
 ### Stage 3. Domain and Realtime Extraction
 
@@ -73,12 +77,12 @@ Planned:
 - [x] старые пути работают через shim/re-export слой
 - [x] есть `ARCHITECTURE.md`
 - [x] есть `BOUNDARIES.md`
-- [ ] есть `AuthProvider`, `StorageProvider`, `MediaProvider`, `RealtimeProvider` contracts
+- [x] есть `AuthProvider`, `StorageProvider`, `MediaProvider`, `RealtimeProvider` contracts
 
 ## Next Correct Step
 
 Следующий большой шаг не `domain extraction`, а:
 
-1. закрыть хвост `Stage 1`
-2. поднять `Stage 2` — `apps/api` и `Nest skeleton`
-3. только потом идти в `Stage 3`
+1. перейти к `Stage 3`
+2. начать перенос первого реального domain slice
+3. не смешивать это с auth/storage/media/database migrations

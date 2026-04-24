@@ -17,7 +17,11 @@
 Перед началом любой работы исполнитель обязан считать следующими документами:
 
 1. [PLATFORM_MIGRATION_PLAN.md](../roadmap/PLATFORM_MIGRATION_PLAN.md)
-2. [FIRST_MIGRATION.md](../waves/FIRST_MIGRATION.md)
+2. [ARCHITECTURE.md](../roadmap/ARCHITECTURE.md)
+3. [BOUNDARIES.md](../roadmap/BOUNDARIES.md)
+4. [STAGE_STATUS.md](../roadmap/STAGE_STATUS.md)
+5. текущий wave-документ, если он есть
+6. текущий `SEGMENT_BRIEF`
 
 Если между локальными идеями исполнителя и этими документами есть конфликт, приоритет у документов.
 
@@ -135,7 +139,11 @@
 
 Исполнитель обязан открыть и прочитать только релевантные разделы:
 - `PLATFORM_MIGRATION_PLAN.md`
-- `FIRST_MIGRATION.md`
+- `ARCHITECTURE.md`
+- `BOUNDARIES.md`
+- `STAGE_STATUS.md`
+- текущий wave-документ
+- текущий `SEGMENT_BRIEF`
 
 Нельзя работать по памяти, если есть риск потерять контекст.
 
@@ -331,7 +339,11 @@
 ## Relevant Docs
 
 - docs/roadmap/PLATFORM_MIGRATION_PLAN.md
-- docs/waves/FIRST_MIGRATION.md
+- docs/roadmap/ARCHITECTURE.md
+- docs/roadmap/BOUNDARIES.md
+- docs/roadmap/STAGE_STATUS.md
+- текущий wave doc, если есть
+- текущий SEGMENT_BRIEF
 - <другие документы, если нужны>
 
 ## Files to Inspect First
