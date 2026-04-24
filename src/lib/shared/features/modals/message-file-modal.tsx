@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
-import { messageFileSchema } from '@/lib/shared/data-access/chat/models/messageFileSchema'
+import { messageFileSchema } from '@app-core/schemas/message-file-schema'
 import qs from 'query-string'
 import {
   Dialog,

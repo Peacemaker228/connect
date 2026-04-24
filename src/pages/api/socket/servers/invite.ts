@@ -1,6 +1,6 @@
 import { NextApiRequest } from 'next'
 import { db } from '@/lib/shared/utils/db'
-import { ERoutes, getSignInRedirectUrl } from '@/lib/shared/utils/routes'
+import { ERoutes, getSignInRedirectUrl } from '@app-core/routing/routes'
 import { NextApiResponseServerIo } from '@/types'
 import { currentProfilePages } from '@/lib/shared/utils/current-profile-pages'
 import { Prisma } from '@prisma/client'

@@ -5,7 +5,7 @@ import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import qs from 'query-string'
-import { ERoutes } from '@/lib/shared/utils/routes'
+import { ERoutes } from '@app-core/routing/routes'
 import { DeleteModal } from '@/lib/shared/features/modals/common/delete-modal'
 
 export const DeleteChannelModal = () => {

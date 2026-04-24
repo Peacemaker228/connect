@@ -2,7 +2,7 @@ import React, { FC, PropsWithChildren } from 'react'
 import { currentProfile } from '@/lib/shared/utils/current-profile'
 import { db } from '@/lib/shared/utils/db'
 import { redirect } from 'next/navigation'
-import { ERoutes } from '@/lib/shared/utils/routes'
+import { ERoutes } from '@app-core/routing/routes'
 import { ServerSidebar } from '@/lib/server-list/features'
 
 interface IServerIdLayoutProps {

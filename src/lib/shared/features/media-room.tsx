@@ -6,7 +6,7 @@ import { Loader2 } from 'lucide-react'
 import { LiveKitRoom, VideoConference } from '@livekit/components-react'
 import '@livekit/components-styles'
 import { MediaDeviceFailure, Room } from 'livekit-client'
-import { getProfileName } from '@/lib/shared/utils/get-profile-name'
+import { getProfileName } from '@app-core/profiles/get-profile-name'
 import { toast } from '@/lib/shared/utils/hooks/use-toast'
 
 interface IMediaRoomProps {

@@ -22,7 +22,7 @@ import { useGetServer, useGetServers } from '@/lib/shared/data-access/server/api
 import { useSidebarSocket } from '@/lib/shared/data-access/navigation-sidebar/use-sidebar-socket'
 import { useGetProfile } from '@/lib/shared/data-access/user/api'
 import { useRouter } from 'next/navigation'
-import { ERoutes } from '@/lib/shared/utils/routes'
+import { ERoutes } from '@app-core/routing/routes'
 
 interface IServerSidebarProps {
   serverId: string

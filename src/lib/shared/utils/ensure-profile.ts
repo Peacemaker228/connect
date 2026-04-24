@@ -1,5 +1,5 @@
 import { db } from '@/lib/shared/utils/db'
-import { getProfileName } from '@/lib/shared/utils/get-profile-name'
+import { getProfileName } from '@app-core/profiles/get-profile-name'
 
 type ClerkEmailAddress = {
   emailAddress: string

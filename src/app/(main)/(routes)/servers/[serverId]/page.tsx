@@ -1,6 +1,6 @@
 import { FC } from 'react'
 import { redirect } from 'next/navigation'
-import { ERoutes } from '@/lib/shared/utils/routes'
+import { ERoutes } from '@app-core/routing/routes'
 import { db } from '@/lib/shared/utils/db'
 import { EGeneral } from '@/types'
 import { currentProfile } from '@/lib/shared/utils/current-profile'

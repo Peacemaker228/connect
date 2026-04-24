@@ -7,10 +7,10 @@ import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { Server } from '@prisma/client'
-import { serverFormSchema } from '@/lib/shared/data-access/server/models/serverModalSchema'
+import { serverFormSchema } from '@app-core/schemas/server-form-schema'
 import { ServerModal } from '@/lib/shared/features/modals/common/server-modal'
 import { useState } from 'react'
-import { ERoutes } from '@/lib/shared/utils/routes'
+import { ERoutes } from '@app-core/routing/routes'
 
 export const InitialModal = () => {
   const router = useRouter()

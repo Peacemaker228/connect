@@ -13,7 +13,7 @@ import { useRouter } from 'next/navigation'
 import { TChannelConversation } from '@/types'
 import { useTranslations } from 'next-intl'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
-import { chatInputSchema, IChatInputSchema } from '@/lib/chat/data-access/models/chatInputSchema'
+import { chatInputSchema, IChatInputSchema } from '@app-core/schemas/chat-input-schema'
 
 interface IChatInputProps {
   apiUrl: string

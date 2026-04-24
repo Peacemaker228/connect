@@ -8,9 +8,9 @@ import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { Server } from '@prisma/client'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
-import { serverFormSchema } from '@/lib/shared/data-access/server/models/serverModalSchema'
+import { serverFormSchema } from '@app-core/schemas/server-form-schema'
 import { ServerModal } from '@/lib/shared/features/modals/common/server-modal'
-import { ERoutes } from '@/lib/shared/utils/routes'
+import { ERoutes } from '@app-core/routing/routes'
 
 export const CreateServerModal = () => {
   const router = useRouter()
