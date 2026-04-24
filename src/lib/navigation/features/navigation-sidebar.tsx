@@ -8,7 +8,7 @@ import { ThemeToggle } from '@/lib/shared/features/theme-toggle'
 import { useParams, useRouter } from 'next/navigation'
 import { LocaleToggle } from '@/lib/shared/ui/locale-toggle'
 import { useServersSocket } from '@/lib/shared/data-access/server-list-sidebar/use-servers-socket'
-import { useGetServers } from '@/lib/shared/data-access/server/api'
+import { useGetServers } from '@sdk/queries/server'
 import { NavigationItem, NavigationAction } from '@/lib/navigation/features'
 import { ERoutes } from '@app-core/routing/routes'
 
