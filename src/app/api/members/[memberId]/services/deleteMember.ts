@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { currentProfile } from '@/lib/shared/utils/current-profile'
-import { db } from '@/lib/shared/utils/db'
 import { validateMemberId } from './utils'
 import { getServerId } from '@/app/api/utils'
+import { requestBackendApi, toNextProxyResponse } from '@/lib/shared/utils/backend-api'
 
 export const deleteMember = async (req: Request, params: Promise<{ memberId: string }>) => {
   try {
@@ -15,34 +15,15 @@ export const deleteMember = async (req: Request, params: Promise<{ memberId: str
     const memberId = await validateMemberId(params)
     if (!memberId) return new NextResponse('Member ID Missing', { status: 400 })
 
-    const server = await db.server.update({
-      where: {
-        id: serverId,
-        profileId: profile.id,
-      },
-      data: {
-        members: {
-          deleteMany: {
-            id: memberId,
-            profileId: {
-              not: profile.id,
-            },
-          },
-        },
-      },
-      include: {
-        members: {
-          include: {
-            profile: true,
-          },
-          orderBy: {
-            role: 'asc',
-          },
-        },
+    const response = await requestBackendApi({
+      path: `/api/members/${memberId}?serverId=${encodeURIComponent(serverId)}`,
+      method: 'DELETE',
+      headers: {
+        'x-profile-id': profile.id,
       },
     })
 
-    return NextResponse.json(server)
+    return toNextProxyResponse(response)
   } catch (err) {
     console.error('[MEMBER_ID_DELETE]', err)
     return new NextResponse('Internal Error', { status: 500 })

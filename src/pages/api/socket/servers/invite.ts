@@ -1,9 +1,9 @@
 import { NextApiRequest } from 'next'
-import { db } from '@/lib/shared/utils/db'
+
 import { ERoutes, getSignInRedirectUrl } from '@app-core/routing/routes'
-import { NextApiResponseServerIo } from '@/types'
 import { currentProfilePages } from '@/lib/shared/utils/current-profile-pages'
-import { Prisma } from '@prisma/client'
+import { readBackendApiResponse, requestBackendApi } from '@/lib/shared/utils/backend-api'
+import { NextApiResponseServerIo } from '@/types'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponseServerIo) {
   if (req.method !== 'POST') {
@@ -23,53 +23,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
   }
 
   try {
-    const server = await db.server.update({
-      where: {
+    const response = await requestBackendApi({
+      path: '/api/invites/join',
+      method: 'POST',
+      body: {
         inviteCode,
       },
-      data: {
-        members: {
-          create: {
-            profileId: profile.id,
-          },
-        },
+      headers: {
+        'x-profile-id': profile.id,
       },
     })
+    const parsedResponse = await readBackendApiResponse(response)
 
-    if (res.socket.server.io) {
-      const io = res.socket.server.io
+    if (parsedResponse.status === 200 && parsedResponse.isJson && res.socket.server.io) {
+      const redirectUrl =
+        typeof parsedResponse.data === 'object' && parsedResponse.data && 'redirectUrl' in parsedResponse.data
+          ? String(parsedResponse.data.redirectUrl)
+          : ''
+      const serverId = redirectUrl.split('/').filter(Boolean).at(-1)
 
-      io.emit(`server:${server.id}:members`, {
-        action: 'member_added',
-        serverId: server.id,
-      })
-    } else {
-      console.error('Socket.IO not initialized')
-    }
-
-    return res.status(200).json({ redirectUrl: `${ERoutes.SERVERS}/${server.id}` })
-  } catch (error) {
-    // Обработка ошибки уникального ограничения (prisma @@uniq)
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      // Участник уже существует — ищем сервер и перенаправляем на него
-      const existingServer = await db.server.findFirst({
-        where: {
-          inviteCode,
-          members: {
-            some: {
-              profileId: profile.id,
-            },
-          },
-        },
-      })
-
-      if (existingServer) {
-        return res.status(200).json({ redirectUrl: `${ERoutes.SERVERS}/${existingServer.id}` })
+      if (serverId) {
+        res.socket.server.io.emit(`server:${serverId}:members`, {
+          action: 'member_added',
+          serverId,
+        })
       }
-
-      return res.status(400).json({ redirectUrl: ERoutes.MAIN_PAGE })
     }
 
+    if (parsedResponse.isJson) {
+      return res.status(parsedResponse.status).json(parsedResponse.data)
+    }
+
+    return res.status(parsedResponse.status).send(parsedResponse.data)
+  } catch (error) {
     console.error('Invite failed:', error)
     return res.status(500).json({ redirectUrl: ERoutes.MAIN_PAGE })
   }

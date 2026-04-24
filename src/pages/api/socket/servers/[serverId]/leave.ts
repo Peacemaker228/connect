@@ -1,7 +1,8 @@
 import { NextApiRequest } from 'next'
-import { db } from '@/lib/shared/utils/db'
-import { NextApiResponseServerIo } from '@/types'
+
 import { currentProfilePages } from '@/lib/shared/utils/current-profile-pages'
+import { readBackendApiResponse, requestBackendApi } from '@/lib/shared/utils/backend-api'
+import { NextApiResponseServerIo } from '@/types'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponseServerIo) {
   if (req.method !== 'PATCH') {
@@ -19,39 +20,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
       return res.status(400).json({ error: 'Server ID Missing' })
     }
 
-    const server = await db.server.update({
-      where: {
-        id: serverId,
-        profileId: {
-          not: profile.id,
-        },
-        members: {
-          some: {
-            profileId: profile.id,
-          },
-        },
-      },
-      data: {
-        members: {
-          deleteMany: {
-            profileId: profile.id,
-          },
-        },
+    const response = await requestBackendApi({
+      path: `/api/servers/${serverId}/leave`,
+      method: 'PATCH',
+      headers: {
+        'x-profile-id': profile.id,
       },
     })
+    const parsedResponse = await readBackendApiResponse(response)
 
-    if (res.socket.server.io) {
-      const io = res.socket.server.io
-      const memberKey = `server:${serverId}:members`
-      io.emit(memberKey, {
+    if (parsedResponse.status === 200 && res.socket.server.io) {
+      res.socket.server.io.emit(`server:${serverId}:members`, {
         action: 'member_left',
         memberId: profile.id,
       })
     }
 
-    res.status(200).json(server)
+    if (parsedResponse.isJson) {
+      return res.status(parsedResponse.status).json(parsedResponse.data)
+    }
+
+    return res.status(parsedResponse.status).send(parsedResponse.data)
   } catch (error) {
     console.error('[SERVER_LEAVE_ERROR]', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    return res.status(500).json({ error: 'Internal Server Error' })
   }
 }

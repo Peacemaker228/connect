@@ -1,48 +1,26 @@
 import { NextResponse } from 'next/server'
+
+import { requestBackendApi, toNextProxyResponse } from '@/lib/shared/utils/backend-api'
 import { currentProfile } from '@/lib/shared/utils/current-profile'
-import { v4 as uuidV4 } from 'uuid'
-import { db } from '@/lib/shared/utils/db'
-import { MemberRole } from '@prisma/client'
-import { EGeneral } from '@/types'
 
 export const POST = async (req: Request) => {
   try {
-    const { name, imageUrl } = await req.json()
-    const normalizedImageUrl = typeof imageUrl === 'string' ? imageUrl : ''
-
     const profile = await currentProfile()
 
     if (!profile) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
-    const server = await db.server.create({
-      data: {
-        profileId: profile.id,
-        name,
-        imageUrl: normalizedImageUrl,
-        inviteCode: uuidV4(),
-        channels: {
-          create: [
-            {
-              name: EGeneral.GENERAL,
-              profileId: profile.id,
-              type: 'TEXT',
-            },
-          ],
-        },
-        members: {
-          create: [
-            {
-              profileId: profile.id,
-              role: MemberRole.ADMIN,
-            },
-          ],
-        },
+    const response = await requestBackendApi({
+      path: '/api/servers',
+      method: 'POST',
+      body: await req.json(),
+      headers: {
+        'x-profile-id': profile.id,
       },
     })
 
-    return NextResponse.json(server)
+    return toNextProxyResponse(response)
   } catch (err) {
     console.log('[SERVERS_POST]', err)
 
@@ -58,17 +36,14 @@ export const GET = async () => {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
-    const servers = await db.server.findMany({
-      where: {
-        members: {
-          some: {
-            profileId: profile.id,
-          },
-        },
+    const response = await requestBackendApi({
+      path: '/api/servers',
+      headers: {
+        'x-profile-id': profile.id,
       },
     })
 
-    return NextResponse.json(servers)
+    return toNextProxyResponse(response)
   } catch (err) {
     console.log('[SERVERS_GET]', err)
 

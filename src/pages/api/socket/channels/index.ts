@@ -1,8 +1,8 @@
-import { db } from '@/lib/shared/utils/db'
-import { MemberRole } from '@prisma/client'
-import { EGeneral, NextApiResponseServerIo } from '@/types'
 import { NextApiRequest } from 'next'
+
 import { currentProfilePages } from '@/lib/shared/utils/current-profile-pages'
+import { readBackendApiResponse, requestBackendApi } from '@/lib/shared/utils/backend-api'
+import { EGeneral, NextApiResponseServerIo } from '@/types'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponseServerIo) {
   if (req.method !== 'POST') {
@@ -33,42 +33,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
       return res.status(400).json({ error: 'Name cannot be "general"' })
     }
 
-    const server = await db.server.update({
-      where: {
-        id: serverId as string,
-        members: {
-          some: {
-            profileId: profile.id,
-            role: {
-              in: [MemberRole.ADMIN, MemberRole.MODERATOR],
-            },
-          },
-        },
-      },
-      data: {
-        channels: {
-          create: {
-            profileId: profile.id,
-            name,
-            type,
-          },
-        },
+    const response = await requestBackendApi({
+      path: `/api/channels?serverId=${encodeURIComponent(serverId as string)}`,
+      method: 'POST',
+      body: req.body,
+      headers: {
+        'x-profile-id': profile.id,
       },
     })
+    const parsedResponse = await readBackendApiResponse(response)
 
-    if (res.socket.server.io) {
-      const io = res.socket.server.io
-
-      const channelKey = `server:${serverId}:channels`
-      io.emit(channelKey, {
+    if (parsedResponse.status === 200 && res.socket.server.io) {
+      res.socket.server.io.emit(`server:${serverId}:channels`, {
         action: 'channel_created',
         channel: { name, type },
       })
-    } else {
-      console.error('Socket.IO not initialized on the server')
     }
 
-    return res.status(200).json(server)
+    if (parsedResponse.isJson) {
+      return res.status(parsedResponse.status).json(parsedResponse.data)
+    }
+
+    return res.status(parsedResponse.status).send(parsedResponse.data)
   } catch (err) {
     console.error('[CHANNEL_POST]', err)
     return res.status(500).json({ error: 'Internal Error' })
