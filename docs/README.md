@@ -8,6 +8,7 @@
 - [roadmap/STAGE_STATUS.md](./roadmap/STAGE_STATUS.md) — что уже сделано по стадиям и что осталось
 - [waves/FIRST_MIGRATION.md](./waves/FIRST_MIGRATION.md) — закрытая волна `Stage 1`
 - [waves/NEST_FOUNDATION.md](./waves/NEST_FOUNDATION.md) — закрытая волна `Stage 2`
+- [waves/DOMAIN_EXTRACTION_SLICE_1.md](./waves/DOMAIN_EXTRACTION_SLICE_1.md) — текущая волна начала `Stage 3`
 
 ## Delegation
 

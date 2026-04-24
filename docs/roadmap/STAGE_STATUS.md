@@ -55,9 +55,15 @@ Remaining:
 
 ### Stage 3. Domain and Realtime Extraction
 
-Status: `not started`
+Status: `in progress`
 
-Planned:
+Done:
+- first backend-owned slice moved to `apps/api`: invites/servers/channels/members
+- `src/app/api/*` for this slice converted to compatibility/proxy layer
+- `src/pages/api/socket/*` for this slice reduced to transitional auth/proxy/socket emit layer
+
+Remaining:
+- finish transitional cleanup for the same slice
 - invites
 - servers
 - channels
@@ -65,24 +71,11 @@ Planned:
 - messages
 - direct messages
 - socket transport
-
-## Exact Stage 1 Done Definition
-
-`Stage 1` считается закрытым только когда:
-
-- [x] создан `packages/app-core` seed layer
-- [x] создан `packages/sdk` seed layer
-- [x] создан `packages/ui` seed layer
-- [x] добавлены `@app-core/*`, `@sdk/*`, `@ui/*`
-- [x] старые пути работают через shim/re-export слой
-- [x] есть `ARCHITECTURE.md`
-- [x] есть `BOUNDARIES.md`
-- [x] есть `AuthProvider`, `StorageProvider`, `MediaProvider`, `RealtimeProvider` contracts
-
+ 
 ## Next Correct Step
 
 Следующий большой шаг не `domain extraction`, а:
 
-1. перейти к `Stage 3`
-2. начать перенос первого реального domain slice
+1. завершить первый Stage 3 slice или его realtime tail
+2. только потом расширять Stage 3 дальше
 3. не смешивать это с auth/storage/media/database migrations
