@@ -3,7 +3,7 @@
 ## Current Read Model
 
 - `PLATFORM_MIGRATION_PLAN.md` = master plan
-- `FIRST_MIGRATION.md` = текущая волна внутри `Stage 1`
+- `waves/*.md` = completed/current waves by stage
 - `SEGMENT_BRIEF_*` = конкретные PR внутри волны
 
 ## Status by Stage
@@ -41,13 +41,17 @@ Remaining:
 
 ### Stage 2. Nest Foundation
 
-Status: `not started`
+Status: `done`
 
-Planned:
+Done:
 - `apps/api`
 - `Nest` skeleton
 - config/logger/health
 - base module scaffold
+- realtime scaffold
+
+Remaining:
+- none at foundation level
 
 ### Stage 3. Domain and Realtime Extraction
 
@@ -79,6 +83,6 @@ Planned:
 
 Следующий большой шаг не `domain extraction`, а:
 
-1. перейти к `Stage 2` — `apps/api` и `Nest skeleton`
-2. после этого идти в `Stage 3`
-3. не прыгать сразу в domain extraction без backend foundation
+1. перейти к `Stage 3`
+2. начать перенос первого реального domain slice
+3. не смешивать это с auth/storage/media/database migrations
