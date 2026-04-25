@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 
 import { PrismaService } from '../../common/database/prisma.service';
 import {
@@ -8,6 +13,7 @@ import {
 } from './auth.constants';
 import type { AuthRequest, AuthRequestHeaders } from './auth-request.interface';
 import type {
+  ApiAuthIdentityPayload,
   ApiAuthContext,
   ApiAuthProfileSnapshot,
   ApiAuthSessionSnapshot,
@@ -97,7 +103,54 @@ export class AuthService {
       name: profile.name,
       email: profile.email,
       imageUrl: profile.imageUrl,
+      createdAt: profile.createdAt,
+      updatedAt: profile.updatedAt,
     };
+  }
+
+  async resolveSessionFromIdentity(params: {
+    userId?: string;
+    sessionId?: string;
+    identity?: ApiAuthIdentityPayload;
+  }): Promise<ApiAuthSessionSnapshot> {
+    const resolvedUserId = params.userId ?? params.identity?.id;
+
+    if (!resolvedUserId) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    if (params.identity && params.identity.id !== resolvedUserId) {
+      throw new BadRequestException('Auth user mismatch');
+    }
+
+    const existingProfile = await this.prisma.profile.findUnique({
+      where: {
+        userId: resolvedUserId,
+      },
+    });
+
+    if (existingProfile) {
+      return this.createSessionSnapshot(existingProfile, 'user-header', params.sessionId);
+    }
+
+    if (!params.identity) {
+      throw new NotFoundException('Profile not found');
+    }
+
+    const createdProfile = await this.prisma.profile.upsert({
+      where: {
+        userId: resolvedUserId,
+      },
+      update: {},
+      create: {
+        userId: resolvedUserId,
+        name: this.getProfileName(params.identity),
+        imageUrl: params.identity.imageUrl ?? '',
+        email: params.identity.primaryEmailAddress ?? '',
+      },
+    });
+
+    return this.createSessionSnapshot(createdProfile, 'user-header', params.sessionId);
   }
 
   private readHeader(
@@ -117,5 +170,60 @@ export class AuthService {
     const resolvedValue = value.trim();
 
     return resolvedValue.length > 0 ? resolvedValue : undefined;
+  }
+
+  private createSessionSnapshot(
+    profile: {
+      id: string;
+      userId: string;
+      name: string;
+      email: string;
+      imageUrl: string;
+      createdAt: Date;
+      updatedAt: Date;
+    },
+    strategy: ApiAuthSessionSnapshot['strategy'],
+    sessionId?: string,
+  ): ApiAuthSessionSnapshot {
+    return {
+      isAuthenticated: true,
+      strategy,
+      sessionId: sessionId ?? null,
+      profile: {
+        id: profile.id,
+        userId: profile.userId,
+        name: profile.name,
+        email: profile.email,
+        imageUrl: profile.imageUrl,
+        createdAt: profile.createdAt,
+        updatedAt: profile.updatedAt,
+      },
+      user: {
+        id: profile.userId,
+        displayName: profile.name,
+        email: profile.email,
+        imageUrl: profile.imageUrl,
+      },
+    };
+  }
+
+  private getProfileName(identity: ApiAuthIdentityPayload) {
+    if (identity.firstName && identity.lastName) {
+      return `${identity.firstName} ${identity.lastName}`;
+    }
+
+    if (identity.firstName) {
+      return identity.firstName;
+    }
+
+    if (identity.lastName) {
+      return identity.lastName;
+    }
+
+    if (identity.username) {
+      return identity.username;
+    }
+
+    return 'USER';
   }
 }
