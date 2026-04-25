@@ -16,6 +16,7 @@ Segment task:
 - start backend-owned sessions/tokens foundation
 - move the auth boundary closer to a full backend-owned model
 - keep current runtime behavior stable
+- keep the implementation compatible with the target browser model: `Secure` + `HttpOnly` cookie-backed sessions
 
 ## Source of Truth
 
@@ -32,6 +33,7 @@ Before starting, the executor must read:
 ### 1. Backend-owned sessions/tokens foundation
 
 Move the auth boundary forward by introducing the backend foundation needed for sessions/tokens/devices work.
+This segment may introduce token/session primitives, but it must not lock the project into bearer-token-as-final-browser-auth.
 
 ### 2. Compatibility-preserving transition
 
@@ -52,6 +54,7 @@ Forbidden in this segment:
 - do not break current runtime
 - do not turn this into a full auth rewrite
 - do not pull in unrelated storage/media/database work
+- treat cookies as the target browser transport even if current transitional endpoints still exchange tokens explicitly
 
 ## Expected Deliverable
 

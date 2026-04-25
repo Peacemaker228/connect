@@ -25,6 +25,8 @@
 Target:
 - собственный auth module в `apps/api`
 - клиент работает через внутренний `AuthProvider`, а не через прямой SDK usage по всему UI
+- browser auth transport должен идти через `Secure` + `HttpOnly` cookie-based session flow
+- protected routes в web runtime должны быть только UX/router-слоем над backend session checks, а не источником реальной защиты
 
 Правило:
 - новые auth-зависимости нельзя тащить напрямую в feature/UI слой

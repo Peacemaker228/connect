@@ -8,6 +8,7 @@ Wave task:
 - start backend-owned sessions/tokens foundation
 - prepare the project for later full `Clerk` replacement
 - keep current runtime stable during the transition
+- converge toward the target browser auth model: backend-owned sessions with `Secure` + `HttpOnly` cookies
 
 ## Position in the Main Plan
 
@@ -23,10 +24,12 @@ Mapping:
 - backend-owned sessions/tokens foundation
 - auth-boundary work required to support later full replacement
 - compatibility-preserving transition work if needed
+- shaping the auth layer so browser runtime can later use cookie-backed session transport
 
 ## Out of Scope
 
 - full `Clerk` removal
+- final browser cookie wiring in web runtime
 - `UploadThing` replacement
 - `Postgres` migration
 - `LiveKit` replacement
