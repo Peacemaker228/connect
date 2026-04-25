@@ -1,5 +1,7 @@
-import { Body, Controller, Delete, Get, Headers, HttpCode, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 
+import { CurrentProfileId } from '../auth/decorators/current-profile-id.decorator';
+import { RequireAuthGuard } from '../auth/guards/require-auth.guard';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import {
   createChatMessageCreatedRealtimeEvent,
@@ -13,6 +15,7 @@ type DirectMessageMutationBody = {
 };
 
 @Controller('direct-messages')
+@UseGuards(RequireAuthGuard)
 export class DirectMessagesController {
   constructor(
     private readonly directMessagesService: DirectMessagesService,
@@ -21,7 +24,7 @@ export class DirectMessagesController {
 
   @Get()
   getMessages(
-    @Headers('x-profile-id') profileId: string | undefined,
+    @CurrentProfileId() profileId: string,
     @Query('conversationId') conversationId: string | undefined,
     @Query('cursor') cursor: string | undefined,
   ) {
@@ -31,7 +34,7 @@ export class DirectMessagesController {
   @Post()
   @HttpCode(HttpStatus.OK)
   async createMessage(
-    @Headers('x-profile-id') profileId: string | undefined,
+    @CurrentProfileId() profileId: string,
     @Query('conversationId') conversationId: string | undefined,
     @Body() body: DirectMessageMutationBody,
   ) {
@@ -46,7 +49,7 @@ export class DirectMessagesController {
 
   @Patch(':directMessageId')
   async updateMessage(
-    @Headers('x-profile-id') profileId: string | undefined,
+    @CurrentProfileId() profileId: string,
     @Param('directMessageId') directMessageId: string,
     @Query('conversationId') conversationId: string | undefined,
     @Body() body: DirectMessageMutationBody,
@@ -62,7 +65,7 @@ export class DirectMessagesController {
 
   @Delete(':directMessageId')
   async deleteMessage(
-    @Headers('x-profile-id') profileId: string | undefined,
+    @CurrentProfileId() profileId: string,
     @Param('directMessageId') directMessageId: string,
     @Query('conversationId') conversationId: string | undefined,
   ) {

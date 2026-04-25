@@ -1,5 +1,7 @@
-import { Body, Controller, Delete, Headers, Param, Patch, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Param, Patch, Query, UseGuards } from '@nestjs/common';
 
+import { CurrentProfileId } from '../auth/decorators/current-profile-id.decorator';
+import { RequireAuthGuard } from '../auth/guards/require-auth.guard';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import {
   createMemberDeletedRealtimeEvent,
@@ -12,6 +14,7 @@ type MemberRoleBody = {
 };
 
 @Controller('members')
+@UseGuards(RequireAuthGuard)
 export class MembersController {
   constructor(
     private readonly membersService: MembersService,
@@ -20,7 +23,7 @@ export class MembersController {
 
   @Patch(':memberId')
   async updateMemberRole(
-    @Headers('x-profile-id') profileId: string | undefined,
+    @CurrentProfileId() profileId: string,
     @Param('memberId') memberId: string,
     @Query('serverId') serverId: string | undefined,
     @Body() body: MemberRoleBody,
@@ -36,7 +39,7 @@ export class MembersController {
 
   @Delete(':memberId')
   async deleteMember(
-    @Headers('x-profile-id') profileId: string | undefined,
+    @CurrentProfileId() profileId: string,
     @Param('memberId') memberId: string,
     @Query('serverId') serverId: string | undefined,
   ) {

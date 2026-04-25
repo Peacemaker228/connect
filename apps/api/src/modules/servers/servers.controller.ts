@@ -1,5 +1,7 @@
-import { Body, Controller, Delete, Get, Headers, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 
+import { CurrentProfileId } from '../auth/decorators/current-profile-id.decorator';
+import { RequireAuthGuard } from '../auth/guards/require-auth.guard';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { createMemberLeftRealtimeEvent } from '../realtime/realtime.events';
 import { ServersService } from './servers.service';
@@ -10,6 +12,7 @@ type ServerMutationBody = {
 };
 
 @Controller('servers')
+@UseGuards(RequireAuthGuard)
 export class ServersController {
   constructor(
     private readonly serversService: ServersService,
@@ -18,20 +21,20 @@ export class ServersController {
 
   @Post()
   createServer(
-    @Headers('x-profile-id') profileId: string | undefined,
+    @CurrentProfileId() profileId: string,
     @Body() body: ServerMutationBody,
   ) {
     return this.serversService.createServer(profileId, body);
   }
 
   @Get()
-  getServers(@Headers('x-profile-id') profileId: string | undefined) {
+  getServers(@CurrentProfileId() profileId: string) {
     return this.serversService.getServers(profileId);
   }
 
   @Get(':serverId')
   getServer(
-    @Headers('x-profile-id') profileId: string | undefined,
+    @CurrentProfileId() profileId: string,
     @Param('serverId') serverId: string,
   ) {
     return this.serversService.getServer(profileId, serverId);
@@ -39,7 +42,7 @@ export class ServersController {
 
   @Patch(':serverId')
   updateServer(
-    @Headers('x-profile-id') profileId: string | undefined,
+    @CurrentProfileId() profileId: string,
     @Param('serverId') serverId: string,
     @Body() body: ServerMutationBody,
   ) {
@@ -48,7 +51,7 @@ export class ServersController {
 
   @Delete(':serverId')
   deleteServer(
-    @Headers('x-profile-id') profileId: string | undefined,
+    @CurrentProfileId() profileId: string,
     @Param('serverId') serverId: string,
   ) {
     return this.serversService.deleteServer(profileId, serverId);
@@ -56,7 +59,7 @@ export class ServersController {
 
   @Patch(':serverId/invite-code')
   regenerateInviteCode(
-    @Headers('x-profile-id') profileId: string | undefined,
+    @CurrentProfileId() profileId: string,
     @Param('serverId') serverId: string,
   ) {
     return this.serversService.regenerateInviteCode(profileId, serverId);
@@ -64,14 +67,12 @@ export class ServersController {
 
   @Patch(':serverId/leave')
   async leaveServer(
-    @Headers('x-profile-id') profileId: string | undefined,
+    @CurrentProfileId() profileId: string,
     @Param('serverId') serverId: string,
   ) {
     const server = await this.serversService.leaveServer(profileId, serverId);
 
-    if (profileId) {
-      this.realtimeGateway.emit(createMemberLeftRealtimeEvent(serverId, profileId));
-    }
+    this.realtimeGateway.emit(createMemberLeftRealtimeEvent(serverId, profileId));
 
     return server;
   }

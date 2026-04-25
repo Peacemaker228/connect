@@ -1,5 +1,7 @@
-import { Body, Controller, Delete, Headers, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 
+import { CurrentProfileId } from '../auth/decorators/current-profile-id.decorator';
+import { RequireAuthGuard } from '../auth/guards/require-auth.guard';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import {
   createChannelCreatedRealtimeEvent,
@@ -14,6 +16,7 @@ type ChannelMutationBody = {
 };
 
 @Controller('channels')
+@UseGuards(RequireAuthGuard)
 export class ChannelsController {
   constructor(
     private readonly channelsService: ChannelsService,
@@ -22,7 +25,7 @@ export class ChannelsController {
 
   @Post()
   async createChannel(
-    @Headers('x-profile-id') profileId: string | undefined,
+    @CurrentProfileId() profileId: string,
     @Query('serverId') serverId: string | undefined,
     @Body() body: ChannelMutationBody,
   ) {
@@ -42,7 +45,7 @@ export class ChannelsController {
 
   @Patch(':channelId')
   async updateChannel(
-    @Headers('x-profile-id') profileId: string | undefined,
+    @CurrentProfileId() profileId: string,
     @Param('channelId') channelId: string,
     @Query('serverId') serverId: string | undefined,
     @Body() body: ChannelMutationBody,
@@ -64,7 +67,7 @@ export class ChannelsController {
 
   @Delete(':channelId')
   async deleteChannel(
-    @Headers('x-profile-id') profileId: string | undefined,
+    @CurrentProfileId() profileId: string,
     @Param('channelId') channelId: string,
     @Query('serverId') serverId: string | undefined,
   ) {
