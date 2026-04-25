@@ -1,4 +1,10 @@
-export type ApiAuthStrategy = 'anonymous' | 'profile-header' | 'user-header';
+export type ApiAuthStrategy =
+  | 'anonymous'
+  | 'profile-header'
+  | 'user-header'
+  | 'access-token';
+
+export type AuthenticatedApiAuthStrategy = 'profile-header' | 'access-token';
 
 export interface AnonymousApiAuthContext {
   isAuthenticated: false;
@@ -10,7 +16,7 @@ export interface AnonymousApiAuthContext {
 
 export interface AuthenticatedApiAuthContext {
   isAuthenticated: true;
-  strategy: 'profile-header';
+  strategy: AuthenticatedApiAuthStrategy;
   profileId: string;
   sessionId?: string;
   userId?: string;
@@ -41,6 +47,21 @@ export interface ApiAuthSessionSnapshot {
   sessionId: string | null;
   profile: ApiAuthProfileSnapshot | null;
   user: ApiAuthUserSnapshot | null;
+}
+
+export interface ApiAuthIssuedSessionSnapshot {
+  sessionId: string;
+  tokenType: 'Bearer';
+  accessToken: string;
+  refreshToken: string;
+  issuedAt: Date;
+  accessTokenExpiresAt: Date;
+  refreshTokenExpiresAt: Date;
+}
+
+export interface ApiAuthSessionExchangeSnapshot {
+  session: ApiAuthSessionSnapshot;
+  issuedSession: ApiAuthIssuedSessionSnapshot;
 }
 
 export interface ApiAuthIdentityPayload {

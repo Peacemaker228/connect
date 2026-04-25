@@ -15,6 +15,16 @@ export class AuthController {
     return this.authService.getSessionSnapshot(authContext);
   }
 
+  @Post('session/exchange')
+  exchangeSession(@CurrentAuth() authContext: ApiAuthContext | undefined) {
+    return this.authService.exchangeSession(authContext);
+  }
+
+  @Post('session/refresh')
+  refreshSession(@Body() body: { refreshToken?: string } | undefined) {
+    return this.authService.refreshSession(body?.refreshToken);
+  }
+
   @Post('session/resolve')
   resolveSession(
     @Headers('x-user-id') userId: string | undefined,
