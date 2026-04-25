@@ -1,5 +1,7 @@
 import { Body, Controller, Delete, Get, Headers, Param, Patch, Post } from '@nestjs/common';
 
+import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { createMemberLeftRealtimeEvent } from '../realtime/realtime.events';
 import { ServersService } from './servers.service';
 
 type ServerMutationBody = {
@@ -9,7 +11,10 @@ type ServerMutationBody = {
 
 @Controller('servers')
 export class ServersController {
-  constructor(private readonly serversService: ServersService) {}
+  constructor(
+    private readonly serversService: ServersService,
+    private readonly realtimeGateway: RealtimeGateway,
+  ) {}
 
   @Post()
   createServer(
@@ -58,10 +63,16 @@ export class ServersController {
   }
 
   @Patch(':serverId/leave')
-  leaveServer(
+  async leaveServer(
     @Headers('x-profile-id') profileId: string | undefined,
     @Param('serverId') serverId: string,
   ) {
-    return this.serversService.leaveServer(profileId, serverId);
+    const server = await this.serversService.leaveServer(profileId, serverId);
+
+    if (profileId) {
+      this.realtimeGateway.emit(createMemberLeftRealtimeEvent(serverId, profileId));
+    }
+
+    return server;
   }
 }

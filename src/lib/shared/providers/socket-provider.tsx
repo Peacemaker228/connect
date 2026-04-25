@@ -14,14 +14,18 @@ export const useSocket = () => {
   return useContext(SocketContext)
 }
 
-export const SocketProvider = ({ children }: PropsWithChildren) => {
+type SocketProviderProps = PropsWithChildren<{
+  socketUrl: string
+}>
+
+export const SocketProvider = ({ children, socketUrl }: SocketProviderProps) => {
   const [socket, setSocket] = useState<Socket | null>(null)
   const [isConnected, setIsConnected] = useState(false)
 
   useEffect(() => {
-    const socketInstance = io({
-      path: '/api/socket/io',
+    const socketInstance = io(`${socketUrl}/realtime`, {
       addTrailingSlash: false,
+      path: '/socket.io',
     })
 
     socketInstance.on('connect', () => {
@@ -37,7 +41,7 @@ export const SocketProvider = ({ children }: PropsWithChildren) => {
     return () => {
       socketInstance.disconnect()
     }
-  }, [])
+  }, [socketUrl])
 
   return <SocketContext.Provider value={{ socket, isConnected }}>{children}</SocketContext.Provider>
 }

@@ -161,9 +161,10 @@ connect/
 
 ## 7. Current State Snapshot
 
-Сейчас проект представляет собой смешанный монолит:
+Сейчас проект представляет собой переходный монолит с уже вынесенным backend ownership:
 - `Next App Router` для страниц и server-side redirect/data flow
-- `Pages API + Socket.IO` для realtime CRUD
+- `apps/api` как backend owner для текущего domain/realtime слоя
+- thin compatibility layers в `src/app/api/*` и части `src/pages/api/socket/*`
 - `Electron` как desktop shell
 - `Clerk` как auth provider
 - `UploadThing` как storage dependency
@@ -199,11 +200,11 @@ connect/
 
 Это главный архитектурный шаг.
 
-Сейчас бизнес-логика размазана между:
-- `app/api`
-- `pages/api`
-- `Socket.IO`-роутами
-- server utility слоями
+Сейчас переходное состояние такое:
+- core domain logic уже живёт в `apps/api`
+- thin compatibility flow всё ещё проходит через `app/api`
+- часть transitional HTTP entrypoints всё ещё остаётся в `pages/api/socket/*`
+- auth/profile resolution всё ещё проходит через web runtime
 
 Вынос в `Nest` даст:
 - модульность
@@ -775,7 +776,7 @@ connect/
 ### Future Move into `apps/api`
 
 Кандидаты на перенос в `Nest`:
-- весь `src/pages/api/socket/*`
+- remaining compatibility HTTP handlers in `src/pages/api/socket/*`
 - `src/app/api/servers/*`
 - `src/app/api/channels/*`
 - `src/app/api/messages/*`

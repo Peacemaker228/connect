@@ -1,4 +1,4 @@
-# First Migration Wave
+# Wave 1. First Migration
 
 ## Goal
 
@@ -15,9 +15,9 @@
 Этот документ подчинён [PLATFORM_MIGRATION_PLAN.md](../roadmap/PLATFORM_MIGRATION_PLAN.md).
 
 Правильное соответствие такое:
-- `FIRST_MIGRATION` = первая волна внутри `Stage 1 / Sprint 2`
-- `apps/api + Nest skeleton` = `Stage 2 / Sprint 3`
-- перенос `invite/server/channel/member` = `Stage 3 / Sprint 4`
+- `Wave 1 / FIRST_MIGRATION` = первая волна внутри `Stage 1 / Sprint 2`
+- `Wave 2 / NEST_FOUNDATION` = `Stage 2 / Sprint 3`
+- `Wave 3 / DOMAIN_EXTRACTION_SLICE_1` = `Stage 3 / Sprint 4`
 
 То есть после завершения этой волны мы не прыгаем сразу к переносу домена.
 Сначала нужно закрыть хвост `Stage 1`, затем поднять `Nest`-контур, и только потом переносить доменную логику.
@@ -72,15 +72,15 @@
 - [x] введены contracts для `AuthProvider`, `StorageProvider`, `MediaProvider`, `RealtimeProvider`
 
 Коротко:
-- `FIRST_MIGRATION` теперь закрывает весь `Stage 1`
-- следующий большой шаг — `Stage 2`, то есть `apps/api` и `Nest skeleton`
+- `Wave 1 / FIRST_MIGRATION` теперь закрывает весь `Stage 1`
+- следующий большой шаг — `Wave 2 / NEST_FOUNDATION`, то есть `apps/api` и `Nest skeleton`
 
 ## What Comes Next
 
-Правильная последовательность после `FIRST_MIGRATION` такая:
+Правильная последовательность после `Wave 1 / FIRST_MIGRATION` такая:
 
-1. Перейти к `Stage 2`: поднять `apps/api` и `Nest skeleton`
-2. Перейти к `Stage 3`: начать перенос `invite/server/channel/member` domain
+1. Перейти к `Wave 2 / Stage 2`: поднять `apps/api` и `Nest skeleton`
+2. Перейти к `Wave 3 / Stage 3`: начать перенос `invite/server/channel/member` domain
 3. Не перескакивать сразу к runtime/domain migration без backend foundation
 
 ## References

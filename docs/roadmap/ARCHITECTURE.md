@@ -122,10 +122,10 @@ Desktop не должен дублировать бизнес-логику backe
 
 ## Current Transitional State
 
-Сейчас проект — связанный fullstack-монолит:
-- `Next App Router`
-- `pages/api`
-- `Socket.IO`
+Сейчас проект — переходный монолит с уже вынесенным backend ownership для текущего domain/realtime слоя:
+- `Next App Router` как web shell и server-side redirect/data flow
+- `apps/api` как backend owner для domain/realtime
+- thin compatibility layers в `src/app/api/*` и remaining `src/pages/api/socket/*`
 - `Electron`
 - `Clerk`
 - `UploadThing`

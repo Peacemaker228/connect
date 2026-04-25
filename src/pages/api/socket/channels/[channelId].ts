@@ -1,15 +1,9 @@
 import { NextApiRequest } from 'next'
-
-import {
-  createChannelDeletedRealtimeEvent,
-  createChannelUpdatedRealtimeEvent,
-} from '@app-core/contracts/server-slice-realtime'
+import { NextApiResponse } from 'next'
 import { currentProfilePages } from '@/lib/shared/utils/current-profile-pages'
 import { readBackendApiResponse, requestBackendApi, writePagesProxyResponse } from '@/lib/shared/utils/backend-api'
-import { emitServerSliceRealtimeEvent } from '../utils/server-slice-realtime'
-import { NextApiResponseServerIo } from '@/types'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponseServerIo) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method } = req
 
   if (!['PATCH', 'DELETE'].includes(method || '')) {
@@ -43,19 +37,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
       })
       const parsedResponse = await readBackendApiResponse(response)
 
-      if (parsedResponse.status === 200) {
-        const body = req.body as { name?: string; type?: string }
-
-        emitServerSliceRealtimeEvent(
-          res,
-          createChannelUpdatedRealtimeEvent(String(serverId), {
-            id: channelId,
-            name: body.name,
-            type: body.type,
-          }),
-        )
-      }
-
       return writePagesProxyResponse(res, parsedResponse)
     }
 
@@ -67,10 +48,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
       },
     })
     const parsedResponse = await readBackendApiResponse(response)
-
-    if (parsedResponse.status === 200) {
-      emitServerSliceRealtimeEvent(res, createChannelDeletedRealtimeEvent(String(serverId), channelId))
-    }
 
     return writePagesProxyResponse(res, parsedResponse)
   } catch (err) {

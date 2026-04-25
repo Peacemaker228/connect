@@ -1,11 +1,13 @@
 import {
+  WebSocketServer,
   OnGatewayConnection,
   OnGatewayDisconnect,
   WebSocketGateway,
 } from '@nestjs/websockets';
-import { Socket } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 
 import { AppLoggerService } from '../../common/logger/app-logger.service';
+import type { RealtimeEvent } from './realtime.events';
 
 @WebSocketGateway({
   namespace: 'realtime',
@@ -15,6 +17,9 @@ import { AppLoggerService } from '../../common/logger/app-logger.service';
   },
 })
 export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  @WebSocketServer()
+  private server?: Server;
+
   constructor(private readonly logger: AppLoggerService) {}
 
   handleConnection(client: Socket) {
@@ -23,5 +28,9 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   handleDisconnect(client: Socket) {
     this.logger.log(`Realtime client disconnected: ${client.id}`, RealtimeGateway.name);
+  }
+
+  emit<TPayload>(event: RealtimeEvent<TPayload>) {
+    this.server?.emit(event.key, event.payload);
   }
 }

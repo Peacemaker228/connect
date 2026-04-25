@@ -1,4 +1,4 @@
-# Nest Foundation Wave
+# Wave 2. Nest Foundation
 
 ## Goal
 
@@ -14,9 +14,9 @@
 ## Position in the Main Plan
 
 Соответствие такое:
-- `FIRST_MIGRATION` = `Stage 1`
-- `NEST_FOUNDATION` = `Stage 2`
-- следующий шаг после этой волны = `Stage 3 / domain + realtime extraction`
+- `Wave 1 / FIRST_MIGRATION` = `Stage 1`
+- `Wave 2 / NEST_FOUNDATION` = `Stage 2`
+- следующий шаг после этой волны = `Wave 3 / Stage 3 / domain + realtime extraction`
 
 ## Scope of This Wave
 
@@ -64,7 +64,7 @@
 
 Следующий шаг:
 
-1. начать `Stage 3`
+1. начать `Wave 3 / Stage 3`
 2. переносить первый реальный domain slice
 3. не смешивать этот шаг с `Clerk` replacement, `Postgres` migration или media rewrite
 

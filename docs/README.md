@@ -6,11 +6,19 @@
 - [roadmap/ARCHITECTURE.md](./roadmap/ARCHITECTURE.md) - target architecture model
 - [roadmap/BOUNDARIES.md](./roadmap/BOUNDARIES.md) - auth/storage/media/realtime/domain boundaries
 - [roadmap/STAGE_STATUS.md](./roadmap/STAGE_STATUS.md) - current stage status and next correct step
-- [waves/FIRST_MIGRATION.md](./waves/FIRST_MIGRATION.md) - closed wave for `Stage 1`
-- [waves/NEST_FOUNDATION.md](./waves/NEST_FOUNDATION.md) - closed wave for `Stage 2`
-- [waves/DOMAIN_EXTRACTION_SLICE_1.md](./waves/DOMAIN_EXTRACTION_SLICE_1.md) - current wave for the start of `Stage 3`
-- [waves/DOMAIN_EXTRACTION_SLICE_2_MESSAGES.md](./waves/DOMAIN_EXTRACTION_SLICE_2_MESSAGES.md) - next wave for the `messages/direct-messages` slice in `Stage 3`
-- [waves/SOCKET_TRANSPORT_EXTRACTION.md](./waves/SOCKET_TRANSPORT_EXTRACTION.md) - transport-focused wave to complete the next `Stage 3` step
+- [waves/FIRST_MIGRATION.md](./waves/FIRST_MIGRATION.md) - Wave 1, closed wave for `Stage 1`
+- [waves/NEST_FOUNDATION.md](./waves/NEST_FOUNDATION.md) - Wave 2, closed wave for `Stage 2`
+- [waves/DOMAIN_EXTRACTION_SLICE_1.md](./waves/DOMAIN_EXTRACTION_SLICE_1.md) - Wave 3, closed wave for the first `Stage 3` slice
+- [waves/DOMAIN_EXTRACTION_SLICE_2_MESSAGES.md](./waves/DOMAIN_EXTRACTION_SLICE_2_MESSAGES.md) - Wave 4, closed wave for the `messages/direct-messages` slice in `Stage 3`
+- [waves/SOCKET_TRANSPORT_EXTRACTION.md](./waves/SOCKET_TRANSPORT_EXTRACTION.md) - Wave 5, closed wave for `Stage 3` transport extraction
+
+## Wave Sequence
+
+1. Wave 1 - `FIRST_MIGRATION`
+2. Wave 2 - `NEST_FOUNDATION`
+3. Wave 3 - `DOMAIN_EXTRACTION_SLICE_1`
+4. Wave 4 - `DOMAIN_EXTRACTION_SLICE_2_MESSAGES`
+5. Wave 5 - `SOCKET_TRANSPORT_EXTRACTION`
 
 ## Delegation
 
