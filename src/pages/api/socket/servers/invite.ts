@@ -1,8 +1,10 @@
 import { NextApiRequest } from 'next'
 
+import { createMemberAddedRealtimeEvent } from '@app-core/contracts/server-slice-realtime'
 import { ERoutes, getSignInRedirectUrl } from '@app-core/routing/routes'
 import { currentProfilePages } from '@/lib/shared/utils/current-profile-pages'
 import { readBackendApiResponse, requestBackendApi, writePagesProxyResponse } from '@/lib/shared/utils/backend-api'
+import { emitServerSliceRealtimeEvent } from '../utils/server-slice-realtime'
 import { NextApiResponseServerIo } from '@/types'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponseServerIo) {
@@ -35,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
     })
     const parsedResponse = await readBackendApiResponse(response)
 
-    if (parsedResponse.status === 200 && parsedResponse.isJson && res.socket.server.io) {
+    if (parsedResponse.status === 200 && parsedResponse.isJson) {
       const redirectUrl =
         typeof parsedResponse.data === 'object' && parsedResponse.data && 'redirectUrl' in parsedResponse.data
           ? String(parsedResponse.data.redirectUrl)
@@ -43,10 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
       const serverId = redirectUrl.split('/').filter(Boolean).at(-1)
 
       if (serverId) {
-        res.socket.server.io.emit(`server:${serverId}:members`, {
-          action: 'member_added',
-          serverId,
-        })
+        emitServerSliceRealtimeEvent(res, createMemberAddedRealtimeEvent(serverId))
       }
     }
 
