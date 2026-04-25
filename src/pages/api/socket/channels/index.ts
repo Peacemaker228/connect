@@ -1,7 +1,9 @@
 import { NextApiRequest } from 'next'
 
+import { createChannelCreatedRealtimeEvent } from '@app-core/contracts/server-slice-realtime'
 import { currentProfilePages } from '@/lib/shared/utils/current-profile-pages'
 import { readBackendApiResponse, requestBackendApi, writePagesProxyResponse } from '@/lib/shared/utils/backend-api'
+import { emitServerSliceRealtimeEvent } from '../utils/server-slice-realtime'
 import { NextApiResponseServerIo } from '@/types'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponseServerIo) {
@@ -30,13 +32,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
     })
     const parsedResponse = await readBackendApiResponse(response)
 
-    if (parsedResponse.status === 200 && res.socket.server.io) {
+    if (parsedResponse.status === 200) {
       const body = req.body as { name?: string; type?: string }
 
-      res.socket.server.io.emit(`server:${serverId}:channels`, {
-        action: 'channel_created',
-        channel: { name: body.name, type: body.type },
-      })
+      emitServerSliceRealtimeEvent(
+        res,
+        createChannelCreatedRealtimeEvent(String(serverId), {
+          name: body.name,
+          type: body.type,
+        }),
+      )
     }
 
     return writePagesProxyResponse(res, parsedResponse)

@@ -9,6 +9,7 @@
 - [waves/FIRST_MIGRATION.md](./waves/FIRST_MIGRATION.md) - closed wave for `Stage 1`
 - [waves/NEST_FOUNDATION.md](./waves/NEST_FOUNDATION.md) - closed wave for `Stage 2`
 - [waves/DOMAIN_EXTRACTION_SLICE_1.md](./waves/DOMAIN_EXTRACTION_SLICE_1.md) - current wave for the start of `Stage 3`
+- [waves/DOMAIN_EXTRACTION_SLICE_2_MESSAGES.md](./waves/DOMAIN_EXTRACTION_SLICE_2_MESSAGES.md) - next wave for the `messages/direct-messages` slice in `Stage 3`
 
 ## Delegation
 
@@ -21,6 +22,7 @@
 - [delegation/briefs/SEGMENT_BRIEF_006_INVITE_SERVER_DOMAIN.md](./delegation/briefs/SEGMENT_BRIEF_006_INVITE_SERVER_DOMAIN.md)
 - [delegation/briefs/SEGMENT_BRIEF_007_DOMAIN_SLICE_CLEANUP.md](./delegation/briefs/SEGMENT_BRIEF_007_DOMAIN_SLICE_CLEANUP.md)
 - [delegation/briefs/SEGMENT_BRIEF_008_DOMAIN_SLICE_REALTIME.md](./delegation/briefs/SEGMENT_BRIEF_008_DOMAIN_SLICE_REALTIME.md)
+- [delegation/briefs/SEGMENT_BRIEF_009_MESSAGES_DOMAIN_SLICE.md](./delegation/briefs/SEGMENT_BRIEF_009_MESSAGES_DOMAIN_SLICE.md)
 
 ## Recommended Reading Order
 

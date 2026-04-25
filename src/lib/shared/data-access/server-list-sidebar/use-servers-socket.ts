@@ -1,5 +1,8 @@
 import { useEffect } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import {
+  getServerMembersRealtimeKey,
+  type ServerMembersRealtimePayload,
+} from '@app-core/contracts/server-slice-realtime'
 import { useSocket } from '../../providers'
 import { ERoutes } from '@app-core/routing/routes'
 import { useRouter } from 'next/navigation'
@@ -9,17 +12,15 @@ import { useToast } from '@/lib/shared/utils/hooks/use-toast'
 
 export const useServersSocket = (serverId: string | undefined) => {
   const router = useRouter()
-  const queryClient = useQueryClient()
   const { socket } = useSocket()
   const { profile } = useGetProfile()
-  // const [id, setId] = useState(serverId)
-  const { data: server, refetch } = useGetServer(serverId || '')
+  const { data: server } = useGetServer(serverId || '')
   const { toast } = useToast()
 
   useEffect(() => {
     if (!socket || !serverId || !server) return
 
-    const handleRedirectFromServer = (data: { action: string; memberId: string }) => {
+    const handleRedirectFromServer = (data: ServerMembersRealtimePayload) => {
       if (data.action !== 'member_deleted' || !(data.memberId && server.members)) return
 
       const member = server.members.find((m) => m.profile.userId === profile?.userId && m.id === data.memberId)
@@ -33,41 +34,15 @@ export const useServersSocket = (serverId: string | undefined) => {
 
       router.push(ERoutes.MAIN_PAGE)
     }
-    // TODO: добавить обновление списка серверов юзера, если в одном из них его исключили
-    // const handleServersUpdate = async (data: { action: string; memberId: string; serverId?: string }) => {
-    //   console.log('data', data)
-    //   if (data.action !== 'member_deleted' || !(data.memberId && data.serverId)) return
-    //
-    //   setId(serverId)
-    //
-    //   try {
-    //     const { data: updatedServer } = await refetch()
-    //
-    //     if (!updatedServer) return
-    //
-    //     const isMember = updatedServer.members.some(
-    //       (m) => m.profile.userId === profile?.userId && m.id === data.memberId,
-    //     )
-    //
-    //     if (!isMember) return
-    //     queryClient.invalidateQueries({ queryKey: ['servers'] })
-    //   } catch {
-    //     console.error('Failed to update servers')
-    //   }
-    // }
 
-    // socket.onAny((event, ...args) => {
-    //   console.log(`Received event: ${event}`, args)
-    // })
+    const membersKey = getServerMembersRealtimeKey(serverId)
 
-    // socket.on('server:members', handleServersUpdate)
-    socket.on(`server:${serverId}:members`, handleRedirectFromServer)
+    socket.on(membersKey, handleRedirectFromServer)
 
     return () => {
-      // socket.off('server:members', handleServersUpdate)
-      socket.off(`server:${serverId}:members`, handleRedirectFromServer)
+      socket.off(membersKey, handleRedirectFromServer)
     }
-  }, [serverId, server, socket, queryClient, profile?.userId, router, toast, refetch])
+  }, [serverId, server, socket, profile?.userId, router, toast])
 
   return socket
 }

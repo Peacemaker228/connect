@@ -1,7 +1,9 @@
 import { NextApiRequest } from 'next'
 
+import { createMemberLeftRealtimeEvent } from '@app-core/contracts/server-slice-realtime'
 import { currentProfilePages } from '@/lib/shared/utils/current-profile-pages'
 import { readBackendApiResponse, requestBackendApi, writePagesProxyResponse } from '@/lib/shared/utils/backend-api'
+import { emitServerSliceRealtimeEvent } from '../../utils/server-slice-realtime'
 import { NextApiResponseServerIo } from '@/types'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponseServerIo) {
@@ -29,11 +31,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
     })
     const parsedResponse = await readBackendApiResponse(response)
 
-    if (parsedResponse.status === 200 && res.socket.server.io) {
-      res.socket.server.io.emit(`server:${serverId}:members`, {
-        action: 'member_left',
-        memberId: profile.id,
-      })
+    if (parsedResponse.status === 200) {
+      emitServerSliceRealtimeEvent(res, createMemberLeftRealtimeEvent(serverId, profile.id))
     }
 
     return writePagesProxyResponse(res, parsedResponse)
