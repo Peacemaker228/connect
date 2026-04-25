@@ -59,9 +59,19 @@ export interface ApiAuthIssuedSessionSnapshot {
   refreshTokenExpiresAt: Date;
 }
 
+export interface ApiAuthCookieTransportSnapshot {
+  accessTokenCookieName: string;
+  refreshTokenCookieName: string;
+  httpOnly: true;
+  secure: boolean;
+  sameSite: 'lax';
+  path: '/';
+}
+
 export interface ApiAuthSessionExchangeSnapshot {
   session: ApiAuthSessionSnapshot;
   issuedSession: ApiAuthIssuedSessionSnapshot;
+  cookieTransport: ApiAuthCookieTransportSnapshot;
 }
 
 export interface ApiAuthIdentityPayload {

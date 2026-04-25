@@ -7,9 +7,10 @@ import { AuthService } from '../auth.service';
 export class RequireAuthGuard implements CanActivate {
   constructor(private readonly authService: AuthService) {}
 
-  canActivate(context: ExecutionContext) {
+  async canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest<AuthRequest>();
-    const authContext = request.authContext ?? this.authService.getRequestContext(request);
+    const authContext =
+      request.authContext ?? (await this.authService.getRequestContext(request));
 
     request.authContext = authContext;
     this.authService.requireAuthenticatedContext(authContext);

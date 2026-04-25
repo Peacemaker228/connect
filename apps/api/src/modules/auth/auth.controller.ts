@@ -1,6 +1,15 @@
-import { Body, Controller, Get, Headers, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Post,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 
 import { CurrentAuth } from './decorators/current-auth.decorator';
+import { AuthCookiesService, type AuthCookieResponse } from './auth-cookies.service';
 import { AuthContextGuard } from './guards/auth-context.guard';
 import { AuthService } from './auth.service';
 import type { ApiAuthContext, ApiAuthIdentityPayload } from './auth.types';
@@ -8,7 +17,10 @@ import type { ApiAuthContext, ApiAuthIdentityPayload } from './auth.types';
 @Controller('auth')
 @UseGuards(AuthContextGuard)
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly authCookiesService: AuthCookiesService,
+  ) {}
 
   @Get('session')
   getSession(@CurrentAuth() authContext: ApiAuthContext | undefined) {
@@ -16,13 +28,57 @@ export class AuthController {
   }
 
   @Post('session/exchange')
-  exchangeSession(@CurrentAuth() authContext: ApiAuthContext | undefined) {
-    return this.authService.exchangeSession(authContext);
+  async exchangeSession(
+    @CurrentAuth() authContext: ApiAuthContext | undefined,
+    @Headers('user-agent') userAgent: string | undefined,
+    @Headers('x-forwarded-for') forwardedFor: string | undefined,
+    @Res({ passthrough: true }) response: AuthCookieResponse,
+  ) {
+    const exchangeSnapshot = await this.authService.exchangeSession(authContext, {
+      userAgent,
+      ipAddress: forwardedFor,
+    });
+
+    this.authCookiesService.applyIssuedSessionCookies(
+      response,
+      exchangeSnapshot.issuedSession,
+    );
+
+    return exchangeSnapshot;
   }
 
   @Post('session/refresh')
-  refreshSession(@Body() body: { refreshToken?: string } | undefined) {
-    return this.authService.refreshSession(body?.refreshToken);
+  async refreshSession(
+    @Body() body: { refreshToken?: string } | undefined,
+    @Headers('cookie') cookieHeader: string | undefined,
+    @Headers('user-agent') userAgent: string | undefined,
+    @Headers('x-forwarded-for') forwardedFor: string | undefined,
+    @Res({ passthrough: true }) response: AuthCookieResponse,
+  ) {
+    const exchangeSnapshot = await this.authService.refreshSession({
+      refreshToken: body?.refreshToken,
+      cookieHeader,
+      userAgent,
+      ipAddress: forwardedFor,
+    });
+
+    this.authCookiesService.applyIssuedSessionCookies(
+      response,
+      exchangeSnapshot.issuedSession,
+    );
+
+    return exchangeSnapshot;
+  }
+
+  @Post('session/logout')
+  async logoutSession(
+    @CurrentAuth() authContext: ApiAuthContext | undefined,
+    @Res({ passthrough: true }) response: AuthCookieResponse,
+  ) {
+    await this.authService.logoutSession(authContext);
+    this.authCookiesService.clearSessionCookies(response);
+
+    return { ok: true };
   }
 
   @Post('session/resolve')
