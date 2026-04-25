@@ -37,3 +37,21 @@ Mapping:
 - [ARCHITECTURE.md](../roadmap/ARCHITECTURE.md)
 - [BOUNDARIES.md](../roadmap/BOUNDARIES.md)
 - [STAGE_STATUS.md](../roadmap/STAGE_STATUS.md)
+
+## Wave Result
+
+Current state after this wave:
+- middleware auth wiring goes through a local auth adapter layer
+- layout/provider runtime auth wiring goes through a local auth provider boundary
+- current runtime auth state and identity loading are centralized
+- direct Clerk glue is reduced in runtime entrypoints while current behavior stays stable
+
+## What Comes Next
+
+This wave is enough to move to the next auth-focused step.
+
+Next step by plan:
+
+1. continue `Stage 4` with backend-owned sessions/tokens foundation
+2. keep the scope inside the auth boundary
+3. do not mix this with storage, `Postgres`, or `LiveKit/media`

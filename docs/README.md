@@ -14,7 +14,8 @@
 - [waves/AUTH_FOUNDATION.md](./waves/AUTH_FOUNDATION.md) - Wave 6, closed auth-foundation wave at the start of `Stage 4`
 - [waves/AUTH_CONTEXT_INTEGRATION.md](./waves/AUTH_CONTEXT_INTEGRATION.md) - Wave 7, closed auth-context integration wave inside `Stage 4`
 - [waves/AUTH_RUNTIME_INTEGRATION.md](./waves/AUTH_RUNTIME_INTEGRATION.md) - Wave 8, closed auth runtime integration wave inside `Stage 4`
-- [waves/AUTH_MIDDLEWARE_INTEGRATION.md](./waves/AUTH_MIDDLEWARE_INTEGRATION.md) - Wave 9, next middleware-focused auth wave inside `Stage 4`
+- [waves/AUTH_MIDDLEWARE_INTEGRATION.md](./waves/AUTH_MIDDLEWARE_INTEGRATION.md) - Wave 9, closed middleware-focused auth wave inside `Stage 4`
+- [waves/AUTH_SESSIONS_FOUNDATION.md](./waves/AUTH_SESSIONS_FOUNDATION.md) - Wave 10, next sessions-focused auth wave inside `Stage 4`
 
 ## Wave Sequence
 
@@ -27,6 +28,7 @@
 7. Wave 7 - `AUTH_CONTEXT_INTEGRATION`
 8. Wave 8 - `AUTH_RUNTIME_INTEGRATION`
 9. Wave 9 - `AUTH_MIDDLEWARE_INTEGRATION`
+10. Wave 10 - `AUTH_SESSIONS_FOUNDATION`
 
 ## Delegation
 
@@ -45,6 +47,7 @@
 - [delegation/briefs/SEGMENT_BRIEF_012_AUTH_CONTEXT_INTEGRATION.md](./delegation/briefs/SEGMENT_BRIEF_012_AUTH_CONTEXT_INTEGRATION.md)
 - [delegation/briefs/SEGMENT_BRIEF_013_AUTH_RUNTIME_INTEGRATION.md](./delegation/briefs/SEGMENT_BRIEF_013_AUTH_RUNTIME_INTEGRATION.md)
 - [delegation/briefs/SEGMENT_BRIEF_014_AUTH_MIDDLEWARE_INTEGRATION.md](./delegation/briefs/SEGMENT_BRIEF_014_AUTH_MIDDLEWARE_INTEGRATION.md)
+- [delegation/briefs/SEGMENT_BRIEF_015_AUTH_SESSIONS_FOUNDATION.md](./delegation/briefs/SEGMENT_BRIEF_015_AUTH_SESSIONS_FOUNDATION.md)
 
 ## Recommended Reading Order
 
