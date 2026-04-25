@@ -40,3 +40,25 @@ Mapping:
 - [ARCHITECTURE.md](../roadmap/ARCHITECTURE.md)
 - [BOUNDARIES.md](../roadmap/BOUNDARIES.md)
 - [STAGE_STATUS.md](../roadmap/STAGE_STATUS.md)
+- [SEGMENT_BRIEF_009_MESSAGES_DOMAIN_SLICE.md](../delegation/briefs/SEGMENT_BRIEF_009_MESSAGES_DOMAIN_SLICE.md)
+
+## Current Result
+
+Current state inside this wave:
+- backend ownership for `messages/direct-messages` is moved into `apps/api`
+- `src/app/api/messages/*` and `src/app/api/direct-messages/*` are now thin proxy/compatibility layers
+- legacy `pages/api/socket/*` for this slice is reduced to transitional auth/proxy/socket emit behavior
+- realtime keys for the message slice are centralized in a shared contract
+
+## What Comes Next
+
+This wave is far enough along for the next Stage 3 step.
+
+Next step:
+
+1. extract the socket transport itself into the `Nest` realtime gateway
+
+Important:
+- do not mix this with `Clerk` replacement
+- do not mix this with `Postgres` migration
+- do not mix this with `LiveKit/media` work
