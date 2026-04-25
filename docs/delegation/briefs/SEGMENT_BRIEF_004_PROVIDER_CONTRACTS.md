@@ -29,7 +29,7 @@
 - [ARCHITECTURE.md](../../roadmap/ARCHITECTURE.md)
 - [BOUNDARIES.md](../../roadmap/BOUNDARIES.md)
 - [STAGE_STATUS.md](../../roadmap/STAGE_STATUS.md)
-- [FIRST_MIGRATION.md](../../waves/FIRST_MIGRATION.md)
+- [Wave 1 - FIRST_MIGRATION.md](../../waves/FIRST_MIGRATION.md)
 - [DELEGATION_AGENT_GUIDE.md](../DELEGATION_AGENT_GUIDE.md)
 
 ## In Scope

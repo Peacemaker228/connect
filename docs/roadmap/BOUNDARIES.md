@@ -77,7 +77,8 @@ Target:
 - subscription model
 
 Сейчас:
-- `Socket.IO` логика размазана между `pages/api/socket/*` и клиентскими hooks
+- transport ownership уже находится в `apps/api`, а legacy `src/pages/api/socket/*` остался как transitional HTTP compatibility layer
+- клиентские hooks уже работают против backend-owned realtime transport через общие contracts
 
 Target:
 - единый realtime boundary в `apps/api`
@@ -98,7 +99,9 @@ Target:
 - permissions/roles
 
 Сейчас:
-- логика распределена между `Next API`, server utils и client-access слоями
+- core domain ownership уже находится в `apps/api`
+- `Next API` и legacy HTTP entrypoints остались thin compatibility/proxy layers
+- client access еще продолжает сходиться к `packages/sdk`
 
 Target:
 - домен живёт в `apps/api`

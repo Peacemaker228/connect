@@ -31,7 +31,7 @@
 - [ARCHITECTURE.md](../../roadmap/ARCHITECTURE.md)
 - [BOUNDARIES.md](../../roadmap/BOUNDARIES.md)
 - [STAGE_STATUS.md](../../roadmap/STAGE_STATUS.md)
-- [NEST_FOUNDATION.md](../../waves/NEST_FOUNDATION.md)
+- [Wave 2 - NEST_FOUNDATION.md](../../waves/NEST_FOUNDATION.md)
 - [DELEGATION_AGENT_GUIDE.md](../DELEGATION_AGENT_GUIDE.md)
 
 ## In Scope

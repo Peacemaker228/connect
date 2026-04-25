@@ -26,7 +26,7 @@ Before starting, the executor must read:
 - [ARCHITECTURE.md](../../roadmap/ARCHITECTURE.md)
 - [BOUNDARIES.md](../../roadmap/BOUNDARIES.md)
 - [STAGE_STATUS.md](../../roadmap/STAGE_STATUS.md)
-- [DOMAIN_EXTRACTION_SLICE_2_MESSAGES.md](../../waves/DOMAIN_EXTRACTION_SLICE_2_MESSAGES.md)
+- [Wave 4 - DOMAIN_EXTRACTION_SLICE_2_MESSAGES.md](../../waves/DOMAIN_EXTRACTION_SLICE_2_MESSAGES.md)
 - [DELEGATION_AGENT_GUIDE.md](../DELEGATION_AGENT_GUIDE.md)
 
 ## In Scope
