@@ -109,17 +109,21 @@ Done:
 - middleware auth wiring now goes through a local auth adapter instead of direct Clerk middleware usage
 - layout/provider runtime auth wiring now goes through a local auth provider boundary
 - the current runtime auth state/identity loading is centralized in runtime auth utilities
+- backend-owned auth session persistence exists
+- backend session refresh/rotation/revocation now goes through persisted auth-session state
+- backend cookie transport foundation exists for browser auth: exchange/refresh/logout can set or clear `Secure` + `HttpOnly` session cookies
+- auth context resolution can now authenticate by cookie-backed access token as well as transitional headers
 
 Remaining:
 - local auth adapter layer still uses `Clerk` internally as the transitional identity/auth source
 - full `Clerk` replacement
-- backend-owned sessions/devices/tokens
-- cookie-compatible browser session transport
+- browser runtime still does not use backend cookie sessions as the primary auth flow everywhere
+- backend-owned devices/session-management surface is still incomplete
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. continue `Stage 4` with backend-owned session persistence and cookie-compatible transport foundation
+1. continue `Stage 4` with browser/runtime integration on top of the new backend cookie-session foundation
 2. keep this focused on the auth boundary only
 3. do not mix this with storage, `Postgres`, or `LiveKit/media` migrations
