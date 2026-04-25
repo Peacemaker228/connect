@@ -4,7 +4,7 @@
 
 - `PLATFORM_MIGRATION_PLAN.md` = master plan
 - `waves/*.md` = completed/current waves by stage
-- `SEGMENT_BRIEF_*` = конкретные PR внутри волны
+- `SEGMENT_BRIEF_*` = concrete PR slices inside a wave
 
 ## Status by Stage
 
@@ -13,10 +13,10 @@
 Status: `done`
 
 Done:
-- есть master migration plan
-- зафиксирована repo strategy
-- зафиксирована target architecture
-- зафиксирована wave/segment delegation model
+- master migration plan exists
+- repo strategy is fixed
+- target architecture is fixed
+- wave/segment delegation model is fixed
 
 Remaining:
 - none
@@ -30,7 +30,7 @@ Done:
 - `packages/sdk` seed extraction
 - `packages/ui` seed extraction
 - `@app-core/*`, `@sdk/*`, `@ui/*`
-- shim/re-export слой в старых путях
+- shim/re-export layer in old paths
 - `AuthProvider` contract
 - `StorageProvider` contract
 - `MediaProvider` contract
@@ -61,21 +61,21 @@ Done:
 - first backend-owned slice moved to `apps/api`: invites/servers/channels/members
 - `src/app/api/*` for this slice converted to compatibility/proxy layer
 - `src/pages/api/socket/*` for this slice reduced to transitional auth/proxy/socket emit layer
+- transitional cleanup for the same slice completed
+- proxy response handling in legacy `pages/api/socket/*` aligned through a shared helper
+- remaining channel validation removed from legacy socket layer so ownership stays in `apps/api`
 
 Remaining:
-- finish transitional cleanup for the same slice
-- invites
-- servers
-- channels
-- members
+- realtime extraction for the same slice
+- complete Stage 3 for invites/servers/channels/members beyond the transitional Socket.IO tail
 - messages
 - direct messages
 - socket transport
- 
+
 ## Next Correct Step
 
-Следующий большой шаг не `domain extraction`, а:
+The next big step inside `Stage 3` is:
 
-1. завершить первый Stage 3 slice или его realtime tail
-2. только потом расширять Stage 3 дальше
-3. не смешивать это с auth/storage/media/database migrations
+1. do realtime extraction for the first Stage 3 slice
+2. only after that expand Stage 3 further
+3. do not mix this with auth/storage/media/database migrations
