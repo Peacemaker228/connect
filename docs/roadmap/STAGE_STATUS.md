@@ -16,6 +16,7 @@ Current wave order:
 - `Wave 7` = `AUTH_CONTEXT_INTEGRATION`
 - `Wave 8` = `AUTH_RUNTIME_INTEGRATION`
 - `Wave 9` = `AUTH_MIDDLEWARE_INTEGRATION`
+- `Wave 10` = `AUTH_SESSIONS_FOUNDATION`
 
 ## Status by Stage
 
@@ -105,9 +106,12 @@ Done:
 - direct active-flow `ensureProfile()` ownership is removed from current profile resolution
 - `src/app/api/*` proxy routes now use backend-auth headers instead of manual `x-profile-id` glue
 - `src/pages/api/socket/*` proxy routes now use backend-auth headers instead of manual `x-profile-id` glue
+- middleware auth wiring now goes through a local auth adapter instead of direct Clerk middleware usage
+- layout/provider runtime auth wiring now goes through a local auth provider boundary
+- current runtime auth state/identity loading is centralized in runtime auth utilities
 
 Remaining:
-- runtime and middleware auth wiring still depend on `Clerk`
+- local auth adapter layer still uses `Clerk` internally as the transitional identity/auth source
 - full `Clerk` replacement
 - backend-owned sessions/devices/tokens
 
@@ -115,6 +119,6 @@ Remaining:
 
 The next correct step by plan is:
 
-1. continue `Stage 4` with auth middleware/runtime wiring integration on top of the new backend auth boundary
+1. continue `Stage 4` with backend-owned sessions/tokens foundation
 2. keep this focused on the auth boundary only
 3. do not mix this with storage, `Postgres`, or `LiveKit/media` migrations
