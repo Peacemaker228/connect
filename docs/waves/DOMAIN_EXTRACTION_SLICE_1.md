@@ -49,6 +49,7 @@ Current state inside this wave:
 - `Next app/api` is no longer the main place that owns this slice's logic
 - `pages/api/socket` is still transitional, but it is no longer a backend-owned domain layer
 - transitional cleanup is complete: proxy responses are aligned and remaining channel validation was removed from the legacy socket layer
+- realtime contract for this slice is now centralized and shared between legacy socket routes and client listeners
 
 ## Transitional Risks
 
@@ -59,14 +60,15 @@ Current state inside this wave:
 
 ## What Comes Next
 
-Next step inside `Stage 3` is now one thing:
+This wave is complete enough for the first Stage 3 slice.
 
-1. do realtime extraction for this same slice
+Next step inside `Stage 3` is now:
+
+1. move to the next domain slice: `messages/direct-messages`
 
 Important:
-- do not mix this with `messages/direct-messages`
 - do not mix this with auth/media/database migrations
-- only after the realtime tail of this slice is done move to the next domain slice
+- keep socket transport changes scoped to the new slice
 
 ## References
 
@@ -76,3 +78,4 @@ Important:
 - [STAGE_STATUS.md](../roadmap/STAGE_STATUS.md)
 - [SEGMENT_BRIEF_006_INVITE_SERVER_DOMAIN.md](../delegation/briefs/SEGMENT_BRIEF_006_INVITE_SERVER_DOMAIN.md)
 - [SEGMENT_BRIEF_007_DOMAIN_SLICE_CLEANUP.md](../delegation/briefs/SEGMENT_BRIEF_007_DOMAIN_SLICE_CLEANUP.md)
+- [SEGMENT_BRIEF_008_DOMAIN_SLICE_REALTIME.md](../delegation/briefs/SEGMENT_BRIEF_008_DOMAIN_SLICE_REALTIME.md)

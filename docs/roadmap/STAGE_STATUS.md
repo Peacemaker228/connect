@@ -64,10 +64,11 @@ Done:
 - transitional cleanup for the same slice completed
 - proxy response handling in legacy `pages/api/socket/*` aligned through a shared helper
 - remaining channel validation removed from legacy socket layer so ownership stays in `apps/api`
+- realtime contract for the first slice centralized in `packages/app-core`
+- legacy socket routes for the first slice switched to a shared emit helper
+- client listeners for the first slice aligned to the shared realtime contract
 
 Remaining:
-- realtime extraction for the same slice
-- complete Stage 3 for invites/servers/channels/members beyond the transitional Socket.IO tail
 - messages
 - direct messages
 - socket transport
@@ -76,6 +77,6 @@ Remaining:
 
 The next big step inside `Stage 3` is:
 
-1. do realtime extraction for the first Stage 3 slice
-2. only after that expand Stage 3 further
+1. start the next Stage 3 domain slice: `messages/direct-messages`
+2. keep socket transport work scoped to that slice
 3. do not mix this with auth/storage/media/database migrations
