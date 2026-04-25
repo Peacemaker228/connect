@@ -19,6 +19,7 @@
 - [delegation/briefs/SEGMENT_BRIEF_004_PROVIDER_CONTRACTS.md](./delegation/briefs/SEGMENT_BRIEF_004_PROVIDER_CONTRACTS.md)
 - [delegation/briefs/SEGMENT_BRIEF_005_NEST_SKELETON.md](./delegation/briefs/SEGMENT_BRIEF_005_NEST_SKELETON.md)
 - [delegation/briefs/SEGMENT_BRIEF_006_INVITE_SERVER_DOMAIN.md](./delegation/briefs/SEGMENT_BRIEF_006_INVITE_SERVER_DOMAIN.md)
+- [delegation/briefs/SEGMENT_BRIEF_007_DOMAIN_SLICE_CLEANUP.md](./delegation/briefs/SEGMENT_BRIEF_007_DOMAIN_SLICE_CLEANUP.md)
 
 ## Recommended Reading Order
 
