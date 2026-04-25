@@ -1,6 +1,6 @@
 import { NextApiRequest } from 'next'
 import { NextApiResponse } from 'next'
-import { currentProfilePages } from '@/lib/shared/utils/current-profile-pages'
+import { currentBackendAuthHeadersPages } from '@/lib/shared/utils/current-profile-pages'
 import { readBackendApiResponse, requestBackendApi, writePagesProxyResponse } from '@/lib/shared/utils/backend-api'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -9,9 +9,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const profile = await currentProfilePages(req)
+    const authHeaders = await currentBackendAuthHeadersPages(req)
 
-    if (!profile) {
+    if (!authHeaders) {
       return res.status(401).json({ error: 'Unauthorized' })
     }
 
@@ -39,9 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       path: `/api/messages/${encodeURIComponent(messageId as string)}?serverId=${encodeURIComponent(serverId as string)}&channelId=${encodeURIComponent(channelId as string)}`,
       method: req.method,
       body: req.method === 'PATCH' ? { content } : undefined,
-      headers: {
-        'x-profile-id': profile.id,
-      },
+      headers: authHeaders,
     })
     const parsedResponse = await readBackendApiResponse(response)
 

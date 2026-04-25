@@ -1,12 +1,12 @@
-import { currentProfile } from '@/lib/shared/utils/current-profile'
+import { currentBackendAuthHeaders } from '@/lib/shared/utils/current-profile'
 import { NextResponse } from 'next/server'
 import { requestBackendApi, toNextProxyResponse } from '@/lib/shared/utils/backend-api'
 
 export const DELETE = async (req: Request, { params }: { params: Promise<{ serverId: string }> }) => {
   try {
-    const profile = await currentProfile()
+    const authHeaders = await currentBackendAuthHeaders()
 
-    if (!profile) {
+    if (!authHeaders) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
@@ -19,9 +19,7 @@ export const DELETE = async (req: Request, { params }: { params: Promise<{ serve
     const response = await requestBackendApi({
       path: `/api/servers/${serverId}`,
       method: 'DELETE',
-      headers: {
-        'x-profile-id': profile.id,
-      },
+      headers: authHeaders,
     })
 
     return toNextProxyResponse(response)
@@ -34,9 +32,9 @@ export const DELETE = async (req: Request, { params }: { params: Promise<{ serve
 
 export const PATCH = async (req: Request, { params }: { params: Promise<{ serverId: string }> }) => {
   try {
-    const profile = await currentProfile()
+    const authHeaders = await currentBackendAuthHeaders()
 
-    if (!profile) {
+    if (!authHeaders) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
@@ -50,9 +48,7 @@ export const PATCH = async (req: Request, { params }: { params: Promise<{ server
       path: `/api/servers/${serverId}`,
       method: 'PATCH',
       body: await req.json(),
-      headers: {
-        'x-profile-id': profile.id,
-      },
+      headers: authHeaders,
     })
 
     return toNextProxyResponse(response)
@@ -65,8 +61,8 @@ export const PATCH = async (req: Request, { params }: { params: Promise<{ server
 
 export const GET = async (req: Request, { params }: { params: Promise<{ serverId: string }> }) => {
   try {
-    const profile = await currentProfile()
-    if (!profile) {
+    const authHeaders = await currentBackendAuthHeaders()
+    if (!authHeaders) {
       return new Response('Unauthorized', { status: 401 })
     }
 
@@ -77,9 +73,7 @@ export const GET = async (req: Request, { params }: { params: Promise<{ serverId
 
     const response = await requestBackendApi({
       path: `/api/servers/${serverId}`,
-      headers: {
-        'x-profile-id': profile.id,
-      },
+      headers: authHeaders,
     })
 
     return toNextProxyResponse(response)
