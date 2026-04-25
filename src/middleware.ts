@@ -1,12 +1,6 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { authMiddleware } from '@/lib/shared/utils/auth-middleware'
 
-const isPublicRoute = createRouteMatcher(['/', '/invite(.*)', '/sign-in(.*)', '/sign-up(.*)', '/api/uploadthing(.*)'])
-
-export default clerkMiddleware(async (auth, request) => {
-  if (!isPublicRoute(request)) {
-    await auth.protect()
-  }
-})
+export default authMiddleware
 
 export const config = {
   matcher: [

@@ -2,8 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import React, { PropsWithChildren } from 'react'
 import localFont from 'next/font/local'
-import { ClerkProvider } from '@clerk/nextjs'
-import { ThemeProvider, ModalProvider, QueryProvider } from '@/lib/shared/providers'
+import { AuthProvider, ThemeProvider, ModalProvider, QueryProvider } from '@/lib/shared/providers'
 import { cn } from '@/lib/shared/utils/utils'
 import { Toaster } from '@/lib/shared/ui/toaster'
 import { DesktopDeepLinkHandler } from '@/lib/shared/features/desktop-deep-link-handler'
@@ -24,16 +23,10 @@ export default async function RootLayout({ children }: Readonly<PropsWithChildre
   const locale = await getLocale()
   const messages = await getMessages()
 
-  const clerkProxyUrl = process.env.NEXT_PUBLIC_CLERK_PROXY_URL
-
   return (
     <html lang={locale} suppressHydrationWarning>
       <body className={cn(font.className, 'bg-white dark:bg-[#232428]')}>
-        <ClerkProvider
-          {...(clerkProxyUrl ? { proxyUrl: clerkProxyUrl } : {})}
-          afterSignOutUrl="/"
-          signInFallbackRedirectUrl="/"
-          signUpFallbackRedirectUrl="/">
+        <AuthProvider>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
@@ -49,7 +42,7 @@ export default async function RootLayout({ children }: Readonly<PropsWithChildre
               </NextIntlClientProvider>
             </QueryProvider>
           </ThemeProvider>
-        </ClerkProvider>
+        </AuthProvider>
       </body>
     </html>
   )

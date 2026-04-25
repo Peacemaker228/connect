@@ -1,33 +1,24 @@
-import { clerkClient, getAuth } from '@clerk/nextjs/server'
 import { NextApiRequest } from 'next'
 
 import {
   createBackendAuthHeaders,
   resolveBackendAuthSession,
 } from '@/lib/shared/utils/backend-auth-context'
+import {
+  getPagesRuntimeAuthState,
+  loadPagesRuntimeAuthIdentity,
+} from '@/lib/shared/utils/runtime-auth'
 
 const resolveCurrentAuthSessionPages = async (req: NextApiRequest) => {
-  const { userId, sessionId } = getAuth(req)
+  const authState = getPagesRuntimeAuthState(req)
 
-  if (!userId) return null
+  if (!authState) return null
 
   try {
     return await resolveBackendAuthSession({
-      userId,
-      sessionId,
-      loadIdentity: async () => {
-        const client = await clerkClient()
-        const user = await client.users.getUser(userId)
-
-        return {
-          id: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          username: user.username,
-          imageUrl: user.imageUrl,
-          primaryEmailAddress: user.emailAddresses[0]?.emailAddress ?? null,
-        }
-      },
+      userId: authState.userId,
+      sessionId: authState.sessionId,
+      loadIdentity: () => loadPagesRuntimeAuthIdentity(authState.userId),
     })
   } catch (error) {
     console.error('[CURRENT_PROFILE_PAGES_BACKEND]', error)
