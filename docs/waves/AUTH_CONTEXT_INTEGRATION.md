@@ -35,3 +35,21 @@ Mapping:
 - [ARCHITECTURE.md](../roadmap/ARCHITECTURE.md)
 - [BOUNDARIES.md](../roadmap/BOUNDARIES.md)
 - [STAGE_STATUS.md](../roadmap/STAGE_STATUS.md)
+
+## Wave Result
+
+Current state after this wave:
+- backend auth boundary can resolve session/profile by user identity
+- `currentProfile()` and `currentProfilePages()` now use backend auth resolution as the primary path
+- `Clerk` remains a transitional identity source and fallback, but is no longer the owner of active profile resolution
+- current runtime behavior is preserved
+
+## What Comes Next
+
+This wave is enough to move to the next auth-focused step.
+
+Next step by plan:
+
+1. continue `Stage 4` with auth runtime/proxy integration
+2. reduce transitional `x-profile-id` flows in runtime entrypoints
+3. do not mix this with storage, `Postgres`, or `LiveKit/media`

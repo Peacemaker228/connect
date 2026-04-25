@@ -13,6 +13,7 @@
 - [waves/SOCKET_TRANSPORT_EXTRACTION.md](./waves/SOCKET_TRANSPORT_EXTRACTION.md) - Wave 5, closed wave for `Stage 3` transport extraction
 - [waves/AUTH_FOUNDATION.md](./waves/AUTH_FOUNDATION.md) - Wave 6, next wave for the start of `Stage 4`
 - [waves/AUTH_CONTEXT_INTEGRATION.md](./waves/AUTH_CONTEXT_INTEGRATION.md) - Wave 7, next auth-boundary wave inside `Stage 4`
+- [waves/AUTH_RUNTIME_INTEGRATION.md](./waves/AUTH_RUNTIME_INTEGRATION.md) - Wave 8, next runtime-focused auth wave inside `Stage 4`
 
 ## Wave Sequence
 
@@ -23,6 +24,7 @@
 5. Wave 5 - `SOCKET_TRANSPORT_EXTRACTION`
 6. Wave 6 - `AUTH_FOUNDATION`
 7. Wave 7 - `AUTH_CONTEXT_INTEGRATION`
+8. Wave 8 - `AUTH_RUNTIME_INTEGRATION`
 
 ## Delegation
 
@@ -39,6 +41,7 @@
 - [delegation/briefs/SEGMENT_BRIEF_010_SOCKET_TRANSPORT_EXTRACTION.md](./delegation/briefs/SEGMENT_BRIEF_010_SOCKET_TRANSPORT_EXTRACTION.md)
 - [delegation/briefs/SEGMENT_BRIEF_011_AUTH_FOUNDATION.md](./delegation/briefs/SEGMENT_BRIEF_011_AUTH_FOUNDATION.md)
 - [delegation/briefs/SEGMENT_BRIEF_012_AUTH_CONTEXT_INTEGRATION.md](./delegation/briefs/SEGMENT_BRIEF_012_AUTH_CONTEXT_INTEGRATION.md)
+- [delegation/briefs/SEGMENT_BRIEF_013_AUTH_RUNTIME_INTEGRATION.md](./delegation/briefs/SEGMENT_BRIEF_013_AUTH_RUNTIME_INTEGRATION.md)
 
 ## Recommended Reading Order
 
