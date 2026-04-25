@@ -12,6 +12,7 @@
 - [waves/DOMAIN_EXTRACTION_SLICE_2_MESSAGES.md](./waves/DOMAIN_EXTRACTION_SLICE_2_MESSAGES.md) - Wave 4, closed wave for the `messages/direct-messages` slice in `Stage 3`
 - [waves/SOCKET_TRANSPORT_EXTRACTION.md](./waves/SOCKET_TRANSPORT_EXTRACTION.md) - Wave 5, closed wave for `Stage 3` transport extraction
 - [waves/AUTH_FOUNDATION.md](./waves/AUTH_FOUNDATION.md) - Wave 6, next wave for the start of `Stage 4`
+- [waves/AUTH_CONTEXT_INTEGRATION.md](./waves/AUTH_CONTEXT_INTEGRATION.md) - Wave 7, next auth-boundary wave inside `Stage 4`
 
 ## Wave Sequence
 
@@ -21,6 +22,7 @@
 4. Wave 4 - `DOMAIN_EXTRACTION_SLICE_2_MESSAGES`
 5. Wave 5 - `SOCKET_TRANSPORT_EXTRACTION`
 6. Wave 6 - `AUTH_FOUNDATION`
+7. Wave 7 - `AUTH_CONTEXT_INTEGRATION`
 
 ## Delegation
 
@@ -36,6 +38,7 @@
 - [delegation/briefs/SEGMENT_BRIEF_009_MESSAGES_DOMAIN_SLICE.md](./delegation/briefs/SEGMENT_BRIEF_009_MESSAGES_DOMAIN_SLICE.md)
 - [delegation/briefs/SEGMENT_BRIEF_010_SOCKET_TRANSPORT_EXTRACTION.md](./delegation/briefs/SEGMENT_BRIEF_010_SOCKET_TRANSPORT_EXTRACTION.md)
 - [delegation/briefs/SEGMENT_BRIEF_011_AUTH_FOUNDATION.md](./delegation/briefs/SEGMENT_BRIEF_011_AUTH_FOUNDATION.md)
+- [delegation/briefs/SEGMENT_BRIEF_012_AUTH_CONTEXT_INTEGRATION.md](./delegation/briefs/SEGMENT_BRIEF_012_AUTH_CONTEXT_INTEGRATION.md)
 
 ## Recommended Reading Order
 
