@@ -1,11 +1,9 @@
 import { NextApiRequest } from 'next'
-import { createChatMessageUpdatedRealtimeEvent } from '@app-core/contracts/message-slice-realtime'
-import { NextApiResponseServerIo } from '@/types'
+import { NextApiResponse } from 'next'
 import { currentProfilePages } from '@/lib/shared/utils/current-profile-pages'
-import { emitMessageSliceRealtimeEvent } from '../utils/message-slice-realtime'
 import { readBackendApiResponse, requestBackendApi, writePagesProxyResponse } from '@/lib/shared/utils/backend-api'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponseServerIo) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'DELETE' && req.method !== 'PATCH') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
@@ -42,13 +40,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
       },
     })
     const parsedResponse = await readBackendApiResponse(response)
-
-    if (parsedResponse.status >= 200 && parsedResponse.status < 300 && parsedResponse.isJson) {
-      emitMessageSliceRealtimeEvent(
-        res,
-        createChatMessageUpdatedRealtimeEvent(String(conversationId), parsedResponse.data),
-      )
-    }
 
     return writePagesProxyResponse(res, parsedResponse)
   } catch (err) {

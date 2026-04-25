@@ -1,15 +1,9 @@
 import { NextApiRequest } from 'next'
-
-import {
-  createMemberDeletedRealtimeEvent,
-  createMemberRoleUpdatedRealtimeEvent,
-} from '@app-core/contracts/server-slice-realtime'
+import { NextApiResponse } from 'next'
 import { currentProfilePages } from '@/lib/shared/utils/current-profile-pages'
 import { readBackendApiResponse, requestBackendApi, writePagesProxyResponse } from '@/lib/shared/utils/backend-api'
-import { emitServerSliceRealtimeEvent } from '../utils/server-slice-realtime'
-import { NextApiResponseServerIo } from '@/types'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponseServerIo) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (req.method !== 'DELETE' && req.method !== 'PATCH') {
       return res.status(405).json({ error: 'Method Not Allowed' })
@@ -42,13 +36,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
       })
       const parsedResponse = await readBackendApiResponse(response)
 
-      if (parsedResponse.status === 200) {
-        emitServerSliceRealtimeEvent(
-          res,
-          createMemberDeletedRealtimeEvent(String(serverId), String(memberId)),
-        )
-      }
-
       return writePagesProxyResponse(res, parsedResponse)
     }
 
@@ -68,13 +55,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
       },
     })
     const parsedResponse = await readBackendApiResponse(response)
-
-    if (parsedResponse.status === 200) {
-      emitServerSliceRealtimeEvent(
-        res,
-        createMemberRoleUpdatedRealtimeEvent(String(serverId), String(memberId)),
-      )
-    }
 
     return writePagesProxyResponse(res, parsedResponse)
   } catch (err) {
