@@ -12,6 +12,7 @@ Current wave order:
 - `Wave 3` = `DOMAIN_EXTRACTION_SLICE_1`
 - `Wave 4` = `DOMAIN_EXTRACTION_SLICE_2_MESSAGES`
 - `Wave 5` = `SOCKET_TRANSPORT_EXTRACTION`
+- `Wave 6` = `AUTH_FOUNDATION`
 
 ## Status by Stage
 
@@ -86,10 +87,27 @@ Remaining:
 - non-blocking transitional cleanup only
 - auth/profile resolution is still transitional and still belongs to a later stage
 
+### Stage 4. Auth Replacement Path
+
+Status: `in progress`
+
+Done:
+- backend auth foundation exists in `apps/api`
+- centralized auth service resolves transitional auth context
+- reusable guards and decorators replace direct `x-profile-id` reads in backend controllers
+- backend-owned `/api/auth/session` snapshot endpoint exists
+- domain backend modules now depend on the auth boundary instead of raw header access
+
+Remaining:
+- move more profile/session resolution onto the backend auth boundary
+- keep current runtime working while reducing direct `Clerk` coupling
+- full `Clerk` replacement
+- backend-owned sessions/devices/tokens
+
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. start `Stage 4` with an auth foundation step for the `Clerk` replacement path
+1. continue `Stage 4` with auth context/profile integration on top of the new backend auth boundary
 2. keep this focused on the auth boundary only
 3. do not mix this with storage, `Postgres`, or `LiveKit/media` migrations

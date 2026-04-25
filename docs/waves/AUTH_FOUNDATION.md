@@ -35,3 +35,22 @@ Mapping:
 - [ARCHITECTURE.md](../roadmap/ARCHITECTURE.md)
 - [BOUNDARIES.md](../roadmap/BOUNDARIES.md)
 - [STAGE_STATUS.md](../roadmap/STAGE_STATUS.md)
+
+## Wave Result
+
+Current state after this wave:
+- backend auth foundation exists in `apps/api`
+- backend controllers no longer read `x-profile-id` directly
+- transitional auth context is centralized behind the auth boundary
+- `/api/auth/session` returns a backend-owned session/profile snapshot
+- current runtime is preserved and full `Clerk` replacement is intentionally deferred
+
+## What Comes Next
+
+This wave is enough to start the next auth-focused step.
+
+Next step by plan:
+
+1. continue `Stage 4` with auth context/profile integration
+2. keep current runtime working while reducing direct `Clerk` coupling
+3. do not mix this with storage, `Postgres`, or `LiveKit/media`
