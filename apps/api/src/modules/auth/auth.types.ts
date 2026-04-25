@@ -1,4 +1,4 @@
-export type ApiAuthStrategy = 'anonymous' | 'profile-header';
+export type ApiAuthStrategy = 'anonymous' | 'profile-header' | 'user-header';
 
 export interface AnonymousApiAuthContext {
   isAuthenticated: false;
@@ -24,6 +24,8 @@ export interface ApiAuthProfileSnapshot {
   name: string;
   email: string;
   imageUrl: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface ApiAuthUserSnapshot {
@@ -39,4 +41,13 @@ export interface ApiAuthSessionSnapshot {
   sessionId: string | null;
   profile: ApiAuthProfileSnapshot | null;
   user: ApiAuthUserSnapshot | null;
+}
+
+export interface ApiAuthIdentityPayload {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  username: string | null;
+  imageUrl: string | null;
+  primaryEmailAddress: string | null;
 }
