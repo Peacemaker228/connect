@@ -13,6 +13,8 @@ import {
   AUTH_USER_ID_HEADER,
 } from './auth.constants';
 import type { AuthRequest, AuthRequestHeaders } from './auth-request.interface';
+import { AuthCookiesService } from './auth-cookies.service';
+import { AuthSessionsService } from './auth-sessions.service';
 import { AuthTokensService } from './auth-tokens.service';
 import type {
   ApiAuthContext,
@@ -23,14 +25,23 @@ import type {
   AuthenticatedApiAuthContext,
 } from './auth.types';
 
+type AuthClientMetadata = {
+  userAgent?: string;
+  ipAddress?: string;
+};
+
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly authTokensService: AuthTokensService,
+    private readonly authSessionsService: AuthSessionsService,
+    private readonly authCookiesService: AuthCookiesService,
   ) {}
 
-  getRequestContext(request: Pick<AuthRequest, 'headers'>): ApiAuthContext {
+  async getRequestContext(
+    request: Pick<AuthRequest, 'headers'>,
+  ): Promise<ApiAuthContext> {
     const authorizationHeader = this.readHeader(
       request.headers,
       AUTH_AUTHORIZATION_HEADER,
@@ -38,15 +49,22 @@ export class AuthService {
 
     if (authorizationHeader) {
       const bearerToken = this.readBearerToken(authorizationHeader);
-      const tokenPayload = this.authTokensService.verifyAccessToken(bearerToken);
 
-      return {
-        isAuthenticated: true,
-        strategy: 'access-token',
-        profileId: tokenPayload.profileId,
-        sessionId: tokenPayload.sessionId,
-        userId: tokenPayload.userId,
-      };
+      return this.resolveAccessTokenContext(bearerToken);
+    }
+
+    const cookieAccessToken = this.authCookiesService.getAccessTokenFromHeaders(
+      request.headers,
+    );
+
+    if (cookieAccessToken) {
+      try {
+        return await this.resolveAccessTokenContext(cookieAccessToken);
+      } catch (error) {
+        if (!(error instanceof UnauthorizedException)) {
+          throw error;
+        }
+      }
     }
 
     const profileId = this.readHeader(request.headers, AUTH_PROFILE_ID_HEADER);
@@ -79,6 +97,7 @@ export class AuthService {
 
   async exchangeSession(
     authContext: ApiAuthContext | undefined,
+    metadata: AuthClientMetadata = {},
   ): Promise<ApiAuthSessionExchangeSnapshot> {
     const currentSession = await this.getSessionSnapshot(
       this.requireAuthenticatedContext(authContext),
@@ -88,13 +107,29 @@ export class AuthService {
       throw new UnauthorizedException('Unauthorized');
     }
 
+    const issuedSession = this.authTokensService.issueSessionTokens({
+      profileId: currentSession.profile.id,
+      userId: currentSession.profile.userId,
+    });
+
+    await this.authSessionsService.createSession({
+      sessionId: issuedSession.sessionId,
+      profileId: currentSession.profile.id,
+      userId: currentSession.profile.userId,
+      refreshToken: issuedSession.refreshToken,
+      refreshTokenExpiresAt: issuedSession.refreshTokenExpiresAt,
+      userAgent: metadata.userAgent,
+      ipAddress: this.normalizeIpAddress(metadata.ipAddress),
+    });
+
     return {
-      session: currentSession,
-      issuedSession: this.authTokensService.issueSessionTokens({
-        profileId: currentSession.profile.id,
-        userId: currentSession.profile.userId,
-        sessionId: currentSession.sessionId,
-      }),
+      session: this.createSessionSnapshot(
+        currentSession.profile,
+        'access-token',
+        issuedSession.sessionId,
+      ),
+      issuedSession,
+      cookieTransport: this.authCookiesService.getCookieTransportSnapshot(),
     };
   }
 
@@ -117,29 +152,59 @@ export class AuthService {
       throw new UnauthorizedException('Unauthorized');
     }
 
-    return {
-      isAuthenticated: true,
-      strategy: authContext.strategy,
-      sessionId: authContext.sessionId ?? null,
+    return this.createSessionSnapshot(
       profile,
-      user: {
-        id: profile.userId,
-        displayName: profile.name,
-        email: profile.email,
-        imageUrl: profile.imageUrl,
-      },
-    };
+      authContext.strategy,
+      authContext.sessionId,
+    );
   }
 
-  async refreshSession(
-    refreshToken: string | undefined,
-  ): Promise<ApiAuthSessionExchangeSnapshot> {
-    const refreshTokenPayload = this.authTokensService.verifyRefreshToken(refreshToken);
+  async refreshSession(params: {
+    refreshToken?: string;
+    cookieHeader?: string;
+    userAgent?: string;
+    ipAddress?: string;
+  }): Promise<ApiAuthSessionExchangeSnapshot> {
+    const resolvedRefreshToken =
+      params.refreshToken ??
+      this.authCookiesService.getRefreshTokenFromCookieHeader(params.cookieHeader);
+
+    if (!resolvedRefreshToken) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    const refreshTokenPayload =
+      this.authTokensService.verifyRefreshToken(resolvedRefreshToken);
+    const persistedSession = await this.authSessionsService.validateRefreshSession({
+      sessionId: refreshTokenPayload.sessionId,
+      profileId: refreshTokenPayload.profileId,
+      userId: refreshTokenPayload.userId,
+      refreshToken: resolvedRefreshToken,
+    });
+
+    if (!persistedSession) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
     const profile = await this.getProfileSnapshot(refreshTokenPayload.profileId);
 
     if (!profile || profile.userId !== refreshTokenPayload.userId) {
       throw new UnauthorizedException('Unauthorized');
     }
+
+    const issuedSession = this.authTokensService.issueSessionTokens({
+      profileId: profile.id,
+      userId: profile.userId,
+      sessionId: refreshTokenPayload.sessionId,
+    });
+
+    await this.authSessionsService.rotateSession({
+      sessionId: refreshTokenPayload.sessionId,
+      refreshToken: issuedSession.refreshToken,
+      refreshTokenExpiresAt: issuedSession.refreshTokenExpiresAt,
+      userAgent: params.userAgent,
+      ipAddress: this.normalizeIpAddress(params.ipAddress),
+    });
 
     return {
       session: this.createSessionSnapshot(
@@ -147,12 +212,17 @@ export class AuthService {
         'access-token',
         refreshTokenPayload.sessionId,
       ),
-      issuedSession: this.authTokensService.issueSessionTokens({
-        profileId: profile.id,
-        userId: profile.userId,
-        sessionId: refreshTokenPayload.sessionId,
-      }),
+      issuedSession,
+      cookieTransport: this.authCookiesService.getCookieTransportSnapshot(),
     };
+  }
+
+  async logoutSession(authContext: ApiAuthContext | undefined) {
+    if (!authContext?.isAuthenticated || !authContext.sessionId) {
+      return;
+    }
+
+    await this.authSessionsService.revokeSession(authContext.sessionId);
   }
 
   async getProfileSnapshot(profileId: string): Promise<ApiAuthProfileSnapshot | null> {
@@ -222,6 +292,29 @@ export class AuthService {
     return this.createSessionSnapshot(createdProfile, 'user-header', params.sessionId);
   }
 
+  private async resolveAccessTokenContext(accessToken: string): Promise<ApiAuthContext> {
+    const tokenPayload = this.authTokensService.verifyAccessToken(accessToken);
+    const persistedSession = await this.authSessionsService.validateSession({
+      sessionId: tokenPayload.sessionId,
+      profileId: tokenPayload.profileId,
+      userId: tokenPayload.userId,
+    });
+
+    if (!persistedSession) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    await this.authSessionsService.touchSession(tokenPayload.sessionId);
+
+    return {
+      isAuthenticated: true,
+      strategy: 'access-token',
+      profileId: tokenPayload.profileId,
+      sessionId: tokenPayload.sessionId,
+      userId: tokenPayload.userId,
+    };
+  }
+
   private readHeader(
     headers: AuthRequestHeaders,
     headerName: string,
@@ -262,7 +355,7 @@ export class AuthService {
       updatedAt: Date;
     },
     strategy: ApiAuthSessionSnapshot['strategy'],
-    sessionId?: string,
+    sessionId?: string | null,
   ): ApiAuthSessionSnapshot {
     return {
       isAuthenticated: true,
@@ -284,6 +377,19 @@ export class AuthService {
         imageUrl: profile.imageUrl,
       },
     };
+  }
+
+  private normalizeIpAddress(ipAddress: string | undefined) {
+    if (!ipAddress) {
+      return undefined;
+    }
+
+    const [firstIpAddress] = ipAddress.split(',');
+    const resolvedIpAddress = firstIpAddress?.trim();
+
+    return resolvedIpAddress && resolvedIpAddress.length > 0
+      ? resolvedIpAddress
+      : undefined;
   }
 
   private getProfileName(identity: ApiAuthIdentityPayload) {

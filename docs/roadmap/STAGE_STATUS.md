@@ -108,17 +108,18 @@ Done:
 - `src/pages/api/socket/*` proxy routes now use backend-auth headers instead of manual `x-profile-id` glue
 - middleware auth wiring now goes through a local auth adapter instead of direct Clerk middleware usage
 - layout/provider runtime auth wiring now goes through a local auth provider boundary
-- current runtime auth state/identity loading is centralized in runtime auth utilities
+- the current runtime auth state/identity loading is centralized in runtime auth utilities
 
 Remaining:
 - local auth adapter layer still uses `Clerk` internally as the transitional identity/auth source
 - full `Clerk` replacement
 - backend-owned sessions/devices/tokens
+- cookie-compatible browser session transport
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. continue `Stage 4` with backend-owned sessions/tokens foundation
+1. continue `Stage 4` with backend-owned session persistence and cookie-compatible transport foundation
 2. keep this focused on the auth boundary only
 3. do not mix this with storage, `Postgres`, or `LiveKit/media` migrations

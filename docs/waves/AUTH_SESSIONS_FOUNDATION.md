@@ -41,3 +41,12 @@ Mapping:
 - [ARCHITECTURE.md](../roadmap/ARCHITECTURE.md)
 - [BOUNDARIES.md](../roadmap/BOUNDARIES.md)
 - [STAGE_STATUS.md](../roadmap/STAGE_STATUS.md)
+
+## Current Segment Direction
+
+The next correct slice inside this wave is:
+
+- backend session persistence
+- cookie-compatible browser transport foundation
+
+This is still part of `Wave 10`, not a new stage.

@@ -17,11 +17,39 @@ model Profile {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  servers  Server[]
-  members  Member[]
-  channels Channel[]
+  servers      Server[]
+  members      Member[]
+  channels     Channel[]
+  authSessions AuthSession[]
 
   @@map("profile")
+}
+
+enum AuthSessionStatus {
+  ACTIVE
+  REVOKED
+}
+
+model AuthSession {
+  id                    String            @id
+  profileId             String
+  profile               Profile           @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId                String
+  status                AuthSessionStatus @default(ACTIVE)
+  refreshTokenHash      String            @unique @db.VarChar(191)
+  refreshTokenExpiresAt DateTime
+  userAgent             String?           @db.Text
+  ipAddress             String?           @db.VarChar(191)
+  lastAccessedAt        DateTime?
+  revokedAt             DateTime?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  @@index([profileId])
+  @@index([userId])
+  @@index([status])
+  @@index([refreshTokenExpiresAt])
+  @@map("authsession")
 }
 
 model Server {
