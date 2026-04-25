@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
 
 import { requestBackendApi, toNextProxyResponse } from '@/lib/shared/utils/backend-api'
-import { currentProfile } from '@/lib/shared/utils/current-profile'
+import { currentBackendAuthHeaders } from '@/lib/shared/utils/current-profile'
 
 export const POST = async (req: Request) => {
   try {
-    const profile = await currentProfile()
+    const authHeaders = await currentBackendAuthHeaders()
 
-    if (!profile) {
+    if (!authHeaders) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
@@ -15,9 +15,7 @@ export const POST = async (req: Request) => {
       path: '/api/servers',
       method: 'POST',
       body: await req.json(),
-      headers: {
-        'x-profile-id': profile.id,
-      },
+      headers: authHeaders,
     })
 
     return toNextProxyResponse(response)
@@ -30,17 +28,15 @@ export const POST = async (req: Request) => {
 
 export const GET = async () => {
   try {
-    const profile = await currentProfile()
+    const authHeaders = await currentBackendAuthHeaders()
 
-    if (!profile) {
+    if (!authHeaders) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
     const response = await requestBackendApi({
       path: '/api/servers',
-      headers: {
-        'x-profile-id': profile.id,
-      },
+      headers: authHeaders,
     })
 
     return toNextProxyResponse(response)

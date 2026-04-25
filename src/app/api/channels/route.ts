@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
-import { currentProfile } from '@/lib/shared/utils/current-profile'
+import { currentBackendAuthHeaders } from '@/lib/shared/utils/current-profile'
 import { getServerId } from '@/app/api/utils'
 import { requestBackendApi, toNextProxyResponse } from '@/lib/shared/utils/backend-api'
 
 export const POST = async (req: Request) => {
   try {
-    const profile = await currentProfile()
-    if (!profile) {
+    const authHeaders = await currentBackendAuthHeaders()
+    if (!authHeaders) {
       return new Response('Unauthorized', { status: 401 })
     }
 
@@ -19,9 +19,7 @@ export const POST = async (req: Request) => {
       path: `/api/channels?serverId=${encodeURIComponent(serverId)}`,
       method: 'POST',
       body: await req.json(),
-      headers: {
-        'x-profile-id': profile.id,
-      },
+      headers: authHeaders,
     })
 
     return toNextProxyResponse(response)

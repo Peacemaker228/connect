@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
-import { currentProfile } from '@/lib/shared/utils/current-profile'
+import { currentBackendAuthHeaders } from '@/lib/shared/utils/current-profile'
 import { requestBackendApi, toNextProxyResponse } from '@/lib/shared/utils/backend-api'
 
 export const PATCH = async (_req: Request, { params }: { params: Promise<{ serverId: string }> }) => {
   try {
-    const profile = await currentProfile()
+    const authHeaders = await currentBackendAuthHeaders()
 
-    if (!profile) {
+    if (!authHeaders) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
@@ -19,9 +19,7 @@ export const PATCH = async (_req: Request, { params }: { params: Promise<{ serve
     const response = await requestBackendApi({
       path: `/api/servers/${serverId}/invite-code`,
       method: 'PATCH',
-      headers: {
-        'x-profile-id': profile.id,
-      },
+      headers: authHeaders,
     })
 
     return toNextProxyResponse(response)

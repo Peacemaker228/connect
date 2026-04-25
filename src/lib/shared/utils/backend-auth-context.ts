@@ -30,6 +30,8 @@ type ResolveCurrentProfileOptions = {
   loadIdentity: () => Promise<BackendAuthIdentity | null>
 }
 
+export type BackendAuthHeaders = Record<string, string | undefined>
+
 const parseBackendSession = async (response: Response): Promise<BackendAuthSession> => {
   const parsedResponse = await readBackendApiResponse(response)
 
@@ -60,11 +62,7 @@ const requestResolvedSession = async ({
   })
 }
 
-export const resolveCurrentProfileFromBackendAuth = async ({
-  userId,
-  sessionId,
-  loadIdentity,
-}: ResolveCurrentProfileOptions) => {
+export const resolveBackendAuthSession = async ({ userId, sessionId, loadIdentity }: ResolveCurrentProfileOptions) => {
   let response = await requestResolvedSession({
     userId,
     sessionId,
@@ -92,7 +90,23 @@ export const resolveCurrentProfileFromBackendAuth = async ({
     throw new Error(`Failed to resolve backend auth session: ${response.status}`)
   }
 
-  const session = await parseBackendSession(response)
+  return await parseBackendSession(response)
+}
 
-  return session.profile
+export const createBackendAuthHeaders = (session: BackendAuthSession | null): BackendAuthHeaders | null => {
+  if (!session?.profile) {
+    return null
+  }
+
+  return {
+    'x-profile-id': session.profile.id,
+    'x-user-id': session.user?.id ?? session.profile.userId,
+    'x-session-id': session.sessionId ?? undefined,
+  }
+}
+
+export const resolveCurrentProfileFromBackendAuth = async (options: ResolveCurrentProfileOptions) => {
+  const session = await resolveBackendAuthSession(options)
+
+  return session?.profile ?? null
 }

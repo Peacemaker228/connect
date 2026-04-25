@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
-import { currentProfile } from '@/lib/shared/utils/current-profile'
+import { currentBackendAuthHeaders } from '@/lib/shared/utils/current-profile'
 import { requestBackendApi, toNextProxyResponse } from '@/lib/shared/utils/backend-api'
 
 export async function GET(req: Request) {
   try {
-    const profile = await currentProfile()
+    const authHeaders = await currentBackendAuthHeaders()
 
-    if (!profile) {
+    if (!authHeaders) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
@@ -27,9 +27,7 @@ export async function GET(req: Request) {
 
     const response = await requestBackendApi({
       path: `/api/direct-messages?${search.toString()}`,
-      headers: {
-        'x-profile-id': profile.id,
-      },
+      headers: authHeaders,
     })
 
     return toNextProxyResponse(response)

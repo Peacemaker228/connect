@@ -1,8 +1,28 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 
-import { resolveCurrentProfileFromBackendAuth } from '@/lib/shared/utils/backend-auth-context'
+import {
+  createBackendAuthHeaders,
+  resolveBackendAuthSession,
+} from '@/lib/shared/utils/backend-auth-context'
 
-export const currentProfile = async () => {
+const loadCurrentAuthIdentity = async () => {
+  const user = await currentUser()
+
+  if (!user) {
+    return null
+  }
+
+  return {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    username: user.username,
+    imageUrl: user.imageUrl,
+    primaryEmailAddress: user.emailAddresses[0]?.emailAddress ?? null,
+  }
+}
+
+const resolveCurrentAuthSession = async () => {
   let authState = null
 
   try {
@@ -17,28 +37,25 @@ export const currentProfile = async () => {
   }
 
   try {
-    return await resolveCurrentProfileFromBackendAuth({
+    return await resolveBackendAuthSession({
       userId: authState.userId,
       sessionId: authState.sessionId,
-      loadIdentity: async () => {
-        const user = await currentUser()
-
-        if (!user) {
-          return null
-        }
-
-        return {
-          id: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          username: user.username,
-          imageUrl: user.imageUrl,
-          primaryEmailAddress: user.emailAddresses[0]?.emailAddress ?? null,
-        }
-      },
+      loadIdentity: loadCurrentAuthIdentity,
     })
   } catch (error) {
     console.error('[CURRENT_PROFILE_BACKEND]', error)
     return null
   }
+}
+
+export const currentProfile = async () => {
+  const session = await resolveCurrentAuthSession()
+
+  return session?.profile ?? null
+}
+
+export const currentBackendAuthHeaders = async () => {
+  const session = await resolveCurrentAuthSession()
+
+  return createBackendAuthHeaders(session)
 }

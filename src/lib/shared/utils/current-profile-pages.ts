@@ -1,15 +1,18 @@
 import { clerkClient, getAuth } from '@clerk/nextjs/server'
 import { NextApiRequest } from 'next'
 
-import { resolveCurrentProfileFromBackendAuth } from '@/lib/shared/utils/backend-auth-context'
+import {
+  createBackendAuthHeaders,
+  resolveBackendAuthSession,
+} from '@/lib/shared/utils/backend-auth-context'
 
-export const currentProfilePages = async (req: NextApiRequest) => {
+const resolveCurrentAuthSessionPages = async (req: NextApiRequest) => {
   const { userId, sessionId } = getAuth(req)
 
   if (!userId) return null
 
   try {
-    return await resolveCurrentProfileFromBackendAuth({
+    return await resolveBackendAuthSession({
       userId,
       sessionId,
       loadIdentity: async () => {
@@ -30,4 +33,16 @@ export const currentProfilePages = async (req: NextApiRequest) => {
     console.error('[CURRENT_PROFILE_PAGES_BACKEND]', error)
     return null
   }
+}
+
+export const currentProfilePages = async (req: NextApiRequest) => {
+  const session = await resolveCurrentAuthSessionPages(req)
+
+  return session?.profile ?? null
+}
+
+export const currentBackendAuthHeadersPages = async (req: NextApiRequest) => {
+  const session = await resolveCurrentAuthSessionPages(req)
+
+  return createBackendAuthHeaders(session)
 }

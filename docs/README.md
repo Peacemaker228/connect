@@ -11,9 +11,10 @@
 - [waves/DOMAIN_EXTRACTION_SLICE_1.md](./waves/DOMAIN_EXTRACTION_SLICE_1.md) - Wave 3, closed wave for the first `Stage 3` slice
 - [waves/DOMAIN_EXTRACTION_SLICE_2_MESSAGES.md](./waves/DOMAIN_EXTRACTION_SLICE_2_MESSAGES.md) - Wave 4, closed wave for the `messages/direct-messages` slice in `Stage 3`
 - [waves/SOCKET_TRANSPORT_EXTRACTION.md](./waves/SOCKET_TRANSPORT_EXTRACTION.md) - Wave 5, closed wave for `Stage 3` transport extraction
-- [waves/AUTH_FOUNDATION.md](./waves/AUTH_FOUNDATION.md) - Wave 6, next wave for the start of `Stage 4`
-- [waves/AUTH_CONTEXT_INTEGRATION.md](./waves/AUTH_CONTEXT_INTEGRATION.md) - Wave 7, next auth-boundary wave inside `Stage 4`
-- [waves/AUTH_RUNTIME_INTEGRATION.md](./waves/AUTH_RUNTIME_INTEGRATION.md) - Wave 8, next runtime-focused auth wave inside `Stage 4`
+- [waves/AUTH_FOUNDATION.md](./waves/AUTH_FOUNDATION.md) - Wave 6, closed auth-foundation wave at the start of `Stage 4`
+- [waves/AUTH_CONTEXT_INTEGRATION.md](./waves/AUTH_CONTEXT_INTEGRATION.md) - Wave 7, closed auth-context integration wave inside `Stage 4`
+- [waves/AUTH_RUNTIME_INTEGRATION.md](./waves/AUTH_RUNTIME_INTEGRATION.md) - Wave 8, closed auth runtime integration wave inside `Stage 4`
+- [waves/AUTH_MIDDLEWARE_INTEGRATION.md](./waves/AUTH_MIDDLEWARE_INTEGRATION.md) - Wave 9, next middleware-focused auth wave inside `Stage 4`
 
 ## Wave Sequence
 
@@ -25,6 +26,7 @@
 6. Wave 6 - `AUTH_FOUNDATION`
 7. Wave 7 - `AUTH_CONTEXT_INTEGRATION`
 8. Wave 8 - `AUTH_RUNTIME_INTEGRATION`
+9. Wave 9 - `AUTH_MIDDLEWARE_INTEGRATION`
 
 ## Delegation
 
@@ -42,6 +44,7 @@
 - [delegation/briefs/SEGMENT_BRIEF_011_AUTH_FOUNDATION.md](./delegation/briefs/SEGMENT_BRIEF_011_AUTH_FOUNDATION.md)
 - [delegation/briefs/SEGMENT_BRIEF_012_AUTH_CONTEXT_INTEGRATION.md](./delegation/briefs/SEGMENT_BRIEF_012_AUTH_CONTEXT_INTEGRATION.md)
 - [delegation/briefs/SEGMENT_BRIEF_013_AUTH_RUNTIME_INTEGRATION.md](./delegation/briefs/SEGMENT_BRIEF_013_AUTH_RUNTIME_INTEGRATION.md)
+- [delegation/briefs/SEGMENT_BRIEF_014_AUTH_MIDDLEWARE_INTEGRATION.md](./delegation/briefs/SEGMENT_BRIEF_014_AUTH_MIDDLEWARE_INTEGRATION.md)
 
 ## Recommended Reading Order
 

@@ -1,7 +1,7 @@
 import { NextApiRequest } from 'next'
 import { NextApiResponse } from 'next'
 import { ERoutes, getSignInRedirectUrl } from '@app-core/routing/routes'
-import { currentProfilePages } from '@/lib/shared/utils/current-profile-pages'
+import { currentBackendAuthHeadersPages } from '@/lib/shared/utils/current-profile-pages'
 import { readBackendApiResponse, requestBackendApi, writePagesProxyResponse } from '@/lib/shared/utils/backend-api'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -15,9 +15,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ redirectUrl: ERoutes.MAIN_PAGE })
   }
 
-  const profile = await currentProfilePages(req)
+  const authHeaders = await currentBackendAuthHeadersPages(req)
 
-  if (!profile) {
+  if (!authHeaders) {
     return res.status(401).json({ redirectUrl: getSignInRedirectUrl(`/invite/${inviteCode}?mode=browser`) })
   }
 
@@ -28,9 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       body: {
         inviteCode,
       },
-      headers: {
-        'x-profile-id': profile.id,
-      },
+      headers: authHeaders,
     })
     const parsedResponse = await readBackendApiResponse(response)
 

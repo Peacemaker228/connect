@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
-import { currentProfile } from '@/lib/shared/utils/current-profile'
+import { currentBackendAuthHeaders } from '@/lib/shared/utils/current-profile'
 import { validateMemberId } from './utils'
 import { getServerId } from '@/app/api/utils'
 import { requestBackendApi, toNextProxyResponse } from '@/lib/shared/utils/backend-api'
 
 export const patchMember = async (req: Request, params: Promise<{ memberId: string }>) => {
   try {
-    const profile = await currentProfile()
-    if (!profile) return new NextResponse('Unauthorized', { status: 401 })
+    const authHeaders = await currentBackendAuthHeaders()
+    if (!authHeaders) return new NextResponse('Unauthorized', { status: 401 })
 
     const serverId = getServerId(req.url)
     if (!serverId) return new NextResponse('Server ID Missing', { status: 400 })
@@ -19,9 +19,7 @@ export const patchMember = async (req: Request, params: Promise<{ memberId: stri
       path: `/api/members/${memberId}?serverId=${encodeURIComponent(serverId)}`,
       method: 'PATCH',
       body: await req.json(),
-      headers: {
-        'x-profile-id': profile.id,
-      },
+      headers: authHeaders,
     })
 
     return toNextProxyResponse(response)
