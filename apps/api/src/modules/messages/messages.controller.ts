@@ -1,5 +1,7 @@
-import { Body, Controller, Delete, Get, Headers, HttpCode, HttpStatus, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 
+import { CurrentProfileId } from '../auth/decorators/current-profile-id.decorator';
+import { RequireAuthGuard } from '../auth/guards/require-auth.guard';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import {
   createChatMessageCreatedRealtimeEvent,
@@ -13,6 +15,7 @@ type MessageMutationBody = {
 };
 
 @Controller('messages')
+@UseGuards(RequireAuthGuard)
 export class MessagesController {
   constructor(
     private readonly messagesService: MessagesService,
@@ -21,7 +24,7 @@ export class MessagesController {
 
   @Get()
   getMessages(
-    @Headers('x-profile-id') profileId: string | undefined,
+    @CurrentProfileId() profileId: string,
     @Query('channelId') channelId: string | undefined,
     @Query('cursor') cursor: string | undefined,
   ) {
@@ -31,7 +34,7 @@ export class MessagesController {
   @Post()
   @HttpCode(HttpStatus.OK)
   async createMessage(
-    @Headers('x-profile-id') profileId: string | undefined,
+    @CurrentProfileId() profileId: string,
     @Query('serverId') serverId: string | undefined,
     @Query('channelId') channelId: string | undefined,
     @Body() body: MessageMutationBody,
@@ -47,7 +50,7 @@ export class MessagesController {
 
   @Patch(':messageId')
   async updateMessage(
-    @Headers('x-profile-id') profileId: string | undefined,
+    @CurrentProfileId() profileId: string,
     @Param('messageId') messageId: string,
     @Query('serverId') serverId: string | undefined,
     @Query('channelId') channelId: string | undefined,
@@ -64,7 +67,7 @@ export class MessagesController {
 
   @Delete(':messageId')
   async deleteMessage(
-    @Headers('x-profile-id') profileId: string | undefined,
+    @CurrentProfileId() profileId: string,
     @Param('messageId') messageId: string,
     @Query('serverId') serverId: string | undefined,
     @Query('channelId') channelId: string | undefined,

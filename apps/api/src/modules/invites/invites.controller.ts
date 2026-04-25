@@ -1,5 +1,7 @@
-import { Body, Controller, Headers, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 
+import { CurrentProfileId } from '../auth/decorators/current-profile-id.decorator';
+import { RequireAuthGuard } from '../auth/guards/require-auth.guard';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { createMemberAddedRealtimeEvent } from '../realtime/realtime.events';
 import { InvitesService } from './invites.service';
@@ -9,6 +11,7 @@ type JoinInviteBody = {
 };
 
 @Controller('invites')
+@UseGuards(RequireAuthGuard)
 export class InvitesController {
   constructor(
     private readonly invitesService: InvitesService,
@@ -17,7 +20,7 @@ export class InvitesController {
 
   @Post('join')
   async joinInvite(
-    @Headers('x-profile-id') profileId: string | undefined,
+    @CurrentProfileId() profileId: string,
     @Body() body: JoinInviteBody,
   ) {
     const result = await this.invitesService.joinInvite(profileId, body.inviteCode);
