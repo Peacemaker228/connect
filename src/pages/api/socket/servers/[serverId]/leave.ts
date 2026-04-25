@@ -1,7 +1,7 @@
 import { NextApiRequest } from 'next'
 
 import { currentProfilePages } from '@/lib/shared/utils/current-profile-pages'
-import { readBackendApiResponse, requestBackendApi } from '@/lib/shared/utils/backend-api'
+import { readBackendApiResponse, requestBackendApi, writePagesProxyResponse } from '@/lib/shared/utils/backend-api'
 import { NextApiResponseServerIo } from '@/types'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponseServerIo) {
@@ -36,11 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
       })
     }
 
-    if (parsedResponse.isJson) {
-      return res.status(parsedResponse.status).json(parsedResponse.data)
-    }
-
-    return res.status(parsedResponse.status).send(parsedResponse.data)
+    return writePagesProxyResponse(res, parsedResponse)
   } catch (error) {
     console.error('[SERVER_LEAVE_ERROR]', error)
     return res.status(500).json({ error: 'Internal Server Error' })

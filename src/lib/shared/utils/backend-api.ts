@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import type { NextApiResponse } from 'next';
 
 const JSON_CONTENT_TYPE = 'application/json';
 const DEFAULT_INTERNAL_API_URL = `http://127.0.0.1:${process.env.API_PORT ?? '4000'}`;
@@ -91,4 +92,15 @@ export const toNextProxyResponse = async (response: Response) => {
     status: parsedResponse.status,
     headers: parsedResponse.contentType ? { 'content-type': parsedResponse.contentType } : undefined,
   });
+};
+
+export const writePagesProxyResponse = (
+  res: NextApiResponse,
+  parsedResponse: ParsedBackendApiResponse,
+) => {
+  if (parsedResponse.isJson) {
+    return res.status(parsedResponse.status).json(parsedResponse.data);
+  }
+
+  return res.status(parsedResponse.status).send(parsedResponse.data);
 };

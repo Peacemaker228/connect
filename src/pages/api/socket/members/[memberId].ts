@@ -1,18 +1,8 @@
 import { NextApiRequest } from 'next'
 
 import { currentProfilePages } from '@/lib/shared/utils/current-profile-pages'
-import { readBackendApiResponse, requestBackendApi } from '@/lib/shared/utils/backend-api'
+import { readBackendApiResponse, requestBackendApi, writePagesProxyResponse } from '@/lib/shared/utils/backend-api'
 import { NextApiResponseServerIo } from '@/types'
-
-const getProfileAndServerId = async (req: NextApiRequest) => {
-  const profile = await currentProfilePages(req)
-  if (!profile) throw new Error('Unauthorized')
-
-  const { serverId } = req.query
-  if (!serverId) throw new Error('Server ID Missing')
-
-  return { profile, serverId }
-}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponseServerIo) {
   try {
@@ -20,11 +10,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
       return res.status(405).json({ error: 'Method Not Allowed' })
     }
 
-    const { profile, serverId } = await getProfileAndServerId(req)
+    const profile = await currentProfilePages(req)
 
     if (!profile) {
       return res.status(401).json({ error: 'Unauthorized' })
     }
+
+    const { serverId } = req.query
     if (!serverId) {
       return res.status(400).json({ error: 'Server ID Missing' })
     }
@@ -52,11 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
         })
       }
 
-      if (parsedResponse.isJson) {
-        return res.status(parsedResponse.status).json(parsedResponse.data)
-      }
-
-      return res.status(parsedResponse.status).send(parsedResponse.data)
+      return writePagesProxyResponse(res, parsedResponse)
     }
 
     const { role } = req.body
@@ -83,11 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
       })
     }
 
-    if (parsedResponse.isJson) {
-      return res.status(parsedResponse.status).json(parsedResponse.data)
-    }
-
-    return res.status(parsedResponse.status).send(parsedResponse.data)
+    return writePagesProxyResponse(res, parsedResponse)
   } catch (err) {
     console.error('[MEMBER_REQUEST_HANDLER]', err)
     return res.status(500).json({ error: 'Internal Server Error' })
