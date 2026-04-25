@@ -36,3 +36,21 @@ Mapping:
 - [ARCHITECTURE.md](../roadmap/ARCHITECTURE.md)
 - [BOUNDARIES.md](../roadmap/BOUNDARIES.md)
 - [STAGE_STATUS.md](../roadmap/STAGE_STATUS.md)
+
+## Wave Result
+
+Current state after this wave:
+- runtime proxy routes use backend-auth headers instead of manual `x-profile-id` glue
+- transitional auth header creation is centralized
+- `src/app/api/*` and `src/pages/api/socket/*` are thinner in auth handling
+- current runtime behavior is preserved
+
+## What Comes Next
+
+This wave is enough to move to the next auth-focused step.
+
+Next step by plan:
+
+1. continue `Stage 4` with middleware/runtime auth wiring integration
+2. reduce remaining direct `Clerk` dependence in runtime wiring
+3. do not mix this with storage, `Postgres`, or `LiveKit/media`

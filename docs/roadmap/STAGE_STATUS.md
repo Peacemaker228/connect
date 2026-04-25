@@ -14,6 +14,8 @@ Current wave order:
 - `Wave 5` = `SOCKET_TRANSPORT_EXTRACTION`
 - `Wave 6` = `AUTH_FOUNDATION`
 - `Wave 7` = `AUTH_CONTEXT_INTEGRATION`
+- `Wave 8` = `AUTH_RUNTIME_INTEGRATION`
+- `Wave 9` = `AUTH_MIDDLEWARE_INTEGRATION`
 
 ## Status by Stage
 
@@ -101,9 +103,10 @@ Done:
 - backend can resolve session/profile by user identity through the auth boundary
 - `currentProfile()` and `currentProfilePages()` now use the backend auth boundary as the primary path
 - direct active-flow `ensureProfile()` ownership is removed from current profile resolution
+- `src/app/api/*` proxy routes now use backend-auth headers instead of manual `x-profile-id` glue
+- `src/pages/api/socket/*` proxy routes now use backend-auth headers instead of manual `x-profile-id` glue
 
 Remaining:
-- transitional `x-profile-id` proxy flow still lives in `src/app/api/*` and `src/pages/api/*`
 - runtime and middleware auth wiring still depend on `Clerk`
 - full `Clerk` replacement
 - backend-owned sessions/devices/tokens
@@ -112,6 +115,6 @@ Remaining:
 
 The next correct step by plan is:
 
-1. continue `Stage 4` with auth runtime/proxy integration on top of the new backend auth boundary
+1. continue `Stage 4` with auth middleware/runtime wiring integration on top of the new backend auth boundary
 2. keep this focused on the auth boundary only
 3. do not mix this with storage, `Postgres`, or `LiveKit/media` migrations
