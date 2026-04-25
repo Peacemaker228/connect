@@ -7,24 +7,48 @@ import {
 
 import { PrismaService } from '../../common/database/prisma.service';
 import {
+  AUTH_AUTHORIZATION_HEADER,
   AUTH_PROFILE_ID_HEADER,
   AUTH_SESSION_ID_HEADER,
   AUTH_USER_ID_HEADER,
 } from './auth.constants';
 import type { AuthRequest, AuthRequestHeaders } from './auth-request.interface';
+import { AuthTokensService } from './auth-tokens.service';
 import type {
-  ApiAuthIdentityPayload,
   ApiAuthContext,
+  ApiAuthIdentityPayload,
   ApiAuthProfileSnapshot,
+  ApiAuthSessionExchangeSnapshot,
   ApiAuthSessionSnapshot,
   AuthenticatedApiAuthContext,
 } from './auth.types';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly authTokensService: AuthTokensService,
+  ) {}
 
   getRequestContext(request: Pick<AuthRequest, 'headers'>): ApiAuthContext {
+    const authorizationHeader = this.readHeader(
+      request.headers,
+      AUTH_AUTHORIZATION_HEADER,
+    );
+
+    if (authorizationHeader) {
+      const bearerToken = this.readBearerToken(authorizationHeader);
+      const tokenPayload = this.authTokensService.verifyAccessToken(bearerToken);
+
+      return {
+        isAuthenticated: true,
+        strategy: 'access-token',
+        profileId: tokenPayload.profileId,
+        sessionId: tokenPayload.sessionId,
+        userId: tokenPayload.userId,
+      };
+    }
+
     const profileId = this.readHeader(request.headers, AUTH_PROFILE_ID_HEADER);
 
     if (!profileId) {
@@ -51,6 +75,27 @@ export class AuthService {
     }
 
     return authContext;
+  }
+
+  async exchangeSession(
+    authContext: ApiAuthContext | undefined,
+  ): Promise<ApiAuthSessionExchangeSnapshot> {
+    const currentSession = await this.getSessionSnapshot(
+      this.requireAuthenticatedContext(authContext),
+    );
+
+    if (!currentSession.profile) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    return {
+      session: currentSession,
+      issuedSession: this.authTokensService.issueSessionTokens({
+        profileId: currentSession.profile.id,
+        userId: currentSession.profile.userId,
+        sessionId: currentSession.sessionId,
+      }),
+    };
   }
 
   async getSessionSnapshot(
@@ -83,6 +128,30 @@ export class AuthService {
         email: profile.email,
         imageUrl: profile.imageUrl,
       },
+    };
+  }
+
+  async refreshSession(
+    refreshToken: string | undefined,
+  ): Promise<ApiAuthSessionExchangeSnapshot> {
+    const refreshTokenPayload = this.authTokensService.verifyRefreshToken(refreshToken);
+    const profile = await this.getProfileSnapshot(refreshTokenPayload.profileId);
+
+    if (!profile || profile.userId !== refreshTokenPayload.userId) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    return {
+      session: this.createSessionSnapshot(
+        profile,
+        'access-token',
+        refreshTokenPayload.sessionId,
+      ),
+      issuedSession: this.authTokensService.issueSessionTokens({
+        profileId: profile.id,
+        userId: profile.userId,
+        sessionId: refreshTokenPayload.sessionId,
+      }),
     };
   }
 
@@ -170,6 +239,16 @@ export class AuthService {
     const resolvedValue = value.trim();
 
     return resolvedValue.length > 0 ? resolvedValue : undefined;
+  }
+
+  private readBearerToken(authorizationHeader: string) {
+    const [scheme, token] = authorizationHeader.split(' ');
+
+    if (!scheme || scheme.toLowerCase() !== 'bearer' || !token) {
+      throw new UnauthorizedException('Invalid authorization header');
+    }
+
+    return token;
   }
 
   private createSessionSnapshot(
