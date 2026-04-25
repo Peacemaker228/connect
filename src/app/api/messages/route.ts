@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server'
 import { currentProfile } from '@/lib/shared/utils/current-profile'
-import { Message } from '@prisma/client'
-import { db } from '@/lib/shared/utils/db'
-
-const MESSAGE_BATCH_SIZE = 10
+import { requestBackendApi, toNextProxyResponse } from '@/lib/shared/utils/backend-api'
 
 export async function GET(req: Request) {
   try {
@@ -22,55 +19,20 @@ export async function GET(req: Request) {
       return new NextResponse('Channel ID Missing', { status: 400 })
     }
 
-    let messages: Message[]
-
+    const search = new URLSearchParams()
+    search.set('channelId', channelId)
     if (cursor) {
-      messages = await db.message.findMany({
-        take: MESSAGE_BATCH_SIZE,
-        skip: 1,
-        cursor: {
-          id: cursor,
-        },
-        where: {
-          channelId,
-        },
-        include: {
-          member: {
-            include: {
-              profile: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      })
-    } else {
-      messages = await db.message.findMany({
-        take: MESSAGE_BATCH_SIZE,
-        where: {
-          channelId,
-        },
-        include: {
-          member: {
-            include: {
-              profile: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      })
+      search.set('cursor', cursor)
     }
 
-    let nextCursor = null
+    const response = await requestBackendApi({
+      path: `/api/messages?${search.toString()}`,
+      headers: {
+        'x-profile-id': profile.id,
+      },
+    })
 
-    if (messages.length === MESSAGE_BATCH_SIZE) {
-      nextCursor = messages[MESSAGE_BATCH_SIZE - 1].id
-    }
-
-    return NextResponse.json({ items: messages, nextCursor })
+    return toNextProxyResponse(response)
   } catch (err) {
     console.log('[MESSAGE_GET]', err)
     return new NextResponse('Internal Error', { status: 500 })

@@ -67,16 +67,18 @@ Done:
 - realtime contract for the first slice centralized in `packages/app-core`
 - legacy socket routes for the first slice switched to a shared emit helper
 - client listeners for the first slice aligned to the shared realtime contract
+- second backend-owned slice started in `apps/api`: messages/direct-messages
+- `src/app/api/messages/*` and `src/app/api/direct-messages/*` reduced to compatibility/proxy ownership
+- `src/pages/api/socket/messages/*` and `src/pages/api/socket/direct-messages/*` reduced to transitional auth/proxy/socket emit layer
+- realtime contract for the message slice centralized in `packages/app-core`
 
 Remaining:
-- messages
-- direct messages
 - socket transport
 
 ## Next Correct Step
 
 The next big step inside `Stage 3` is:
 
-1. start the next Stage 3 domain slice: `messages/direct-messages`
-2. keep socket transport work scoped to that slice
+1. extract socket transport ownership from legacy `pages/api/socket/*` into `Nest` realtime gateway
+2. keep this focused on transport, not on auth/storage/media/database migrations
 3. do not mix this with auth/storage/media/database migrations

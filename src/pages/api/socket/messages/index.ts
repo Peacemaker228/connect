@@ -1,7 +1,9 @@
 import { NextApiRequest } from 'next'
+import { createChatMessageCreatedRealtimeEvent } from '@app-core/contracts/message-slice-realtime'
 import { NextApiResponseServerIo } from '@/types'
 import { currentProfilePages } from '@/lib/shared/utils/current-profile-pages'
-import { db } from '@/lib/shared/utils/db'
+import { emitMessageSliceRealtimeEvent } from '../utils/message-slice-realtime'
+import { readBackendApiResponse, requestBackendApi, writePagesProxyResponse } from '@/lib/shared/utils/backend-api'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponseServerIo) {
   if (req.method !== 'POST') {
@@ -29,62 +31,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponseS
       return res.status(400).json({ error: 'Content Missing' })
     }
 
-    const server = await db.server.findFirst({
-      where: {
-        id: serverId as string,
-        members: {
-          some: {
-            profileId: profile.id,
-          },
-        },
-      },
-      include: {
-        members: true,
-      },
-    })
-
-    if (!server) {
-      return res.status(404).json({ error: 'Server Not Found' })
-    }
-
-    const channel = await db.channel.findFirst({
-      where: {
-        id: channelId as string,
-        serverId: serverId as string,
-      },
-    })
-
-    if (!channel) {
-      return res.status(404).json({ error: 'Channel Not Found' })
-    }
-
-    const member = server.members.find((m) => m.profileId === profile.id)
-
-    if (!member) {
-      return res.status(404).json({ error: 'Member Not Found' })
-    }
-
-    const message = await db.message.create({
-      data: {
+    const response = await requestBackendApi({
+      path: `/api/messages?serverId=${encodeURIComponent(serverId as string)}&channelId=${encodeURIComponent(channelId as string)}`,
+      method: 'POST',
+      body: {
         content,
         fileUrl,
-        channelId: channelId as string,
-        memberId: member.id,
       },
-      include: {
-        member: {
-          include: {
-            profile: true,
-          },
-        },
+      headers: {
+        'x-profile-id': profile.id,
       },
     })
+    const parsedResponse = await readBackendApiResponse(response)
 
-    const channelKey = `chat:${channelId}:messages`
+    if (parsedResponse.status >= 200 && parsedResponse.status < 300 && parsedResponse.isJson) {
+      emitMessageSliceRealtimeEvent(
+        res,
+        createChatMessageCreatedRealtimeEvent(String(channelId), parsedResponse.data),
+      )
+    }
 
-    res?.socket?.server?.io?.emit(channelKey, message)
-
-    return res.status(200).json(message)
+    return writePagesProxyResponse(res, parsedResponse)
   } catch (err) {
     console.log('[MESSAGE_POST]', err)
     return res.status(500).json({ error: 'Internal Error' })

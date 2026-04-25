@@ -1,6 +1,7 @@
 'use client'
 
 import { Member, Message, Profile } from '@prisma/client'
+import { getChatMessagesRealtimeKey, getChatMessagesUpdateRealtimeKey } from '@app-core/contracts/message-slice-realtime'
 import { ElementRef, FC, Fragment, useRef } from 'react'
 import { TChannelConversation } from '@/types'
 import { Loader2, ServerCrash } from 'lucide-react'
@@ -42,8 +43,8 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   name,
 }) => {
   const queryKey = `chat:${chatId}`
-  const addKey = `chat:${chatId}:messages`
-  const updateKey = `chat:${chatId}:messages:update`
+  const addKey = getChatMessagesRealtimeKey(chatId)
+  const updateKey = getChatMessagesUpdateRealtimeKey(chatId)
 
   const chatRef = useRef<ElementRef<'div'>>(null)
   const bottomRef = useRef<ElementRef<'div'>>(null)

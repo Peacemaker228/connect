@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server'
 import { currentProfile } from '@/lib/shared/utils/current-profile'
-import { DirectMessage } from '@prisma/client'
-import { db } from '@/lib/shared/utils/db'
-
-const MESSAGE_BATCH_SIZE = 10
+import { requestBackendApi, toNextProxyResponse } from '@/lib/shared/utils/backend-api'
 
 export async function GET(req: Request) {
   try {
@@ -22,55 +19,20 @@ export async function GET(req: Request) {
       return new NextResponse('Conversation ID Missing', { status: 400 })
     }
 
-    let messages: DirectMessage[]
-
+    const search = new URLSearchParams()
+    search.set('conversationId', conversationId)
     if (cursor) {
-      messages = await db.directMessage.findMany({
-        take: MESSAGE_BATCH_SIZE,
-        skip: 1,
-        cursor: {
-          id: cursor,
-        },
-        where: {
-          conversationId,
-        },
-        include: {
-          member: {
-            include: {
-              profile: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      })
-    } else {
-      messages = await db.directMessage.findMany({
-        take: MESSAGE_BATCH_SIZE,
-        where: {
-          conversationId,
-        },
-        include: {
-          member: {
-            include: {
-              profile: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      })
+      search.set('cursor', cursor)
     }
 
-    let nextCursor = null
+    const response = await requestBackendApi({
+      path: `/api/direct-messages?${search.toString()}`,
+      headers: {
+        'x-profile-id': profile.id,
+      },
+    })
 
-    if (messages.length === MESSAGE_BATCH_SIZE) {
-      nextCursor = messages[MESSAGE_BATCH_SIZE - 1].id
-    }
-
-    return NextResponse.json({ items: messages, nextCursor })
+    return toNextProxyResponse(response)
   } catch (err) {
     console.log('[DIRECT_MESSAGES_GET]', err)
     return new NextResponse('Internal Error', { status: 500 })
