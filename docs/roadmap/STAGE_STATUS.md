@@ -17,6 +17,13 @@ Current wave order:
 - `Wave 8` = `AUTH_RUNTIME_INTEGRATION`
 - `Wave 9` = `AUTH_MIDDLEWARE_INTEGRATION`
 - `Wave 10` = `AUTH_SESSIONS_FOUNDATION`
+- `Wave 11` = `AUTH_COOKIE_RUNTIME_INTEGRATION`
+- `Wave 12` = `AUTH_IDENTITY_OWNERSHIP_FOUNDATION`
+- `Wave 13` = `AUTH_OWN_ENTRYPOINTS_INTEGRATION`
+- `Wave 14` = `AUTH_CLERK_REMOVAL`
+- `Wave 15` = `AUTH_RESIDUAL_CLERK_CLEANUP`
+- `Wave 16` = `AUTH_STAGE4_COMPATIBILITY_CLEANUP`
+- `Wave 17` = `STORAGE_FOUNDATION`
 
 ## Status by Stage
 
@@ -93,7 +100,7 @@ Remaining:
 
 ### Stage 4. Auth Replacement Path
 
-Status: `in progress`
+Status: `done`
 
 Done:
 - backend auth foundation exists in `apps/api`
@@ -128,16 +135,16 @@ Done:
 - residual `Clerk` imports are removed from `server-upload`, `uploadthing`, and the legacy `ensure-profile` helper path
 
 Remaining:
-- backend auth compatibility paths for legacy identity resolution still exist
-- `/api/auth/session/resolve`, `resolveClerkIdentity`, and dead auth-context compatibility helpers still need cleanup
-- full `Clerk` replacement is very close but not fully complete yet
-- backend-owned devices/session-management surface is still incomplete
-- auth product completeness (`email verification`, `password reset`, account-linking policy) is still pending after provider replacement
+- deferred late-roadmap auth product work only:
+  - `email verification`
+  - `password reset`
+  - similar non-blocking auth-product completeness work
+- these items are intentionally moved to the very end of the roadmap, before the final `Next.js -> React` decision
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. continue `Stage 4` with final auth compatibility cleanup and removal of legacy identity-resolution paths
-2. keep this focused on the auth boundary only
-3. do not mix this with storage, `Postgres`, or `LiveKit/media` migrations
+1. start `Stage 5` with storage foundation / storage abstraction
+2. keep `UploadThing` behind the backend storage boundary first
+3. do not mix this with `Postgres`, `LiveKit/media`, or late deferred auth-product work

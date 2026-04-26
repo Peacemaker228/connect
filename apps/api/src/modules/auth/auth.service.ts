@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -9,7 +8,6 @@ import {
   AUTH_AUTHORIZATION_HEADER,
   AUTH_PROFILE_ID_HEADER,
   AUTH_SESSION_ID_HEADER,
-  AUTH_USER_ID_HEADER,
 } from './auth.constants';
 import type { AuthRequest, AuthRequestHeaders } from './auth-request.interface';
 import { AuthCookiesService } from './auth-cookies.service';
@@ -18,7 +16,6 @@ import { AuthSessionsService } from './auth-sessions.service';
 import { AuthTokensService } from './auth-tokens.service';
 import type {
   ApiAuthContext,
-  ApiAuthIdentityPayload,
   ApiAuthPasswordLoginPayload,
   ApiAuthPasswordRegistrationPayload,
   ApiAuthProfileSnapshot,
@@ -84,7 +81,6 @@ export class AuthService {
       strategy: 'profile-header',
       profileId,
       sessionId: this.readHeader(request.headers, AUTH_SESSION_ID_HEADER),
-      userId: this.readHeader(request.headers, AUTH_USER_ID_HEADER),
     };
   }
 
@@ -225,33 +221,6 @@ export class AuthService {
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
     };
-  }
-
-  async resolveSessionFromIdentity(params: {
-    userId?: string;
-    sessionId?: string;
-    identity?: ApiAuthIdentityPayload;
-  }): Promise<ApiAuthSessionSnapshot> {
-    const resolvedUserId = params.userId ?? params.identity?.id;
-
-    if (!resolvedUserId) {
-      throw new UnauthorizedException('Unauthorized');
-    }
-
-    if (params.identity && params.identity.id !== resolvedUserId) {
-      throw new BadRequestException('Auth user mismatch');
-    }
-
-    const resolvedProfile = await this.authIdentitiesService.resolveClerkIdentity({
-      userId: resolvedUserId,
-      identity: params.identity,
-    });
-
-    return this.createSessionSnapshot(
-      resolvedProfile,
-      'user-header',
-      params.sessionId,
-    );
   }
 
   async registerPasswordIdentity(

@@ -21,7 +21,8 @@
 - [waves/AUTH_OWN_ENTRYPOINTS_INTEGRATION.md](./waves/AUTH_OWN_ENTRYPOINTS_INTEGRATION.md) - Wave 13, closed auth-entrypoints wave inside `Stage 4`
 - [waves/AUTH_CLERK_REMOVAL.md](./waves/AUTH_CLERK_REMOVAL.md) - Wave 14, closed active-path provider-removal wave inside `Stage 4`
 - [waves/AUTH_RESIDUAL_CLERK_CLEANUP.md](./waves/AUTH_RESIDUAL_CLERK_CLEANUP.md) - Wave 15, closed residual-cleanup wave inside `Stage 4`
-- [waves/AUTH_STAGE4_COMPATIBILITY_CLEANUP.md](./waves/AUTH_STAGE4_COMPATIBILITY_CLEANUP.md) - Wave 16, next final compatibility-cleanup wave inside `Stage 4`
+- [waves/AUTH_STAGE4_COMPATIBILITY_CLEANUP.md](./waves/AUTH_STAGE4_COMPATIBILITY_CLEANUP.md) - Wave 16, closed final compatibility-cleanup wave inside `Stage 4`
+- [waves/STORAGE_FOUNDATION.md](./waves/STORAGE_FOUNDATION.md) - Wave 17, current storage-foundation wave at the start of `Stage 5`
 
 ## Wave Sequence
 
@@ -41,6 +42,7 @@
 14. Wave 14 - `AUTH_CLERK_REMOVAL`
 15. Wave 15 - `AUTH_RESIDUAL_CLERK_CLEANUP`
 16. Wave 16 - `AUTH_STAGE4_COMPATIBILITY_CLEANUP`
+17. Wave 17 - `STORAGE_FOUNDATION`
 
 ## Delegation
 
@@ -67,6 +69,7 @@
 - [delegation/briefs/SEGMENT_BRIEF_020_AUTH_CLERK_REMOVAL.md](./delegation/briefs/SEGMENT_BRIEF_020_AUTH_CLERK_REMOVAL.md)
 - [delegation/briefs/SEGMENT_BRIEF_021_AUTH_RESIDUAL_CLERK_CLEANUP.md](./delegation/briefs/SEGMENT_BRIEF_021_AUTH_RESIDUAL_CLERK_CLEANUP.md)
 - [delegation/briefs/SEGMENT_BRIEF_022_AUTH_STAGE4_COMPATIBILITY_CLEANUP.md](./delegation/briefs/SEGMENT_BRIEF_022_AUTH_STAGE4_COMPATIBILITY_CLEANUP.md)
+- [delegation/briefs/SEGMENT_BRIEF_023_STORAGE_FOUNDATION.md](./delegation/briefs/SEGMENT_BRIEF_023_STORAGE_FOUNDATION.md)
 
 ## Recommended Reading Order
 

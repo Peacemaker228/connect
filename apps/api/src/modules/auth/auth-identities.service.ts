@@ -2,7 +2,6 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthIdentityProvider, type Profile } from '@prisma/client';
@@ -10,7 +9,6 @@ import { randomUUID } from 'crypto';
 
 import { PrismaService } from '../../common/database/prisma.service';
 import type {
-  ApiAuthIdentityPayload,
   ApiAuthPasswordLoginPayload,
   ApiAuthPasswordRegistrationPayload,
 } from './auth.types';
@@ -22,82 +20,6 @@ export class AuthIdentitiesService {
     private readonly prisma: PrismaService,
     private readonly authPasswordsService: AuthPasswordsService,
   ) {}
-
-  async resolveClerkIdentity(params: {
-    userId: string;
-    identity?: ApiAuthIdentityPayload;
-  }): Promise<Profile> {
-    const existingIdentity = await this.prisma.authIdentity.findUnique({
-      where: {
-        provider_subject: {
-          provider: AuthIdentityProvider.CLERK,
-          subject: params.userId,
-        },
-      },
-      include: {
-        profile: true,
-      },
-    });
-
-    if (existingIdentity) {
-      await this.touchIdentity(existingIdentity.id, params.identity);
-      return existingIdentity.profile;
-    }
-
-    const legacyProfile = await this.prisma.profile.findUnique({
-      where: {
-        userId: params.userId,
-      },
-    });
-
-    if (legacyProfile) {
-      await this.prisma.authIdentity.upsert({
-        where: {
-          provider_subject: {
-            provider: AuthIdentityProvider.CLERK,
-            subject: params.userId,
-          },
-        },
-        update: this.getClerkIdentityUpdate(params.identity),
-        create: {
-          provider: AuthIdentityProvider.CLERK,
-          subject: params.userId,
-          profileId: legacyProfile.id,
-          ...this.getClerkIdentityCreate(params.identity),
-        },
-      });
-
-      return legacyProfile;
-    }
-
-    if (!params.identity) {
-      throw new NotFoundException('Profile not found');
-    }
-
-    const identity = params.identity;
-
-    return this.prisma.$transaction(async (tx) => {
-      const createdProfile = await tx.profile.create({
-        data: {
-          userId: params.userId,
-          name: this.getProfileName(identity),
-          imageUrl: identity.imageUrl ?? '',
-          email: identity.primaryEmailAddress ?? '',
-        },
-      });
-
-      await tx.authIdentity.create({
-        data: {
-          provider: AuthIdentityProvider.CLERK,
-          subject: params.userId,
-          profileId: createdProfile.id,
-          ...this.getClerkIdentityCreate(identity),
-        },
-      });
-
-      return createdProfile;
-    });
-  }
 
   async registerPasswordIdentity(
     payload: ApiAuthPasswordRegistrationPayload,
@@ -195,49 +117,6 @@ export class AuthIdentitiesService {
 
     return existingIdentity.profile;
   }
-
-  private async touchIdentity(
-    identityId: string,
-    identity: ApiAuthIdentityPayload | undefined,
-  ) {
-    await this.prisma.authIdentity.update({
-      where: {
-        id: identityId,
-      },
-      data: this.getClerkIdentityUpdate(identity),
-    });
-  }
-
-  private getClerkIdentityCreate(identity: ApiAuthIdentityPayload | undefined) {
-    const email = identity?.primaryEmailAddress
-      ? this.normalizeEmailAddress(identity.primaryEmailAddress)
-      : null;
-
-    return {
-      email,
-      emailNormalized: email,
-      lastAuthenticatedAt: new Date(),
-    };
-  }
-
-  private getClerkIdentityUpdate(identity: ApiAuthIdentityPayload | undefined) {
-    if (!identity) {
-      return {
-        lastAuthenticatedAt: new Date(),
-      };
-    }
-
-    const email = identity?.primaryEmailAddress
-      ? this.normalizeEmailAddress(identity.primaryEmailAddress)
-      : null;
-
-    return {
-      email,
-      emailNormalized: email,
-      lastAuthenticatedAt: new Date(),
-    };
-  }
-
   private normalizeEmail(value: string) {
     const normalizedEmail = this.normalizeEmailAddress(value);
 
@@ -280,36 +159,5 @@ export class AuthIdentitiesService {
     }
 
     throw new BadRequestException('Profile name is required');
-  }
-
-  private getProfileName(identity: ApiAuthIdentityPayload) {
-    if (identity.firstName && identity.lastName) {
-      return `${identity.firstName} ${identity.lastName}`;
-    }
-
-    if (identity.firstName) {
-      return identity.firstName;
-    }
-
-    if (identity.lastName) {
-      return identity.lastName;
-    }
-
-    if (identity.username) {
-      return identity.username;
-    }
-
-    if (identity.primaryEmailAddress) {
-      const normalizedEmail = this.normalizeEmailAddress(
-        identity.primaryEmailAddress,
-      );
-      const [emailName] = normalizedEmail?.split('@') ?? [];
-
-      if (emailName?.trim()) {
-        return emailName.trim();
-      }
-    }
-
-    return 'USER';
   }
 }

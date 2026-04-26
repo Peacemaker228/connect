@@ -14,7 +14,6 @@ import { AuthContextGuard } from './guards/auth-context.guard';
 import { AuthService } from './auth.service';
 import type {
   ApiAuthContext,
-  ApiAuthIdentityPayload,
   ApiAuthPasswordLoginPayload,
   ApiAuthPasswordRegistrationPayload,
 } from './auth.types';
@@ -127,18 +126,5 @@ export class AuthController {
     );
 
     return exchangeSnapshot;
-  }
-
-  @Post('session/resolve')
-  resolveSession(
-    @Headers('x-user-id') userId: string | undefined,
-    @Headers('x-session-id') sessionId: string | undefined,
-    @Body() body: { identity?: ApiAuthIdentityPayload } | undefined,
-  ) {
-    return this.authService.resolveSessionFromIdentity({
-      userId,
-      sessionId,
-      identity: body?.identity,
-    });
   }
 }

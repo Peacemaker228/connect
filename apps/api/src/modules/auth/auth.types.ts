@@ -1,7 +1,6 @@
 export type ApiAuthStrategy =
   | 'anonymous'
   | 'profile-header'
-  | 'user-header'
   | 'access-token';
 
 export type AuthenticatedApiAuthStrategy = 'profile-header' | 'access-token';
@@ -72,15 +71,6 @@ export interface ApiAuthSessionExchangeSnapshot {
   session: ApiAuthSessionSnapshot;
   issuedSession: ApiAuthIssuedSessionSnapshot;
   cookieTransport: ApiAuthCookieTransportSnapshot;
-}
-
-export interface ApiAuthIdentityPayload {
-  id: string;
-  firstName: string | null;
-  lastName: string | null;
-  username: string | null;
-  imageUrl: string | null;
-  primaryEmailAddress: string | null;
 }
 
 export interface ApiAuthPasswordRegistrationPayload {
