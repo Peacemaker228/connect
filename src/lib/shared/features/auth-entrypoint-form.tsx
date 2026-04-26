@@ -1,11 +1,22 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
+import { authEntrypointSchema } from '@app-core/schemas/auth-entrypoint-schema'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import type { FormEvent } from 'react'
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
 import { Button } from '@/lib/shared/ui/button'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/lib/shared/ui/form'
 import { Input } from '@/lib/shared/ui/input'
 
 type AuthEntrypointMode = 'login' | 'register'
@@ -13,6 +24,8 @@ type AuthEntrypointMode = 'login' | 'register'
 type AuthEntrypointFormProps = {
   mode: AuthEntrypointMode
 }
+
+type AuthEntrypointFormValues = z.infer<typeof authEntrypointSchema>
 
 type BackendErrorResponse = {
   message?: string | string[]
@@ -45,11 +58,15 @@ export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
   const searchParams = useSearchParams()
   const redirectUrl =
     searchParams?.get('redirect_url')?.trim() || DEFAULT_REDIRECT_URL
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const form = useForm<AuthEntrypointFormValues>({
+    resolver: zodResolver(authEntrypointSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+    },
+  })
 
   const isRegister = mode === 'register'
   const submitPath = isRegister ? '/api/auth/register' : '/api/auth/login'
@@ -79,14 +96,7 @@ export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
     clerkSearchParams.toString()
   }`
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
-    if (isSubmitting) {
-      return
-    }
-
-    setIsSubmitting(true)
+  const handleSubmit = async (values: AuthEntrypointFormValues) => {
     setErrorMessage(null)
 
     try {
@@ -98,9 +108,9 @@ export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
         credentials: 'include',
         cache: 'no-store',
         body: JSON.stringify({
-          ...(isRegister ? { name } : {}),
-          email,
-          password,
+          ...(isRegister ? { name: values.name } : {}),
+          email: values.email,
+          password: values.password,
         }),
       })
 
@@ -113,8 +123,6 @@ export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
       router.refresh()
     } catch {
       setErrorMessage('Unable to complete authentication right now')
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
@@ -128,64 +136,89 @@ export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
         <p className="text-sm leading-6 text-neutral-300">{description}</p>
       </div>
 
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        {isRegister ? (
-          <div className="space-y-2">
-            <label className="text-sm text-neutral-300" htmlFor="name">
-              Name
-            </label>
-            <Input
-              id="name"
-              autoComplete="name"
-              disabled={isSubmitting}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Your name"
-              value={name}
+      <Form {...form}>
+        <form className="space-y-4" onSubmit={form.handleSubmit(handleSubmit)}>
+          {isRegister ? (
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-normal text-neutral-300">
+                    Name
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      autoComplete="name"
+                      disabled={form.formState.isSubmitting}
+                      placeholder="Your name"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-        ) : null}
+          ) : null}
 
-        <div className="space-y-2">
-          <label className="text-sm text-neutral-300" htmlFor="email">
-            Email
-          </label>
-          <Input
-            id="email"
-            autoComplete="email"
-            disabled={isSubmitting}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="name@example.com"
-            type="email"
-            value={email}
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-normal text-neutral-300">
+                  Email
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    autoComplete="email"
+                    disabled={form.formState.isSubmitting}
+                    placeholder="name@example.com"
+                    type="email"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <div className="space-y-2">
-          <label className="text-sm text-neutral-300" htmlFor="password">
-            Password
-          </label>
-          <Input
-            id="password"
-            autoComplete={isRegister ? 'new-password' : 'current-password'}
-            disabled={isSubmitting}
-            minLength={8}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="At least 8 characters"
-            type="password"
-            value={password}
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-normal text-neutral-300">
+                  Password
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    autoComplete={isRegister ? 'new-password' : 'current-password'}
+                    disabled={form.formState.isSubmitting}
+                    placeholder="At least 8 characters"
+                    type="password"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        {errorMessage ? (
-          <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
-            {errorMessage}
-          </p>
-        ) : null}
+          {errorMessage ? (
+            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+              {errorMessage}
+            </p>
+          ) : null}
 
-        <Button className="w-full" disabled={isSubmitting} type="submit">
-          {isSubmitting ? 'Please wait...' : submitLabel}
-        </Button>
-      </form>
+          <Button
+            className="w-full"
+            disabled={form.formState.isSubmitting}
+            type="submit">
+            {form.formState.isSubmitting ? 'Please wait...' : submitLabel}
+          </Button>
+        </form>
+      </Form>
 
       <div className="mt-6 space-y-3 text-sm text-neutral-300">
         <Link className="block hover:text-white" href={secondaryLink}>
