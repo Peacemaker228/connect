@@ -82,3 +82,14 @@ export interface ApiAuthIdentityPayload {
   imageUrl: string | null;
   primaryEmailAddress: string | null;
 }
+
+export interface ApiAuthPasswordRegistrationPayload {
+  email: string;
+  password: string;
+  name?: string | null;
+}
+
+export interface ApiAuthPasswordLoginPayload {
+  email: string;
+  password: string;
+}
