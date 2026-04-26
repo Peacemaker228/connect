@@ -25,6 +25,7 @@ Current wave order:
 - `Wave 16` = `AUTH_STAGE4_COMPATIBILITY_CLEANUP`
 - `Wave 17` = `STORAGE_FOUNDATION`
 - `Wave 18` = `STORAGE_S3_PROVIDER_IMPLEMENTATION`
+- `Wave 19` = `STORAGE_MANAGED_CLOUD_VALIDATION`
 
 ## Status by Stage
 
@@ -154,10 +155,14 @@ Done:
 - current runtime upload flow stays working while direct storage-vendor spread is reduced
 - cloud-first `S3-compatible` direction is fixed in docs and config shape
 - `Redis` is intentionally excluded from the initial storage step
+- real managed-cloud `S3-compatible` provider now exists in `apps/api`
+- active storage ownership can now move through the new `S3-compatible` provider instead of the temporary UploadThing adapter
+- explicit backend upload policy for `messageFile` is now fixed instead of remaining implicit
 
 Remaining:
-- implement a real `S3-compatible` provider in `apps/api`
-- switch active storage ownership from temporary `UploadThing` provider to the new `S3-compatible` provider
+- validate the new provider against a real managed-cloud bucket
+- document and confirm the required dev/prod storage env contract
+- decide whether `UploadThing` remains as temporary fallback only or can be removed in a later step
 - decide whether public URL compatibility stays temporary or moves toward stronger metadata/file-key ownership later
 
 ## Next Correct Step
@@ -165,7 +170,7 @@ Remaining:
 The next correct step by plan is:
 
 1. start `Stage 5` with storage foundation / storage abstraction
-2. implement the real backend `S3-compatible` provider for the storage boundary
+2. validate the real managed-cloud bucket flow and required env wiring
 3. keep managed cloud storage first, not self-hosted `MinIO` first
 4. do not add `Redis` unless a concrete storage-driven need appears
-5. do not mix this with `Postgres`, `LiveKit/media`, or late deferred auth-product work
+5. only after validation decide the next storage refactor step

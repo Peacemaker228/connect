@@ -21,6 +21,7 @@ const STORAGE_UPLOAD_POLICIES: Record<StorageUploadEndpoint, StorageUploadPolicy
   messageFile: {
     allowedContentTypes: ['image/', 'application/pdf'],
     folder: 'message-files',
+    maxFileSizeBytes: 4 * MB_IN_BYTES,
     visibility: 'public',
   },
 };
