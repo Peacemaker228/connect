@@ -1,14 +1,17 @@
 import { createUploadthing, type FileRouter } from 'uploadthing/next'
-import { auth } from '@clerk/nextjs/server'
+import { currentProfile } from '@/lib/shared/utils/current-profile'
 
 const f = createUploadthing()
 
 const handleAuth = async () => {
-  const { userId } = await auth()
+  const profile = await currentProfile()
 
-  if (!userId) throw new Error('Unauthorized')
+  if (!profile) throw new Error('Unauthorized')
 
-  return { userId }
+  return {
+    profileId: profile.id,
+    userId: profile.userId,
+  }
 }
 export const ourFileRouter = {
   serverImage: f({ image: { maxFileSize: '4MB', maxFileCount: 1 } })
