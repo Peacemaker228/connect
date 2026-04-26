@@ -1,21 +1,11 @@
 import { getSignInRedirectUrl } from '@app-core/routing/routes'
 import { NextRequest, NextResponse } from 'next/server'
 
-export const AUTH_PUBLIC_ROUTE_PATTERNS = [
-  '/',
-  '/invite(.*)',
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-]
+export const AUTH_PUBLIC_ROUTE_PATTERNS = ['/', '/invite(.*)', '/sign-in(.*)', '/sign-up(.*)']
 
 const BACKEND_ACCESS_TOKEN_COOKIE = 'ax-access-token'
 
-const AUTH_PUBLIC_ROUTE_REGEXES = [
-  /^\/$/,
-  /^\/invite(?:\/.*)?$/,
-  /^\/sign-in(?:\/.*)?$/,
-  /^\/sign-up(?:\/.*)?$/,
-]
+const AUTH_PUBLIC_ROUTE_REGEXES = [/^\/$/, /^\/invite(?:\/.*)?$/, /^\/sign-in(?:\/.*)?$/, /^\/sign-up(?:\/.*)?$/]
 
 const isPublicRoute = (pathname: string) => {
   return AUTH_PUBLIC_ROUTE_REGEXES.some((pattern) => pattern.test(pathname))

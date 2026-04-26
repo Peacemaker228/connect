@@ -6,8 +6,10 @@ This wave starts `Stage 5` after the active `Stage 4` auth-provider replacement 
 
 Wave task:
 - establish backend-owned storage foundation
-- keep `UploadThing` behind a storage boundary first
-- prepare the project for a later move to `MinIO` or another `S3-compatible` provider
+- move the project toward a backend-owned `S3-compatible` storage model
+- prefer a managed cloud provider first, not self-hosted infra first
+- keep `Redis` out of this wave unless a concrete storage need appears
+- leave `MinIO` as a later conscious self-hosted option, not the immediate first move
 
 ## Position in the Main Plan
 
@@ -28,11 +30,32 @@ These are intentionally deferred to the very end of the roadmap, before the fina
 
 - backend-owned storage foundation
 - storage boundary cleanup
+- choosing the near-term provider direction for storage
 - keeping current upload flows stable while reducing storage lock-in
+
+## Current Decision for This Wave
+
+For the current stage, the project should move toward:
+- managed cloud `S3-compatible` object storage first
+- no `Redis` as part of the initial storage foundation
+- separate dev/prod buckets or prefixes
+
+This means:
+- do not introduce self-hosted `MinIO` yet
+- do not introduce `Redis` just because storage work has started
+- do not widen this wave into background jobs, image processing, or virus scanning pipelines
+
+Current recommended direction:
+- implement the storage boundary in `apps/api`
+- make provider replacement possible
+- prefer a provider such as `Cloudflare R2` first
+- keep a later path open for `MinIO` if the project chooses stronger self-hosted independence later
 
 ## Out of Scope
 
-- immediate full replacement of `UploadThing`
+- broad storage-platform rollout with self-hosted infra
+- introducing `Redis` without a concrete storage-driven need
+- immediate full replacement of `UploadThing` in the same large step if it widens the scope too much
 - `Postgres` migration
 - `LiveKit` replacement
 - deferred late-roadmap auth-product completeness work

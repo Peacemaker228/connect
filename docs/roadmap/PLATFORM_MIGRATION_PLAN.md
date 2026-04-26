@@ -240,6 +240,12 @@ connect/
 
 ### Replace `UploadThing`
 
+Current storage decision:
+- prefer managed cloud `S3-compatible` storage first
+- do not introduce `Redis` in the initial storage step
+- do not start with self-hosted `MinIO`
+- keep `MinIO` as a later option once the storage boundary is stable
+
 Это не выглядит срочной задачей.
 
 Сейчас в проекте уже есть хороший промежуточный слой: загрузка идёт через backend route, а не через произвольный direct flow из UI.
@@ -426,6 +432,11 @@ These items may be intentionally deferred until the very end of the roadmap, bef
 
 ### Stage 5. Storage Abstraction
 
+Current execution note:
+- prefer managed cloud `S3-compatible` storage first
+- do not add `Redis` in this stage without a concrete storage-driven need
+- do not turn this stage into an early self-hosted infra rollout
+
 Срок:
 - `1-2 недели`
 
@@ -438,6 +449,23 @@ These items may be intentionally deferred until the very end of the roadmap, bef
 
 Результат:
 - storage становится replaceable
+
+### Stage 5A. Web Runtime API Extraction
+
+Срок:
+- `1-2 недели`
+
+Что делаем:
+- убираем remaining `pages/api` и `app/api` compatibility/proxy layers из `Next`
+- переводим web runtime на direct requests в `apps/api`
+- точкой доступа делаем client access layer через `packages/sdk`
+- на client side используем query/mutation flow (`TanStack Query`; `axios` допустим как transport client, если он нужен команде)
+- оставляем `Next` как web shell/router layer, а не как product API layer
+
+Результат:
+- web ходит напрямую в backend
+- `Next` больше не владеет API/proxy ownership
+- переход к `React + Vite` потом становится заметно проще
 
 ### Stage 6. `MySQL -> Postgres`
 

@@ -13,9 +13,10 @@
 Start `Wave 17 / Stage 5` after the active `Stage 4` auth-provider replacement work is complete.
 
 Segment task:
-- establish backend-owned storage foundation
-- keep `UploadThing` behind the storage boundary first
-- prepare the project for later storage-provider replacement without broadening the scope
+- establish a backend-owned storage foundation
+- move toward a backend-owned `S3-compatible` storage model
+- keep the implementation cloud-first for now
+- prepare the project for later provider replacement without broadening the scope
 
 ## Source of Truth
 
@@ -33,11 +34,23 @@ Before starting, the executor must read:
 
 Move active storage ownership further behind the backend/storage boundary.
 
-### 2. Boundary-first approach
+### 2. Cloud-first `S3-compatible` direction
 
-Keep `UploadThing` working for now, but reduce direct dependency spread and tighten the storage abstraction.
+Prefer a managed cloud `S3-compatible` direction first.
 
-### 3. Stage sequencing
+This segment should not start with self-hosted `MinIO`.
+
+### 3. Boundary-first approach
+
+Reduce direct dependency spread and tighten the storage abstraction.
+
+`UploadThing` may remain temporarily only if needed to keep the migration step narrow and reviewable.
+
+### 4. No forced `Redis`
+
+Do not introduce `Redis` in this segment unless a concrete storage-driven reason appears in the implementation itself.
+
+### 5. Stage sequencing
 
 Advance `Stage 5` without pulling in `Postgres`, media, or deferred auth-product work.
 
@@ -45,7 +58,8 @@ Advance `Stage 5` without pulling in `Postgres`, media, or deferred auth-product
 
 Forbidden in this segment:
 - full `UploadThing` removal
-- full `MinIO` rollout as a production replacement
+- self-hosted `MinIO` rollout as an immediate infra step
+- adding `Redis` just because storage work exists
 - `Postgres` migration
 - `LiveKit/media` rewrite
 - deferred auth-product work like `email verification` or `password reset`
@@ -57,13 +71,15 @@ Forbidden in this segment:
 - do not break current upload/runtime behavior
 - do not reopen finished `Stage 4` provider-replacement work
 - prefer thin, reviewable foundation changes over a large storage rewrite
+- prefer a provider-agnostic `S3-compatible` shape over a new vendor-specific abstraction
 
 ## Expected Deliverable
 
 By the end of the segment:
 - storage ownership is cleaner and more backend-owned
 - current upload flow still works
-- the project is better prepared for later `UploadThing -> MinIO/S3-compatible` replacement
+- the project is better prepared for later `UploadThing -> S3-compatible` replacement
+- the project has a clear cloud-first direction without prematurely taking on self-hosted infra or `Redis`
 
 ## Acceptance Criteria
 
@@ -87,6 +103,7 @@ The executor must return:
 
 - what storage-boundary/foundation work was added
 - what still remains before storage-provider replacement can happen later
+- whether the implementation keeps the project on the cloud-first / no-Redis path for this stage
 
 ### Changed Files
 
