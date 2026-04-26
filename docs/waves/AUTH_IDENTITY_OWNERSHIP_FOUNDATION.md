@@ -41,3 +41,21 @@ Mapping:
 - [ARCHITECTURE.md](../roadmap/ARCHITECTURE.md)
 - [BOUNDARIES.md](../roadmap/BOUNDARIES.md)
 - [STAGE_STATUS.md](../roadmap/STAGE_STATUS.md)
+
+## Wave Result
+
+Current state after this wave:
+- backend auth identities exist as a separate ownership layer
+- Clerk identity resolution is routed through backend auth-identity records
+- password hashing/verification foundation exists inside the backend auth boundary
+- backend password-based register/login entrypoints exist and issue backend-owned sessions
+
+## What Comes Next
+
+This wave is enough to move to the next auth-focused step.
+
+Next step by plan:
+
+1. integrate backend-owned auth entrypoints into the runtime/browser flow
+2. reduce `Clerk` as the main sign-in/sign-up source
+3. do not turn this into full `Clerk` removal yet
