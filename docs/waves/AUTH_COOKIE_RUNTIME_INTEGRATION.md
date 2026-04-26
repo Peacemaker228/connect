@@ -40,3 +40,20 @@ Mapping:
 - [ARCHITECTURE.md](../roadmap/ARCHITECTURE.md)
 - [BOUNDARIES.md](../roadmap/BOUNDARIES.md)
 - [STAGE_STATUS.md](../roadmap/STAGE_STATUS.md)
+
+## Wave Result
+
+Current state after this wave:
+- browser/runtime auth can bootstrap backend cookie sessions through dedicated auth routes
+- runtime auth utilities prefer backend cookie-session auth before falling back to transitional Clerk-backed identity resolution
+- runtime provider and middleware are aligned to the backend cookie-session path as the primary browser auth flow
+
+## What Comes Next
+
+This wave is enough to move to the next auth-focused step.
+
+Next step by plan:
+
+1. continue `Stage 4` with backend-owned identity/login foundation
+2. reduce `Clerk` as the auth source of truth
+3. do not turn this into a full `Clerk` removal yet
