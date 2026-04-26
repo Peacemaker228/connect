@@ -36,3 +36,20 @@ Mapping:
 - [ARCHITECTURE.md](../roadmap/ARCHITECTURE.md)
 - [BOUNDARIES.md](../roadmap/BOUNDARIES.md)
 - [STAGE_STATUS.md](../roadmap/STAGE_STATUS.md)
+
+## Wave Result
+
+Current state after this wave:
+- `Clerk` is removed from the active browser/runtime auth path
+- app-shell auth provider and middleware now run on backend-owned auth flow
+- sign-in/sign-up browser flow no longer depends on `Clerk` as the primary active path
+
+## What Comes Next
+
+This wave is enough to move to the next auth-focused cleanup step.
+
+Next step by plan:
+
+1. remove residual `Clerk` usage outside the primary runtime path
+2. finish remaining auth-boundary cleanup before calling `Clerk` replacement complete
+3. do not mix this with storage or other later-stage migrations
