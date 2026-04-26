@@ -1,13 +1,13 @@
 'use client'
 
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useUser } from '@clerk/nextjs'
 import { Loader2 } from 'lucide-react'
 import { LiveKitRoom, VideoConference } from '@livekit/components-react'
 import '@livekit/components-styles'
 import { MediaDeviceFailure, Room } from 'livekit-client'
 import { getProfileName } from '@app-core/profiles/get-profile-name'
 import { toast } from '@/lib/shared/utils/hooks/use-toast'
+import { useGetProfile } from '@sdk/queries/profile'
 
 interface IMediaRoomProps {
   chatId: string
@@ -49,7 +49,7 @@ const getDeviceErrorDescription = (failure?: MediaDeviceFailure, kind?: MediaDev
 }
 
 export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, chatId }) => {
-  const { user } = useUser()
+  const { profile } = useGetProfile()
   const [token, setToken] = useState('')
   const room = useMemo(() => new Room(), [])
   const isStartingMediaRef = useRef(false)
@@ -62,13 +62,13 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, chatId }) => {
   }, [])
 
   useEffect(() => {
-    if (!user?.username && !user?.firstName && !user?.lastName) return
-
     const name = getProfileName({
-      firstName: user.firstName,
-      lastName: user.lastName,
-      username: user.username,
+      firstName: null,
+      lastName: null,
+      username: profile?.name ?? null,
     })
+
+    if (!profile?.name) return
 
     ;(async () => {
       try {
@@ -79,7 +79,7 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, chatId }) => {
         console.error('[livekit] failed to fetch room token', error)
       }
     })()
-  }, [chatId, user?.firstName, user?.lastName, user?.username])
+  }, [chatId, profile?.name])
 
   const showMediaFailure = useCallback(
     (error: unknown, kind?: MediaDeviceKind) => {

@@ -1,11 +1,9 @@
-import { SignIn } from '@clerk/nextjs'
 import { redirect } from 'next/navigation'
 
 import { AuthEntrypointForm } from '@/lib/shared/features/auth-entrypoint-form'
 import { currentProfile } from '@/lib/shared/utils/current-profile'
 
 type AuthSearchParams = {
-  mode?: string | string[]
   redirect_url?: string | string[]
 }
 
@@ -20,15 +18,10 @@ export default async function SignInPage({
 }) {
   const resolvedSearchParams = await searchParams
   const redirectUrl = getSearchParam(resolvedSearchParams.redirect_url) ?? '/'
-  const mode = getSearchParam(resolvedSearchParams.mode)
   const profile = await currentProfile()
 
   if (profile) {
     redirect(redirectUrl)
-  }
-
-  if (mode === 'clerk') {
-    return <SignIn />
   }
 
   return <AuthEntrypointForm mode="login" />

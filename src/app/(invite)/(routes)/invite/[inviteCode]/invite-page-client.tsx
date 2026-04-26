@@ -1,7 +1,6 @@
 'use client'
 
 import axios from 'axios'
-import { useAuth } from '@clerk/nextjs'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -12,6 +11,7 @@ import { useJoinByInvite } from '@sdk/mutations/invite'
 import { ERoutes, getSignInRedirectUrl } from '@app-core/routing/routes'
 import { getDesktopInviteUrl } from '@/lib/shared/utils/desktop-deep-link'
 import { getDesktopDownloadUrl } from '@/lib/shared/utils/desktop-download'
+import { useGetProfile } from '@sdk/queries/profile'
 
 interface IInvitePageClientProps {
   inviteCode: string
@@ -25,7 +25,7 @@ export const InvitePageClient = ({
   shouldAutoJoinInBrowser,
 }: IInvitePageClientProps) => {
   const router = useRouter()
-  const { isLoaded, userId } = useAuth()
+  const { profile, isLoading: isProfileLoading } = useGetProfile()
   const t = useTranslations('InvitePage')
   const isDesktop = typeof window !== 'undefined' && Boolean(window.electron?.isDesktop)
 
@@ -65,7 +65,7 @@ export const InvitePageClient = ({
       return
     }
 
-    if (!isLoaded || isDesktop || shouldAutoJoinInBrowser || hasTriedDesktopOpenRef.current) {
+    if (isProfileLoading || isDesktop || shouldAutoJoinInBrowser || hasTriedDesktopOpenRef.current) {
       return
     }
 
@@ -78,19 +78,19 @@ export const InvitePageClient = ({
     return () => {
       window.clearTimeout(timeoutId)
     }
-  }, [desktopInviteUrl, isDesktop, isLoaded, isValidInvite, shouldAutoJoinInBrowser])
+  }, [desktopInviteUrl, isDesktop, isProfileLoading, isValidInvite, shouldAutoJoinInBrowser])
 
   useEffect(() => {
     if (!isValidInvite) {
       return
     }
 
-    if (hasJoinedRef.current || !isLoaded) {
+    if (hasJoinedRef.current || isProfileLoading) {
       return
     }
 
     if (isDesktop) {
-      if (!userId) {
+      if (!profile) {
         hasJoinedRef.current = true
         setIsRedirecting(true)
         router.replace(desktopSignInRedirectUrl)
@@ -106,7 +106,7 @@ export const InvitePageClient = ({
       return
     }
 
-    if (!userId) {
+    if (!profile) {
       hasJoinedRef.current = true
       setIsRedirecting(true)
       router.replace(browserSignInRedirectUrl)
@@ -119,12 +119,12 @@ export const InvitePageClient = ({
     browserSignInRedirectUrl,
     desktopSignInRedirectUrl,
     isDesktop,
-    isLoaded,
+    isProfileLoading,
     isValidInvite,
     joinInvite,
+    profile,
     router,
     shouldAutoJoinInBrowser,
-    userId,
   ])
 
   const continueInBrowser = async () => {
@@ -132,7 +132,7 @@ export const InvitePageClient = ({
       return
     }
 
-    if (!userId) {
+    if (!profile) {
       setIsRedirecting(true)
       router.replace(browserSignInRedirectUrl)
       return
@@ -141,7 +141,7 @@ export const InvitePageClient = ({
     await joinInvite()
   }
 
-  if (!isLoaded || isPending || isRedirecting) {
+  if (isProfileLoading || isPending || isRedirecting) {
     return <Spinner />
   }
 
