@@ -7,7 +7,7 @@ const DEFAULT_INTERNAL_API_URL = `http://127.0.0.1:${process.env.API_PORT ?? '40
 type BackendApiRequest = {
   path: string;
   method?: string;
-  body?: unknown;
+  body?: BodyInit | Record<string, unknown> | unknown[];
   headers?: Record<string, string | undefined>;
 };
 
@@ -60,17 +60,45 @@ const createRequestHeaders = (headers?: Record<string, string | undefined>) => {
   return resolvedHeaders;
 };
 
+const isBodyInit = (body: BackendApiRequest['body']): body is BodyInit => {
+  if (body === undefined) {
+    return false;
+  }
+
+  if (typeof body === 'string' || body instanceof Blob || body instanceof FormData || body instanceof URLSearchParams) {
+    return true;
+  }
+
+  if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) {
+    return true;
+  }
+
+  return typeof ReadableStream !== 'undefined' && body instanceof ReadableStream;
+};
+
+const createRequestBody = (body: BackendApiRequest['body'], headers: Headers) => {
+  if (body === undefined) {
+    return undefined;
+  }
+
+  if (isBodyInit(body)) {
+    return body;
+  }
+
+  if (!headers.has('content-type')) {
+    headers.set('content-type', JSON_CONTENT_TYPE);
+  }
+
+  return JSON.stringify(body);
+};
+
 export const requestBackendApi = async ({ path, method = 'GET', body, headers }: BackendApiRequest) => {
   const resolvedHeaders = createRequestHeaders(headers);
-
-  if (body !== undefined && !resolvedHeaders.has('content-type')) {
-    resolvedHeaders.set('content-type', JSON_CONTENT_TYPE);
-  }
 
   return fetch(new URL(path, getInternalApiUrl()), {
     method,
     headers: resolvedHeaders,
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: createRequestBody(body, resolvedHeaders),
     cache: 'no-store',
   });
 };

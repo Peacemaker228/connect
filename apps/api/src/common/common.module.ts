@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
 import appConfig from './config/app.config';
+import storageConfig from './config/storage.config';
 import { PrismaService } from './database/prisma.service';
 import { AppLoggerService } from './logger/app-logger.service';
 
@@ -12,7 +13,7 @@ import { AppLoggerService } from './logger/app-logger.service';
       isGlobal: true,
       cache: true,
       envFilePath: ['.env.local', '.env.production', '.env'],
-      load: [appConfig],
+      load: [appConfig, storageConfig],
     }),
   ],
   providers: [AppLoggerService, PrismaService],

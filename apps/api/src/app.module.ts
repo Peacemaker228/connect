@@ -12,6 +12,7 @@ import { MessagesModule } from './modules/messages/messages.module';
 import { ProfilesModule } from './modules/profiles/profiles.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { ServersModule } from './modules/servers/servers.module';
+import { StorageModule } from './modules/storage/storage.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -29,6 +30,7 @@ import { UsersModule } from './modules/users/users.module';
     DirectMessagesModule,
     RealtimeModule,
     MediaModule,
+    StorageModule,
   ],
 })
 export class AppModule {}
