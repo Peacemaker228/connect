@@ -13,7 +13,7 @@ type BackendAuthIdentity = {
 
 type BackendAuthSession = {
   isAuthenticated: boolean
-  strategy: 'anonymous' | 'profile-header' | 'user-header'
+  strategy: 'anonymous' | 'profile-header' | 'user-header' | 'access-token'
   sessionId: string | null
   profile: Profile | null
   user: {
@@ -40,6 +40,31 @@ const parseBackendSession = async (response: Response): Promise<BackendAuthSessi
   }
 
   return parsedResponse.data as BackendAuthSession
+}
+
+export const getBackendAuthSessionFromCookie = async (cookieHeader?: string) => {
+  if (!cookieHeader) {
+    return null
+  }
+
+  const response = await requestBackendApi({
+    path: '/api/auth/session',
+    headers: {
+      cookie: cookieHeader,
+    },
+  })
+
+  if (response.status === 401) {
+    return null
+  }
+
+  if (!response.ok) {
+    throw new Error(`Failed to get backend auth session: ${response.status}`)
+  }
+
+  const session = await parseBackendSession(response)
+
+  return session.profile ? session : null
 }
 
 const requestResolvedSession = async ({

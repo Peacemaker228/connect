@@ -1,4 +1,5 @@
 import { auth, clerkClient, currentUser, getAuth } from '@clerk/nextjs/server'
+import { cookies } from 'next/headers'
 import type { NextApiRequest } from 'next'
 
 type RuntimeAuthState = {
@@ -79,4 +80,17 @@ export const loadPagesRuntimeAuthIdentity = async (userId: string) => {
     console.error('[PAGES_RUNTIME_AUTH_IDENTITY]', error)
     return null
   }
+}
+
+export const getCurrentRuntimeCookieHeader = async () => {
+  const cookieStore = await cookies()
+  const cookieEntries = cookieStore.getAll()
+
+  if (cookieEntries.length === 0) {
+    return undefined
+  }
+
+  return cookieEntries
+    .map(({ name, value }) => `${name}=${encodeURIComponent(value)}`)
+    .join('; ')
 }

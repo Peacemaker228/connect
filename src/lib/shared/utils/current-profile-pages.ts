@@ -2,6 +2,7 @@ import { NextApiRequest } from 'next'
 
 import {
   createBackendAuthHeaders,
+  getBackendAuthSessionFromCookie,
   resolveBackendAuthSession,
 } from '@/lib/shared/utils/backend-auth-context'
 import {
@@ -10,6 +11,16 @@ import {
 } from '@/lib/shared/utils/runtime-auth'
 
 const resolveCurrentAuthSessionPages = async (req: NextApiRequest) => {
+  try {
+    const cookieSession = await getBackendAuthSessionFromCookie(req.headers.cookie)
+
+    if (cookieSession?.profile) {
+      return cookieSession
+    }
+  } catch (error) {
+    console.error('[CURRENT_PROFILE_PAGES_COOKIE_BACKEND]', error)
+  }
+
   const authState = getPagesRuntimeAuthState(req)
 
   if (!authState) return null
