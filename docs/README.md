@@ -16,7 +16,8 @@
 - [waves/AUTH_RUNTIME_INTEGRATION.md](./waves/AUTH_RUNTIME_INTEGRATION.md) - Wave 8, closed auth runtime integration wave inside `Stage 4`
 - [waves/AUTH_MIDDLEWARE_INTEGRATION.md](./waves/AUTH_MIDDLEWARE_INTEGRATION.md) - Wave 9, closed middleware-focused auth wave inside `Stage 4`
 - [waves/AUTH_SESSIONS_FOUNDATION.md](./waves/AUTH_SESSIONS_FOUNDATION.md) - Wave 10, closed sessions/cookie-foundation wave inside `Stage 4`
-- [waves/AUTH_COOKIE_RUNTIME_INTEGRATION.md](./waves/AUTH_COOKIE_RUNTIME_INTEGRATION.md) - Wave 11, next runtime/browser auth integration wave inside `Stage 4`
+- [waves/AUTH_COOKIE_RUNTIME_INTEGRATION.md](./waves/AUTH_COOKIE_RUNTIME_INTEGRATION.md) - Wave 11, closed runtime/browser auth integration wave inside `Stage 4`
+- [waves/AUTH_IDENTITY_OWNERSHIP_FOUNDATION.md](./waves/AUTH_IDENTITY_OWNERSHIP_FOUNDATION.md) - Wave 12, next auth-ownership wave inside `Stage 4`
 
 ## Wave Sequence
 
@@ -31,6 +32,7 @@
 9. Wave 9 - `AUTH_MIDDLEWARE_INTEGRATION`
 10. Wave 10 - `AUTH_SESSIONS_FOUNDATION`
 11. Wave 11 - `AUTH_COOKIE_RUNTIME_INTEGRATION`
+12. Wave 12 - `AUTH_IDENTITY_OWNERSHIP_FOUNDATION`
 
 ## Delegation
 
@@ -52,6 +54,7 @@
 - [delegation/briefs/SEGMENT_BRIEF_015_AUTH_SESSIONS_FOUNDATION.md](./delegation/briefs/SEGMENT_BRIEF_015_AUTH_SESSIONS_FOUNDATION.md)
 - [delegation/briefs/SEGMENT_BRIEF_016_AUTH_COOKIE_SESSION_FOUNDATION.md](./delegation/briefs/SEGMENT_BRIEF_016_AUTH_COOKIE_SESSION_FOUNDATION.md)
 - [delegation/briefs/SEGMENT_BRIEF_017_AUTH_COOKIE_RUNTIME_INTEGRATION.md](./delegation/briefs/SEGMENT_BRIEF_017_AUTH_COOKIE_RUNTIME_INTEGRATION.md)
+- [delegation/briefs/SEGMENT_BRIEF_018_AUTH_IDENTITY_OWNERSHIP_FOUNDATION.md](./delegation/briefs/SEGMENT_BRIEF_018_AUTH_IDENTITY_OWNERSHIP_FOUNDATION.md)
 
 ## Recommended Reading Order
 

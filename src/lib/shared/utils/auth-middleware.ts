@@ -8,10 +8,18 @@ export const AUTH_PUBLIC_ROUTE_PATTERNS = [
   '/api/uploadthing(.*)',
 ]
 
+const BACKEND_ACCESS_TOKEN_COOKIE = 'ax-access-token'
+
 const isPublicRoute = createRouteMatcher(AUTH_PUBLIC_ROUTE_PATTERNS)
 
 export const authMiddleware = clerkMiddleware(async (auth, request) => {
-  if (!isPublicRoute(request)) {
-    await auth.protect()
+  if (isPublicRoute(request)) {
+    return
   }
+
+  if (request.cookies.has(BACKEND_ACCESS_TOKEN_COOKIE)) {
+    return
+  }
+
+  await auth.protect()
 })
