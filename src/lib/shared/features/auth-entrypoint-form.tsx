@@ -72,8 +72,8 @@ export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
   const submitPath = isRegister ? '/api/auth/register' : '/api/auth/login'
   const title = isRegister ? 'Create account' : 'Welcome back'
   const description = isRegister
-    ? 'Backend-owned account creation is now the primary browser path.'
-    : 'Sign in through the backend auth boundary first, with Clerk as fallback.'
+    ? 'Create a backend-owned account and start a cookie-backed session.'
+    : 'Sign in through the backend auth boundary using your existing account.'
   const submitLabel = isRegister ? 'Create account' : 'Sign in'
   const secondaryHref = isRegister ? '/sign-in' : '/sign-up'
   const secondaryLabel = isRegister
@@ -86,14 +86,8 @@ export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
     secondarySearchParams.set('redirect_url', redirectUrl)
   }
 
-  const clerkSearchParams = new URLSearchParams(secondarySearchParams)
-  clerkSearchParams.set('mode', 'clerk')
-
   const secondaryLink = `${secondaryHref}${
     secondarySearchParams.size > 0 ? `?${secondarySearchParams.toString()}` : ''
-  }`
-  const clerkFallbackLink = `?${
-    clerkSearchParams.toString()
   }`
 
   const handleSubmit = async (values: AuthEntrypointFormValues) => {
@@ -223,9 +217,6 @@ export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
       <div className="mt-6 space-y-3 text-sm text-neutral-300">
         <Link className="block hover:text-white" href={secondaryLink}>
           {secondaryLabel}
-        </Link>
-        <Link className="block text-neutral-400 hover:text-white" href={clerkFallbackLink}>
-          Use Clerk fallback instead
         </Link>
       </div>
     </div>

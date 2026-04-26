@@ -1,16 +1,20 @@
 import {
   createBackendAuthHeaders,
   getBackendAuthSessionFromCookie,
-  resolveBackendAuthSession,
 } from '@/lib/shared/utils/backend-auth-context'
-import {
-  getCurrentRuntimeCookieHeader,
-  getCurrentRuntimeAuthState,
-  loadCurrentRuntimeAuthIdentity,
-} from '@/lib/shared/utils/runtime-auth'
+import { cookies } from 'next/headers'
 
 const resolveCurrentAuthSession = async () => {
-  const cookieHeader = await getCurrentRuntimeCookieHeader()
+  const cookieStore = await cookies()
+  const cookieEntries = cookieStore.getAll()
+
+  if (cookieEntries.length === 0) {
+    return null
+  }
+
+  const cookieHeader = cookieEntries
+    .map(({ name, value }) => `${name}=${encodeURIComponent(value)}`)
+    .join('; ')
 
   if (cookieHeader) {
     try {
@@ -24,32 +28,13 @@ const resolveCurrentAuthSession = async () => {
     }
   }
 
-  const authState = await getCurrentRuntimeAuthState()
-
-  if (!authState) {
-    return null
-  }
-
-  try {
-    return await resolveBackendAuthSession({
-      userId: authState.userId,
-      sessionId: authState.sessionId,
-      loadIdentity: loadCurrentRuntimeAuthIdentity,
-    })
-  } catch (error) {
-    console.error('[CURRENT_PROFILE_BACKEND]', error)
-    return null
-  }
+  return null
 }
 
 export const currentProfile = async () => {
   const session = await resolveCurrentAuthSession()
 
   return session?.profile ?? null
-}
-
-export const currentBackendAuthSession = async () => {
-  return resolveCurrentAuthSession()
 }
 
 export const currentBackendAuthHeaders = async () => {

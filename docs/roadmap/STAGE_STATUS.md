@@ -123,11 +123,13 @@ Done:
 - browser/runtime auth entrypoints now use backend-owned login/register flow as the primary path
 - sign-in/sign-up pages now prefer local auth entrypoint forms with Clerk left as fallback mode
 - shared auth entrypoint validation is centralized through app-core schema/contracts
+- `Clerk` is removed from the active browser/runtime auth path
+- app-shell auth provider and middleware now run on backend-owned auth flow instead of `Clerk`
 
 Remaining:
-- local auth adapter layer still uses `Clerk` internally as the transitional identity/auth source
-- full `Clerk` replacement
-- transitional `Clerk` provider/middleware/runtime glue still exists in the app shell
+- residual `Clerk` usage still exists outside the primary auth runtime path
+- `server-upload`, `uploadthing`, and legacy helper code still contain `Clerk`-based auth or `Clerk`-shaped assumptions
+- full `Clerk` replacement is not complete yet
 - backend-owned devices/session-management surface is still incomplete
 - auth product completeness (`email verification`, `password reset`, account-linking policy) is still pending after provider replacement
 
@@ -135,6 +137,6 @@ Remaining:
 
 The next correct step by plan is:
 
-1. continue `Stage 4` with final `Clerk` removal and cleanup of transitional auth wiring
+1. continue `Stage 4` with residual `Clerk` cleanup outside the primary runtime path
 2. keep this focused on the auth boundary only
 3. do not mix this with storage, `Postgres`, or `LiveKit/media` migrations

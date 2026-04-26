@@ -16,13 +16,13 @@ import {
 import { roleIconMap } from '@/lib/shared/utils/role-icon-map'
 import { Spinner } from '@/lib/shared/ui/spinner'
 import { ErrorComponent } from '@/lib/shared/ui/error-component'
-import { UserButton } from '@clerk/nextjs'
 import { useTranslations } from 'next-intl'
 import { useGetServer, useGetServers } from '@sdk/queries/server'
 import { useSidebarSocket } from '@/lib/shared/data-access/navigation-sidebar/use-sidebar-socket'
 import { useGetProfile } from '@sdk/queries/profile'
 import { useRouter } from 'next/navigation'
 import { ERoutes } from '@app-core/routing/routes'
+import { BackendUserMenu } from '@/lib/shared/features/backend-user-menu'
 
 interface IServerSidebarProps {
   serverId: string
@@ -156,13 +156,7 @@ export const ServerSidebar: FC<IServerSidebarProps> = ({ serverId }) => {
           </ScrollArea>
           <Separator className={'h-[2px] bg-white dark:bg-[#232428] rounded-md'} />
           <div className="px-[16px] py-[12px] flex justify-between items-center dark:bg-[#2B2D31] bg-[#E3E5E8]">
-            <UserButton
-              appearance={{
-                elements: {
-                  avatarBox: 'h-[48px] w-[48px]',
-                },
-              }}
-            />
+            <BackendUserMenu email={profile?.email} imageUrl={profile?.imageUrl} name={profile?.name} />
             <div
               className={
                 'flex justify-center items-center mx-3 h-[36px] w-[36px] rounded-[24px] cursor-pointer bg-background dark:bg-neutral-700'
