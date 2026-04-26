@@ -38,3 +38,20 @@ Mapping:
 - [ARCHITECTURE.md](../roadmap/ARCHITECTURE.md)
 - [BOUNDARIES.md](../roadmap/BOUNDARIES.md)
 - [STAGE_STATUS.md](../roadmap/STAGE_STATUS.md)
+
+## Wave Result
+
+Current state after this wave:
+- browser/runtime auth entrypoints now use backend-owned login/register flow as the primary path
+- sign-in/sign-up pages prefer local auth entrypoint forms with `Clerk` left as fallback mode
+- shared auth entrypoint validation is centralized through app-core schema/contracts
+
+## What Comes Next
+
+This wave is enough to move to the next auth-focused step.
+
+Next step by plan:
+
+1. perform final `Clerk` removal and clean up transitional auth wiring
+2. keep the scope inside the auth boundary
+3. do not mix this with auth product-completeness work yet
