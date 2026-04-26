@@ -21,13 +21,49 @@ model Profile {
   members      Member[]
   channels     Channel[]
   authSessions AuthSession[]
+  authIdentities AuthIdentity[]
 
   @@map("profile")
+}
+
+enum AuthIdentityProvider {
+  CLERK
+  PASSWORD
 }
 
 enum AuthSessionStatus {
   ACTIVE
   REVOKED
+}
+
+model AuthIdentity {
+  id                  String               @id @default(uuid())
+  provider            AuthIdentityProvider
+  subject             String               @db.VarChar(191)
+  profileId           String
+  profile             Profile              @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  email               String?              @db.Text
+  emailNormalized     String?              @db.VarChar(191)
+  lastAuthenticatedAt DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  passwordCredential AuthPasswordCredential?
+
+  @@unique([provider, subject])
+  @@index([profileId])
+  @@index([emailNormalized])
+  @@map("authidentity")
+}
+
+model AuthPasswordCredential {
+  identityId String       @id
+  identity   AuthIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  passwordHash String     @db.Text
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@map("authpasswordcredential")
 }
 
 model AuthSession {

@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 
 import { AuthCookiesService } from './auth-cookies.service';
 import { AuthController } from './auth.controller';
+import { AuthIdentitiesService } from './auth-identities.service';
+import { AuthPasswordsService } from './auth-passwords.service';
 import { AuthSessionsService } from './auth-sessions.service';
 import { AuthService } from './auth.service';
 import { AuthTokensService } from './auth-tokens.service';
@@ -15,6 +17,8 @@ import { RequireAuthGuard } from './guards/require-auth.guard';
     AuthTokensService,
     AuthSessionsService,
     AuthCookiesService,
+    AuthIdentitiesService,
+    AuthPasswordsService,
     AuthContextGuard,
     RequireAuthGuard,
   ],
@@ -23,6 +27,8 @@ import { RequireAuthGuard } from './guards/require-auth.guard';
     AuthTokensService,
     AuthSessionsService,
     AuthCookiesService,
+    AuthIdentitiesService,
+    AuthPasswordsService,
     AuthContextGuard,
     RequireAuthGuard,
   ],

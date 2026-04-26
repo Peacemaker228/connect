@@ -12,7 +12,12 @@ import { CurrentAuth } from './decorators/current-auth.decorator';
 import { AuthCookiesService, type AuthCookieResponse } from './auth-cookies.service';
 import { AuthContextGuard } from './guards/auth-context.guard';
 import { AuthService } from './auth.service';
-import type { ApiAuthContext, ApiAuthIdentityPayload } from './auth.types';
+import type {
+  ApiAuthContext,
+  ApiAuthIdentityPayload,
+  ApiAuthPasswordLoginPayload,
+  ApiAuthPasswordRegistrationPayload,
+} from './auth.types';
 
 @Controller('auth')
 @UseGuards(AuthContextGuard)
@@ -79,6 +84,49 @@ export class AuthController {
     this.authCookiesService.clearSessionCookies(response);
 
     return { ok: true };
+  }
+
+  @Post('register/password')
+  async registerPasswordIdentity(
+    @Body() body: ApiAuthPasswordRegistrationPayload,
+    @Headers('user-agent') userAgent: string | undefined,
+    @Headers('x-forwarded-for') forwardedFor: string | undefined,
+    @Res({ passthrough: true }) response: AuthCookieResponse,
+  ) {
+    const exchangeSnapshot = await this.authService.registerPasswordIdentity(
+      body,
+      {
+        userAgent,
+        ipAddress: forwardedFor,
+      },
+    );
+
+    this.authCookiesService.applyIssuedSessionCookies(
+      response,
+      exchangeSnapshot.issuedSession,
+    );
+
+    return exchangeSnapshot;
+  }
+
+  @Post('login/password')
+  async loginWithPassword(
+    @Body() body: ApiAuthPasswordLoginPayload,
+    @Headers('user-agent') userAgent: string | undefined,
+    @Headers('x-forwarded-for') forwardedFor: string | undefined,
+    @Res({ passthrough: true }) response: AuthCookieResponse,
+  ) {
+    const exchangeSnapshot = await this.authService.loginWithPassword(body, {
+      userAgent,
+      ipAddress: forwardedFor,
+    });
+
+    this.authCookiesService.applyIssuedSessionCookies(
+      response,
+      exchangeSnapshot.issuedSession,
+    );
+
+    return exchangeSnapshot;
   }
 
   @Post('session/resolve')

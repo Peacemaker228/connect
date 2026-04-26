@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 
@@ -14,11 +13,14 @@ import {
 } from './auth.constants';
 import type { AuthRequest, AuthRequestHeaders } from './auth-request.interface';
 import { AuthCookiesService } from './auth-cookies.service';
+import { AuthIdentitiesService } from './auth-identities.service';
 import { AuthSessionsService } from './auth-sessions.service';
 import { AuthTokensService } from './auth-tokens.service';
 import type {
   ApiAuthContext,
   ApiAuthIdentityPayload,
+  ApiAuthPasswordLoginPayload,
+  ApiAuthPasswordRegistrationPayload,
   ApiAuthProfileSnapshot,
   ApiAuthSessionExchangeSnapshot,
   ApiAuthSessionSnapshot,
@@ -37,6 +39,7 @@ export class AuthService {
     private readonly authTokensService: AuthTokensService,
     private readonly authSessionsService: AuthSessionsService,
     private readonly authCookiesService: AuthCookiesService,
+    private readonly authIdentitiesService: AuthIdentitiesService,
   ) {}
 
   async getRequestContext(
@@ -107,30 +110,7 @@ export class AuthService {
       throw new UnauthorizedException('Unauthorized');
     }
 
-    const issuedSession = this.authTokensService.issueSessionTokens({
-      profileId: currentSession.profile.id,
-      userId: currentSession.profile.userId,
-    });
-
-    await this.authSessionsService.createSession({
-      sessionId: issuedSession.sessionId,
-      profileId: currentSession.profile.id,
-      userId: currentSession.profile.userId,
-      refreshToken: issuedSession.refreshToken,
-      refreshTokenExpiresAt: issuedSession.refreshTokenExpiresAt,
-      userAgent: metadata.userAgent,
-      ipAddress: this.normalizeIpAddress(metadata.ipAddress),
-    });
-
-    return {
-      session: this.createSessionSnapshot(
-        currentSession.profile,
-        'access-token',
-        issuedSession.sessionId,
-      ),
-      issuedSession,
-      cookieTransport: this.authCookiesService.getCookieTransportSnapshot(),
-    };
+    return this.issueOwnedSession(currentSession.profile, metadata);
   }
 
   async getSessionSnapshot(
@@ -262,34 +242,38 @@ export class AuthService {
       throw new BadRequestException('Auth user mismatch');
     }
 
-    const existingProfile = await this.prisma.profile.findUnique({
-      where: {
-        userId: resolvedUserId,
-      },
+    const resolvedProfile = await this.authIdentitiesService.resolveClerkIdentity({
+      userId: resolvedUserId,
+      identity: params.identity,
     });
 
-    if (existingProfile) {
-      return this.createSessionSnapshot(existingProfile, 'user-header', params.sessionId);
-    }
+    return this.createSessionSnapshot(
+      resolvedProfile,
+      'user-header',
+      params.sessionId,
+    );
+  }
 
-    if (!params.identity) {
-      throw new NotFoundException('Profile not found');
-    }
+  async registerPasswordIdentity(
+    payload: ApiAuthPasswordRegistrationPayload,
+    metadata: AuthClientMetadata = {},
+  ): Promise<ApiAuthSessionExchangeSnapshot> {
+    const profile = await this.authIdentitiesService.registerPasswordIdentity(
+      payload,
+    );
 
-    const createdProfile = await this.prisma.profile.upsert({
-      where: {
-        userId: resolvedUserId,
-      },
-      update: {},
-      create: {
-        userId: resolvedUserId,
-        name: this.getProfileName(params.identity),
-        imageUrl: params.identity.imageUrl ?? '',
-        email: params.identity.primaryEmailAddress ?? '',
-      },
-    });
+    return this.issueOwnedSession(profile, metadata);
+  }
 
-    return this.createSessionSnapshot(createdProfile, 'user-header', params.sessionId);
+  async loginWithPassword(
+    payload: ApiAuthPasswordLoginPayload,
+    metadata: AuthClientMetadata = {},
+  ): Promise<ApiAuthSessionExchangeSnapshot> {
+    const profile = await this.authIdentitiesService.authenticatePasswordIdentity(
+      payload,
+    );
+
+    return this.issueOwnedSession(profile, metadata);
   }
 
   private async resolveAccessTokenContext(accessToken: string): Promise<ApiAuthContext> {
@@ -392,23 +376,41 @@ export class AuthService {
       : undefined;
   }
 
-  private getProfileName(identity: ApiAuthIdentityPayload) {
-    if (identity.firstName && identity.lastName) {
-      return `${identity.firstName} ${identity.lastName}`;
-    }
+  private async issueOwnedSession(
+    profile: {
+      id: string;
+      userId: string;
+      name: string;
+      email: string;
+      imageUrl: string;
+      createdAt: Date;
+      updatedAt: Date;
+    },
+    metadata: AuthClientMetadata,
+  ): Promise<ApiAuthSessionExchangeSnapshot> {
+    const issuedSession = this.authTokensService.issueSessionTokens({
+      profileId: profile.id,
+      userId: profile.userId,
+    });
 
-    if (identity.firstName) {
-      return identity.firstName;
-    }
+    await this.authSessionsService.createSession({
+      sessionId: issuedSession.sessionId,
+      profileId: profile.id,
+      userId: profile.userId,
+      refreshToken: issuedSession.refreshToken,
+      refreshTokenExpiresAt: issuedSession.refreshTokenExpiresAt,
+      userAgent: metadata.userAgent,
+      ipAddress: this.normalizeIpAddress(metadata.ipAddress),
+    });
 
-    if (identity.lastName) {
-      return identity.lastName;
-    }
-
-    if (identity.username) {
-      return identity.username;
-    }
-
-    return 'USER';
+    return {
+      session: this.createSessionSnapshot(
+        profile,
+        'access-token',
+        issuedSession.sessionId,
+      ),
+      issuedSession,
+      cookieTransport: this.authCookiesService.getCookieTransportSnapshot(),
+    };
   }
 }

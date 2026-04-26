@@ -112,22 +112,26 @@ Done:
 - backend-owned auth session persistence exists
 - backend session refresh/rotation/revocation now goes through persisted auth-session state
 - backend cookie transport foundation exists for browser auth: exchange/refresh/logout can set or clear `Secure` + `HttpOnly` session cookies
-- auth context resolution can now authenticate by cookie-backed access token as well as transitional headers
+- auth context resolution can now be authenticated by cookie-backed access token as well as transitional headers
 - browser/runtime auth can now bootstrap and clear backend cookie sessions through dedicated auth routes
-- current runtime profile/session resolution prefers backend cookie-session auth before falling back to transitional Clerk-backed identity resolution
+- the current runtime profile / session resolution prefers backend cookie-session auth before falling back to transitional Clerk-backed identity resolution
 - runtime provider and middleware are integrated with the backend cookie-session path as the primary browser auth flow
+- backend-owned auth identity foundation exists
+- Clerk identity resolution now goes through backend auth-identity ownership instead of direct profile upsert logic
+- password hashing/verification foundation exists in the backend auth boundary
+- backend password-based register/login endpoints now exist on top of the backend session/cookie model
 
 Remaining:
 - local auth adapter layer still uses `Clerk` internally as the transitional identity/auth source
 - full `Clerk` replacement
-- backend-owned registration/login identity flow does not exist yet
-- browser runtime still uses `Clerk` as a bootstrap/sign-in source for auth ownership
+- browser runtime still uses `Clerk` as the main sign-in/sign-up source
+- backend-owned auth entrypoints are not integrated into the runtime UX yet
 - backend-owned devices/session-management surface is still incomplete
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. continue `Stage 4` with backend-owned identity/login foundation to reduce `Clerk` as the auth source of truth
+1. continue `Stage 4` with backend-owned auth entrypoints/runtime integration on top of the new identity foundation
 2. keep this focused on the auth boundary only
 3. do not mix this with storage, `Postgres`, or `LiveKit/media` migrations
