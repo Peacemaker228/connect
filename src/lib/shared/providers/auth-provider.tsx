@@ -6,22 +6,28 @@ import { useEffect, useRef } from 'react'
 
 function BackendSessionBridge() {
   const { isLoaded, userId } = useAuth()
-  const lastSyncKeyRef = useRef<string | null>(null)
+  const lastResolvedUserIdRef = useRef<string | null | undefined>(undefined)
 
   useEffect(() => {
     if (!isLoaded) {
       return
     }
 
-    const syncKey = userId ?? 'anonymous'
-
-    if (lastSyncKeyRef.current === syncKey) {
+    if (lastResolvedUserIdRef.current === userId) {
       return
     }
 
-    lastSyncKeyRef.current = syncKey
+    const previousUserId = lastResolvedUserIdRef.current
+    lastResolvedUserIdRef.current = userId
 
     const abortController = new AbortController()
+
+    if (!userId && !previousUserId) {
+      return () => {
+        abortController.abort()
+      }
+    }
+
     const path = userId ? '/api/auth/session/bootstrap' : '/api/auth/session/logout'
 
     fetch(path, {
@@ -46,6 +52,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
     <ClerkProvider
       {...(clerkProxyUrl ? { proxyUrl: clerkProxyUrl } : {})}
       afterSignOutUrl="/"
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
       signInFallbackRedirectUrl="/"
       signUpFallbackRedirectUrl="/">
       <BackendSessionBridge />
