@@ -97,7 +97,7 @@ Status: `in progress`
 
 Done:
 - backend auth foundation exists in `apps/api`
-- centralized auth service resolves transitional auth context
+- a centralized auth service resolves transitional auth context
 - reusable guards and decorators replace direct `x-profile-id` reads in backend controllers
 - backend-owned `/api/auth/session` snapshot endpoint exists
 - domain backend modules now depend on the auth boundary instead of raw header access
@@ -110,7 +110,7 @@ Done:
 - layout/provider runtime auth wiring now goes through a local auth provider boundary
 - the current runtime auth state/identity loading is centralized in runtime auth utilities
 - backend-owned auth session persistence exists
-- backend session refresh/rotation/revocation now goes through persisted auth-session state
+- backend session refresh/rotation/revocation now goes through the persisted auth-session state
 - backend cookie transport foundation exists for browser auth: exchange/refresh/logout can set or clear `Secure` + `HttpOnly` session cookies
 - auth context resolution can now be authenticated by cookie-backed access token as well as transitional headers
 - browser/runtime auth can now bootstrap and clear backend cookie sessions through dedicated auth routes
@@ -120,18 +120,21 @@ Done:
 - Clerk identity resolution now goes through backend auth-identity ownership instead of direct profile upsert logic
 - password hashing/verification foundation exists in the backend auth boundary
 - backend password-based register/login endpoints now exist on top of the backend session/cookie model
+- browser/runtime auth entrypoints now use backend-owned login/register flow as the primary path
+- sign-in/sign-up pages now prefer local auth entrypoint forms with Clerk left as fallback mode
+- shared auth entrypoint validation is centralized through app-core schema/contracts
 
 Remaining:
 - local auth adapter layer still uses `Clerk` internally as the transitional identity/auth source
 - full `Clerk` replacement
-- browser runtime still uses `Clerk` as the main sign-in/sign-up source
-- backend-owned auth entrypoints are not integrated into the runtime UX yet
+- transitional `Clerk` provider/middleware/runtime glue still exists in the app shell
 - backend-owned devices/session-management surface is still incomplete
+- auth product completeness (`email verification`, `password reset`, account-linking policy) is still pending after provider replacement
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. continue `Stage 4` with backend-owned auth entrypoints/runtime integration on top of the new identity foundation
+1. continue `Stage 4` with final `Clerk` removal and cleanup of transitional auth wiring
 2. keep this focused on the auth boundary only
 3. do not mix this with storage, `Postgres`, or `LiveKit/media` migrations

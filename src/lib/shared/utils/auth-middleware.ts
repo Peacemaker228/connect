@@ -5,6 +5,8 @@ export const AUTH_PUBLIC_ROUTE_PATTERNS = [
   '/invite(.*)',
   '/sign-in(.*)',
   '/sign-up(.*)',
+  '/api/auth/login(.*)',
+  '/api/auth/register(.*)',
   '/api/uploadthing(.*)',
 ]
 
