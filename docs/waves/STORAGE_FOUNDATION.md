@@ -33,6 +33,20 @@ These are intentionally deferred to the very end of the roadmap, before the fina
 - choosing the near-term provider direction for storage
 - keeping current upload flows stable while reducing storage lock-in
 
+## Current Progress
+
+Completed in the first storage step:
+- `apps/api` now owns the active server-upload path through a backend storage module
+- a backend storage provider token and service shape now exist
+- the old `Next` upload route is reduced to a thin proxy
+- multipart upload proxying to backend is handled centrally
+- the project now has a documented cloud-first `S3-compatible` direction with no early `Redis`
+
+Still not done in this wave family:
+- the active provider is still `UploadThing`
+- a real `S3-compatible` provider is not implemented yet
+- storage metadata ownership is still compatibility-oriented, not fully normalized
+
 ## Current Decision for This Wave
 
 For the current stage, the project should move toward:
@@ -67,3 +81,10 @@ Current recommended direction:
 - [ARCHITECTURE.md](../roadmap/ARCHITECTURE.md)
 - [BOUNDARIES.md](../roadmap/BOUNDARIES.md)
 - [STAGE_STATUS.md](../roadmap/STAGE_STATUS.md)
+
+## Next Logical Step
+
+After this foundation step, the next correct move is:
+- implement the real managed-cloud `S3-compatible` provider in `apps/api`
+- keep the runtime upload contract stable
+- leave `MinIO` and `Redis` out of the next implementation step
