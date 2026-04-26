@@ -36,3 +36,20 @@ Mapping:
 - [ARCHITECTURE.md](../roadmap/ARCHITECTURE.md)
 - [BOUNDARIES.md](../roadmap/BOUNDARIES.md)
 - [STAGE_STATUS.md](../roadmap/STAGE_STATUS.md)
+
+## Wave Result
+
+Current state after this wave:
+- residual `Clerk` imports are removed from `server-upload`, `uploadthing`, and the legacy `ensure-profile` helper path
+- auth ownership is cleaner outside the primary runtime auth path
+- remaining `Clerk`-related work is now mostly compatibility cleanup rather than active provider usage
+
+## What Comes Next
+
+This wave is enough to move to the next auth-focused cleanup step.
+
+Next step by plan:
+
+1. remove remaining backend auth compatibility paths tied to legacy identity resolution
+2. finish the last auth-boundary cleanup before calling `Stage 4` complete
+3. do not mix this with auth-product completeness work yet

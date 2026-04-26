@@ -125,11 +125,12 @@ Done:
 - shared auth entrypoint validation is centralized through app-core schema/contracts
 - `Clerk` is removed from the active browser/runtime auth path
 - app-shell auth provider and middleware now run on backend-owned auth flow instead of `Clerk`
+- residual `Clerk` imports are removed from `server-upload`, `uploadthing`, and the legacy `ensure-profile` helper path
 
 Remaining:
-- residual `Clerk` usage still exists outside the primary auth runtime path
-- `server-upload`, `uploadthing`, and legacy helper code still contain `Clerk`-based auth or `Clerk`-shaped assumptions
-- full `Clerk` replacement is not complete yet
+- backend auth compatibility paths for legacy identity resolution still exist
+- `/api/auth/session/resolve`, `resolveClerkIdentity`, and dead auth-context compatibility helpers still need cleanup
+- full `Clerk` replacement is very close but not fully complete yet
 - backend-owned devices/session-management surface is still incomplete
 - auth product completeness (`email verification`, `password reset`, account-linking policy) is still pending after provider replacement
 
@@ -137,6 +138,6 @@ Remaining:
 
 The next correct step by plan is:
 
-1. continue `Stage 4` with residual `Clerk` cleanup outside the primary runtime path
+1. continue `Stage 4` with final auth compatibility cleanup and removal of legacy identity-resolution paths
 2. keep this focused on the auth boundary only
 3. do not mix this with storage, `Postgres`, or `LiveKit/media` migrations
