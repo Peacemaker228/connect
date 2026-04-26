@@ -36,3 +36,21 @@ Mapping:
 - [ARCHITECTURE.md](../roadmap/ARCHITECTURE.md)
 - [BOUNDARIES.md](../roadmap/BOUNDARIES.md)
 - [STAGE_STATUS.md](../roadmap/STAGE_STATUS.md)
+
+## Wave Result
+
+Current state after this wave:
+- backend auth compatibility paths tied to legacy identity resolution are removed
+- dead/transitional auth-context helpers from the old provider bridge are cleaned up
+- provider replacement is effectively complete
+- late auth-product work like `email verification` and `password reset` is intentionally deferred to the very end of the roadmap
+
+## What Comes Next
+
+This wave is enough to close the active provider-replacement part of `Stage 4` and move to the next stage.
+
+Next step by plan:
+
+1. start `Stage 5` with storage foundation / storage abstraction
+2. keep `UploadThing` behind the backend storage boundary first
+3. leave deferred auth-product completeness for the late-roadmap checkpoint before the final `Next.js -> React` decision

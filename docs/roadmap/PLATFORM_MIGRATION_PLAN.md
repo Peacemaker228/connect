@@ -166,7 +166,7 @@ connect/
 - `apps/api` как backend owner для текущего domain/realtime слоя
 - thin compatibility layers в `src/app/api/*` и части `src/pages/api/socket/*`
 - `Electron` как desktop shell
-- `Clerk` как auth provider
+- backend-owned auth is now the active provider path; `Clerk` replacement work is largely complete and the remaining auth work is product-completeness
 - `UploadThing` как storage dependency
 - `LiveKit` как media layer
 - `Prisma + MySQL` как persistence
@@ -308,6 +308,10 @@ connect/
 9. Заменить `LiveKit`
 10. Только потом решать, нужен ли уход с `Next`
 
+Late-order note:
+- deferred auth-product completeness such as `email verification` and `password reset` should happen near the end of the roadmap
+- this late auth work should be completed before the final `Next.js -> React` decision
+
 ## 10. Detailed Migration Stages
 
 ### Stage 0. Architecture Freeze
@@ -413,6 +417,13 @@ connect/
 Результат:
 - auth становится частью платформы
 
+Late-roadmap note:
+- `email verification`
+- `password reset`
+- similar non-blocking auth-product completeness work
+
+These items may be intentionally deferred until the very end of the roadmap, before the final `Next.js -> React` decision, as long as backend-owned auth/provider replacement is already complete and the current product can operate without them.
+
 ### Stage 5. Storage Abstraction
 
 Срок:
@@ -506,6 +517,15 @@ connect/
 
 Результат:
 - платформа готова к росту от маленьких комнат к большим сценариям
+
+### Deferred Late-Roadmap Auth Product Work
+
+This checkpoint exists for auth-product capabilities that are useful but not required to finish provider replacement:
+- `email verification`
+- `password reset`
+- similar late auth-product completeness tasks
+
+This checkpoint should happen near the end of the roadmap, right before the final decision on `Next.js -> React`.
 
 ### Stage 10. Decide on `Next.js`
 
