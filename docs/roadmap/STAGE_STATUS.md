@@ -24,6 +24,7 @@ Current wave order:
 - `Wave 15` = `AUTH_RESIDUAL_CLERK_CLEANUP`
 - `Wave 16` = `AUTH_STAGE4_COMPATIBILITY_CLEANUP`
 - `Wave 17` = `STORAGE_FOUNDATION`
+- `Wave 18` = `STORAGE_S3_PROVIDER_IMPLEMENTATION`
 
 ## Status by Stage
 
@@ -141,12 +142,30 @@ Remaining:
   - similar non-blocking auth-product completeness work
 - these items are intentionally moved to the very end of the roadmap, before the final `Next.js -> React` decision
 
+### Stage 5. Storage Foundation
+
+Status: `in_progress`
+
+Done:
+- backend-owned storage module exists in `apps/api`
+- storage provider token and provider shape exist behind the backend boundary
+- current server-upload route is reduced to a thin proxy to backend storage ownership
+- multipart proxying to backend works through the shared backend proxy helper
+- current runtime upload flow stays working while direct storage-vendor spread is reduced
+- cloud-first `S3-compatible` direction is fixed in docs and config shape
+- `Redis` is intentionally excluded from the initial storage step
+
+Remaining:
+- implement a real `S3-compatible` provider in `apps/api`
+- switch active storage ownership from temporary `UploadThing` provider to the new `S3-compatible` provider
+- decide whether public URL compatibility stays temporary or moves toward stronger metadata/file-key ownership later
+
 ## Next Correct Step
 
 The next correct step by plan is:
 
 1. start `Stage 5` with storage foundation / storage abstraction
-2. move toward a backend-owned `S3-compatible` storage shape
-3. prefer managed cloud storage first, not self-hosted `MinIO` first
+2. implement the real backend `S3-compatible` provider for the storage boundary
+3. keep managed cloud storage first, not self-hosted `MinIO` first
 4. do not add `Redis` unless a concrete storage-driven need appears
 5. do not mix this with `Postgres`, `LiveKit/media`, or late deferred auth-product work

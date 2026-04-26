@@ -23,6 +23,7 @@
 - [waves/AUTH_RESIDUAL_CLERK_CLEANUP.md](./waves/AUTH_RESIDUAL_CLERK_CLEANUP.md) - Wave 15, closed residual-cleanup wave inside `Stage 4`
 - [waves/AUTH_STAGE4_COMPATIBILITY_CLEANUP.md](./waves/AUTH_STAGE4_COMPATIBILITY_CLEANUP.md) - Wave 16, closed final compatibility-cleanup wave inside `Stage 4`
 - [waves/STORAGE_FOUNDATION.md](./waves/STORAGE_FOUNDATION.md) - Wave 17, current storage-foundation wave at the start of `Stage 5`
+- [waves/STORAGE_S3_PROVIDER_IMPLEMENTATION.md](./waves/STORAGE_S3_PROVIDER_IMPLEMENTATION.md) - Wave 18, current `S3-compatible` provider implementation wave inside `Stage 5`
 
 ## Wave Sequence
 
@@ -43,6 +44,7 @@
 15. Wave 15 - `AUTH_RESIDUAL_CLERK_CLEANUP`
 16. Wave 16 - `AUTH_STAGE4_COMPATIBILITY_CLEANUP`
 17. Wave 17 - `STORAGE_FOUNDATION`
+18. Wave 18 - `STORAGE_S3_PROVIDER_IMPLEMENTATION`
 
 ## Delegation
 
@@ -70,6 +72,7 @@
 - [delegation/briefs/SEGMENT_BRIEF_021_AUTH_RESIDUAL_CLERK_CLEANUP.md](./delegation/briefs/SEGMENT_BRIEF_021_AUTH_RESIDUAL_CLERK_CLEANUP.md)
 - [delegation/briefs/SEGMENT_BRIEF_022_AUTH_STAGE4_COMPATIBILITY_CLEANUP.md](./delegation/briefs/SEGMENT_BRIEF_022_AUTH_STAGE4_COMPATIBILITY_CLEANUP.md)
 - [delegation/briefs/SEGMENT_BRIEF_023_STORAGE_FOUNDATION.md](./delegation/briefs/SEGMENT_BRIEF_023_STORAGE_FOUNDATION.md)
+- [delegation/briefs/SEGMENT_BRIEF_024_STORAGE_S3_PROVIDER_IMPLEMENTATION.md](./delegation/briefs/SEGMENT_BRIEF_024_STORAGE_S3_PROVIDER_IMPLEMENTATION.md)
 
 ## Recommended Reading Order
 
