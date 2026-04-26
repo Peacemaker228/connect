@@ -24,7 +24,6 @@ export const SocketProvider = ({ children, socketUrl }: SocketProviderProps) => 
 
   useEffect(() => {
     const socketInstance = io(`${socketUrl}/realtime`, {
-      addTrailingSlash: false,
       path: '/socket.io',
     })
 
