@@ -46,6 +46,12 @@ Target:
 - backend-controlled storage flow
 - provider можно менять между `UploadThing`, `MinIO`, `S3-compatible`
 
+Current Stage 5 direction:
+- cloud-first managed `S3-compatible` storage
+- no `Redis` in the initial storage foundation
+- no self-hosted `MinIO` as the first move
+- keep the later path open for `MinIO` only after the storage boundary is stable
+
 Правило:
 - клиент не должен считать конкретный storage vendor частью core-логики
 
@@ -111,6 +117,12 @@ Target:
 
 Правило:
 - UI не должен быть местом хранения доменной логики
+
+### Web Runtime Note
+
+- web runtime в долгую должен опираться на direct client requests в `apps/api`, а не на `Next` proxy routes
+- `pages/api` и `app/api` в `Next` для domain access должны остаться только временным compatibility layer
+- как web client data layer допустимы `TanStack Query` + `axios` (или другой thin HTTP client), но ownership должен оставаться у backend
 
 ## Package Boundaries
 

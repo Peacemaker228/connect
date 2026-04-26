@@ -3,9 +3,15 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { LogOut } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/lib/shared/ui/dropdown-menu'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/lib/shared/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/lib/shared/ui/avatar'
 
 type BackendUserMenuProps = {
@@ -29,7 +35,6 @@ const getInitials = (name?: string | null) => {
 }
 
 export function BackendUserMenu({ email, imageUrl, name }: BackendUserMenuProps) {
-  const router = useRouter()
   const queryClient = useQueryClient()
   const [isSigningOut, setIsSigningOut] = useState(false)
 
@@ -41,19 +46,21 @@ export function BackendUserMenu({ email, imageUrl, name }: BackendUserMenuProps)
     setIsSigningOut(true)
 
     try {
-      await fetch('/api/auth/session/logout', {
+      const response = await fetch('/api/auth/session/logout', {
         method: 'POST',
         credentials: 'include',
         cache: 'no-store',
       })
 
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['profile'] }),
-        queryClient.invalidateQueries({ queryKey: ['servers'] }),
-      ])
+      if (!response.ok) {
+        throw new Error(`Logout failed with status ${response.status}`)
+      }
 
-      router.replace('/sign-in')
-      router.refresh()
+      queryClient.setQueryData(['profile'], null)
+      // queryClient.removeQueries({ queryKey: ['profile'] })
+      // queryClient.removeQueries({ queryKey: ['servers'] })
+
+      window.location.replace('/sign-in')
     } catch (error) {
       console.error('[BACKEND_USER_MENU_LOGOUT]', error)
       setIsSigningOut(false)

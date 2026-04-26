@@ -120,6 +120,12 @@ Desktop не должен дублировать бизнес-логику backe
 - `coturn`
 - `SFU` stack
 
+Stage note:
+- the presence of `infra/redis` and `infra/minio` does not mean they must be introduced early
+- for `Stage 5`, the preferred storage direction is managed cloud `S3-compatible` first
+- self-hosted `MinIO` stays a later independence-focused option
+- `Redis` should appear only when a concrete queue/cache/rate-limit need exists
+
 ## Current Transitional State
 
 Сейчас проект — переходный монолит с уже вынесенным backend ownership для текущего domain/realtime слоя:

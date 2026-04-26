@@ -15,6 +15,6 @@ function parsePort(value: string | undefined, fallback: number) {
 
 export default registerAs('app', () => ({
   environment: process.env.NODE_ENV ?? 'development',
-  port: parsePort(process.env.API_PORT ?? process.env.PORT, DEFAULT_API_PORT),
+  port: parsePort(process.env.API_PORT, DEFAULT_API_PORT),
   globalPrefix: process.env.API_GLOBAL_PREFIX ?? DEFAULT_GLOBAL_PREFIX,
 }));

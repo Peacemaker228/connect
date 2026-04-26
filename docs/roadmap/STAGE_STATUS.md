@@ -146,5 +146,7 @@ Remaining:
 The next correct step by plan is:
 
 1. start `Stage 5` with storage foundation / storage abstraction
-2. keep `UploadThing` behind the backend storage boundary first
-3. do not mix this with `Postgres`, `LiveKit/media`, or late deferred auth-product work
+2. move toward a backend-owned `S3-compatible` storage shape
+3. prefer managed cloud storage first, not self-hosted `MinIO` first
+4. do not add `Redis` unless a concrete storage-driven need appears
+5. do not mix this with `Postgres`, `LiveKit/media`, or late deferred auth-product work
