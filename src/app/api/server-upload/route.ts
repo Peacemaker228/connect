@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { utapi } from '@/lib/server/uploadthing'
 import { UploadEndpoint } from '@app-core/files/upload-file'
+import { currentProfile } from '@/lib/shared/utils/current-profile'
 
 export const runtime = 'nodejs'
 
@@ -22,9 +22,9 @@ const isAllowedFile = (file: File, endpoint: UploadEndpoint) => {
 
 export async function POST(req: Request) {
   try {
-    const { userId } = await auth()
+    const profile = await currentProfile()
 
-    if (!userId) {
+    if (!profile) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
