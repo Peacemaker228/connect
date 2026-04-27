@@ -28,7 +28,7 @@ declare global {
         builtAt: string
       } | null>
       notifyReady?: () => void
-      onClerkSession?: (callback: (sessionId: string) => void) => (() => void) | void
+      onAuthSession?: (callback: (sessionId: string) => void) => (() => void) | void
     }
   }
 }

@@ -26,7 +26,7 @@ if (SHOULD_DISABLE_MEDIA_FOUNDATION_VIDEO_CAPTURE) {
 
 let mainWindow = null
 let pendingNavigationPath = null
-let pendingSessionId = null
+let pendingAuthSessionId = null
 let isRendererReady = false
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -446,17 +446,17 @@ const getSessionIdFromDeepLink = (urlString) => {
   }
 }
 
-const sendSessionToRenderer = (sessionId) => {
+const sendAuthSessionToRenderer = (sessionId) => {
   if (!sessionId) {
     return
   }
 
   if (!mainWindow || mainWindow.isDestroyed() || !isRendererReady) {
-    pendingSessionId = sessionId
+    pendingAuthSessionId = sessionId
     return
   }
 
-  mainWindow.webContents.send('clerk:session', sessionId)
+  mainWindow.webContents.send('auth:session', sessionId)
 }
 
 const handleDeepLink = (urlString) => {
@@ -468,7 +468,7 @@ const handleDeepLink = (urlString) => {
   }
 
   if (sessionId) {
-    pendingSessionId = sessionId
+    pendingAuthSessionId = sessionId
   }
 
   if (mainWindow && !mainWindow.isDestroyed() && appPath) {
@@ -477,7 +477,7 @@ const handleDeepLink = (urlString) => {
   }
 
   if (sessionId) {
-    sendSessionToRenderer(sessionId)
+    sendAuthSessionToRenderer(sessionId)
   }
 }
 
@@ -713,10 +713,10 @@ ipcMain.handle('desktop:get-build-info', async () => {
 ipcMain.on('desktop:renderer-ready', () => {
   isRendererReady = true
 
-  if (pendingSessionId) {
-    const sessionId = pendingSessionId
-    pendingSessionId = null
-    sendSessionToRenderer(sessionId)
+  if (pendingAuthSessionId) {
+    const sessionId = pendingAuthSessionId
+    pendingAuthSessionId = null
+    sendAuthSessionToRenderer(sessionId)
   }
 })
 
