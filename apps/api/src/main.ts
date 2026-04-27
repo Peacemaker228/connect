@@ -15,10 +15,14 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const port = configService.get<number>('app.port') ?? 4000;
   const globalPrefix = configService.get<string>('app.globalPrefix') ?? 'api';
+  const corsAllowedOrigins = configService.get<string[]>('app.corsAllowedOrigins') ?? [];
 
   app.useLogger(logger);
   app.setGlobalPrefix(globalPrefix);
-  app.enableCors();
+  app.enableCors({
+    origin: corsAllowedOrigins.length > 0 ? corsAllowedOrigins : false,
+    credentials: true,
+  });
 
   await app.listen(port);
 
