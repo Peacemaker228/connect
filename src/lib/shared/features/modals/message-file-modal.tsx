@@ -20,12 +20,14 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/lib/share
 import { FileUpload } from '@/lib/shared/features/file-upload'
 import { Button } from '@/lib/shared/ui/button'
 import { useTranslations } from 'next-intl'
+import { useStagedUpload } from '@/lib/shared/utils/hooks/use-staged-upload'
 
 export const MessageFileModal = () => {
   const router = useRouter()
   const { isOpen, onClose, type, data } = useModal()
   const t = useTranslations('Modals.MessageFileModal')
   const commonTrans = useTranslations('Common')
+  const stagedUpload = useStagedUpload('messageFile')
 
   const { apiUrl, query } = data
 
@@ -39,8 +41,17 @@ export const MessageFileModal = () => {
   })
 
   const handleClose = () => {
-    form.reset()
-    onClose()
+    void (async () => {
+      try {
+        await stagedUpload.cleanupStagedValue(form.getValues('fileUrl'))
+      } catch (error) {
+        console.warn(error)
+      } finally {
+        stagedUpload.reset()
+        form.reset()
+        onClose()
+      }
+    })()
   }
 
   const isLoading = form.formState.isSubmitting
@@ -54,6 +65,8 @@ export const MessageFileModal = () => {
 
       await axios.post(url, { ...data, content: data.fileUrl })
 
+      stagedUpload.markCommitted(data.fileUrl)
+      stagedUpload.reset()
       form.reset()
 
       router.refresh()
@@ -81,7 +94,14 @@ export const MessageFileModal = () => {
                     return (
                       <FormItem>
                         <FormControl>
-                          <FileUpload onChangeAction={field.onChange} endpoint={'messageFile'} {...field} />
+                          <FileUpload
+                            onChangeAction={field.onChange}
+                            endpoint={'messageFile'}
+                            isStagedValueAction={stagedUpload.isStagedValue}
+                            onCleanupStagedValueAction={stagedUpload.cleanupStagedValue}
+                            onUploadCompleteAction={stagedUpload.registerUploadedValue}
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

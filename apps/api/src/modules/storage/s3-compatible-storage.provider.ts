@@ -1,12 +1,18 @@
 import { randomUUID } from 'node:crypto';
 import { extname } from 'node:path';
 
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { DeleteObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import type {
   BackendStorageProvider,
+  StorageProviderDeleteRequest,
   StorageProviderUploadRequest,
   StorageStoredFile,
 } from './storage.types';
@@ -95,6 +101,36 @@ export class S3CompatibleStorageProvider implements BackendStorageProvider {
     };
   }
 
+  async deleteFile(request: StorageProviderDeleteRequest): Promise<void> {
+    const config = this.getResolvedConfig();
+    const objectKey = this.resolveObjectKeyFromPublicUrl(config.publicBaseUrl, request.fileUrl);
+
+    this.ensureAllowedFolder(objectKey, request.folder);
+
+    const objectOwnerProfileId = await this.getObjectOwnerProfileId(config, objectKey);
+
+    if (!objectOwnerProfileId) {
+      return;
+    }
+
+    if (objectOwnerProfileId !== request.profileId) {
+      throw new ForbiddenException('Cannot delete another profile file');
+    }
+
+    try {
+      await this.getClient(config).send(
+        new DeleteObjectCommand({
+          Bucket: config.bucket,
+          Key: objectKey,
+        }),
+      );
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `S3-compatible delete failed: ${this.getErrorMessage(error)}`,
+      );
+    }
+  }
+
   private buildObjectKey(folder: string, fileName: string) {
     const { baseName, extension } = sanitizeFileNamePart(fileName);
     const datePrefix = new Date().toISOString().slice(0, 10).replace(/-/g, '/');
@@ -104,6 +140,14 @@ export class S3CompatibleStorageProvider implements BackendStorageProvider {
 
   private createPublicUrl(publicBaseUrl: string, objectKey: string) {
     return `${publicBaseUrl}/${encodeStorageKey(objectKey)}`;
+  }
+
+  private ensureAllowedFolder(objectKey: string, folder: string) {
+    if (objectKey === folder || objectKey.startsWith(`${folder}/`)) {
+      return;
+    }
+
+    throw new BadRequestException('Storage file does not belong to the requested upload endpoint');
   }
 
   private getClient(config: ResolvedS3CompatibleConfig) {
@@ -142,12 +186,83 @@ export class S3CompatibleStorageProvider implements BackendStorageProvider {
     };
   }
 
+  private async getObjectOwnerProfileId(config: ResolvedS3CompatibleConfig, objectKey: string) {
+    try {
+      const result = await this.getClient(config).send(
+        new HeadObjectCommand({
+          Bucket: config.bucket,
+          Key: objectKey,
+        }),
+      );
+
+      return result.Metadata?.profileid ?? null;
+    } catch (error) {
+      if (this.isMissingObjectError(error)) {
+        return null;
+      }
+
+      throw new InternalServerErrorException(
+        `S3-compatible ownership check failed: ${this.getErrorMessage(error)}`,
+      );
+    }
+  }
+
   private getErrorMessage(error: unknown) {
     if (error instanceof Error && error.message) {
       return error.message;
     }
 
     return 'Unknown storage error';
+  }
+
+  private isMissingObjectError(error: unknown) {
+    if (!error || typeof error !== 'object') {
+      return false;
+    }
+
+    const errorName = 'name' in error ? error.name : undefined;
+    const httpStatusCode =
+      '$metadata' in error &&
+      error.$metadata &&
+      typeof error.$metadata === 'object' &&
+      'httpStatusCode' in error.$metadata
+        ? error.$metadata.httpStatusCode
+        : undefined;
+
+    return errorName === 'NotFound' || errorName === 'NoSuchKey' || httpStatusCode === 404;
+  }
+
+  private resolveObjectKeyFromPublicUrl(publicBaseUrl: string, fileUrl: string) {
+    try {
+      const resolvedPublicBaseUrl = new URL(publicBaseUrl);
+      const resolvedFileUrl = new URL(fileUrl);
+
+      if (resolvedPublicBaseUrl.origin !== resolvedFileUrl.origin) {
+        throw new BadRequestException('Storage file host does not match the active storage public URL');
+      }
+
+      const basePathname = resolvedPublicBaseUrl.pathname.replace(/\/+$/g, '');
+      const objectPathname = decodeURIComponent(resolvedFileUrl.pathname);
+
+      if (basePathname && !objectPathname.startsWith(`${basePathname}/`)) {
+        throw new BadRequestException('Storage file path is outside of the configured public base URL');
+      }
+
+      const keyPathname = basePathname ? objectPathname.slice(basePathname.length + 1) : objectPathname.slice(1);
+      const objectKey = keyPathname.replace(/^\/+/, '');
+
+      if (!objectKey) {
+        throw new BadRequestException('Storage file key is empty');
+      }
+
+      return objectKey;
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      throw new BadRequestException('Invalid storage file URL');
+    }
   }
 
   private requireConfigValue(configKey: string) {

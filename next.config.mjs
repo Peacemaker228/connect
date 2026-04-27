@@ -5,6 +5,27 @@ const withNextIntl = createNextIntlPlugin()
 const require = createRequire(import.meta.url)
 const { version } = require('./package.json')
 
+const resolveStorageImagePattern = () => {
+  const publicBaseUrl = process.env.STORAGE_PUBLIC_BASE_URL?.trim()
+
+  if (!publicBaseUrl) {
+    return null
+  }
+
+  try {
+    const { protocol, hostname } = new URL(publicBaseUrl)
+
+    return {
+      protocol: protocol.replace(':', ''),
+      hostname,
+    }
+  } catch {
+    return null
+  }
+}
+
+const storageImagePattern = resolveStorageImagePattern()
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -22,6 +43,7 @@ const nextConfig = {
         protocol: 'https',
         hostname: '*.ufs.sh',
       },
+      ...(storageImagePattern ? [storageImagePattern] : []),
     ],
   },
 }

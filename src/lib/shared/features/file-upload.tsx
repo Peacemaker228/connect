@@ -12,16 +12,34 @@ interface IFileUploadProps {
   onChangeAction: (url?: string) => void
   value: string
   endpoint: UploadEndpoint
+  isStagedValueAction?: (value: string) => boolean
+  onCleanupStagedValueAction?: (value: string) => Promise<unknown>
+  onUploadCompleteAction?: (value: string) => void
 }
 
-export const FileUpload: FC<IFileUploadProps> = ({ endpoint, value, onChangeAction }) => {
+export const FileUpload: FC<IFileUploadProps> = ({
+  endpoint,
+  value,
+  onChangeAction,
+  isStagedValueAction,
+  onCleanupStagedValueAction,
+  onUploadCompleteAction,
+}) => {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const t = useTranslations('Modals.ServerModal')
 
   const { fileType, fileUrl } = getUploadValueParts(value, endpoint)
 
-  const handleRemoveFile = () => {
+  const handleRemoveFile = async () => {
+    if (value && isStagedValueAction?.(value)) {
+      try {
+        await onCleanupStagedValueAction?.(value)
+      } catch (error) {
+        console.warn(error)
+      }
+    }
+
     onChangeAction('')
 
     if (inputRef.current) {
@@ -66,7 +84,18 @@ export const FileUpload: FC<IFileUploadProps> = ({ endpoint, value, onChangeActi
         throw new Error(json.error ?? 'Upload failed')
       }
 
-      onChangeAction(serializeUploadValue(json.url, json.type, endpoint))
+      const nextValue = serializeUploadValue(json.url, json.type, endpoint)
+
+      if (value && nextValue !== value && isStagedValueAction?.(value)) {
+        try {
+          await onCleanupStagedValueAction?.(value)
+        } catch (error) {
+          console.warn(error)
+        }
+      }
+
+      onUploadCompleteAction?.(nextValue)
+      onChangeAction(nextValue)
     } catch (error) {
       console.warn(error)
       event.target.value = ''

@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { Server } from '@prisma/client'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
+import { useStagedUpload } from '@/lib/shared/utils/hooks/use-staged-upload'
 import { serverFormSchema } from '@app-core/schemas/server-form-schema'
 import { ServerModal } from '@/lib/shared/features/modals/common/server-modal'
 import { ERoutes } from '@app-core/routing/routes'
@@ -15,6 +16,7 @@ import { ERoutes } from '@app-core/routing/routes'
 export const CreateServerModal = () => {
   const router = useRouter()
   const queryClient = useQueryClient()
+  const stagedUpload = useStagedUpload('serverImage')
 
   const form = useForm({
     resolver: zodResolver(serverFormSchema),
@@ -42,6 +44,8 @@ export const CreateServerModal = () => {
         return [...servers, createdServer]
       })
 
+      stagedUpload.markCommitted(data.imageUrl)
+      stagedUpload.reset()
       form.reset()
       onClose()
       router.push(`${ERoutes.SERVERS}/${createdServer.id}`)
@@ -52,8 +56,17 @@ export const CreateServerModal = () => {
   }
 
   const handleClose = () => {
-    form.reset()
-    onClose()
+    void (async () => {
+      try {
+        await stagedUpload.cleanupStagedValue(form.getValues('imageUrl'))
+      } catch (error) {
+        console.warn(error)
+      } finally {
+        stagedUpload.reset()
+        form.reset()
+        onClose()
+      }
+    })()
   }
 
   return (
@@ -63,6 +76,9 @@ export const CreateServerModal = () => {
       isLoading={isLoading}
       isModalOpen={isModalOpen}
       onClose={handleClose}
+      isStagedImageValueAction={stagedUpload.isStagedValue}
+      onCleanupStagedImageAction={stagedUpload.cleanupStagedValue}
+      onImageUploadCompleteAction={stagedUpload.registerUploadedValue}
     />
   )
 }

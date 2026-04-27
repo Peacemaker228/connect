@@ -9,9 +9,13 @@ import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { serverFormSchema } from '@app-core/schemas/server-form-schema'
 import { ServerModal } from '@/lib/shared/features/modals/common/server-modal'
 import { useCallback, useEffect } from 'react'
+import { deleteUploadedFile } from '@/lib/shared/utils/delete-upload'
+import { useStagedUpload } from '@/lib/shared/utils/hooks/use-staged-upload'
 
 export const EditServerModal = () => {
   const router = useRouter()
+  const { cleanupStagedValue, isStagedValue, markCommitted, registerUploadedValue, reset } =
+    useStagedUpload('serverImage')
 
   const form = useForm({
     resolver: zodResolver(serverFormSchema),
@@ -33,6 +37,17 @@ export const EditServerModal = () => {
     try {
       await axios.patch(`/api/servers/${server?.id}`, data)
 
+      markCommitted(data.imageUrl)
+      reset()
+
+      if (server?.imageUrl && server.imageUrl !== data.imageUrl) {
+        try {
+          await deleteUploadedFile(server.imageUrl, 'serverImage')
+        } catch (error) {
+          console.warn(error)
+        }
+      }
+
       form.reset()
       onClose()
       router.refresh()
@@ -43,19 +58,29 @@ export const EditServerModal = () => {
 
   useEffect(() => {
     if (server) {
+      reset()
       form.setValue('name', server.name)
       form.setValue('imageUrl', server.imageUrl)
     }
-  }, [form, server])
+  }, [form, reset, server])
 
   const handleClose = useCallback(() => {
-    onClose()
+    void (async () => {
+      try {
+        await cleanupStagedValue(form.getValues('imageUrl'))
+      } catch (error) {
+        console.warn(error)
+      } finally {
+        reset()
+        onClose()
 
-    if (server) {
-      form.setValue('name', server.name)
-      form.setValue('imageUrl', server.imageUrl)
-    }
-  }, [form, onClose, server])
+        if (server) {
+          form.setValue('name', server.name)
+          form.setValue('imageUrl', server.imageUrl)
+        }
+      }
+    })()
+  }, [cleanupStagedValue, form, onClose, reset, server])
 
   return (
     <ServerModal
@@ -64,6 +89,9 @@ export const EditServerModal = () => {
       isLoading={isLoading}
       isModalOpen={isModalOpen}
       onClose={handleClose}
+      isStagedImageValueAction={isStagedValue}
+      onCleanupStagedImageAction={cleanupStagedValue}
+      onImageUploadCompleteAction={registerUploadedValue}
     />
   )
 }
