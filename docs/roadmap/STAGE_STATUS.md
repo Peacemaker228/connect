@@ -138,6 +138,7 @@ Done:
 - `Clerk` is removed from the active browser/runtime auth path
 - app-shell auth provider and middleware now run on backend-owned auth flow instead of `Clerk`
 - residual `Clerk` imports are removed from `server-upload`, `uploadthing`, and the legacy `ensure-profile` helper path
+- repo-level `Clerk` leftovers are reduced from package/build/electron glue: the dead `@clerk/nextjs` dependency is removed, build env no longer carries `CLERK_*`, and desktop bridge naming is auth-neutral
 
 Remaining:
 - deferred late-roadmap auth product work only:
@@ -188,5 +189,5 @@ The next correct step by plan is:
 5. move next into storage metadata/file-key ownership instead of staying on raw vendor URLs forever
 
 Optional side cleanup:
-- `Wave 22 / CLERK_REPO_CLEANUP` may remove leftover repo/package/electron naming traces of `Clerk`
+- `Wave 22 / CLERK_REPO_CLEANUP` is now the narrow repo-hygiene follow-up for dead package/env/electron/doc leftovers
 - it must not reopen `Stage 4` auth work

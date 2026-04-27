@@ -33,6 +33,13 @@ Mapping:
 - keep this as a narrow cleanup
 - if a `Clerk` reference is still functionally needed, do not delete it blindly
 
+## Current Result
+
+- dead `@clerk/nextjs` package and lockfile leftovers can be removed
+- stale `CLERK_*` build env wiring can be removed from the repo-level Dockerfile
+- desktop deep-link session glue should keep working, but its naming should be auth-neutral rather than `Clerk`-specific
+- historical auth-wave docs may still mention `Clerk` for roadmap history; runbook/current-runtime docs should not describe it as an active dependency anymore
+
 ## References
 
 - [PLATFORM_MIGRATION_PLAN.md](../roadmap/PLATFORM_MIGRATION_PLAN.md)

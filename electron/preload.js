@@ -6,13 +6,13 @@ contextBridge.exposeInMainWorld('electron', {
   writeClipboardText: (text) => ipcRenderer.invoke('desktop:write-clipboard', text),
   getBuildInfo: () => ipcRenderer.invoke('desktop:get-build-info'),
   notifyReady: () => ipcRenderer.send('desktop:renderer-ready'),
-  onClerkSession: (callback) => {
+  onAuthSession: (callback) => {
     const listener = (_event, sessionId) => callback(sessionId)
 
-    ipcRenderer.on('clerk:session', listener)
+    ipcRenderer.on('auth:session', listener)
 
     return () => {
-      ipcRenderer.removeListener('clerk:session', listener)
+      ipcRenderer.removeListener('auth:session', listener)
     }
   },
 })
