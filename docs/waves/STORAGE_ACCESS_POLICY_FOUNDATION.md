@@ -49,6 +49,8 @@ Mapping:
 - backend storage access resolution now returns explicit access policy metadata (`kind`, `upstream`, `legacy compatibility`) instead of exposing public redirect behavior only as an implementation detail
 - the active managed-cloud path stays stable: runtime reads still go through backend-owned `/api/storage/access`, while the underlying provider continues to resolve to public object URLs for now
 - legacy public URL compatibility remains narrow and explicit, and is surfaced as compatibility metadata instead of staying silent fallback behavior
+- current working decision is fixed for this stage: files stay `public`, active reads stay on `backend-redirect`, and legacy URLs are not mass-migrated
+- if a sweeper is introduced later, the preferred direction is a narrow staged/temp-upload sweeper rather than a full orphan scanner over the whole bucket
 
 ## References
 

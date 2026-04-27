@@ -31,6 +31,7 @@ Current wave order:
 - `Wave 22` = `CLERK_REPO_CLEANUP` (optional side cleanup, done)
 - `Wave 23` = `STORAGE_RUNTIME_READ_RESOLUTION`
 - `Wave 24` = `STORAGE_ACCESS_POLICY_FOUNDATION`
+- `Wave 25` = `STORAGE_STAGED_UPLOAD_SWEEPER`
 
 ## Status by Stage
 
@@ -182,7 +183,7 @@ Remaining:
 - decide whether historical `UploadThing` read compatibility (for old CDN URLs) stays temporary or is later normalized away
 - decide whether public URL compatibility stays temporary or moves toward stronger metadata/file-key ownership later
 - decide whether the current `backend-redirect` contract later evolves into `signed-url` or `proxy-stream` access for stronger backend ownership
-- decide whether a later abandoned-upload sweeper is worth adding or stays intentionally out of scope
+- if a later abandoned-upload sweeper is added, keep it narrow: prefer a staged/temp-object sweeper over a full bucket-vs-DB orphan scanner
 
 ## Next Correct Step
 
@@ -193,6 +194,10 @@ The next correct step by plan is:
 3. keep historical storage compatibility narrow and read-only where ownership-safe cleanup is not available
 4. do not add `Redis` unless a concrete storage-driven need appears
 5. continue from the explicit `backend-redirect` contract toward stronger backend-owned file access later, if and when `signed-url` or `proxy-stream` access becomes worth the complexity
+
+Planned follow-up after `Wave 24`:
+- `Wave 25 / STORAGE_STAGED_UPLOAD_SWEEPER`
+- this should be the final narrow storage-hygiene step before calling `Stage 5` done
 
 Completed side cleanup:
 - `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only
