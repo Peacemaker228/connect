@@ -204,7 +204,9 @@ Current `Wave 26` progress:
 - backend CORS/origin foundation exists for direct browser calls
 - first shared SDK extraction slices are already done for `server`, `profile`, and `invite`
 - the first shared feature mutation extraction slices are already done for server CRUD and invite-code refresh
-- the next narrow step should continue with channel-focused shared mutations before broad UI rewrites
+- channel create/edit/delete mutations are now moved under shared SDK ownership
+- membership and server-membership mutations are now moved under shared SDK ownership
+- the next narrow step should continue with a practical message-mutation bundle before broad UI rewrites
 
 Completed side cleanup:
 - `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only

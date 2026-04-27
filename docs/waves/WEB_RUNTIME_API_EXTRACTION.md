@@ -20,9 +20,11 @@ Current completed slices inside this wave:
 - backend CORS/origin foundation for direct web-to-backend calls
 - first shared SDK extraction slices for `server`, `profile`, and `invite` access paths
 - first shared feature mutation extraction slices for server CRUD and invite-code refresh
+- channel create/edit/delete mutations now use shared SDK ownership instead of raw same-origin proxy calls
+- membership and server-membership mutations now use shared SDK ownership instead of raw same-origin proxy calls
 
 Current next slice inside this wave:
-- continue extraction through channel-focused shared mutations before broad UI rewrites
+- continue extraction through a practical message-mutation bundle before broad UI rewrites
 
 ## In Scope
 

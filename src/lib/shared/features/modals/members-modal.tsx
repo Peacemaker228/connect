@@ -19,10 +19,9 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/lib/shared/ui/dropdown-menu'
-import axios from 'axios'
-import qs from 'query-string'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { useKickMember, useUpdateMemberRole } from '@sdk/mutations/membership'
 
 const roleIconMap: Record<MemberRole, ReactNode | null> = {
   GUEST: null,
@@ -34,6 +33,8 @@ export const MembersModal = () => {
   const [loadingId, setLoadingId] = useState('')
   const { isOpen, onClose, type, data, onOpen } = useModal()
   const router = useRouter()
+  const { mutateAsync: kickMember } = useKickMember()
+  const { mutateAsync: updateMemberRole } = useUpdateMemberRole()
   const t = useTranslations('Modals.MembersModal')
   const commonTrans = useTranslations('Common')
 
@@ -42,23 +43,17 @@ export const MembersModal = () => {
   const isModalOpen = isOpen && type === 'members'
 
   const handleKick = async (memberId: string) => {
+    if (!server?.id) {
+      return
+    }
+
     try {
       setLoadingId(memberId)
 
-      const url = qs.stringifyUrl({
-        url: `/api/socket/members/${memberId}`,
-        query: {
-          serverId: server?.id,
-        },
-      })
-
-      const res = await axios.delete(url)
+      const updatedServer = await kickMember({ serverId: server.id, memberId, currentServer: server })
 
       router.refresh()
-
-      onOpen('members', { server: res.data })
-
-      setLoadingId('')
+      onOpen('members', { server: updatedServer })
     } catch (err) {
       console.log(err)
     } finally {
@@ -67,23 +62,17 @@ export const MembersModal = () => {
   }
 
   const handleRoleChange = async (memberId: string, role: MemberRole) => {
+    if (!server?.id) {
+      return
+    }
+
     try {
       setLoadingId(memberId)
 
-      const url = qs.stringifyUrl({
-        url: `/api/socket/members/${memberId}`,
-        query: {
-          serverId: server?.id,
-        },
-      })
-
-      const res = await axios.patch(url, { role })
+      const updatedServer = await updateMemberRole({ serverId: server.id, memberId, role, currentServer: server })
 
       router.refresh()
-
-      onOpen('members', { server: res.data })
-
-      setLoadingId('')
+      onOpen('members', { server: updatedServer })
     } catch (err) {
       console.log(err)
     } finally {
