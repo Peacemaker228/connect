@@ -27,6 +27,7 @@ Current wave order:
 - `Wave 18` = `STORAGE_S3_PROVIDER_IMPLEMENTATION`
 - `Wave 19` = `STORAGE_MANAGED_CLOUD_VALIDATION`
 - `Wave 20` = `STORAGE_UPLOADTHING_COMPATIBILITY_CLEANUP`
+- `Wave 21` = `STORAGE_METADATA_OWNERSHIP_FOUNDATION`
 
 ## Status by Stage
 
@@ -180,4 +181,4 @@ The next correct step by plan is:
 2. keep managed cloud storage first, not self-hosted `MinIO` first
 3. keep historical storage compatibility narrow and read-only where ownership-safe cleanup is not available
 4. do not add `Redis` unless a concrete storage-driven need appears
-5. leave metadata normalization and broader lifecycle work for later storage steps
+5. move next into storage metadata/file-key ownership instead of staying on raw vendor URLs forever
