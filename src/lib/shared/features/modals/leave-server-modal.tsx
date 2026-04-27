@@ -9,20 +9,18 @@ import {
   DialogTitle,
 } from '@/lib/shared/ui/dialog'
 import { Button } from '@/lib/shared/ui/button'
-import axios from 'axios'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { ERoutes } from '@app-core/routing/routes'
-import { useQueryClient } from '@tanstack/react-query'
-import { Server } from '@prisma/client'
+import { useLeaveServer } from '@sdk/mutations/membership'
 
 export const LeaveServerModal = () => {
   const { isOpen, onClose, type, data } = useModal()
   const router = useRouter()
-  const queryClient = useQueryClient()
   const [isLoading, setIsLoading] = useState(false)
+  const { mutateAsync: leaveServer } = useLeaveServer()
   const t = useTranslations('Modals.LeaveServerModal')
   const commonTrans = useTranslations('Common')
 
@@ -36,16 +34,7 @@ export const LeaveServerModal = () => {
     try {
       setIsLoading(true)
 
-      await axios.patch(`/api/socket/servers/${server.id}/leave`)
-
-      const nextServers = queryClient.setQueryData<Server[]>(['servers'], (servers = []) => {
-        return servers.filter((item) => item.id !== server.id)
-      })
-
-      queryClient.removeQueries({ queryKey: ['server', server.id], exact: true })
-      queryClient.invalidateQueries({ queryKey: ['servers'] })
-
-      const nextServerId = nextServers?.[0]?.id
+      const { nextServerId } = await leaveServer(server.id)
 
       onClose()
       router.replace(nextServerId ? `${ERoutes.SERVERS}/${nextServerId}` : ERoutes.MAIN_PAGE)
