@@ -6,7 +6,7 @@ import { FileIcon, Loader2, X } from 'lucide-react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { ImageUpload } from '@/lib/shared/ui/icons/components/ImageUpload'
-import { getUploadValueParts, serializeUploadValue, UploadEndpoint } from '@app-core/files/upload-file'
+import { buildStorageAccessPath, getUploadValueParts, serializeUploadValue, UploadEndpoint } from '@app-core/files/upload-file'
 
 interface IFileUploadProps {
   onChangeAction: (url?: string) => void
@@ -30,6 +30,7 @@ export const FileUpload: FC<IFileUploadProps> = ({
   const t = useTranslations('Modals.ServerModal')
 
   const { fileType, fileUrl } = getUploadValueParts(value, endpoint)
+  const fileAccessPath = buildStorageAccessPath(value, endpoint)
 
   const handleRemoveFile = async () => {
     if (value && isStagedValueAction?.(value)) {
@@ -112,7 +113,7 @@ export const FileUpload: FC<IFileUploadProps> = ({
     if (fileType.startsWith('image')) {
       return (
         <div className="relative h-20 w-20">
-          <Image fill src={fileUrl} alt="Upload" className="rounded-full object-cover" />
+          <Image fill src={fileAccessPath} alt="Upload" className="rounded-full object-cover" />
           <button
             type="button"
             onClick={handleRemoveFile}
@@ -128,7 +129,7 @@ export const FileUpload: FC<IFileUploadProps> = ({
         <div className="relative flex items-center p-2 mt-2 rounded-md bg-background/10">
           <FileIcon className="h-10 w-10 fill-indigo-200 stroke-indigo-400" />
           <Link
-            href={fileUrl}
+            href={fileAccessPath}
             target={'_blank'}
             rel={'noopener noreferrer'}
             className="ml-2 text-sm text-indigo-500 dark:text-indigo-400 hover:underline overflow-wrap-anywhere">

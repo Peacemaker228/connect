@@ -21,7 +21,7 @@ import { ERoutes } from '@app-core/routing/routes'
 import { useTranslations } from 'next-intl'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { chatInputSchema, IChatInputSchema } from '@app-core/schemas/chat-input-schema'
-import { getUploadValueParts } from '@app-core/files/upload-file'
+import { buildStorageAccessPath, getUploadValueParts } from '@app-core/files/upload-file'
 
 interface IChatItemProps {
   id: string
@@ -93,6 +93,7 @@ export const ChatItem: FC<IChatItemProps> = ({
   }, [content, form])
 
   const { fileType, fileUrl: resolvedFileUrl } = getUploadValueParts(fileUrl ?? '', 'messageFile')
+  const fileAccessPath = buildStorageAccessPath(fileUrl ?? '', 'messageFile')
 
   const isAdmin = currentMember.role === 'ADMIN'
   const isModerator = currentMember.role === 'MODERATOR'
@@ -101,8 +102,8 @@ export const ChatItem: FC<IChatItemProps> = ({
   const canDeleteMessage = !deleted && (isAdmin || isModerator || isOwner)
   const canEditMessage = !deleted && isOwner && !fileUrl
 
-  const isPDF = fileType === 'application/pdf' && resolvedFileUrl
-  const isImage = !!resolvedFileUrl && fileType?.startsWith('image')
+  const isPDF = fileType === 'application/pdf' && fileAccessPath
+  const isImage = Boolean(fileAccessPath) && fileType?.startsWith('image')
 
   const isLoading = form.formState.isSubmitting
 
@@ -142,20 +143,20 @@ export const ChatItem: FC<IChatItemProps> = ({
           </div>
           {isImage && (
             <Link
-              href={resolvedFileUrl}
+              href={fileAccessPath}
               target={'_blank'}
               rel={'noopener noreferrer'}
               className={
                 'relative aspect-square rounded-md mt-2 overflow-hidden border flex items-center bg-secondary h-48 w-48'
               }>
-              <Image src={resolvedFileUrl} alt={content} fill className={'object-cover'} />
+              <Image src={fileAccessPath} alt={content} fill className={'object-cover'} />
             </Link>
           )}
           {isPDF && (
             <div className="relative flex items-center p-2 mt-2 rounded-md bg-background/10">
               <FileIcon className="h-10 w-10 fill-indigo-200 stroke-indigo-400" />
               <Link
-                href={resolvedFileUrl}
+                href={fileAccessPath}
                 target={'_blank'}
                 rel={'noopener noreferrer'}
                 className="ml-2 text-sm text-indigo-500 dark:text-indigo-400 hover:underline overflow-wrap-anywhere">

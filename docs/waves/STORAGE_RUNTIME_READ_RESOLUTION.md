@@ -46,6 +46,12 @@ Mapping:
 - old public URLs may remain as transitional compatibility, but should stop being the only long-term read contract
 - the storage boundary should own more of the read story, not only upload/delete
 
+## Current Result
+
+- active runtime consumers can move to a backend-owned storage access path instead of reading stored public URLs directly
+- current managed-cloud `S3-compatible` storage still resolves to public object URLs under the hood, but the preferred active path can now be file-key-based resolution
+- legacy public URLs may still be accepted as narrow compatibility input where key-based metadata is missing
+
 ## References
 
 - [PLATFORM_MIGRATION_PLAN.md](../roadmap/PLATFORM_MIGRATION_PLAN.md)

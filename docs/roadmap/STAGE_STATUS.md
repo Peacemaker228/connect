@@ -155,9 +155,9 @@ Status: `in_progress`
 Done:
 - backend-owned storage module exists in `apps/api`
 - storage provider token and provider shape exist behind the backend boundary
-- current server-upload route is reduced to a thin proxy to backend storage ownership
+- the current server-upload route is reduced to a thin proxy to backend storage ownership
 - multipart proxying to backend works through the shared backend proxy helper
-- current runtime upload flow stays working while direct storage-vendor spread is reduced
+- the current runtime upload flow stays working while direct storage-vendor spread is reduced
 - cloud-first `S3-compatible` direction is fixed in docs and config shape
 - `Redis` is intentionally excluded from the initial storage step
 - real managed-cloud `S3-compatible` provider now exists in `apps/api`
@@ -172,11 +172,13 @@ Done:
 - the unsafe `UploadThing` delete/cleanup compatibility path is removed instead of being kept weaker than the managed-cloud ownership model
 - new upload values can now carry backend-owned storage metadata (`fileKey` + `fileUrl` + `fileType`) instead of staying raw-vendor-URL-only
 - storage delete/cleanup now prefers backend-owned file-key metadata and falls back to public URL parsing only for legacy values
+- active runtime file reads can now go through a backend-owned storage access path instead of using stored public URLs as the only direct runtime read contract
+- current managed-cloud reads still resolve to public object URLs under the hood, but file-key-based access resolution is now the preferred active path
 
 Remaining:
 - decide whether historical `UploadThing` read compatibility (for old CDN URLs) stays temporary or is later normalized away
 - decide whether public URL compatibility stays temporary or moves toward stronger metadata/file-key ownership later
-- decide when active runtime reads should move from stored public URL usage toward backend-issued file access resolution
+- decide whether file-access resolution later becomes signed/private instead of public redirect resolution
 - decide whether a later abandoned-upload sweeper is worth adding or stays intentionally out of scope
 
 ## Next Correct Step

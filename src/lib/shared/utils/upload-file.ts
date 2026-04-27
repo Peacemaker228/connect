@@ -1,2 +1,2 @@
-export { getUploadValueParts, serializeUploadValue } from '@app-core/files/upload-file'
+export { buildStorageAccessPath, getUploadValueParts, serializeUploadValue } from '@app-core/files/upload-file'
 export type { UploadEndpoint } from '@app-core/files/upload-file'

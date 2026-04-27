@@ -5,7 +5,7 @@ import { ActionTooltip } from '@/lib/shared/features/action-tooltip'
 import { cn } from '@/lib/shared/utils/utils'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { getUploadValueParts } from '@app-core/files/upload-file'
+import { buildStorageAccessPath } from '@app-core/files/upload-file'
 
 const SERVER_AVATAR_COLOR_CLASSES = [
   'bg-rose-500',
@@ -52,14 +52,14 @@ export const NavigationItem: FC<INavigationItemProps> = ({ id, imageUrl, name })
   const params = useParams()
   const router = useRouter()
   const [hasImageError, setHasImageError] = useState(false)
-  const { fileUrl } = getUploadValueParts(imageUrl, 'serverImage')
+  const fileAccessPath = buildStorageAccessPath(imageUrl, 'serverImage')
   const avatarInitials = useMemo(() => getServerAvatarInitials(name), [name])
   const avatarColorClassName = useMemo(() => SERVER_AVATAR_COLOR_CLASSES[getColorIndex(`${name}:${id}`)], [name, id])
-  const shouldShowImage = Boolean(fileUrl) && !hasImageError
+  const shouldShowImage = Boolean(fileAccessPath) && !hasImageError
 
   useEffect(() => {
     setHasImageError(false)
-  }, [fileUrl])
+  }, [fileAccessPath])
 
   const handleServerClick = () => {
     router.push(`/servers/${id}`)
@@ -80,7 +80,7 @@ export const NavigationItem: FC<INavigationItemProps> = ({ id, imageUrl, name })
             'relative group flex mx-3 h-[48px] w-[48px] rounded-[24px] overflow-hidden group-hover:rounded-[16px] transition-all',
           )}>
           {shouldShowImage ? (
-            <Image src={fileUrl} fill alt={name} onError={() => setHasImageError(true)} />
+            <Image src={fileAccessPath} fill alt={name} onError={() => setHasImageError(true)} />
           ) : (
             <div
               className={cn(

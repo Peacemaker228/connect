@@ -37,6 +37,13 @@ export interface StorageProviderDeleteRequest {
   profileId: string;
 }
 
+export interface StorageProviderResolveAccessRequest {
+  endpoint: StorageUploadEndpoint;
+  fileKey?: string | null;
+  fileUrl?: string | null;
+  folder: string;
+}
+
 export interface StorageStoredFile {
   contentType: string;
   key: string;
@@ -47,8 +54,14 @@ export interface StorageStoredFile {
   visibility: StorageVisibility;
 }
 
+export interface ResolvedStorageFileAccess {
+  provider: StorageProviderKind;
+  url: string;
+}
+
 export interface BackendStorageProvider {
   readonly kind: StorageProviderKind;
   uploadFile(request: StorageProviderUploadRequest): Promise<StorageStoredFile>;
   deleteFile(request: StorageProviderDeleteRequest): Promise<void>;
+  resolveFileAccess(request: StorageProviderResolveAccessRequest): Promise<ResolvedStorageFileAccess>;
 }
