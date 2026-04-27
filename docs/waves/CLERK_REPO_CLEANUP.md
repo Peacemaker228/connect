@@ -35,10 +35,10 @@ Mapping:
 
 ## Current Result
 
-- dead `@clerk/nextjs` package and lockfile leftovers can be removed
-- stale `CLERK_*` build env wiring can be removed from the repo-level Dockerfile
-- desktop deep-link session glue should keep working, but its naming should be auth-neutral rather than `Clerk`-specific
-- historical auth-wave docs may still mention `Clerk` for roadmap history; runbook/current-runtime docs should not describe it as an active dependency anymore
+- dead `@clerk/nextjs` package and lockfile leftovers are removed
+- stale `CLERK_*` build env wiring is removed from the repo-level Dockerfile
+- desktop deep-link session glue keeps working with auth-neutral naming instead of `Clerk`-specific naming
+- historical auth-wave docs still mention `Clerk` where needed for roadmap history; runbook/current-runtime docs no longer describe it as an active dependency
 
 ## References
 

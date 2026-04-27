@@ -22,11 +22,13 @@
 - [waves/AUTH_CLERK_REMOVAL.md](./waves/AUTH_CLERK_REMOVAL.md) - Wave 14, closed active-path provider-removal wave inside `Stage 4`
 - [waves/AUTH_RESIDUAL_CLERK_CLEANUP.md](./waves/AUTH_RESIDUAL_CLERK_CLEANUP.md) - Wave 15, closed residual-cleanup wave inside `Stage 4`
 - [waves/AUTH_STAGE4_COMPATIBILITY_CLEANUP.md](./waves/AUTH_STAGE4_COMPATIBILITY_CLEANUP.md) - Wave 16, closed final compatibility-cleanup wave inside `Stage 4`
-- [waves/STORAGE_FOUNDATION.md](./waves/STORAGE_FOUNDATION.md) - Wave 17, current storage-foundation wave at the start of `Stage 5`
-- [waves/STORAGE_S3_PROVIDER_IMPLEMENTATION.md](./waves/STORAGE_S3_PROVIDER_IMPLEMENTATION.md) - Wave 18, current `S3-compatible` provider implementation wave inside `Stage 5`
-- [waves/STORAGE_MANAGED_CLOUD_VALIDATION.md](./waves/STORAGE_MANAGED_CLOUD_VALIDATION.md) - Wave 19, managed-cloud validation checkpoint inside `Stage 5`
-- [waves/STORAGE_UPLOADTHING_COMPATIBILITY_CLEANUP.md](./waves/STORAGE_UPLOADTHING_COMPATIBILITY_CLEANUP.md) - Wave 20, compatibility-cleanup wave inside `Stage 5`
-- [waves/STORAGE_METADATA_OWNERSHIP_FOUNDATION.md](./waves/STORAGE_METADATA_OWNERSHIP_FOUNDATION.md) - Wave 21, metadata/file-key ownership wave inside `Stage 5`
+- [waves/STORAGE_FOUNDATION.md](./waves/STORAGE_FOUNDATION.md) - Wave 17, closed storage-foundation wave at the start of `Stage 5`
+- [waves/STORAGE_S3_PROVIDER_IMPLEMENTATION.md](./waves/STORAGE_S3_PROVIDER_IMPLEMENTATION.md) - Wave 18, closed `S3-compatible` provider implementation wave inside `Stage 5`
+- [waves/STORAGE_MANAGED_CLOUD_VALIDATION.md](./waves/STORAGE_MANAGED_CLOUD_VALIDATION.md) - Wave 19, closed managed-cloud validation wave inside `Stage 5`
+- [waves/STORAGE_UPLOADTHING_COMPATIBILITY_CLEANUP.md](./waves/STORAGE_UPLOADTHING_COMPATIBILITY_CLEANUP.md) - Wave 20, closed compatibility-cleanup wave inside `Stage 5`
+- [waves/STORAGE_METADATA_OWNERSHIP_FOUNDATION.md](./waves/STORAGE_METADATA_OWNERSHIP_FOUNDATION.md) - Wave 21, closed metadata/file-key ownership wave inside `Stage 5`
+- [waves/CLERK_REPO_CLEANUP.md](./waves/CLERK_REPO_CLEANUP.md) - Wave 22, closed optional repo-level Clerk cleanup
+- [waves/STORAGE_RUNTIME_READ_RESOLUTION.md](./waves/STORAGE_RUNTIME_READ_RESOLUTION.md) - Wave 23, current runtime-read/file-access wave inside `Stage 5`
 
 ## Wave Sequence
 
@@ -51,6 +53,8 @@
 19. Wave 19 - `STORAGE_MANAGED_CLOUD_VALIDATION`
 20. Wave 20 - `STORAGE_UPLOADTHING_COMPATIBILITY_CLEANUP`
 21. Wave 21 - `STORAGE_METADATA_OWNERSHIP_FOUNDATION`
+22. Wave 22 - `CLERK_REPO_CLEANUP`
+23. Wave 23 - `STORAGE_RUNTIME_READ_RESOLUTION`
 
 ## Delegation
 
@@ -82,6 +86,8 @@
 - [delegation/briefs/SEGMENT_BRIEF_025_STORAGE_MANAGED_CLOUD_VALIDATION.md](./delegation/briefs/SEGMENT_BRIEF_025_STORAGE_MANAGED_CLOUD_VALIDATION.md)
 - [delegation/briefs/SEGMENT_BRIEF_026_STORAGE_UPLOADTHING_COMPATIBILITY_CLEANUP.md](./delegation/briefs/SEGMENT_BRIEF_026_STORAGE_UPLOADTHING_COMPATIBILITY_CLEANUP.md)
 - [delegation/briefs/SEGMENT_BRIEF_027_STORAGE_METADATA_OWNERSHIP_FOUNDATION.md](./delegation/briefs/SEGMENT_BRIEF_027_STORAGE_METADATA_OWNERSHIP_FOUNDATION.md)
+- [delegation/briefs/SEGMENT_BRIEF_028_CLERK_REPO_CLEANUP.md](./delegation/briefs/SEGMENT_BRIEF_028_CLERK_REPO_CLEANUP.md)
+- [delegation/briefs/SEGMENT_BRIEF_029_STORAGE_RUNTIME_READ_RESOLUTION.md](./delegation/briefs/SEGMENT_BRIEF_029_STORAGE_RUNTIME_READ_RESOLUTION.md)
 
 ## Recommended Reading Order
 

@@ -12,12 +12,15 @@ import { ConfigService } from '@nestjs/config';
 
 import type {
   BackendStorageProvider,
+  ResolvedStorageFileAccess,
   StorageProviderDeleteRequest,
+  StorageProviderResolveAccessRequest,
   StorageProviderUploadRequest,
   StorageStoredFile,
 } from './storage.types';
 
 const DEFAULT_S3_REGION = 'auto';
+const LEGACY_READ_HOSTS = ['utfs.io', 'ufs.sh'];
 
 type ResolvedS3CompatibleConfig = {
   accessKeyId: string;
@@ -132,6 +135,48 @@ export class S3CompatibleStorageProvider implements BackendStorageProvider {
     }
   }
 
+  async resolveFileAccess(
+    request: StorageProviderResolveAccessRequest,
+  ): Promise<ResolvedStorageFileAccess> {
+    const config = this.getResolvedConfig();
+    const normalizedFileKey = request.fileKey?.trim();
+
+    if (normalizedFileKey) {
+      this.ensureAllowedFolder(normalizedFileKey, request.folder);
+
+      return {
+        provider: this.kind,
+        url: this.createPublicUrl(config.publicBaseUrl, normalizedFileKey),
+      };
+    }
+
+    const legacyFileUrl = request.fileUrl?.trim();
+
+    if (!legacyFileUrl) {
+      throw new BadRequestException('Storage file URL is required when the file key is missing');
+    }
+
+    try {
+      const resolvedObjectKey = this.resolveObjectKeyFromPublicUrl(config.publicBaseUrl, legacyFileUrl);
+
+      this.ensureAllowedFolder(resolvedObjectKey, request.folder);
+
+      return {
+        provider: this.kind,
+        url: this.createPublicUrl(config.publicBaseUrl, resolvedObjectKey),
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException && this.isAllowedLegacyReadUrl(legacyFileUrl)) {
+        return {
+          provider: this.kind,
+          url: legacyFileUrl,
+        };
+      }
+
+      throw error;
+    }
+  }
+
   private buildObjectKey(folder: string, fileName: string) {
     const { baseName, extension } = sanitizeFileNamePart(fileName);
     const datePrefix = new Date().toISOString().slice(0, 10).replace(/-/g, '/');
@@ -231,6 +276,23 @@ export class S3CompatibleStorageProvider implements BackendStorageProvider {
         : undefined;
 
     return errorName === 'NotFound' || errorName === 'NoSuchKey' || httpStatusCode === 404;
+  }
+
+  private isAllowedLegacyReadUrl(fileUrl: string) {
+    try {
+      const resolvedUrl = new URL(fileUrl);
+      const normalizedHostname = resolvedUrl.hostname.toLowerCase();
+
+      if (resolvedUrl.protocol !== 'https:' && resolvedUrl.protocol !== 'http:') {
+        return false;
+      }
+
+      return LEGACY_READ_HOSTS.some(
+        (allowedHost) => normalizedHostname === allowedHost || normalizedHostname.endsWith(`.${allowedHost}`),
+      );
+    } catch {
+      return false;
+    }
   }
 
   private resolveObjectKeyFromPublicUrl(publicBaseUrl: string, fileUrl: string | null | undefined) {

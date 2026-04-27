@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { STORAGE_PROVIDER } from './storage.constants';
 import type {
   BackendStorageProvider,
+  ResolvedStorageFileAccess,
   StorageUploadEndpoint,
   StorageUploadPolicy,
   UploadedStorageFile,
@@ -88,6 +89,28 @@ export class StorageService {
       fileUrl: resolvedFileUrl,
       folder: this.resolveStorageFolder(uploadPolicy.folder),
       profileId: resolvedProfileId,
+    });
+  }
+
+  async resolveFileAccess(
+    endpoint: string | undefined,
+    fileUrl: string | undefined,
+    fileKey?: string | undefined,
+  ): Promise<ResolvedStorageFileAccess> {
+    const resolvedEndpoint = this.requireUploadEndpoint(endpoint);
+    const uploadPolicy = STORAGE_UPLOAD_POLICIES[resolvedEndpoint];
+    const resolvedFileKey = this.normalizeOptionalString(fileKey);
+    const resolvedFileUrl = this.normalizeOptionalString(fileUrl);
+
+    if (!resolvedFileKey && !resolvedFileUrl) {
+      throw new HttpException('File key or file URL is required', HttpStatus.BAD_REQUEST);
+    }
+
+    return this.storageProvider.resolveFileAccess({
+      endpoint: resolvedEndpoint,
+      fileKey: resolvedFileKey,
+      fileUrl: resolvedFileUrl,
+      folder: this.resolveStorageFolder(uploadPolicy.folder),
     });
   }
 

@@ -2,9 +2,12 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
+  Query,
+  Redirect,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -17,11 +20,11 @@ import { StorageService } from './storage.service';
 import type { UploadedStorageFile } from './storage.types';
 
 @Controller('storage')
-@UseGuards(RequireAuthGuard)
 export class StorageController {
   constructor(private readonly storageService: StorageService) {}
 
   @Post('upload')
+  @UseGuards(RequireAuthGuard)
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(FileInterceptor('file'))
   uploadFile(
@@ -33,6 +36,7 @@ export class StorageController {
   }
 
   @Delete('file')
+  @UseGuards(RequireAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteFile(
     @CurrentProfileId() profileId: string,
@@ -41,5 +45,19 @@ export class StorageController {
     @Body('fileUrl') fileUrl: string | undefined,
   ) {
     return this.storageService.deleteFile(profileId, endpoint, fileUrl, fileKey);
+  }
+
+  @Get('access')
+  @Redirect(undefined, HttpStatus.TEMPORARY_REDIRECT)
+  async resolveFileAccess(
+    @Query('endpoint') endpoint: string | undefined,
+    @Query('fileKey') fileKey: string | undefined,
+    @Query('fileUrl') fileUrl: string | undefined,
+  ) {
+    const resolvedFileAccess = await this.storageService.resolveFileAccess(endpoint, fileUrl, fileKey);
+
+    return {
+      url: resolvedFileAccess.url,
+    };
   }
 }

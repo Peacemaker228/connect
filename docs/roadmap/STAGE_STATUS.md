@@ -28,7 +28,8 @@ Current wave order:
 - `Wave 19` = `STORAGE_MANAGED_CLOUD_VALIDATION`
 - `Wave 20` = `STORAGE_UPLOADTHING_COMPATIBILITY_CLEANUP`
 - `Wave 21` = `STORAGE_METADATA_OWNERSHIP_FOUNDATION`
-- `Wave 22` = `CLERK_REPO_CLEANUP` (optional side cleanup)
+- `Wave 22` = `CLERK_REPO_CLEANUP` (optional side cleanup, done)
+- `Wave 23` = `STORAGE_RUNTIME_READ_RESOLUTION`
 
 ## Status by Stage
 
@@ -138,7 +139,7 @@ Done:
 - `Clerk` is removed from the active browser/runtime auth path
 - app-shell auth provider and middleware now run on backend-owned auth flow instead of `Clerk`
 - residual `Clerk` imports are removed from `server-upload`, `uploadthing`, and the legacy `ensure-profile` helper path
-- repo-level `Clerk` leftovers are reduced from package/build/electron glue: the dead `@clerk/nextjs` dependency is removed, build env no longer carries `CLERK_*`, and desktop bridge naming is auth-neutral
+- repo-level `Clerk` leftovers are removed from package/build/electron glue: the dead `@clerk/nextjs` dependency is gone, build env no longer carries `CLERK_*`, and desktop bridge naming is auth-neutral
 
 Remaining:
 - deferred late-roadmap auth product work only:
@@ -154,9 +155,9 @@ Status: `in_progress`
 Done:
 - backend-owned storage module exists in `apps/api`
 - storage provider token and provider shape exist behind the backend boundary
-- current server-upload route is reduced to a thin proxy to backend storage ownership
+- the current server-upload route is reduced to a thin proxy to backend storage ownership
 - multipart proxying to backend works through the shared backend proxy helper
-- current runtime upload flow stays working while direct storage-vendor spread is reduced
+- the current runtime upload flow stays working while direct storage-vendor spread is reduced
 - cloud-first `S3-compatible` direction is fixed in docs and config shape
 - `Redis` is intentionally excluded from the initial storage step
 - real managed-cloud `S3-compatible` provider now exists in `apps/api`
@@ -171,23 +172,24 @@ Done:
 - the unsafe `UploadThing` delete/cleanup compatibility path is removed instead of being kept weaker than the managed-cloud ownership model
 - new upload values can now carry backend-owned storage metadata (`fileKey` + `fileUrl` + `fileType`) instead of staying raw-vendor-URL-only
 - storage delete/cleanup now prefers backend-owned file-key metadata and falls back to public URL parsing only for legacy values
+- active runtime file reads can now go through a backend-owned storage access path instead of using stored public URLs as the only direct runtime read contract
+- current managed-cloud reads still resolve to public object URLs under the hood, but file-key-based access resolution is now the preferred active path
 
 Remaining:
 - decide whether historical `UploadThing` read compatibility (for old CDN URLs) stays temporary or is later normalized away
 - decide whether public URL compatibility stays temporary or moves toward stronger metadata/file-key ownership later
-- decide when active runtime reads should move from stored public URL usage toward backend-issued file access resolution
+- decide whether file-access resolution later becomes signed/private instead of public redirect resolution
 - decide whether a later abandoned-upload sweeper is worth adding or stays intentionally out of scope
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. start `Stage 5` with storage foundation / storage abstraction
+1. continue `Stage 5` with runtime read/file-access ownership work instead of stopping at write/delete metadata ownership
 2. keep managed cloud storage first, not self-hosted `MinIO` first
 3. keep historical storage compatibility narrow and read-only where ownership-safe cleanup is not available
 4. do not add `Redis` unless a concrete storage-driven need appears
-5. move next into storage metadata/file-key ownership instead of staying on raw vendor URLs forever
+5. move active runtime reads gradually away from stored public URL dependence toward backend-issued file access resolution
 
-Optional side cleanup:
-- `Wave 22 / CLERK_REPO_CLEANUP` is now the narrow repo-hygiene follow-up for dead package/env/electron/doc leftovers
-- it must not reopen `Stage 4` auth work
+Completed side cleanup:
+- `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only

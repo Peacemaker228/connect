@@ -74,6 +74,26 @@ export const getUploadValueParts = (value: string, endpoint: UploadEndpoint) => 
   return parseMetadataUploadValue(value) ?? parseLegacyUploadValue(value, endpoint)
 }
 
+export const buildStorageAccessPath = (value: string, endpoint: UploadEndpoint) => {
+  const { fileKey, fileUrl } = getUploadValueParts(value, endpoint)
+
+  if (!fileKey && !fileUrl) {
+    return ''
+  }
+
+  const searchParams = new URLSearchParams({
+    endpoint,
+  })
+
+  if (fileKey) {
+    searchParams.set('fileKey', fileKey)
+  } else if (fileUrl) {
+    searchParams.set('fileUrl', fileUrl)
+  }
+
+  return `/api/storage/access?${searchParams.toString()}`
+}
+
 export const serializeUploadValue = ({ fileKey, fileType, fileUrl }: SerializeUploadValueInput) => {
   const searchParams = new URLSearchParams({
     key: fileKey,

@@ -9,12 +9,14 @@ type BackendApiRequest = {
   method?: string;
   body?: BodyInit | Record<string, unknown> | unknown[];
   headers?: Record<string, string | undefined>;
+  redirect?: RequestRedirect;
 };
 
 type ParsedBackendApiResponse =
   | {
       contentType: string | null;
       data: unknown;
+      location: string | null;
       status: number;
       setCookie: string[];
       isJson: true;
@@ -22,6 +24,7 @@ type ParsedBackendApiResponse =
   | {
       contentType: string | null;
       data: string;
+      location: string | null;
       status: number;
       setCookie: string[];
       isJson: false;
@@ -92,7 +95,13 @@ const createRequestBody = (body: BackendApiRequest['body'], headers: Headers) =>
   return JSON.stringify(body);
 };
 
-export const requestBackendApi = async ({ path, method = 'GET', body, headers }: BackendApiRequest) => {
+export const requestBackendApi = async ({
+  path,
+  method = 'GET',
+  body,
+  headers,
+  redirect,
+}: BackendApiRequest) => {
   const resolvedHeaders = createRequestHeaders(headers);
 
   return fetch(new URL(path, getInternalApiUrl()), {
@@ -100,17 +109,20 @@ export const requestBackendApi = async ({ path, method = 'GET', body, headers }:
     headers: resolvedHeaders,
     body: createRequestBody(body, resolvedHeaders),
     cache: 'no-store',
+    redirect,
   });
 };
 
 export const readBackendApiResponse = async (response: Response): Promise<ParsedBackendApiResponse> => {
   const contentType = response.headers.get('content-type');
+  const location = response.headers.get('location');
   const status = response.status;
   const setCookie = getSetCookieHeaders(response);
 
   if (contentType?.includes(JSON_CONTENT_TYPE)) {
     return {
       contentType,
+      location,
       status,
       setCookie,
       isJson: true,
@@ -120,6 +132,7 @@ export const readBackendApiResponse = async (response: Response): Promise<Parsed
 
   return {
     contentType,
+    location,
     status,
     setCookie,
     isJson: false,
@@ -134,6 +147,10 @@ export const toNextProxyResponse = async (response: Response) => {
   parsedResponse.setCookie.forEach((cookieValue) => {
     proxyHeaders.append('set-cookie', cookieValue);
   });
+
+  if (parsedResponse.location) {
+    proxyHeaders.set('location', parsedResponse.location);
+  }
 
   if (parsedResponse.isJson) {
     return NextResponse.json(parsedResponse.data, {
@@ -162,6 +179,10 @@ export const writePagesProxyResponse = (
 
   if (parsedResponse.isJson) {
     return res.status(parsedResponse.status).json(parsedResponse.data);
+  }
+
+  if (parsedResponse.location) {
+    res.setHeader('Location', parsedResponse.location);
   }
 
   return res.status(parsedResponse.status).send(parsedResponse.data);

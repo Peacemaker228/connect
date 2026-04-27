@@ -20,7 +20,8 @@
 - device/session lifecycle
 
 Сейчас:
-- `Clerk`
+- backend-owned auth/session boundary is the active path
+- historical `Clerk` references are roadmap history only, not active runtime ownership
 
 Target:
 - собственный auth module в `apps/api`
@@ -40,11 +41,12 @@ Target:
 - storage policy
 
 Сейчас:
-- `UploadThing`
+- backend-controlled managed-cloud `S3-compatible` storage is the active path
+- historical public URL compatibility still exists for old values and gradual normalization
 
 Target:
 - backend-controlled storage flow
-- provider можно менять между `UploadThing`, `MinIO`, `S3-compatible`
+- provider можно менять между managed `S3-compatible` storage и later self-hosted `MinIO`
 
 Current Stage 5 direction:
 - cloud-first managed `S3-compatible` storage
