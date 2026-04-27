@@ -15,6 +15,14 @@ Mapping:
 - `Stage 5` storage foundation is now complete at the current roadmap level
 - `Wave 26 / WEB_RUNTIME_API_EXTRACTION` is the first active wave of `Stage 5A`
 
+Current completed slices inside this wave:
+- API base URL and backend-aware HTTP client foundation
+- backend CORS/origin foundation for direct web-to-backend calls
+- first shared SDK extraction slices for `server`, `profile`, and `invite` access paths
+
+Current next slice inside this wave:
+- continue extraction through shared feature mutations before broad UI rewrites
+
 ## In Scope
 
 - web runtime API extraction

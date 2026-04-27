@@ -1,9 +1,15 @@
 import { useMutation } from '@tanstack/react-query'
-import axios from 'axios'
+import { getBackendApiBaseUrl, privateApiInstance } from '../api/http-client'
+
+const getJoinInviteRequestPath = () => {
+  return getBackendApiBaseUrl() ? '/api/invites/join' : '/api/socket/servers/invite'
+}
 
 export const useJoinByInvite = () => {
   return useMutation({
     mutationFn: (inviteCode: string) =>
-      axios.post<{ redirectUrl: string }>('/api/socket/servers/invite', { inviteCode }).then((res) => res.data),
+      privateApiInstance
+        .post<{ redirectUrl: string }>(getJoinInviteRequestPath(), { inviteCode })
+        .then((res) => res.data),
   })
 }
