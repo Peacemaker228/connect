@@ -1,6 +1,6 @@
 export type StorageUploadEndpoint = 'messageFile' | 'serverImage';
 
-export type StorageProviderKind = 'uploadthing' | 's3-compatible';
+export type StorageProviderKind = 's3-compatible';
 
 export type StorageVisibility = 'public' | 'private';
 

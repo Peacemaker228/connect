@@ -25,6 +25,7 @@
 - [waves/STORAGE_FOUNDATION.md](./waves/STORAGE_FOUNDATION.md) - Wave 17, current storage-foundation wave at the start of `Stage 5`
 - [waves/STORAGE_S3_PROVIDER_IMPLEMENTATION.md](./waves/STORAGE_S3_PROVIDER_IMPLEMENTATION.md) - Wave 18, current `S3-compatible` provider implementation wave inside `Stage 5`
 - [waves/STORAGE_MANAGED_CLOUD_VALIDATION.md](./waves/STORAGE_MANAGED_CLOUD_VALIDATION.md) - Wave 19, managed-cloud validation checkpoint inside `Stage 5`
+- [waves/STORAGE_UPLOADTHING_COMPATIBILITY_CLEANUP.md](./waves/STORAGE_UPLOADTHING_COMPATIBILITY_CLEANUP.md) - Wave 20, compatibility-cleanup wave inside `Stage 5`
 
 ## Wave Sequence
 
@@ -47,6 +48,7 @@
 17. Wave 17 - `STORAGE_FOUNDATION`
 18. Wave 18 - `STORAGE_S3_PROVIDER_IMPLEMENTATION`
 19. Wave 19 - `STORAGE_MANAGED_CLOUD_VALIDATION`
+20. Wave 20 - `STORAGE_UPLOADTHING_COMPATIBILITY_CLEANUP`
 
 ## Delegation
 
@@ -76,6 +78,7 @@
 - [delegation/briefs/SEGMENT_BRIEF_023_STORAGE_FOUNDATION.md](./delegation/briefs/SEGMENT_BRIEF_023_STORAGE_FOUNDATION.md)
 - [delegation/briefs/SEGMENT_BRIEF_024_STORAGE_S3_PROVIDER_IMPLEMENTATION.md](./delegation/briefs/SEGMENT_BRIEF_024_STORAGE_S3_PROVIDER_IMPLEMENTATION.md)
 - [delegation/briefs/SEGMENT_BRIEF_025_STORAGE_MANAGED_CLOUD_VALIDATION.md](./delegation/briefs/SEGMENT_BRIEF_025_STORAGE_MANAGED_CLOUD_VALIDATION.md)
+- [delegation/briefs/SEGMENT_BRIEF_026_STORAGE_UPLOADTHING_COMPATIBILITY_CLEANUP.md](./delegation/briefs/SEGMENT_BRIEF_026_STORAGE_UPLOADTHING_COMPATIBILITY_CLEANUP.md)
 
 ## Recommended Reading Order
 
