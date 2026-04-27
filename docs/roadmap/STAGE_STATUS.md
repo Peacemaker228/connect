@@ -30,6 +30,7 @@ Current wave order:
 - `Wave 21` = `STORAGE_METADATA_OWNERSHIP_FOUNDATION`
 - `Wave 22` = `CLERK_REPO_CLEANUP` (optional side cleanup, done)
 - `Wave 23` = `STORAGE_RUNTIME_READ_RESOLUTION`
+- `Wave 24` = `STORAGE_ACCESS_POLICY_FOUNDATION`
 
 ## Status by Stage
 
@@ -185,11 +186,11 @@ Remaining:
 
 The next correct step by plan is:
 
-1. continue `Stage 5` with runtime read/file-access ownership work instead of stopping at write/delete metadata ownership
+1. continue `Stage 5` with storage access-policy work instead of stopping at public redirect-based read resolution
 2. keep managed cloud storage first, not self-hosted `MinIO` first
 3. keep historical storage compatibility narrow and read-only where ownership-safe cleanup is not available
 4. do not add `Redis` unless a concrete storage-driven need appears
-5. move active runtime reads gradually away from stored public URL dependence toward backend-issued file access resolution
+5. decide whether backend-issued file access remains public-redirect based or starts moving toward signed/private access later
 
 Completed side cleanup:
 - `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only
