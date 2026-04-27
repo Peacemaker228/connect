@@ -3,7 +3,6 @@
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { serverFormSchema } from '@app-core/schemas/server-form-schema'
@@ -11,11 +10,13 @@ import { ServerModal } from '@/lib/shared/features/modals/common/server-modal'
 import { useCallback, useEffect } from 'react'
 import { deleteUploadedFile } from '@/lib/shared/utils/delete-upload'
 import { useStagedUpload } from '@/lib/shared/utils/hooks/use-staged-upload'
+import { useUpdateServer } from '@sdk/mutations/server'
 
 export const EditServerModal = () => {
   const router = useRouter()
   const { cleanupStagedValue, isStagedValue, markCommitted, registerUploadedValue, reset } =
     useStagedUpload('serverImage')
+  const { mutateAsync: updateServer } = useUpdateServer()
 
   const form = useForm({
     resolver: zodResolver(serverFormSchema),
@@ -34,8 +35,12 @@ export const EditServerModal = () => {
   const isLoading = form.formState.isSubmitting
 
   const handleSubmit = async (data: z.infer<typeof serverFormSchema>) => {
+    if (!server?.id) {
+      return
+    }
+
     try {
-      await axios.patch(`/api/servers/${server?.id}`, data)
+      await updateServer({ serverId: server.id, payload: data })
 
       markCommitted(data.imageUrl)
       reset()

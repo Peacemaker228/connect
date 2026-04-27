@@ -3,13 +3,13 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/lib/shared/ui/dialog'
 import { Input } from '@/lib/shared/ui/input'
 import { Button } from '@/lib/shared/ui/button'
-import axios from 'axios'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { Label } from '@/lib/shared/ui/label'
 import { Check, Copy, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useOrigin } from '@/lib/shared/utils/hooks/use-origin'
+import { useRegenerateServerInviteCode } from '@sdk/mutations/server'
 
 export const InviteModal = () => {
   const [copied, setCopied] = useState(false)
@@ -17,6 +17,7 @@ export const InviteModal = () => {
   const { isOpen, onClose, type, data, onOpen } = useModal()
   const origin = useOrigin()
   const t = useTranslations('Modals.InviteModal')
+  const { mutateAsync: regenerateInviteCode } = useRegenerateServerInviteCode()
 
   const isModalOpen = isOpen && type === 'invite'
 
@@ -56,12 +57,16 @@ export const InviteModal = () => {
   }
 
   const onNew = async () => {
+    if (!server?.id) {
+      return
+    }
+
     try {
       setIsLoading(true)
 
-      const res = await axios.patch(`/api/servers/${server?.id}/invite-code`)
+      const updatedServer = await regenerateInviteCode(server.id)
 
-      onOpen('invite', { server: res.data })
+      onOpen('invite', { server: updatedServer })
     } catch (err) {
       console.log(err)
     } finally {

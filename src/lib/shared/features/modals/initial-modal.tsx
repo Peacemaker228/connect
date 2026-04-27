@@ -3,7 +3,6 @@
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { Server } from '@prisma/client'
@@ -12,12 +11,14 @@ import { ServerModal } from '@/lib/shared/features/modals/common/server-modal'
 import { useState } from 'react'
 import { ERoutes } from '@app-core/routing/routes'
 import { useStagedUpload } from '@/lib/shared/utils/hooks/use-staged-upload'
+import { useCreateServer } from '@sdk/mutations/server'
 
 export const InitialModal = () => {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [isRedirecting, setIsRedirecting] = useState(false)
   const stagedUpload = useStagedUpload('serverImage')
+  const { mutateAsync: createServer } = useCreateServer()
 
   const form = useForm({
     resolver: zodResolver(serverFormSchema),
@@ -31,7 +32,7 @@ export const InitialModal = () => {
 
   const handleSubmit = async (data: z.infer<typeof serverFormSchema>) => {
     try {
-      const { data: createdServer } = await axios.post<Server>('/api/servers', data)
+      const createdServer = await createServer(data)
 
       queryClient.setQueryData<Server[]>(['servers'], (servers = []) => {
         if (servers.some((server) => server.id === createdServer.id)) {
