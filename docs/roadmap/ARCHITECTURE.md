@@ -130,11 +130,11 @@ Stage note:
 
 Сейчас проект — переходный монолит с уже вынесенным backend ownership для текущего domain/realtime слоя:
 - `Next App Router` как web shell и server-side redirect/data flow
-- `apps/api` как backend owner для domain/realtime
+- `apps/api` как backend an owner для domain/realtime
 - thin compatibility layers в `src/app/api/*` и remaining `src/pages/api/socket/*`
 - `Electron`
-- `Clerk`
-- `UploadThing`
+- backend-owned auth/session flow
+- managed-cloud `S3-compatible` storage with historical public URL compatibility
 - `LiveKit`
 - `Prisma + MySQL`
 
@@ -155,8 +155,8 @@ Stage note:
 
 Временные решения:
 - `Next` как fullstack shell
-- `Clerk` как auth provider
-- `UploadThing` как storage dependency
+- remaining `Next` compatibility/proxy layers around web runtime access
+- historical public-URL compatibility in the storage layer
 - `LiveKit` как media layer
 - `MySQL` как текущая БД
 

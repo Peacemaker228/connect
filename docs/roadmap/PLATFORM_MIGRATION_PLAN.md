@@ -167,7 +167,7 @@ connect/
 - thin compatibility layers в `src/app/api/*` и части `src/pages/api/socket/*`
 - `Electron` как desktop shell
 - backend-owned auth is now the active provider path; `Clerk` replacement work is largely complete and the remaining auth work is product-completeness
-- `UploadThing` как storage dependency
+- managed-cloud `S3-compatible` storage is now the active storage path, while historical public URL compatibility remains as transitional baggage
 - `LiveKit` как media layer
 - `Prisma + MySQL` как persistence
 
