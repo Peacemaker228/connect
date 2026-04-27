@@ -1,4 +1,6 @@
 export type StorageVisibility = 'public' | 'private'
+export type StorageFileAccessKind = 'backend-redirect' | 'signed-url' | 'proxy-stream'
+export type StorageFileAccessUpstream = 'public-url' | 'signed-url' | 'backend-stream'
 
 export interface StorageFileMetadata {
   id: string
@@ -35,6 +37,9 @@ export interface StorageAccessRequest {
 }
 
 export interface StorageFileAccess {
+  kind: StorageFileAccessKind
+  upstream: StorageFileAccessUpstream
+  isLegacyCompatibility?: boolean
   url: string
   expiresAt?: Date | null
 }

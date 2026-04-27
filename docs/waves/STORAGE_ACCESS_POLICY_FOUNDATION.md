@@ -43,6 +43,13 @@ Mapping:
 - prepare a stronger backend-owned read/access contract
 - keep legacy compatibility narrow and explicit
 
+## Current Result
+
+- new stored upload values can now carry an explicit backend-owned access contract marker (`access=backend-redirect`) instead of relying on implicit public-URL assumptions
+- backend storage access resolution now returns explicit access policy metadata (`kind`, `upstream`, `legacy compatibility`) instead of exposing public redirect behavior only as an implementation detail
+- the active managed-cloud path stays stable: runtime reads still go through backend-owned `/api/storage/access`, while the underlying provider continues to resolve to public object URLs for now
+- legacy public URL compatibility remains narrow and explicit, and is surfaced as compatibility metadata instead of staying silent fallback behavior
+
 ## References
 
 - [PLATFORM_MIGRATION_PLAN.md](../roadmap/PLATFORM_MIGRATION_PLAN.md)

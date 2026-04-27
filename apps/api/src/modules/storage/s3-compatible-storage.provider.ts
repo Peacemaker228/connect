@@ -145,7 +145,11 @@ export class S3CompatibleStorageProvider implements BackendStorageProvider {
       this.ensureAllowedFolder(normalizedFileKey, request.folder);
 
       return {
+        kind: 'backend-redirect',
+        upstream: 'public-url',
+        isLegacyCompatibility: false,
         provider: this.kind,
+        visibility: 'public',
         url: this.createPublicUrl(config.publicBaseUrl, normalizedFileKey),
       };
     }
@@ -162,13 +166,21 @@ export class S3CompatibleStorageProvider implements BackendStorageProvider {
       this.ensureAllowedFolder(resolvedObjectKey, request.folder);
 
       return {
+        kind: 'backend-redirect',
+        upstream: 'public-url',
+        isLegacyCompatibility: false,
         provider: this.kind,
+        visibility: 'public',
         url: this.createPublicUrl(config.publicBaseUrl, resolvedObjectKey),
       };
     } catch (error) {
       if (error instanceof BadRequestException && this.isAllowedLegacyReadUrl(legacyFileUrl)) {
         return {
+          kind: 'backend-redirect',
+          upstream: 'public-url',
+          isLegacyCompatibility: true,
           provider: this.kind,
+          visibility: 'public',
           url: legacyFileUrl,
         };
       }

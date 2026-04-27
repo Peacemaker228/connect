@@ -14,12 +14,14 @@ const MB_IN_BYTES = 1024 * 1024;
 
 const STORAGE_UPLOAD_POLICIES: Record<StorageUploadEndpoint, StorageUploadPolicy> = {
   serverImage: {
+    accessKind: 'backend-redirect',
     allowedContentTypes: ['image/'],
     folder: 'server-images',
     maxFileSizeBytes: 4 * MB_IN_BYTES,
     visibility: 'public',
   },
   messageFile: {
+    accessKind: 'backend-redirect',
     allowedContentTypes: ['image/', 'application/pdf'],
     folder: 'message-files',
     maxFileSizeBytes: 4 * MB_IN_BYTES,
@@ -59,6 +61,7 @@ export class StorageService {
     });
 
     return {
+      accessKind: uploadPolicy.accessKind,
       key: storedFile.key,
       name: storedFile.name,
       size: storedFile.size,
@@ -106,12 +109,18 @@ export class StorageService {
       throw new HttpException('File key or file URL is required', HttpStatus.BAD_REQUEST);
     }
 
-    return this.storageProvider.resolveFileAccess({
+    const resolvedFileAccess = await this.storageProvider.resolveFileAccess({
       endpoint: resolvedEndpoint,
       fileKey: resolvedFileKey,
       fileUrl: resolvedFileUrl,
       folder: this.resolveStorageFolder(uploadPolicy.folder),
     });
+
+    if (resolvedFileAccess.kind !== uploadPolicy.accessKind) {
+      throw new HttpException('Storage access policy mismatch', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    return resolvedFileAccess;
   }
 
   private ensureAllowedFile(file: UploadedStorageFile, policy: StorageUploadPolicy) {
