@@ -32,6 +32,8 @@ Current wave order:
 - `Wave 23` = `STORAGE_RUNTIME_READ_RESOLUTION`
 - `Wave 24` = `STORAGE_ACCESS_POLICY_FOUNDATION`
 - `Wave 25` = `STORAGE_STAGED_UPLOAD_SWEEPER`
+- `Wave 26` = `WEB_RUNTIME_API_EXTRACTION`
+- `Wave 27` = `VENDOR_REPO_CLEANUP` (optional side cleanup)
 
 ## Status by Stage
 
@@ -191,11 +193,14 @@ Remaining:
 
 The next correct step by plan is:
 
-1. treat `Stage 5` storage foundation as complete at the current roadmap level
-2. keep managed cloud storage first, not self-hosted `MinIO` first
-3. keep historical storage compatibility narrow and read-only where ownership-safe cleanup is not available
-4. do not add `Redis` unless a concrete storage-driven need appears
-5. only reopen storage later if stronger backend-owned file access (`signed-url` or `proxy-stream`) becomes worth the product/operational complexity
+1. start `Stage 5A` with web runtime API extraction
+2. reduce remaining `Next` `app/api` and `pages/api` compatibility/proxy layers
+3. move web runtime closer to direct backend access through `packages/sdk`
+4. keep the now-stable auth/storage boundaries intact during the extraction
+5. do not mix this with `Postgres` migration or media rewrite
 
 Completed side cleanup:
 - `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only
+
+Optional side cleanup:
+- `Wave 27 / VENDOR_REPO_CLEANUP` may be run to remove dead repo-level `Clerk` and `UploadThing` leftovers without changing the main `Stage 5A` path

@@ -29,8 +29,10 @@
 - [waves/STORAGE_METADATA_OWNERSHIP_FOUNDATION.md](./waves/STORAGE_METADATA_OWNERSHIP_FOUNDATION.md) - Wave 21, closed metadata/file-key ownership wave inside `Stage 5`
 - [waves/CLERK_REPO_CLEANUP.md](./waves/CLERK_REPO_CLEANUP.md) - Wave 22, closed optional repo-level Clerk cleanup
 - [waves/STORAGE_RUNTIME_READ_RESOLUTION.md](./waves/STORAGE_RUNTIME_READ_RESOLUTION.md) - Wave 23, closed runtime-read/file-access wave inside `Stage 5`
-- [waves/STORAGE_ACCESS_POLICY_FOUNDATION.md](./waves/STORAGE_ACCESS_POLICY_FOUNDATION.md) - Wave 24, current storage-access-policy wave inside `Stage 5`
-- [waves/STORAGE_STAGED_UPLOAD_SWEEPER.md](./waves/STORAGE_STAGED_UPLOAD_SWEEPER.md) - Wave 25, planned narrow staged-upload cleanup wave before closing `Stage 5`
+- [waves/STORAGE_ACCESS_POLICY_FOUNDATION.md](./waves/STORAGE_ACCESS_POLICY_FOUNDATION.md) - Wave 24, closed storage-access-policy wave inside `Stage 5`
+- [waves/STORAGE_STAGED_UPLOAD_SWEEPER.md](./waves/STORAGE_STAGED_UPLOAD_SWEEPER.md) - Wave 25, closed narrow staged-upload cleanup wave that closes `Stage 5`
+- [waves/WEB_RUNTIME_API_EXTRACTION.md](./waves/WEB_RUNTIME_API_EXTRACTION.md) - Wave 26, current web runtime extraction wave for `Stage 5A`
+- [waves/VENDOR_REPO_CLEANUP.md](./waves/VENDOR_REPO_CLEANUP.md) - Wave 27, optional tiny repo-level cleanup for dead `Clerk` and `UploadThing` leftovers
 
 ## Wave Sequence
 
@@ -59,6 +61,8 @@
 23. Wave 23 - `STORAGE_RUNTIME_READ_RESOLUTION`
 24. Wave 24 - `STORAGE_ACCESS_POLICY_FOUNDATION`
 25. Wave 25 - `STORAGE_STAGED_UPLOAD_SWEEPER`
+26. Wave 26 - `WEB_RUNTIME_API_EXTRACTION`
+27. Wave 27 - `VENDOR_REPO_CLEANUP`
 
 ## Delegation
 
@@ -94,6 +98,8 @@
 - [delegation/briefs/SEGMENT_BRIEF_029_STORAGE_RUNTIME_READ_RESOLUTION.md](./delegation/briefs/SEGMENT_BRIEF_029_STORAGE_RUNTIME_READ_RESOLUTION.md)
 - [delegation/briefs/SEGMENT_BRIEF_030_STORAGE_ACCESS_POLICY_FOUNDATION.md](./delegation/briefs/SEGMENT_BRIEF_030_STORAGE_ACCESS_POLICY_FOUNDATION.md)
 - [delegation/briefs/SEGMENT_BRIEF_031_STORAGE_STAGED_UPLOAD_SWEEPER.md](./delegation/briefs/SEGMENT_BRIEF_031_STORAGE_STAGED_UPLOAD_SWEEPER.md)
+- [delegation/briefs/SEGMENT_BRIEF_032_WEB_RUNTIME_API_EXTRACTION.md](./delegation/briefs/SEGMENT_BRIEF_032_WEB_RUNTIME_API_EXTRACTION.md)
+- [delegation/briefs/SEGMENT_BRIEF_033_VENDOR_REPO_CLEANUP.md](./delegation/briefs/SEGMENT_BRIEF_033_VENDOR_REPO_CLEANUP.md)
 
 ## Recommended Reading Order
 
