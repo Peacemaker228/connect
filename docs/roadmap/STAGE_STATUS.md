@@ -199,6 +199,12 @@ The next correct step by plan is:
 4. keep the now-stable auth/storage boundaries intact during the extraction
 5. do not mix this with `Postgres` migration or media rewrite
 
+Current `Wave 26` progress:
+- backend-aware API base URL/client foundation exists
+- backend CORS/origin foundation exists for direct browser calls
+- first shared SDK extraction slices are already done for `server`, `profile`, and `invite`
+- the next narrow step should continue with shared feature mutations before broad UI rewrites
+
 Completed side cleanup:
 - `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only
 
