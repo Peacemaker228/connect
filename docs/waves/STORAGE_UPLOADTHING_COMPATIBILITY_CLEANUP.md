@@ -10,6 +10,17 @@ Wave task:
 - reduce storage-vendor overlap without broad metadata redesign
 - remove or harden compatibility paths that do not have the same ownership guarantees as the managed-cloud provider
 
+## Result
+
+Completed by this wave:
+- the active runtime storage path no longer depends on `UploadThing`
+- the old `Next` `UploadThing` route and UI utility leftovers are removed from active code
+- the unsafe `UploadThing` delete/cleanup compatibility path is removed instead of being kept weaker than the managed-cloud provider
+
+Remaining:
+- historical `UploadThing` read compatibility may still remain temporarily where old public CDN URLs exist
+- broader metadata normalization stays intentionally out of scope for this wave
+
 ## Position in the Main Plan
 
 Mapping:

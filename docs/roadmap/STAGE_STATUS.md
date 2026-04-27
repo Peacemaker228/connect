@@ -162,11 +162,13 @@ Done:
 - the new provider is validated against a real managed-cloud bucket
 - live upload flow works end-to-end through the backend-owned storage path
 - runtime image host wiring is aligned for the managed-cloud storage host
-- main explicit orphan-cleanup flows are covered in the UI/storage boundary lifecycle
+- the main explicit orphan-cleanup flows are covered in the UI/storage boundary lifecycle
+- the active storage runtime no longer depends on `UploadThing`
+- the old `Next` `UploadThing` route and UI utility leftovers are removed from active code
+- the unsafe `UploadThing` delete/cleanup compatibility path is removed instead of being kept weaker than the managed-cloud ownership model
 
 Remaining:
-- narrow the remaining `UploadThing` compatibility layer
-- decide whether `UploadThing` stays only for historical compatibility or can be removed from active code entirely
+- decide whether historical `UploadThing` read compatibility (for old CDN URLs) stays temporary or is later normalized away
 - decide whether public URL compatibility stays temporary or moves toward stronger metadata/file-key ownership later
 - decide whether a later abandoned-upload sweeper is worth adding or stays intentionally out of scope
 
@@ -176,6 +178,6 @@ The next correct step by plan is:
 
 1. start `Stage 5` with storage foundation / storage abstraction
 2. keep managed cloud storage first, not self-hosted `MinIO` first
-3. reduce the remaining `UploadThing` compatibility layer without widening the scope
+3. keep historical storage compatibility narrow and read-only where ownership-safe cleanup is not available
 4. do not add `Redis` unless a concrete storage-driven need appears
 5. leave metadata normalization and broader lifecycle work for later storage steps
