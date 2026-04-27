@@ -84,7 +84,11 @@ export const FileUpload: FC<IFileUploadProps> = ({
         throw new Error(json.error ?? 'Upload failed')
       }
 
-      const nextValue = serializeUploadValue(json.url, json.type, endpoint)
+      const nextValue = serializeUploadValue({
+        fileKey: json.key,
+        fileType: json.type,
+        fileUrl: json.url,
+      })
 
       if (value && nextValue !== value && isStagedValueAction?.(value)) {
         try {

@@ -167,10 +167,13 @@ Done:
 - the active storage runtime no longer depends on `UploadThing`
 - the old `Next` `UploadThing` route and UI utility leftovers are removed from active code
 - the unsafe `UploadThing` delete/cleanup compatibility path is removed instead of being kept weaker than the managed-cloud ownership model
+- new upload values can now carry backend-owned storage metadata (`fileKey` + `fileUrl` + `fileType`) instead of staying raw-vendor-URL-only
+- storage delete/cleanup now prefers backend-owned file-key metadata and falls back to public URL parsing only for legacy values
 
 Remaining:
 - decide whether historical `UploadThing` read compatibility (for old CDN URLs) stays temporary or is later normalized away
 - decide whether public URL compatibility stays temporary or moves toward stronger metadata/file-key ownership later
+- decide when active runtime reads should move from stored public URL usage toward backend-issued file access resolution
 - decide whether a later abandoned-upload sweeper is worth adding or stays intentionally out of scope
 
 ## Next Correct Step

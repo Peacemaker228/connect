@@ -8,7 +8,17 @@ Wave task:
 - begin moving storage ownership away from raw vendor URLs
 - introduce stronger file metadata / file-key ownership direction
 - keep the current runtime behavior stable while preparing later normalization
-- allow a tiny dead-dependency cleanup for the remaining `Clerk` package/env leftovers only if it does not reopen auth work
+
+## Result
+
+Completed by this wave:
+- new upload values can now carry backend-owned storage metadata (`fileKey` + `fileUrl` + `fileType`) instead of remaining raw-vendor-URL-only
+- storage delete/cleanup now prefers backend-owned file-key ownership and falls back to public URL parsing only for legacy values
+- the active managed-cloud runtime path remains stable during the first metadata-ownership step
+
+Not done yet:
+- runtime reads still rely on the stored public URL inside the compatibility envelope
+- broader storage normalization and backend-issued file access remain later steps
 
 ## Position in the Main Plan
 
@@ -38,7 +48,6 @@ Mapping:
 - keep the active managed-cloud path stable
 - prefer reviewable foundation work over big-bang storage rewrite
 - do not widen this into a general database migration
-- if `Clerk` cleanup is touched here, it must stay a dead-dependency cleanup only, not a return to `Stage 4`
 
 ## References
 

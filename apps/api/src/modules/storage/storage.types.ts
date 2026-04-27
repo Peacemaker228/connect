@@ -31,7 +31,8 @@ export interface StorageProviderUploadRequest {
 
 export interface StorageProviderDeleteRequest {
   endpoint: StorageUploadEndpoint;
-  fileUrl: string;
+  fileKey?: string | null;
+  fileUrl?: string | null;
   folder: string;
   profileId: string;
 }

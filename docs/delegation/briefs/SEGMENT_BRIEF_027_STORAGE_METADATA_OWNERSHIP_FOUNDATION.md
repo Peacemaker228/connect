@@ -45,12 +45,6 @@ Keep the current runtime contract stable during the first normalization step.
 
 Prefer a small, reviewable ownership step over a broad storage/database redesign.
 
-### 4. Optional dead `Clerk` cleanup
-
-If the repo still contains only dead `Clerk` package/env leftovers, they may be removed as a tiny cleanup inside this segment.
-
-This does not authorize reopening auth architecture work.
-
 ## Out of Scope
 
 Forbidden in this segment:
@@ -65,7 +59,6 @@ Forbidden in this segment:
 - do not break the active managed-cloud provider path
 - do not widen this into a general database migration
 - keep historical compatibility concerns explicit
-- if `Clerk` is touched, keep it strictly to dead package/env cleanup only
 
 ## Expected Deliverable
 

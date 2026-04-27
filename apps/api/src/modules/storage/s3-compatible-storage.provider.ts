@@ -103,7 +103,8 @@ export class S3CompatibleStorageProvider implements BackendStorageProvider {
 
   async deleteFile(request: StorageProviderDeleteRequest): Promise<void> {
     const config = this.getResolvedConfig();
-    const objectKey = this.resolveObjectKeyFromPublicUrl(config.publicBaseUrl, request.fileUrl);
+    const objectKey =
+      request.fileKey?.trim() || this.resolveObjectKeyFromPublicUrl(config.publicBaseUrl, request.fileUrl);
 
     this.ensureAllowedFolder(objectKey, request.folder);
 
@@ -232,8 +233,12 @@ export class S3CompatibleStorageProvider implements BackendStorageProvider {
     return errorName === 'NotFound' || errorName === 'NoSuchKey' || httpStatusCode === 404;
   }
 
-  private resolveObjectKeyFromPublicUrl(publicBaseUrl: string, fileUrl: string) {
+  private resolveObjectKeyFromPublicUrl(publicBaseUrl: string, fileUrl: string | null | undefined) {
     try {
+      if (!fileUrl) {
+        throw new BadRequestException('Storage file URL is required when the file key is missing');
+      }
+
       const resolvedPublicBaseUrl = new URL(publicBaseUrl);
       const resolvedFileUrl = new URL(fileUrl);
 

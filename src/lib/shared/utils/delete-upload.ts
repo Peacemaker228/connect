@@ -3,9 +3,9 @@
 import { getUploadValueParts, type UploadEndpoint } from '@app-core/files/upload-file'
 
 export const deleteUploadedFile = async (value: string, endpoint: UploadEndpoint) => {
-  const { fileUrl } = getUploadValueParts(value, endpoint)
+  const { fileKey, fileUrl } = getUploadValueParts(value, endpoint)
 
-  if (!fileUrl) {
+  if (!fileUrl && !fileKey) {
     return
   }
 
@@ -16,6 +16,7 @@ export const deleteUploadedFile = async (value: string, endpoint: UploadEndpoint
     },
     body: JSON.stringify({
       endpoint,
+      fileKey,
       fileUrl,
     }),
   })

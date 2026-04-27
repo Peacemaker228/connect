@@ -37,8 +37,9 @@ export class StorageController {
   deleteFile(
     @CurrentProfileId() profileId: string,
     @Body('endpoint') endpoint: string | undefined,
+    @Body('fileKey') fileKey: string | undefined,
     @Body('fileUrl') fileUrl: string | undefined,
   ) {
-    return this.storageService.deleteFile(profileId, endpoint, fileUrl);
+    return this.storageService.deleteFile(profileId, endpoint, fileUrl, fileKey);
   }
 }
