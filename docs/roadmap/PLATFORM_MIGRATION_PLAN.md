@@ -436,6 +436,7 @@ Current execution note:
 - prefer managed cloud `S3-compatible` storage first
 - do not add `Redis` in this stage without a concrete storage-driven need
 - do not turn this stage into an early self-hosted infra rollout
+- managed-cloud validation may be done with any acceptable `S3-compatible` provider; a temporary provider choice such as `Yandex Object Storage` does not change the architectural direction
 
 Срок:
 - `1-2 недели`

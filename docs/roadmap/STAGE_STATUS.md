@@ -26,6 +26,7 @@ Current wave order:
 - `Wave 17` = `STORAGE_FOUNDATION`
 - `Wave 18` = `STORAGE_S3_PROVIDER_IMPLEMENTATION`
 - `Wave 19` = `STORAGE_MANAGED_CLOUD_VALIDATION`
+- `Wave 20` = `STORAGE_UPLOADTHING_COMPATIBILITY_CLEANUP`
 
 ## Status by Stage
 
@@ -158,19 +159,23 @@ Done:
 - real managed-cloud `S3-compatible` provider now exists in `apps/api`
 - active storage ownership can now move through the new `S3-compatible` provider instead of the temporary UploadThing adapter
 - explicit backend upload policy for `messageFile` is now fixed instead of remaining implicit
+- the new provider is validated against a real managed-cloud bucket
+- live upload flow works end-to-end through the backend-owned storage path
+- runtime image host wiring is aligned for the managed-cloud storage host
+- main explicit orphan-cleanup flows are covered in the UI/storage boundary lifecycle
 
 Remaining:
-- validate the new provider against a real managed-cloud bucket
-- document and confirm the required dev/prod storage env contract
-- decide whether `UploadThing` remains as temporary fallback only or can be removed in a later step
+- narrow the remaining `UploadThing` compatibility layer
+- decide whether `UploadThing` stays only for historical compatibility or can be removed from active code entirely
 - decide whether public URL compatibility stays temporary or moves toward stronger metadata/file-key ownership later
+- decide whether a later abandoned-upload sweeper is worth adding or stays intentionally out of scope
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
 1. start `Stage 5` with storage foundation / storage abstraction
-2. validate the real managed-cloud bucket flow and required env wiring
-3. keep managed cloud storage first, not self-hosted `MinIO` first
+2. keep managed cloud storage first, not self-hosted `MinIO` first
+3. reduce the remaining `UploadThing` compatibility layer without widening the scope
 4. do not add `Redis` unless a concrete storage-driven need appears
-5. only after validation decide the next storage refactor step
+5. leave metadata normalization and broader lifecycle work for later storage steps

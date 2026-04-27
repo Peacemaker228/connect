@@ -9,6 +9,18 @@ Wave task:
 - confirm the required dev/prod env contract
 - verify that the current runtime upload contract still works end-to-end
 
+## Result
+
+Completed by this wave:
+- live managed-cloud validation passed
+- the current backend-owned upload flow works end-to-end against a real `S3-compatible` managed provider
+- dev bucket/credentials/env contract were proven in practice
+- runtime image host handling was aligned for the managed-cloud storage host
+- the main staged-upload orphan cleanup flows were tightened without broad redesign
+
+Observed limitation:
+- if the app or tab is killed during an in-flight upload, a later background sweeper would still be the only fully reliable cleanup answer
+
 ## Position in the Main Plan
 
 Mapping:
@@ -36,6 +48,13 @@ Mapping:
 - keep the current upload/runtime contract stable
 - do not widen this step into a new storage architecture phase
 - use managed cloud first
+
+## Next Logical Step
+
+After this validation wave, the next correct move is:
+- narrow the remaining `UploadThing` compatibility layer
+- keep the active storage path on the real managed-cloud `S3-compatible` provider
+- avoid jumping early into metadata redesign or self-hosted infra
 
 ## References
 
