@@ -28,3 +28,28 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const authHeaders = await currentBackendAuthHeaders()
+
+    if (!authHeaders) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await req.json()
+
+    const response = await requestBackendApi({
+      path: '/api/storage/file',
+      method: 'DELETE',
+      body,
+      headers: authHeaders,
+    })
+
+    return toNextProxyResponse(response)
+  } catch (error) {
+    console.error('server-upload delete error', error)
+
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
+}

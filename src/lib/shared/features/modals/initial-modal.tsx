@@ -11,11 +11,13 @@ import { serverFormSchema } from '@app-core/schemas/server-form-schema'
 import { ServerModal } from '@/lib/shared/features/modals/common/server-modal'
 import { useState } from 'react'
 import { ERoutes } from '@app-core/routing/routes'
+import { useStagedUpload } from '@/lib/shared/utils/hooks/use-staged-upload'
 
 export const InitialModal = () => {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [isRedirecting, setIsRedirecting] = useState(false)
+  const stagedUpload = useStagedUpload('serverImage')
 
   const form = useForm({
     resolver: zodResolver(serverFormSchema),
@@ -39,6 +41,8 @@ export const InitialModal = () => {
         return [...servers, createdServer]
       })
 
+      stagedUpload.markCommitted(data.imageUrl)
+      stagedUpload.reset()
       setIsRedirecting(true)
       router.replace(`${ERoutes.SERVERS}/${createdServer.id}`)
       queryClient.invalidateQueries({ queryKey: ['servers'] })
@@ -48,5 +52,29 @@ export const InitialModal = () => {
     }
   }
 
-  return <ServerModal form={form} onSubmitAction={handleSubmit} isLoading={isLoading} isModalOpen />
+  const handleClose = () => {
+    void (async () => {
+      try {
+        await stagedUpload.cleanupStagedValue(form.getValues('imageUrl'))
+      } catch (error) {
+        console.warn(error)
+      } finally {
+        stagedUpload.reset()
+        form.reset()
+      }
+    })()
+  }
+
+  return (
+    <ServerModal
+      form={form}
+      onSubmitAction={handleSubmit}
+      isLoading={isLoading}
+      isModalOpen
+      onClose={handleClose}
+      isStagedImageValueAction={stagedUpload.isStagedValue}
+      onCleanupStagedImageAction={stagedUpload.cleanupStagedValue}
+      onImageUploadCompleteAction={stagedUpload.registerUploadedValue}
+    />
+  )
 }

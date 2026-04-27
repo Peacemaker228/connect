@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   HttpCode,
   HttpStatus,
   Post,
@@ -29,5 +30,15 @@ export class StorageController {
     @UploadedFile() file: UploadedStorageFile | undefined,
   ) {
     return this.storageService.uploadFile(profileId, endpoint, file);
+  }
+
+  @Delete('file')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteFile(
+    @CurrentProfileId() profileId: string,
+    @Body('endpoint') endpoint: string | undefined,
+    @Body('fileUrl') fileUrl: string | undefined,
+  ) {
+    return this.storageService.deleteFile(profileId, endpoint, fileUrl);
   }
 }

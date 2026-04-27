@@ -1,8 +1,9 @@
-import { InternalServerErrorException, Injectable } from '@nestjs/common';
+import { BadRequestException, InternalServerErrorException, Injectable } from '@nestjs/common';
 import { UTApi } from 'uploadthing/server';
 
 import type {
   BackendStorageProvider,
+  StorageProviderDeleteRequest,
   StorageProviderUploadRequest,
   StorageStoredFile,
 } from './storage.types';
@@ -35,5 +36,37 @@ export class UploadthingStorageProvider implements BackendStorageProvider {
       visibility: request.visibility,
       provider: this.kind,
     };
+  }
+
+  async deleteFile(request: StorageProviderDeleteRequest): Promise<void> {
+    const fileKey = this.extractFileKey(request.fileUrl);
+
+    try {
+      await this.utapi.deleteFiles(fileKey);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        error instanceof Error ? error.message : 'UploadThing delete failed',
+      );
+    }
+  }
+
+  private extractFileKey(fileUrl: string) {
+    try {
+      const { pathname } = new URL(fileUrl);
+      const pathSegments = pathname.split('/').filter(Boolean);
+      const fileKey = pathSegments[pathSegments.length - 1];
+
+      if (!fileKey) {
+        throw new BadRequestException('UploadThing file key is empty');
+      }
+
+      return decodeURIComponent(fileKey);
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      throw new BadRequestException('Invalid UploadThing file URL');
+    }
   }
 }

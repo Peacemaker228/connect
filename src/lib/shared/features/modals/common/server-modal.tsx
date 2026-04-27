@@ -17,9 +17,21 @@ interface IServerModalProps {
   onClose?: () => void
   onSubmitAction: (data: z.infer<typeof serverFormSchema>) => Promise<void>
   form: UseFormReturn<{ name: string; imageUrl: string }>
+  isStagedImageValueAction?: (value: string) => boolean
+  onCleanupStagedImageAction?: (value: string) => Promise<unknown>
+  onImageUploadCompleteAction?: (value: string) => void
 }
 
-export const ServerModal: FC<IServerModalProps> = ({ isModalOpen, isLoading, onClose, onSubmitAction, form }) => {
+export const ServerModal: FC<IServerModalProps> = ({
+  isModalOpen,
+  isLoading,
+  onClose,
+  onSubmitAction,
+  form,
+  isStagedImageValueAction,
+  onCleanupStagedImageAction,
+  onImageUploadCompleteAction,
+}) => {
   const t = useTranslations('Modals.ServerModal')
   const commonTrans = useTranslations('Common')
 
@@ -40,7 +52,14 @@ export const ServerModal: FC<IServerModalProps> = ({ isModalOpen, isLoading, onC
                     return (
                       <FormItem>
                         <FormControl>
-                          <FileUpload onChangeAction={field.onChange} endpoint="serverImage" {...field} />
+                          <FileUpload
+                            onChangeAction={field.onChange}
+                            endpoint="serverImage"
+                            isStagedValueAction={isStagedImageValueAction}
+                            onCleanupStagedValueAction={onCleanupStagedImageAction}
+                            onUploadCompleteAction={onImageUploadCompleteAction}
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

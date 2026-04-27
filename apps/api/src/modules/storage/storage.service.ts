@@ -21,6 +21,7 @@ const STORAGE_UPLOAD_POLICIES: Record<StorageUploadEndpoint, StorageUploadPolicy
   messageFile: {
     allowedContentTypes: ['image/', 'application/pdf'],
     folder: 'message-files',
+    maxFileSizeBytes: 4 * MB_IN_BYTES,
     visibility: 'public',
   },
 };
@@ -65,6 +66,20 @@ export class StorageService {
     };
   }
 
+  async deleteFile(profileId: string | undefined, endpoint: string | undefined, fileUrl: string | undefined) {
+    const resolvedProfileId = this.requireProfileId(profileId);
+    const resolvedEndpoint = this.requireUploadEndpoint(endpoint);
+    const uploadPolicy = STORAGE_UPLOAD_POLICIES[resolvedEndpoint];
+    const resolvedFileUrl = this.requireFileUrl(fileUrl);
+
+    await this.storageProvider.deleteFile({
+      endpoint: resolvedEndpoint,
+      fileUrl: resolvedFileUrl,
+      folder: this.resolveStorageFolder(uploadPolicy.folder),
+      profileId: resolvedProfileId,
+    });
+  }
+
   private ensureAllowedFile(file: UploadedStorageFile, policy: StorageUploadPolicy) {
     if (!policy.allowedContentTypes.some((contentType) => file.mimetype.startsWith(contentType))) {
       throw new HttpException('Invalid file type', HttpStatus.BAD_REQUEST);
@@ -97,6 +112,16 @@ export class StorageService {
     }
 
     return file;
+  }
+
+  private requireFileUrl(fileUrl: string | undefined) {
+    const resolvedFileUrl = fileUrl?.trim();
+
+    if (!resolvedFileUrl) {
+      throw new HttpException('File URL is required', HttpStatus.BAD_REQUEST);
+    }
+
+    return resolvedFileUrl;
   }
 
   private resolveStorageFolder(folder: string) {
