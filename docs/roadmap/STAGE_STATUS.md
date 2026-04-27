@@ -28,6 +28,7 @@ Current wave order:
 - `Wave 19` = `STORAGE_MANAGED_CLOUD_VALIDATION`
 - `Wave 20` = `STORAGE_UPLOADTHING_COMPATIBILITY_CLEANUP`
 - `Wave 21` = `STORAGE_METADATA_OWNERSHIP_FOUNDATION`
+- `Wave 22` = `CLERK_REPO_CLEANUP` (optional side cleanup)
 
 ## Status by Stage
 
@@ -36,7 +37,7 @@ Current wave order:
 Status: `done`
 
 Done:
-- master migration plan exists
+- a master migration plan exists
 - repo strategy is fixed
 - target architecture is fixed
 - wave/segment delegation model is fixed
@@ -185,3 +186,7 @@ The next correct step by plan is:
 3. keep historical storage compatibility narrow and read-only where ownership-safe cleanup is not available
 4. do not add `Redis` unless a concrete storage-driven need appears
 5. move next into storage metadata/file-key ownership instead of staying on raw vendor URLs forever
+
+Optional side cleanup:
+- `Wave 22 / CLERK_REPO_CLEANUP` may remove leftover repo/package/electron naming traces of `Clerk`
+- it must not reopen `Stage 4` auth work
