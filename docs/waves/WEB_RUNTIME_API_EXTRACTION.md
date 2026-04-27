@@ -19,9 +19,10 @@ Current completed slices inside this wave:
 - API base URL and backend-aware HTTP client foundation
 - backend CORS/origin foundation for direct web-to-backend calls
 - first shared SDK extraction slices for `server`, `profile`, and `invite` access paths
+- first shared feature mutation extraction slices for server CRUD and invite-code refresh
 
 Current next slice inside this wave:
-- continue extraction through shared feature mutations before broad UI rewrites
+- continue extraction through channel-focused shared mutations before broad UI rewrites
 
 ## In Scope
 
