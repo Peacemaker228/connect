@@ -205,7 +205,8 @@ Current `Wave 26` progress:
 - first shared SDK extraction slices are already done for `server`, `profile`, and `invite`
 - the first shared feature mutation extraction slices are already done for server CRUD and invite-code refresh
 - channel create/edit/delete mutations are now moved under shared SDK ownership
-- the next narrow step should continue with a practical server-membership mutation bundle before broad UI rewrites
+- membership and server-membership mutations are now moved under shared SDK ownership
+- the next narrow step should continue with a practical message-mutation bundle before broad UI rewrites
 
 Completed side cleanup:
 - `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only
