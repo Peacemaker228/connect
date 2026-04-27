@@ -3,18 +3,18 @@
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { ChannelType } from '@prisma/client'
-import qs from 'query-string'
 import { channelFormSchema } from '@/lib/channel/data-access/models/channelFormSchema'
 import { useEffect } from 'react'
 import { ChannelModal } from '@/lib/shared/features/modals/common/channel-modal'
+import { useUpdateChannel } from '@sdk/mutations/channel'
 
 export const EditChannelModal = () => {
   const router = useRouter()
   const { isOpen, onClose, type, data } = useModal()
+  const { mutateAsync: updateChannel } = useUpdateChannel()
 
   const { channel, server } = data
 
@@ -38,15 +38,12 @@ export const EditChannelModal = () => {
   }, [channel, form])
 
   const handleSubmit = async (data: z.infer<typeof channelFormSchema>) => {
-    try {
-      const url = qs.stringifyUrl({
-        url: `/api/socket/channels/${channel?.id}`,
-        query: {
-          serverId: server?.id,
-        },
-      })
+    if (!server?.id || !channel?.id) {
+      return
+    }
 
-      await axios.patch(url, data)
+    try {
+      await updateChannel({ serverId: server.id, channelId: channel.id, payload: data })
 
       form.reset()
       onClose()
