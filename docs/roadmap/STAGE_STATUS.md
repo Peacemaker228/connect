@@ -152,7 +152,7 @@ Remaining:
 
 ### Stage 5. Storage Foundation
 
-Status: `in_progress`
+Status: `done`
 
 Done:
 - backend-owned storage module exists in `apps/api`
@@ -178,26 +178,24 @@ Done:
 - current managed-cloud reads still resolve to public object URLs under the hood, but file-key-based access resolution is now the preferred active path
 - new stored uploads can now explicitly mark backend-owned runtime access policy (`backend-redirect`) instead of depending on implicit read assumptions
 - backend storage access responses now expose explicit access-policy metadata (`kind`, `upstream`, `compatibility`) while current managed-cloud resolution remains public-URL-backed under the hood
+- backend-owned uploads are now marked as `staged` until a domain success-path finalizes them
+- a bounded staged-upload sweeper can now clean only aged files that remain `staged`, without introducing a full bucket-vs-DB orphan scanner
 
 Remaining:
-- decide whether historical `UploadThing` read compatibility (for old CDN URLs) stays temporary or is later normalized away
-- decide whether public URL compatibility stays temporary or moves toward stronger metadata/file-key ownership later
-- decide whether the current `backend-redirect` contract later evolves into `signed-url` or `proxy-stream` access for stronger backend ownership
-- if a later abandoned-upload sweeper is added, keep it narrow: prefer a staged/temp-object sweeper over a full bucket-vs-DB orphan scanner
+- non-blocking later storage evolution only:
+  - decide whether historical `UploadThing` read compatibility (for old CDN URLs) stays temporary or is later normalized away
+  - decide whether public URL compatibility stays temporary or moves toward stronger metadata/file-key ownership later
+  - decide whether the current `backend-redirect` contract later evolves into `signed-url` or `proxy-stream` access for stronger backend ownership
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. continue `Stage 5` with storage access-policy work instead of stopping at public redirect-based read resolution
+1. treat `Stage 5` storage foundation as complete at the current roadmap level
 2. keep managed cloud storage first, not self-hosted `MinIO` first
 3. keep historical storage compatibility narrow and read-only where ownership-safe cleanup is not available
 4. do not add `Redis` unless a concrete storage-driven need appears
-5. continue from the explicit `backend-redirect` contract toward stronger backend-owned file access later, if and when `signed-url` or `proxy-stream` access becomes worth the complexity
-
-Planned follow-up after `Wave 24`:
-- `Wave 25 / STORAGE_STAGED_UPLOAD_SWEEPER`
-- this should be the final narrow storage-hygiene step before calling `Stage 5` done
+5. only reopen storage later if stronger backend-owned file access (`signed-url` or `proxy-stream`) becomes worth the product/operational complexity
 
 Completed side cleanup:
 - `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only

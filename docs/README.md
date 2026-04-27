@@ -30,6 +30,7 @@
 - [waves/CLERK_REPO_CLEANUP.md](./waves/CLERK_REPO_CLEANUP.md) - Wave 22, closed optional repo-level Clerk cleanup
 - [waves/STORAGE_RUNTIME_READ_RESOLUTION.md](./waves/STORAGE_RUNTIME_READ_RESOLUTION.md) - Wave 23, closed runtime-read/file-access wave inside `Stage 5`
 - [waves/STORAGE_ACCESS_POLICY_FOUNDATION.md](./waves/STORAGE_ACCESS_POLICY_FOUNDATION.md) - Wave 24, current storage-access-policy wave inside `Stage 5`
+- [waves/STORAGE_STAGED_UPLOAD_SWEEPER.md](./waves/STORAGE_STAGED_UPLOAD_SWEEPER.md) - Wave 25, planned narrow staged-upload cleanup wave before closing `Stage 5`
 
 ## Wave Sequence
 
@@ -57,6 +58,7 @@
 22. Wave 22 - `CLERK_REPO_CLEANUP`
 23. Wave 23 - `STORAGE_RUNTIME_READ_RESOLUTION`
 24. Wave 24 - `STORAGE_ACCESS_POLICY_FOUNDATION`
+25. Wave 25 - `STORAGE_STAGED_UPLOAD_SWEEPER`
 
 ## Delegation
 
@@ -91,6 +93,7 @@
 - [delegation/briefs/SEGMENT_BRIEF_028_CLERK_REPO_CLEANUP.md](./delegation/briefs/SEGMENT_BRIEF_028_CLERK_REPO_CLEANUP.md)
 - [delegation/briefs/SEGMENT_BRIEF_029_STORAGE_RUNTIME_READ_RESOLUTION.md](./delegation/briefs/SEGMENT_BRIEF_029_STORAGE_RUNTIME_READ_RESOLUTION.md)
 - [delegation/briefs/SEGMENT_BRIEF_030_STORAGE_ACCESS_POLICY_FOUNDATION.md](./delegation/briefs/SEGMENT_BRIEF_030_STORAGE_ACCESS_POLICY_FOUNDATION.md)
+- [delegation/briefs/SEGMENT_BRIEF_031_STORAGE_STAGED_UPLOAD_SWEEPER.md](./delegation/briefs/SEGMENT_BRIEF_031_STORAGE_STAGED_UPLOAD_SWEEPER.md)
 
 ## Recommended Reading Order
 

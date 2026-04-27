@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 
 import { GENERAL_CHANNEL_NAME } from '../../common/constants/domain.constants';
 import { PrismaService } from '../../common/database/prisma.service';
+import { StorageService } from '../storage/storage.service';
 
 type ServerMutationBody = {
   name?: string;
@@ -12,7 +13,10 @@ type ServerMutationBody = {
 
 @Injectable()
 export class ServersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storageService: StorageService,
+  ) {}
 
   async createServer(profileId: string | undefined, body: ServerMutationBody) {
     const resolvedProfileId = this.requireProfileId(profileId);
@@ -22,11 +26,16 @@ export class ServersService {
       throw new HttpException('Name is required', HttpStatus.BAD_REQUEST);
     }
 
+    const finalizedImageUrl =
+      typeof imageUrl === 'string'
+        ? await this.storageService.finalizeStoredValue(resolvedProfileId, 'serverImage', imageUrl)
+        : imageUrl;
+
     return this.prisma.server.create({
       data: {
         profileId: resolvedProfileId,
         name,
-        imageUrl: typeof imageUrl === 'string' ? imageUrl : '',
+        imageUrl: typeof finalizedImageUrl === 'string' ? finalizedImageUrl : '',
         inviteCode: randomUUID(),
         channels: {
           create: [
@@ -105,6 +114,11 @@ export class ServersService {
       throw new HttpException('Server ID Missing', HttpStatus.BAD_REQUEST);
     }
 
+    const finalizedImageUrl =
+      typeof body.imageUrl === 'string'
+        ? await this.storageService.finalizeStoredValue(resolvedProfileId, 'serverImage', body.imageUrl)
+        : body.imageUrl;
+
     return this.prisma.server.update({
       where: {
         id: serverId,
@@ -112,7 +126,7 @@ export class ServersService {
       },
       data: {
         name: body.name,
-        imageUrl: typeof body.imageUrl === 'string' ? body.imageUrl : undefined,
+        imageUrl: typeof finalizedImageUrl === 'string' ? finalizedImageUrl : undefined,
       },
     });
   }
