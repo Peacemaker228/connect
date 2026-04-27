@@ -5,12 +5,14 @@ import { STORAGE_PROVIDER } from './storage.constants';
 import type {
   BackendStorageProvider,
   ResolvedStorageFileAccess,
+  StorageStagedSweepResult,
   StorageUploadEndpoint,
   StorageUploadPolicy,
   UploadedStorageFile,
 } from './storage.types';
 
 const MB_IN_BYTES = 1024 * 1024;
+const STORAGE_VALUE_PREFIX = 'storage://v1?';
 
 const STORAGE_UPLOAD_POLICIES: Record<StorageUploadEndpoint, StorageUploadPolicy> = {
   serverImage: {
@@ -95,6 +97,41 @@ export class StorageService {
     });
   }
 
+  async finalizeStoredValue(
+    profileId: string | undefined,
+    endpoint: StorageUploadEndpoint,
+    storedValue: string | null | undefined,
+  ) {
+    const resolvedProfileId = this.requireProfileId(profileId);
+    const resolvedValue = this.normalizeOptionalString(storedValue ?? undefined);
+
+    if (!resolvedValue || !resolvedValue.startsWith(STORAGE_VALUE_PREFIX)) {
+      return resolvedValue ?? storedValue ?? '';
+    }
+
+    const uploadPolicy = STORAGE_UPLOAD_POLICIES[endpoint];
+    const { fileKey, fileUrl } = this.resolveStoredValueReference(resolvedValue);
+
+    if (!fileKey && !fileUrl) {
+      return resolvedValue;
+    }
+
+    const finalizedFile = await this.storageProvider.finalizeFile({
+      endpoint,
+      fileKey,
+      fileUrl,
+      folder: this.resolveStorageFolder(uploadPolicy.folder),
+      profileId: resolvedProfileId,
+    });
+
+    return this.serializeStoredValue({
+      accessKind: uploadPolicy.accessKind,
+      fileKey: finalizedFile.key,
+      fileType: finalizedFile.contentType,
+      fileUrl: finalizedFile.url,
+    });
+  }
+
   async resolveFileAccess(
     endpoint: string | undefined,
     fileUrl: string | undefined,
@@ -121,6 +158,19 @@ export class StorageService {
     }
 
     return resolvedFileAccess;
+  }
+
+  async sweepStagedUploads(): Promise<StorageStagedSweepResult> {
+    const maxAgeHours = this.configService.get<number>('storage.stagedSweeperMaxAgeHours') ?? 24;
+    const maxObjects = this.configService.get<number>('storage.stagedSweeperMaxObjects') ?? 100;
+    const cutoff = new Date(Date.now() - maxAgeHours * 60 * 60 * 1000);
+    const folders = Object.values(STORAGE_UPLOAD_POLICIES).map((policy) => this.resolveStorageFolder(policy.folder));
+
+    return this.storageProvider.sweepStagedUploads({
+      cutoff,
+      folders,
+      maxObjects,
+    });
   }
 
   private ensureAllowedFile(file: UploadedStorageFile, policy: StorageUploadPolicy) {
@@ -155,6 +205,36 @@ export class StorageService {
     }
 
     return file;
+  }
+
+  private resolveStoredValueReference(value: string) {
+    const searchParams = new URLSearchParams(value.slice(STORAGE_VALUE_PREFIX.length));
+
+    return {
+      fileKey: this.normalizeOptionalString(searchParams.get('key') ?? undefined),
+      fileUrl: this.normalizeOptionalString(searchParams.get('url') ?? undefined),
+    };
+  }
+
+  private serializeStoredValue({
+    accessKind,
+    fileKey,
+    fileType,
+    fileUrl,
+  }: {
+    accessKind: StorageUploadPolicy['accessKind'];
+    fileKey: string;
+    fileType: string;
+    fileUrl: string;
+  }) {
+    const searchParams = new URLSearchParams({
+      access: accessKind,
+      key: fileKey,
+      type: fileType,
+      url: fileUrl,
+    });
+
+    return `${STORAGE_VALUE_PREFIX}${searchParams.toString()}`;
   }
 
   private normalizeOptionalString(value: string | undefined) {

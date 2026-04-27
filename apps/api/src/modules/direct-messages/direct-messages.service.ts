@@ -2,6 +2,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { MemberRole } from '@prisma/client';
 
 import { PrismaService } from '../../common/database/prisma.service';
+import { StorageService } from '../storage/storage.service';
 
 type DirectMessageMutationBody = {
   content?: string;
@@ -31,7 +32,10 @@ const CONVERSATION_INCLUDE = {
 
 @Injectable()
 export class DirectMessagesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storageService: StorageService,
+  ) {}
 
   async getMessages(
     profileId: string | undefined,
@@ -112,10 +116,15 @@ export class DirectMessagesService {
       throw new HttpException('Member Not Found', HttpStatus.NOT_FOUND);
     }
 
+    const finalizedFileUrl =
+      typeof body.fileUrl === 'string'
+        ? await this.storageService.finalizeStoredValue(resolvedProfileId, 'messageFile', body.fileUrl)
+        : body.fileUrl;
+
     return this.prisma.directMessage.create({
       data: {
         content: body.content,
-        fileUrl: body.fileUrl,
+        fileUrl: finalizedFileUrl,
         conversationId,
         memberId: member.id,
       },

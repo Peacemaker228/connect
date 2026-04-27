@@ -5,6 +5,7 @@ import { AuthModule } from '../auth/auth.module';
 import { S3CompatibleStorageProvider } from './s3-compatible-storage.provider';
 import { STORAGE_PROVIDER } from './storage.constants';
 import { StorageController } from './storage.controller';
+import { StorageStagedUploadSweeperService } from './storage-staged-upload-sweeper.service';
 import { StorageService } from './storage.service';
 
 @Module({
@@ -12,6 +13,7 @@ import { StorageService } from './storage.service';
   controllers: [StorageController],
   providers: [
     StorageService,
+    StorageStagedUploadSweeperService,
     S3CompatibleStorageProvider,
     {
       provide: STORAGE_PROVIDER,

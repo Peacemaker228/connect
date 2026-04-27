@@ -248,8 +248,8 @@ Current storage decision:
 - keep files `public` for the current product stage
 - keep `backend-redirect` as the current active read/access contract
 - do not do a mass migration of legacy storage URLs right now
-- allow one more narrow `Stage 5` step before closing the stage
-- if a sweeper is added later, prefer a narrow staged/temp-upload sweeper rather than a full bucket-vs-DB orphan scanner
+- `Stage 5` is now considered complete at the current roadmap level
+- the implemented storage hygiene path stays narrow: staged/temp-upload sweeper, not a full bucket-vs-DB orphan scanner
 
 Это не выглядит срочной задачей.
 

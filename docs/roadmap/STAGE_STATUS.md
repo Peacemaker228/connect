@@ -32,6 +32,8 @@ Current wave order:
 - `Wave 23` = `STORAGE_RUNTIME_READ_RESOLUTION`
 - `Wave 24` = `STORAGE_ACCESS_POLICY_FOUNDATION`
 - `Wave 25` = `STORAGE_STAGED_UPLOAD_SWEEPER`
+- `Wave 26` = `WEB_RUNTIME_API_EXTRACTION`
+- `Wave 27` = `VENDOR_REPO_CLEANUP` (optional side cleanup)
 
 ## Status by Stage
 
@@ -152,7 +154,7 @@ Remaining:
 
 ### Stage 5. Storage Foundation
 
-Status: `in_progress`
+Status: `done`
 
 Done:
 - backend-owned storage module exists in `apps/api`
@@ -178,26 +180,27 @@ Done:
 - current managed-cloud reads still resolve to public object URLs under the hood, but file-key-based access resolution is now the preferred active path
 - new stored uploads can now explicitly mark backend-owned runtime access policy (`backend-redirect`) instead of depending on implicit read assumptions
 - backend storage access responses now expose explicit access-policy metadata (`kind`, `upstream`, `compatibility`) while current managed-cloud resolution remains public-URL-backed under the hood
+- backend-owned uploads are now marked as `staged` until a domain success-path finalizes them
+- a bounded staged-upload sweeper can now clean only aged files that remain `staged`, without introducing a full bucket-vs-DB orphan scanner
 
 Remaining:
-- decide whether historical `UploadThing` read compatibility (for old CDN URLs) stays temporary or is later normalized away
-- decide whether public URL compatibility stays temporary or moves toward stronger metadata/file-key ownership later
-- decide whether the current `backend-redirect` contract later evolves into `signed-url` or `proxy-stream` access for stronger backend ownership
-- if a later abandoned-upload sweeper is added, keep it narrow: prefer a staged/temp-object sweeper over a full bucket-vs-DB orphan scanner
+- non-blocking later storage evolution only:
+  - decide whether historical `UploadThing` read compatibility (for old CDN URLs) stays temporary or is later normalized away
+  - decide whether public URL compatibility stays temporary or moves toward stronger metadata/file-key ownership later
+  - decide whether the current `backend-redirect` contract later evolves into `signed-url` or `proxy-stream` access for stronger backend ownership
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. continue `Stage 5` with storage access-policy work instead of stopping at public redirect-based read resolution
-2. keep managed cloud storage first, not self-hosted `MinIO` first
-3. keep historical storage compatibility narrow and read-only where ownership-safe cleanup is not available
-4. do not add `Redis` unless a concrete storage-driven need appears
-5. continue from the explicit `backend-redirect` contract toward stronger backend-owned file access later, if and when `signed-url` or `proxy-stream` access becomes worth the complexity
-
-Planned follow-up after `Wave 24`:
-- `Wave 25 / STORAGE_STAGED_UPLOAD_SWEEPER`
-- this should be the final narrow storage-hygiene step before calling `Stage 5` done
+1. start `Stage 5A` with web runtime API extraction
+2. reduce remaining `Next` `app/api` and `pages/api` compatibility/proxy layers
+3. move web runtime closer to direct backend access through `packages/sdk`
+4. keep the now-stable auth/storage boundaries intact during the extraction
+5. do not mix this with `Postgres` migration or media rewrite
 
 Completed side cleanup:
 - `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only
+
+Optional side cleanup:
+- `Wave 27 / VENDOR_REPO_CLEANUP` may be run to remove dead repo-level `Clerk` and `UploadThing` leftovers without changing the main `Stage 5A` path

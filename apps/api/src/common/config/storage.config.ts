@@ -2,6 +2,9 @@ import { registerAs } from '@nestjs/config';
 
 const DEFAULT_STORAGE_TARGET_PROVIDER = 's3-compatible';
 const DEFAULT_STORAGE_ACTIVE_PROVIDER = DEFAULT_STORAGE_TARGET_PROVIDER;
+const DEFAULT_STAGED_SWEEPER_INTERVAL_MINUTES = 60;
+const DEFAULT_STAGED_SWEEPER_MAX_AGE_HOURS = 24;
+const DEFAULT_STAGED_SWEEPER_MAX_OBJECTS = 100;
 
 const parseBoolean = (value: string | undefined, fallback: boolean) => {
   if (!value) {
@@ -19,6 +22,20 @@ const parseBoolean = (value: string | undefined, fallback: boolean) => {
   }
 
   return fallback;
+};
+
+const parsePositiveInteger = (value: string | undefined, fallback: number) => {
+  if (!value) {
+    return fallback;
+  }
+
+  const normalizedValue = Number.parseInt(value.trim(), 10);
+
+  if (!Number.isFinite(normalizedValue) || normalizedValue <= 0) {
+    return fallback;
+  }
+
+  return normalizedValue;
 };
 
 const normalizeOptionalString = (value: string | undefined) => {
@@ -59,4 +76,17 @@ export default registerAs('storage', () => ({
   s3SecretAccessKey: normalizeOptionalString(process.env.STORAGE_S3_SECRET_ACCESS_KEY),
   s3ForcePathStyle: parseBoolean(process.env.STORAGE_S3_FORCE_PATH_STYLE, false),
   keyPrefix: normalizeKeyPrefix(process.env.STORAGE_KEY_PREFIX),
+  stagedSweeperEnabled: parseBoolean(process.env.STORAGE_STAGED_SWEEPER_ENABLED, false),
+  stagedSweeperIntervalMinutes: parsePositiveInteger(
+    process.env.STORAGE_STAGED_SWEEPER_INTERVAL_MINUTES,
+    DEFAULT_STAGED_SWEEPER_INTERVAL_MINUTES,
+  ),
+  stagedSweeperMaxAgeHours: parsePositiveInteger(
+    process.env.STORAGE_STAGED_SWEEPER_MAX_AGE_HOURS,
+    DEFAULT_STAGED_SWEEPER_MAX_AGE_HOURS,
+  ),
+  stagedSweeperMaxObjects: parsePositiveInteger(
+    process.env.STORAGE_STAGED_SWEEPER_MAX_OBJECTS,
+    DEFAULT_STAGED_SWEEPER_MAX_OBJECTS,
+  ),
 }));
