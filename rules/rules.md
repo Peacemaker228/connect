@@ -88,3 +88,5 @@ Do not mix layers without need.
 - what changed in each file
 - why the change was made
 - any risks or follow-up notes
+
+Не делай предположений, если не проверил!

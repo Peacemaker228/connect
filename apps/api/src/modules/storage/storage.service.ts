@@ -66,14 +66,25 @@ export class StorageService {
     };
   }
 
-  async deleteFile(profileId: string | undefined, endpoint: string | undefined, fileUrl: string | undefined) {
+  async deleteFile(
+    profileId: string | undefined,
+    endpoint: string | undefined,
+    fileUrl: string | undefined,
+    fileKey?: string | undefined,
+  ) {
     const resolvedProfileId = this.requireProfileId(profileId);
     const resolvedEndpoint = this.requireUploadEndpoint(endpoint);
     const uploadPolicy = STORAGE_UPLOAD_POLICIES[resolvedEndpoint];
-    const resolvedFileUrl = this.requireFileUrl(fileUrl);
+    const resolvedFileKey = this.normalizeOptionalString(fileKey);
+    const resolvedFileUrl = this.normalizeOptionalString(fileUrl);
+
+    if (!resolvedFileKey && !resolvedFileUrl) {
+      throw new HttpException('File key or file URL is required', HttpStatus.BAD_REQUEST);
+    }
 
     await this.storageProvider.deleteFile({
       endpoint: resolvedEndpoint,
+      fileKey: resolvedFileKey,
       fileUrl: resolvedFileUrl,
       folder: this.resolveStorageFolder(uploadPolicy.folder),
       profileId: resolvedProfileId,
@@ -114,14 +125,10 @@ export class StorageService {
     return file;
   }
 
-  private requireFileUrl(fileUrl: string | undefined) {
-    const resolvedFileUrl = fileUrl?.trim();
+  private normalizeOptionalString(value: string | undefined) {
+    const resolvedValue = value?.trim();
 
-    if (!resolvedFileUrl) {
-      throw new HttpException('File URL is required', HttpStatus.BAD_REQUEST);
-    }
-
-    return resolvedFileUrl;
+    return resolvedValue ? resolvedValue : null;
   }
 
   private resolveStorageFolder(folder: string) {

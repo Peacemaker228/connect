@@ -27,6 +27,7 @@ Current wave order:
 - `Wave 18` = `STORAGE_S3_PROVIDER_IMPLEMENTATION`
 - `Wave 19` = `STORAGE_MANAGED_CLOUD_VALIDATION`
 - `Wave 20` = `STORAGE_UPLOADTHING_COMPATIBILITY_CLEANUP`
+- `Wave 21` = `STORAGE_METADATA_OWNERSHIP_FOUNDATION`
 
 ## Status by Stage
 
@@ -166,10 +167,13 @@ Done:
 - the active storage runtime no longer depends on `UploadThing`
 - the old `Next` `UploadThing` route and UI utility leftovers are removed from active code
 - the unsafe `UploadThing` delete/cleanup compatibility path is removed instead of being kept weaker than the managed-cloud ownership model
+- new upload values can now carry backend-owned storage metadata (`fileKey` + `fileUrl` + `fileType`) instead of staying raw-vendor-URL-only
+- storage delete/cleanup now prefers backend-owned file-key metadata and falls back to public URL parsing only for legacy values
 
 Remaining:
 - decide whether historical `UploadThing` read compatibility (for old CDN URLs) stays temporary or is later normalized away
 - decide whether public URL compatibility stays temporary or moves toward stronger metadata/file-key ownership later
+- decide when active runtime reads should move from stored public URL usage toward backend-issued file access resolution
 - decide whether a later abandoned-upload sweeper is worth adding or stays intentionally out of scope
 
 ## Next Correct Step
@@ -180,4 +184,4 @@ The next correct step by plan is:
 2. keep managed cloud storage first, not self-hosted `MinIO` first
 3. keep historical storage compatibility narrow and read-only where ownership-safe cleanup is not available
 4. do not add `Redis` unless a concrete storage-driven need appears
-5. leave metadata normalization and broader lifecycle work for later storage steps
+5. move next into storage metadata/file-key ownership instead of staying on raw vendor URLs forever
