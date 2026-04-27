@@ -30,6 +30,8 @@ Current wave order:
 - `Wave 21` = `STORAGE_METADATA_OWNERSHIP_FOUNDATION`
 - `Wave 22` = `CLERK_REPO_CLEANUP` (optional side cleanup, done)
 - `Wave 23` = `STORAGE_RUNTIME_READ_RESOLUTION`
+- `Wave 24` = `STORAGE_ACCESS_POLICY_FOUNDATION`
+- `Wave 25` = `STORAGE_STAGED_UPLOAD_SWEEPER`
 
 ## Status by Stage
 
@@ -174,22 +176,28 @@ Done:
 - storage delete/cleanup now prefers backend-owned file-key metadata and falls back to public URL parsing only for legacy values
 - active runtime file reads can now go through a backend-owned storage access path instead of using stored public URLs as the only direct runtime read contract
 - current managed-cloud reads still resolve to public object URLs under the hood, but file-key-based access resolution is now the preferred active path
+- new stored uploads can now explicitly mark backend-owned runtime access policy (`backend-redirect`) instead of depending on implicit read assumptions
+- backend storage access responses now expose explicit access-policy metadata (`kind`, `upstream`, `compatibility`) while current managed-cloud resolution remains public-URL-backed under the hood
 
 Remaining:
 - decide whether historical `UploadThing` read compatibility (for old CDN URLs) stays temporary or is later normalized away
 - decide whether public URL compatibility stays temporary or moves toward stronger metadata/file-key ownership later
-- decide whether file-access resolution later becomes signed/private instead of public redirect resolution
-- decide whether a later abandoned-upload sweeper is worth adding or stays intentionally out of scope
+- decide whether the current `backend-redirect` contract later evolves into `signed-url` or `proxy-stream` access for stronger backend ownership
+- if a later abandoned-upload sweeper is added, keep it narrow: prefer a staged/temp-object sweeper over a full bucket-vs-DB orphan scanner
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. continue `Stage 5` with runtime read/file-access ownership work instead of stopping at write/delete metadata ownership
+1. continue `Stage 5` with storage access-policy work instead of stopping at public redirect-based read resolution
 2. keep managed cloud storage first, not self-hosted `MinIO` first
 3. keep historical storage compatibility narrow and read-only where ownership-safe cleanup is not available
 4. do not add `Redis` unless a concrete storage-driven need appears
-5. move active runtime reads gradually away from stored public URL dependence toward backend-issued file access resolution
+5. continue from the explicit `backend-redirect` contract toward stronger backend-owned file access later, if and when `signed-url` or `proxy-stream` access becomes worth the complexity
+
+Planned follow-up after `Wave 24`:
+- `Wave 25 / STORAGE_STAGED_UPLOAD_SWEEPER`
+- this should be the final narrow storage-hygiene step before calling `Stage 5` done
 
 Completed side cleanup:
 - `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only

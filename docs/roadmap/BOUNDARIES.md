@@ -53,6 +53,9 @@ Current Stage 5 direction:
 - no `Redis` in the initial storage foundation
 - no self-hosted `MinIO` as the first move
 - keep the later path open for `MinIO` only after the storage boundary is stable
+- keep files `public` for the current product stage
+- keep `backend-redirect` as the current active runtime read/access contract
+- keep legacy URL compatibility instead of forcing a mass migration now
 
 Правило:
 - клиент не должен считать конкретный storage vendor частью core-логики

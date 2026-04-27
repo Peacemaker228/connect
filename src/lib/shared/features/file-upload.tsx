@@ -86,6 +86,7 @@ export const FileUpload: FC<IFileUploadProps> = ({
       }
 
       const nextValue = serializeUploadValue({
+        accessKind: json.accessKind,
         fileKey: json.key,
         fileType: json.type,
         fileUrl: json.url,

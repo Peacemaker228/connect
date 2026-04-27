@@ -245,6 +245,11 @@ Current storage decision:
 - do not introduce `Redis` in the initial storage step
 - do not start with self-hosted `MinIO`
 - keep `MinIO` as a later option once the storage boundary is stable
+- keep files `public` for the current product stage
+- keep `backend-redirect` as the current active read/access contract
+- do not do a mass migration of legacy storage URLs right now
+- allow one more narrow `Stage 5` step before closing the stage
+- if a sweeper is added later, prefer a narrow staged/temp-upload sweeper rather than a full bucket-vs-DB orphan scanner
 
 Это не выглядит срочной задачей.
 
@@ -437,6 +442,9 @@ Current execution note:
 - do not add `Redis` in this stage without a concrete storage-driven need
 - do not turn this stage into an early self-hosted infra rollout
 - managed-cloud validation may be done with any acceptable `S3-compatible` provider; a temporary provider choice such as `Yandex Object Storage` does not change the architectural direction
+- keep files `public` for now
+- keep `backend-redirect` as the current runtime read/access model
+- do not force a mass legacy URL migration during this stage
 
 Срок:
 - `1-2 недели`

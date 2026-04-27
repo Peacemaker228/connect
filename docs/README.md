@@ -28,7 +28,8 @@
 - [waves/STORAGE_UPLOADTHING_COMPATIBILITY_CLEANUP.md](./waves/STORAGE_UPLOADTHING_COMPATIBILITY_CLEANUP.md) - Wave 20, closed compatibility-cleanup wave inside `Stage 5`
 - [waves/STORAGE_METADATA_OWNERSHIP_FOUNDATION.md](./waves/STORAGE_METADATA_OWNERSHIP_FOUNDATION.md) - Wave 21, closed metadata/file-key ownership wave inside `Stage 5`
 - [waves/CLERK_REPO_CLEANUP.md](./waves/CLERK_REPO_CLEANUP.md) - Wave 22, closed optional repo-level Clerk cleanup
-- [waves/STORAGE_RUNTIME_READ_RESOLUTION.md](./waves/STORAGE_RUNTIME_READ_RESOLUTION.md) - Wave 23, current runtime-read/file-access wave inside `Stage 5`
+- [waves/STORAGE_RUNTIME_READ_RESOLUTION.md](./waves/STORAGE_RUNTIME_READ_RESOLUTION.md) - Wave 23, closed runtime-read/file-access wave inside `Stage 5`
+- [waves/STORAGE_ACCESS_POLICY_FOUNDATION.md](./waves/STORAGE_ACCESS_POLICY_FOUNDATION.md) - Wave 24, current storage-access-policy wave inside `Stage 5`
 
 ## Wave Sequence
 
@@ -55,6 +56,7 @@
 21. Wave 21 - `STORAGE_METADATA_OWNERSHIP_FOUNDATION`
 22. Wave 22 - `CLERK_REPO_CLEANUP`
 23. Wave 23 - `STORAGE_RUNTIME_READ_RESOLUTION`
+24. Wave 24 - `STORAGE_ACCESS_POLICY_FOUNDATION`
 
 ## Delegation
 
@@ -88,6 +90,7 @@
 - [delegation/briefs/SEGMENT_BRIEF_027_STORAGE_METADATA_OWNERSHIP_FOUNDATION.md](./delegation/briefs/SEGMENT_BRIEF_027_STORAGE_METADATA_OWNERSHIP_FOUNDATION.md)
 - [delegation/briefs/SEGMENT_BRIEF_028_CLERK_REPO_CLEANUP.md](./delegation/briefs/SEGMENT_BRIEF_028_CLERK_REPO_CLEANUP.md)
 - [delegation/briefs/SEGMENT_BRIEF_029_STORAGE_RUNTIME_READ_RESOLUTION.md](./delegation/briefs/SEGMENT_BRIEF_029_STORAGE_RUNTIME_READ_RESOLUTION.md)
+- [delegation/briefs/SEGMENT_BRIEF_030_STORAGE_ACCESS_POLICY_FOUNDATION.md](./delegation/briefs/SEGMENT_BRIEF_030_STORAGE_ACCESS_POLICY_FOUNDATION.md)
 
 ## Recommended Reading Order
 

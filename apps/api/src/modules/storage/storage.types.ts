@@ -3,6 +3,8 @@ export type StorageUploadEndpoint = 'messageFile' | 'serverImage';
 export type StorageProviderKind = 's3-compatible';
 
 export type StorageVisibility = 'public' | 'private';
+export type StorageFileAccessKind = 'backend-redirect' | 'signed-url' | 'proxy-stream';
+export type StorageFileAccessUpstream = 'public-url' | 'signed-url' | 'backend-stream';
 
 export type UploadedStorageFile = {
   buffer: Buffer;
@@ -12,6 +14,7 @@ export type UploadedStorageFile = {
 };
 
 export interface StorageUploadPolicy {
+  accessKind: StorageFileAccessKind;
   allowedContentTypes: readonly string[];
   folder: string;
   maxFileSizeBytes?: number;
@@ -55,7 +58,11 @@ export interface StorageStoredFile {
 }
 
 export interface ResolvedStorageFileAccess {
+  kind: StorageFileAccessKind;
+  upstream: StorageFileAccessUpstream;
+  isLegacyCompatibility: boolean;
   provider: StorageProviderKind;
+  visibility: StorageVisibility;
   url: string;
 }
 

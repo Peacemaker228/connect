@@ -3,6 +3,12 @@ import type { NextApiResponse } from 'next';
 
 const JSON_CONTENT_TYPE = 'application/json';
 const DEFAULT_INTERNAL_API_URL = `http://127.0.0.1:${process.env.API_PORT ?? '4000'}`;
+const FORWARDED_RESPONSE_HEADERS = [
+  'cache-control',
+  'x-storage-access-kind',
+  'x-storage-access-upstream',
+  'x-storage-access-compatibility',
+] as const;
 
 type BackendApiRequest = {
   path: string;
@@ -16,6 +22,7 @@ type ParsedBackendApiResponse =
   | {
       contentType: string | null;
       data: unknown;
+      forwardedHeaders: Record<string, string>;
       location: string | null;
       status: number;
       setCookie: string[];
@@ -24,6 +31,7 @@ type ParsedBackendApiResponse =
   | {
       contentType: string | null;
       data: string;
+      forwardedHeaders: Record<string, string>;
       location: string | null;
       status: number;
       setCookie: string[];
@@ -61,6 +69,20 @@ const createRequestHeaders = (headers?: Record<string, string | undefined>) => {
   });
 
   return resolvedHeaders;
+};
+
+const getForwardedResponseHeaders = (response: Response) => {
+  const forwardedHeaders: Record<string, string> = {};
+
+  FORWARDED_RESPONSE_HEADERS.forEach((headerName) => {
+    const headerValue = response.headers.get(headerName);
+
+    if (headerValue) {
+      forwardedHeaders[headerName] = headerValue;
+    }
+  });
+
+  return forwardedHeaders;
 };
 
 const isBodyInit = (body: BackendApiRequest['body']): body is BodyInit => {
@@ -115,6 +137,7 @@ export const requestBackendApi = async ({
 
 export const readBackendApiResponse = async (response: Response): Promise<ParsedBackendApiResponse> => {
   const contentType = response.headers.get('content-type');
+  const forwardedHeaders = getForwardedResponseHeaders(response);
   const location = response.headers.get('location');
   const status = response.status;
   const setCookie = getSetCookieHeaders(response);
@@ -125,6 +148,7 @@ export const readBackendApiResponse = async (response: Response): Promise<Parsed
       location,
       status,
       setCookie,
+      forwardedHeaders,
       isJson: true,
       data: await response.json(),
     };
@@ -135,6 +159,7 @@ export const readBackendApiResponse = async (response: Response): Promise<Parsed
     location,
     status,
     setCookie,
+    forwardedHeaders,
     isJson: false,
     data: await response.text(),
   };
@@ -146,6 +171,10 @@ export const toNextProxyResponse = async (response: Response) => {
 
   parsedResponse.setCookie.forEach((cookieValue) => {
     proxyHeaders.append('set-cookie', cookieValue);
+  });
+
+  Object.entries(parsedResponse.forwardedHeaders).forEach(([headerName, headerValue]) => {
+    proxyHeaders.set(headerName, headerValue);
   });
 
   if (parsedResponse.location) {
@@ -176,6 +205,10 @@ export const writePagesProxyResponse = (
   if (parsedResponse.setCookie.length > 0) {
     res.setHeader('Set-Cookie', parsedResponse.setCookie);
   }
+
+  Object.entries(parsedResponse.forwardedHeaders).forEach(([headerName, headerValue]) => {
+    res.setHeader(headerName, headerValue);
+  });
 
   if (parsedResponse.isJson) {
     return res.status(parsedResponse.status).json(parsedResponse.data);

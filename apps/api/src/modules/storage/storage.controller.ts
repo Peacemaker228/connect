@@ -8,6 +8,7 @@ import {
   Post,
   Query,
   Redirect,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -18,6 +19,10 @@ import { CurrentProfileId } from '../auth/decorators/current-profile-id.decorato
 import { RequireAuthGuard } from '../auth/guards/require-auth.guard';
 import { StorageService } from './storage.service';
 import type { UploadedStorageFile } from './storage.types';
+
+type PassthroughResponse = {
+  setHeader(name: string, value: string): void;
+};
 
 @Controller('storage')
 export class StorageController {
@@ -50,11 +55,20 @@ export class StorageController {
   @Get('access')
   @Redirect(undefined, HttpStatus.TEMPORARY_REDIRECT)
   async resolveFileAccess(
+    @Res({ passthrough: true }) response: PassthroughResponse,
     @Query('endpoint') endpoint: string | undefined,
     @Query('fileKey') fileKey: string | undefined,
     @Query('fileUrl') fileUrl: string | undefined,
   ) {
     const resolvedFileAccess = await this.storageService.resolveFileAccess(endpoint, fileUrl, fileKey);
+
+    response.setHeader('Cache-Control', 'no-store');
+    response.setHeader('X-Storage-Access-Kind', resolvedFileAccess.kind);
+    response.setHeader('X-Storage-Access-Upstream', resolvedFileAccess.upstream);
+    response.setHeader(
+      'X-Storage-Access-Compatibility',
+      resolvedFileAccess.isLegacyCompatibility ? 'legacy' : 'active',
+    );
 
     return {
       url: resolvedFileAccess.url,
