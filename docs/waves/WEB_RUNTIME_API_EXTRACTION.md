@@ -22,9 +22,10 @@ Current completed slices inside this wave:
 - first shared feature mutation extraction slices for server CRUD and invite-code refresh
 - channel create/edit/delete mutations now use shared SDK ownership instead of raw same-origin proxy calls
 - membership and server-membership mutations now use shared SDK ownership instead of raw same-origin proxy calls
+- message create/update/delete mutations now use shared SDK ownership while preserving the current chat runtime contract
 
 Current next slice inside this wave:
-- continue extraction through a practical message-mutation bundle before broad UI rewrites
+- continue extraction through a practical chat-read query bundle before any full chat transport rewrite
 
 ## In Scope
 
