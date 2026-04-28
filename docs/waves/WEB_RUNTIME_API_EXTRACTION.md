@@ -30,9 +30,11 @@ Current completed slices inside this wave:
 - chat runtime API/socket contract is now normalized, so chat reads/writes use domain API paths while realtime remains socket/event based
 - remaining `Next` API/proxy routes have been inventoried before broad deletion; only the already-retired `src/pages/api/socket/io.ts` route was removed
 - legacy `pages/api/socket/channels/*` and `pages/api/socket/members/[memberId]` routes were removed after repeated code search confirmed no active callers
+- legacy `pages/api/socket/servers/[serverId]/leave.ts` was removed after repeated code search confirmed no active callers
+- invite join fallback was moved off `pages/api/socket/servers/invite.ts`; the legacy invite socket route was then removed
 
 Current next slice inside this wave:
-- continue with narrow route-family cleanup based on the inventory below; the remaining legacy `pages/api/socket/servers/[serverId]/leave.ts` route is the next unused/dead candidate if repeated code search still shows no active callers
+- continue with narrow route-family cleanup based on the inventory below; inspect the message/direct-message legacy socket routes as the next route-family slice
 
 Current runtime decision:
 - `direct backend mode` is the active web runtime target for API reads/writes
@@ -72,7 +74,6 @@ Inventory rule:
 | `src/app/api/direct-messages/route.ts` | `src/app/(main)/(routes)/*/conversations/[memberId]/page.tsx` passes `/api/direct-messages` to chat read helper; direct mode goes to backend | `GET /api/direct-messages` |
 | `src/app/api/server-upload/route.ts` | `packages/sdk/src/actions/storage.ts` fallback `/api/server-upload` | `/api/storage/upload`, `/api/storage/file` |
 | `src/app/api/livekit/route.ts` | `packages/sdk/src/actions/media.ts` fallback `/api/livekit` | `/api/media/livekit-token` |
-| `src/pages/api/socket/servers/invite.ts` | `packages/sdk/src/mutations/invite.ts` fallback `/api/socket/servers/invite` | `/api/invites/join` |
 | `src/pages/api/socket/messages/index.ts` | no active component caller after chat contract normalization; retained only for legacy `/api/socket/messages` fallback shape | `/api/messages` |
 | `src/pages/api/socket/messages/[messageId].ts` | no active component caller after chat contract normalization; retained only for legacy `/api/socket/messages/:id` fallback shape | `/api/messages/:messageId` |
 | `src/pages/api/socket/direct-messages/index.ts` | no active component caller after chat contract normalization; retained only for legacy `/api/socket/direct-messages` fallback shape | `/api/direct-messages` |
@@ -80,11 +81,11 @@ Inventory rule:
 
 ### Unused / Dead Route Candidates Kept For A Later Narrow Slice
 
-These routes had no active caller in `src`, `packages`, or `apps` code search during Segment 044, but were not removed in this slice because they are part of the broader legacy `pages/api/socket/*` compatibility surface.
+These routes had no active caller in `src`, `packages`, or `apps` code search during Segment 044, but were not removed in that slice because they are part of the broader legacy `pages/api/socket/*` compatibility surface.
 
 | Route | Reason kept |
 | --- | --- |
-| `src/pages/api/socket/servers/[serverId]/leave.ts` | No active caller found; keep until membership/server fallback removal is split into its own route deletion slice. |
+| _None currently_ | Segment 045 and Segment 046 removed the previously documented dead channel/member/server-leave route candidates. |
 
 ### Removed Routes
 
@@ -94,12 +95,14 @@ These routes had no active caller in `src`, `packages`, or `apps` code search du
 | `src/pages/api/socket/channels/index.ts` | Repeated Segment 045 code search found no active `/api/socket/channels` callers outside docs and the route file itself | `packages/sdk/src/mutations/channel.ts` uses `/api/channels` through the backend-aware client. |
 | `src/pages/api/socket/channels/[channelId].ts` | Repeated Segment 045 code search found no active `/api/socket/channels/:channelId` callers outside docs and the route file itself | `packages/sdk/src/mutations/channel.ts` uses `/api/channels/:channelId` through the backend-aware client. |
 | `src/pages/api/socket/members/[memberId].ts` | Repeated Segment 045 code search found no active `/api/socket/members/:memberId` callers outside docs and the route file itself | `packages/sdk/src/mutations/membership.ts` uses `/api/members/:memberId` through the backend-aware client. |
+| `src/pages/api/socket/servers/[serverId]/leave.ts` | Repeated Segment 046 code search found no active `/api/socket/servers/*/leave` callers outside docs and the route file itself | `packages/sdk/src/mutations/membership.ts` uses `/api/servers/:serverId/leave` through the backend-aware client. |
+| `src/pages/api/socket/servers/invite.ts` | Invite join fallback was deliberately moved from `/api/socket/servers/invite` to `/api/invites/join`, then code search found no remaining active callers | `packages/sdk/src/mutations/invite.ts` uses `/api/invites/join` through the backend-aware client. |
 
 ### Broader Deletion Blockers
 
 - `src/app/api/storage/access/route.ts` is still an active URL produced by `buildStorageAccessPath`.
 - Several `src/app/api/*` routes are still same-origin fallback paths for SDK helpers when `NEXT_PUBLIC_API_URL` / development backend base URL is unavailable.
-- Some `src/pages/api/socket/*` routes are now unused by active code but should be removed in small route-family slices so legacy fallback assumptions can be verified per flow.
+- `src/pages/api/socket/messages/*` and `src/pages/api/socket/direct-messages/*` remain as legacy message fallback surface and should be handled in a dedicated route-family slice.
 
 ## In Scope
 

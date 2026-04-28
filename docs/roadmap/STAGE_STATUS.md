@@ -216,7 +216,9 @@ Current `Wave 26` progress:
 - remaining `Next` compatibility/proxy routes have been inventoried in `docs/waves/WEB_RUNTIME_API_EXTRACTION.md`
 - the already-retired `src/pages/api/socket/io.ts` route was removed after code search showed no active callers and realtime transport was already owned by `apps/api`
 - legacy `src/pages/api/socket/channels/*` and `src/pages/api/socket/members/[memberId].ts` routes were removed after repeated code search showed no active callers and SDK channel/member mutations already used backend-aware domain API paths
-- the next narrow step should remove remaining dead/unused proxy route candidates route-family by route-family, starting with legacy `pages/api/socket/servers/[serverId]/leave.ts` if code search still shows no active callers
+- legacy `src/pages/api/socket/servers/[serverId]/leave.ts` was removed after repeated code search showed no active callers and SDK server-leave mutation already used the backend-aware `/api/servers/:serverId/leave` domain path
+- invite join fallback was moved off `src/pages/api/socket/servers/invite.ts`, and the legacy invite socket route was removed
+- the next narrow step should clean the remaining legacy message/direct-message socket route family after repeated caller search
 
 Completed side cleanup:
 - `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only
