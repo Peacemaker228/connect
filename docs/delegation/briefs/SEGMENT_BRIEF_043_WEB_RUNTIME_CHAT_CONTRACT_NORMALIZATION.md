@@ -29,7 +29,7 @@ This is preparation for proxy-route cleanup. It is not a realtime rewrite.
 - page-level chat props that still pass mixed `apiUrl` / `socketUrl` values
 - chat components that still treat `/api/socket/*` as a mutation/API contract
 - SDK message/chat helpers and their path normalization, only where the runtime contract can be clarified safely
-- keeping direct backend mode and legacy fallback mode both working
+- keeping direct backend mode working as the active target runtime
 
 ### Out of Scope
 
@@ -57,15 +57,17 @@ Where safe, make the code distinguish:
 
 Avoid using `/api/socket/*` as the general mutation API contract unless it is still required for legacy fallback.
 
-### 3. Preserve compatibility
+### 3. Preserve active runtime
 
-Do not remove fallback behavior in the same slice unless it is proven unused and covered by checks.
+Do not delete broad compatibility routes in this slice.
+
+For chat write paths, `direct backend mode` is the active runtime target. Same-origin `Next` API fallback for chat writes is no longer a hard guarantee once pages/components pass canonical domain API paths through the SDK. If a legacy fallback path remains in the SDK, it should be treated as transitional compatibility, not as the product runtime contract.
 
 ## Acceptance Criteria
 
 - chat pages/components expose a clearer API-vs-realtime contract
 - message read/write paths continue to work in direct backend mode
-- legacy fallback still works where the project still depends on it
+- no active product flow depends on same-origin `Next` API fallback for chat writes
 - no broad proxy-route deletion is introduced
 
 ## Verification

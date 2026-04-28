@@ -27,9 +27,16 @@ Current completed slices inside this wave:
 - auth login/register/logout runtime actions now use shared SDK ownership while preserving cookie-session behavior
 - storage upload/delete runtime actions now use shared SDK ownership while preserving staged upload lifecycle
 - media token runtime action now uses backend/API-owned token generation through the shared SDK while preserving current LiveKit behavior
+- chat runtime API/socket contract is now normalized, so chat reads/writes use domain API paths while realtime remains socket/event based
 
 Current next slice inside this wave:
-- normalize the remaining chat runtime API/socket contract before broad proxy-route removal
+- run an inventory-first cleanup of remaining `Next` compatibility/proxy routes before any broad deletion
+
+Current runtime decision:
+- `direct backend mode` is the active web runtime target for API reads/writes
+- same-origin `Next` API fallback is transitional compatibility, not the long-term product contract
+- after chat contract normalization, chat writes do not need to preserve same-origin `Next` API fallback if direct backend mode is configured and verified
+- broad deletion of compatibility routes still requires an explicit inventory/cleanup slice
 
 ## In Scope
 
