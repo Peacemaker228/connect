@@ -8,6 +8,7 @@ import { MediaDeviceFailure, Room } from 'livekit-client'
 import { getProfileName } from '@app-core/profiles/get-profile-name'
 import { toast } from '@/lib/shared/utils/hooks/use-toast'
 import { useGetProfile } from '@sdk/queries/profile'
+import { getLiveKitToken } from '@sdk/actions/media'
 
 interface IMediaRoomProps {
   chatId: string
@@ -72,8 +73,7 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, chatId }) => {
 
     ;(async () => {
       try {
-        const response = await fetch(`/api/livekit?room=${chatId}&username=${name}`)
-        const data = await response.json()
+        const data = await getLiveKitToken({ room: chatId, username: name })
         setToken(data.token)
       } catch (error) {
         console.error('[livekit] failed to fetch room token', error)
