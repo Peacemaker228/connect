@@ -1,6 +1,7 @@
 'use client'
 
 import { getUploadValueParts, type UploadEndpoint } from '@app-core/files/upload-file'
+import { deleteStorageFile } from '@sdk/actions/storage'
 
 export const deleteUploadedFile = async (value: string, endpoint: UploadEndpoint) => {
   const { fileKey, fileUrl } = getUploadValueParts(value, endpoint)
@@ -9,30 +10,5 @@ export const deleteUploadedFile = async (value: string, endpoint: UploadEndpoint
     return
   }
 
-  const response = await fetch('/api/server-upload', {
-    method: 'DELETE',
-    headers: {
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      endpoint,
-      fileKey,
-      fileUrl,
-    }),
-  })
-
-  if (response.ok) {
-    return
-  }
-
-  let errorMessage = 'Delete failed'
-
-  try {
-    const json = await response.json()
-    errorMessage = typeof json.error === 'string' ? json.error : errorMessage
-  } catch {
-    // Ignore non-JSON error bodies and fall back to the generic message.
-  }
-
-  throw new Error(errorMessage)
+  await deleteStorageFile({ endpoint, fileKey, fileUrl })
 }

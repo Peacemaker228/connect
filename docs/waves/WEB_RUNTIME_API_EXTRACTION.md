@@ -24,9 +24,11 @@ Current completed slices inside this wave:
 - membership and server-membership mutations now use shared SDK ownership instead of raw same-origin proxy calls
 - message create/update/delete mutations now use shared SDK ownership while preserving the current chat runtime contract
 - chat read/infinite-query path now uses shared SDK ownership while preserving pagination and realtime fallback behavior
+- auth login/register/logout runtime actions now use shared SDK ownership while preserving cookie-session behavior
+- storage upload/delete runtime actions now use shared SDK ownership while preserving staged upload lifecycle
 
 Current next slice inside this wave:
-- continue extraction through auth runtime action wrappers before broad proxy-route removal
+- continue extraction through media token runtime action wrappers before broad proxy-route removal
 
 ## In Scope
 

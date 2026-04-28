@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { ImageUpload } from '@/lib/shared/ui/icons/components/ImageUpload'
 import { buildStorageAccessPath, getUploadValueParts, serializeUploadValue, UploadEndpoint } from '@app-core/files/upload-file'
+import { uploadStorageFile } from '@sdk/actions/storage'
 
 interface IFileUploadProps {
   onChangeAction: (url?: string) => void
@@ -71,25 +72,13 @@ export const FileUpload: FC<IFileUploadProps> = ({
     setIsUploading(true)
 
     try {
-      const formData = new FormData()
-      formData.append('endpoint', endpoint)
-      formData.append('file', file)
-
-      const response = await fetch('/api/server-upload', {
-        body: formData,
-        method: 'POST',
-      })
-      const json = await response.json()
-
-      if (!response.ok) {
-        throw new Error(json.error ?? 'Upload failed')
-      }
+      const uploadedFile = await uploadStorageFile(endpoint, file)
 
       const nextValue = serializeUploadValue({
-        accessKind: json.accessKind,
-        fileKey: json.key,
-        fileType: json.type,
-        fileUrl: json.url,
+        accessKind: uploadedFile.accessKind,
+        fileKey: uploadedFile.key,
+        fileType: uploadedFile.type,
+        fileUrl: uploadedFile.url,
       })
 
       if (value && nextValue !== value && isStagedValueAction?.(value)) {

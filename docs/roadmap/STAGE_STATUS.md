@@ -208,7 +208,9 @@ Current `Wave 26` progress:
 - membership and server-membership mutations are now moved under shared SDK ownership
 - message create/update/delete mutations are now moved under shared SDK ownership while preserving the current chat runtime contract
 - chat read/infinite-query path is now moved under shared SDK ownership while preserving pagination and realtime fallback behavior
-- the next narrow step should continue with auth runtime action wrappers before broad proxy-route removal
+- auth login/register/logout runtime actions are now moved under shared SDK ownership while preserving cookie-session behavior
+- storage upload/delete runtime actions are now moved under shared SDK ownership while preserving staged upload lifecycle
+- the next narrow step should continue with media token runtime action wrappers before broad proxy-route removal
 
 Completed side cleanup:
 - `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only
