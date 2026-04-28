@@ -6,14 +6,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Form, FormControl, FormField, FormItem } from '@/lib/shared/ui/form'
 import { Plus } from 'lucide-react'
 import { Input } from '@/lib/shared/ui/input'
-import qs from 'query-string'
-import axios from 'axios'
 import { EmojiPickerCustom } from '@/lib/shared/features/emoji-picker-custom'
 import { useRouter } from 'next/navigation'
 import { TChannelConversation } from '@/types'
 import { useTranslations } from 'next-intl'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { chatInputSchema, IChatInputSchema } from '@app-core/schemas/chat-input-schema'
+import { useCreateMessage } from '@sdk/mutations/message'
 
 interface IChatInputProps {
   apiUrl: string
@@ -28,6 +27,7 @@ export const ChatInput: FC<IChatInputProps> = ({ apiUrl, query, name, type }) =>
   const { onOpen } = useModal()
   const router = useRouter()
   const t = useTranslations('ChannelPage')
+  const { mutateAsync: createMessage } = useCreateMessage()
 
   const form = useForm<IChatInputSchema>({
     resolver: zodResolver(chatInputSchema),
@@ -40,12 +40,7 @@ export const ChatInput: FC<IChatInputProps> = ({ apiUrl, query, name, type }) =>
 
   const handleSubmit = async (data: IChatInputSchema) => {
     try {
-      const url = qs.stringifyUrl({
-        url: apiUrl,
-        query,
-      })
-
-      await axios.post(url, data)
+      await createMessage({ apiUrl, query, payload: data })
 
       form.reset()
       router.refresh()

@@ -1,14 +1,14 @@
 'use client'
 
-import axios from 'axios'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { useState } from 'react'
-import qs from 'query-string'
 import { DeleteModal } from '@/lib/shared/features/modals/common/delete-modal'
+import { useDeleteMessage } from '@sdk/mutations/message'
 
 export const DeleteMessageModal = () => {
   const { isOpen, onClose, type, data } = useModal()
   const [isLoading, setIsLoading] = useState(false)
+  const { mutateAsync: deleteMessage } = useDeleteMessage()
 
   const isModalOpen = isOpen && type === 'deleteMessage'
 
@@ -20,12 +20,7 @@ export const DeleteMessageModal = () => {
     try {
       setIsLoading(true)
 
-      const url = qs.stringifyUrl({
-        url: apiUrl,
-        query,
-      })
-
-      await axios.delete(url)
+      await deleteMessage({ apiUrl, query })
 
       onClose()
     } catch (err) {

@@ -3,11 +3,9 @@
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { messageFileSchema } from '@app-core/schemas/message-file-schema'
-import qs from 'query-string'
 import {
   Dialog,
   DialogContent,
@@ -21,6 +19,7 @@ import { FileUpload } from '@/lib/shared/features/file-upload'
 import { Button } from '@/lib/shared/ui/button'
 import { useTranslations } from 'next-intl'
 import { useStagedUpload } from '@/lib/shared/utils/hooks/use-staged-upload'
+import { useCreateMessage } from '@sdk/mutations/message'
 
 export const MessageFileModal = () => {
   const router = useRouter()
@@ -28,6 +27,7 @@ export const MessageFileModal = () => {
   const t = useTranslations('Modals.MessageFileModal')
   const commonTrans = useTranslations('Common')
   const stagedUpload = useStagedUpload('messageFile')
+  const { mutateAsync: createMessage } = useCreateMessage()
 
   const { apiUrl, query } = data
 
@@ -57,13 +57,12 @@ export const MessageFileModal = () => {
   const isLoading = form.formState.isSubmitting
 
   const handleSubmit = async (data: z.infer<typeof messageFileSchema>) => {
-    try {
-      const url = qs.stringifyUrl({
-        url: apiUrl ?? '',
-        query,
-      })
+    if (!apiUrl) {
+      return
+    }
 
-      await axios.post(url, { ...data, content: data.fileUrl })
+    try {
+      await createMessage({ apiUrl, query, payload: { ...data, content: data.fileUrl } })
 
       stagedUpload.markCommitted(data.fileUrl)
       stagedUpload.reset()
