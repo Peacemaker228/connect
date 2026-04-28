@@ -211,7 +211,9 @@ Current `Wave 26` progress:
 - auth login/register/logout runtime actions are now moved under shared SDK ownership while preserving cookie-session behavior
 - storage upload/delete runtime actions are now moved under shared SDK ownership while preserving staged upload lifecycle
 - media token runtime action is now moved under backend/API-owned token generation through shared SDK ownership while preserving current LiveKit behavior
-- the next narrow step should normalize the remaining chat runtime API/socket contract before broad proxy-route removal
+- chat runtime API/socket contract is now normalized so chat reads/writes use domain API paths while realtime remains socket/event based
+- Stage 5A active runtime assumption: direct backend mode is the target; same-origin `Next` API fallback is transitional and no longer a hard guarantee for newly normalized chat write paths
+- the next narrow step should run an inventory-first cleanup of remaining `Next` compatibility/proxy routes before any broad deletion
 
 Completed side cleanup:
 - `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only

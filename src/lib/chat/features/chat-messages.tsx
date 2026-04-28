@@ -23,9 +23,8 @@ interface IChatMessagesProps {
   name: string
   member: Member
   chatId: string
-  apiUrl: string
-  socketUrl: string
-  socketQuery: Record<string, string>
+  messageApiUrl: string
+  messageQuery: Record<string, string>
   paramKey: 'channelId' | 'conversationId'
   paramValue: string
   type: TChannelConversation
@@ -33,12 +32,11 @@ interface IChatMessagesProps {
 
 export const ChatMessages: FC<IChatMessagesProps> = ({
   chatId,
-  socketUrl,
-  socketQuery,
+  messageApiUrl,
+  messageQuery,
   paramKey,
   paramValue,
   type,
-  apiUrl,
   member,
   name,
 }) => {
@@ -51,7 +49,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useChatQuery({
     queryKey,
-    apiUrl,
+    apiUrl: messageApiUrl,
     paramKey,
     paramValue,
   })
@@ -110,8 +108,8 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
             {page.items.map((m: MessageWithMemberWithProfile) => (
               <ChatItem
                 fileUrl={m.fileUrl}
-                socketUrl={socketUrl}
-                socketQuery={socketQuery}
+                messageApiUrl={messageApiUrl}
+                messageQuery={messageQuery}
                 currentMember={member}
                 id={m.id}
                 member={m.member}

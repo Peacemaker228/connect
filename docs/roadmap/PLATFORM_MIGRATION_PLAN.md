@@ -478,7 +478,9 @@ Current execution note:
 
 Текущий execution note:
 - `Wave 26 / WEB_RUNTIME_API_EXTRACTION` уже вынесла значительную часть web runtime access в `packages/sdk`: server/profile/invite queries, server/channel/membership/message mutations, chat reads, auth actions, storage actions, media token action
-- следующий безопасный шаг внутри `Wave 26` - нормализовать chat runtime API/socket contract перед broad proxy-route cleanup
+- chat runtime API/socket contract now separates domain API paths from socket/event realtime paths
+- следующий безопасный шаг внутри `Wave 26` - inventory-first cleanup of remaining `Next` compatibility/proxy routes
+- active runtime target for `Stage 5A` is direct web-to-`apps/api` access through `packages/sdk`; same-origin `Next` API fallback is transitional compatibility, not a requirement for newly normalized chat write paths
 - broad removal of `src/app/api/*` and `src/pages/api/*` is still not allowed until compatibility/fallback usage is explicitly inventoried
 
 ### Stage 6. `MySQL -> Postgres`

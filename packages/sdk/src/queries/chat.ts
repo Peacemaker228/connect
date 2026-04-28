@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { Member, Message, Profile } from '@prisma/client'
-import { privateApiInstance } from '../api/http-client'
+import { getBackendApiBaseUrl, privateApiInstance } from '../api/http-client'
 
 export type ChatMessage = Message & {
   member: Member & {
@@ -21,6 +21,16 @@ export type ChatQueryParams = {
   isConnected: boolean
 }
 
+const normalizeChatApiUrl = (apiUrl: string) => {
+  if (!getBackendApiBaseUrl()) {
+    return apiUrl
+  }
+
+  return apiUrl
+    .replace('/api/socket/messages', '/api/messages')
+    .replace('/api/socket/direct-messages', '/api/direct-messages')
+}
+
 const createChatQueryPath = (
   apiUrl: string,
   params: {
@@ -37,7 +47,7 @@ const createChatQueryPath = (
     searchParams.set('cursor', params.cursor)
   }
 
-  return `${apiUrl}?${searchParams.toString()}`
+  return `${normalizeChatApiUrl(apiUrl)}?${searchParams.toString()}`
 }
 
 export const useChatQuery = ({ queryKey, paramKey, paramValue, apiUrl, isConnected }: ChatQueryParams) => {

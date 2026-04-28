@@ -128,6 +128,7 @@ Target:
 - web runtime в долгую должен опираться на direct client requests в `apps/api`, а не на `Next` proxy routes
 - `pages/api` и `app/api` в `Next` для domain access должны остаться только временным compatibility layer
 - как web client data layer допустимы `TanStack Query` + `axios` (или другой thin HTTP client), но ownership должен оставаться у backend
+- для `Stage 5A` direct backend mode считается active runtime target; same-origin `Next` API fallback больше не должен блокировать нормализацию новых chat write paths, но broad proxy deletion всё равно требует отдельного inventory/cleanup шага
 
 ## Package Boundaries
 

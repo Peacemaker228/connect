@@ -33,8 +33,8 @@ interface IChatItemProps {
   deleted: boolean
   currentMember: Member
   isUpdated: boolean
-  socketUrl: string
-  socketQuery: Record<string, string>
+  messageApiUrl: string
+  messageQuery: Record<string, string>
 }
 
 export const ChatItem: FC<IChatItemProps> = ({
@@ -42,8 +42,8 @@ export const ChatItem: FC<IChatItemProps> = ({
   currentMember,
   member,
   fileUrl,
-  socketUrl,
-  socketQuery,
+  messageApiUrl,
+  messageQuery,
   isUpdated,
   timestamp,
   content,
@@ -109,7 +109,7 @@ export const ChatItem: FC<IChatItemProps> = ({
 
   const handleSubmit = async (data: IChatInputSchema) => {
     try {
-      await updateMessage({ apiUrl: `${socketUrl}/${id}`, query: socketQuery, payload: data })
+      await updateMessage({ apiUrl: `${messageApiUrl}/${id}`, query: messageQuery, payload: data })
 
       form.reset()
       setIsEditing(false)
@@ -221,7 +221,7 @@ export const ChatItem: FC<IChatItemProps> = ({
           <ActionTooltip label={t('ChatItem.delete')}>
             <Trash
               onClick={() => {
-                onOpen('deleteMessage', { apiUrl: `${socketUrl}/${id}`, query: socketQuery })
+                onOpen('deleteMessage', { apiUrl: `${messageApiUrl}/${id}`, query: messageQuery })
               }}
               className={
                 'cursor-pointer ml-auto w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition'

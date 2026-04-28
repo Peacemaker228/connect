@@ -39,6 +39,12 @@ const ChannelIdPage: FC<IChannelIdPageProps> = async ({ params }) => {
     redirect(ERoutes.MAIN_PAGE)
   }
 
+  const messageApiUrl = '/api/messages'
+  const messageQuery = {
+    channelId: channel.id,
+    serverId: channel.serverId,
+  }
+
   return (
     <div className="bg-white dark:bg-[#313338] flex flex-col h-full">
       <ChatHeader name={channel.name} serverId={channel.serverId} type={'channel'} />
@@ -49,22 +55,15 @@ const ChannelIdPage: FC<IChannelIdPageProps> = async ({ params }) => {
             name={channel.name}
             chatId={channel.id}
             type={'channel'}
-            apiUrl={'/api/messages'}
+            messageApiUrl={messageApiUrl}
             paramKey={'channelId'}
             paramValue={channel.id}
-            socketUrl={'/api/socket/messages'}
-            socketQuery={{
-              channelId: channel.id,
-              serverId: channel.serverId,
-            }}
+            messageQuery={messageQuery}
           />
           <ChatInput
-            apiUrl={'/api/socket/messages'}
+            messageApiUrl={messageApiUrl}
             type={'channel'}
-            query={{
-              channelId: channel.id,
-              serverId: channel.serverId,
-            }}
+            messageQuery={messageQuery}
             name={channel.name}
           />
         </>

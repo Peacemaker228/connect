@@ -54,6 +54,10 @@ const MemberIdPage: FC<IMemberIdPageProps> = async ({ params, searchParams }) =>
   const { memberOne, memberTwo } = conversation
 
   const otherMember = memberOne.profileId === profile.id ? memberTwo : memberOne
+  const messageApiUrl = '/api/direct-messages'
+  const messageQuery = {
+    conversationId: conversation.id,
+  }
 
   return (
     <div className="bg-white dark:bg-[#313338] flex flex-col h-full">
@@ -70,20 +74,15 @@ const MemberIdPage: FC<IMemberIdPageProps> = async ({ params, searchParams }) =>
             name={otherMember.profile.name}
             member={currentMember}
             chatId={conversation.id}
-            apiUrl={`/api/direct-messages`}
-            socketUrl={'/api/socket/direct-messages'}
-            socketQuery={{
-              conversationId: conversation.id,
-            }}
+            messageApiUrl={messageApiUrl}
+            messageQuery={messageQuery}
             paramKey={'conversationId'}
             paramValue={conversation.id}
             type={'conversation'}
           />
           <ChatInput
-            apiUrl={'/api/socket/direct-messages'}
-            query={{
-              conversationId: conversation.id,
-            }}
+            messageApiUrl={messageApiUrl}
+            messageQuery={messageQuery}
             name={otherMember.profile.name}
             type={'conversation'}
           />
