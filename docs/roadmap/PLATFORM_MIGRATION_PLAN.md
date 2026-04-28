@@ -476,6 +476,11 @@ Current execution note:
 - `Next` больше не владеет API/proxy ownership
 - переход к `React + Vite` потом становится заметно проще
 
+Текущий execution note:
+- `Wave 26 / WEB_RUNTIME_API_EXTRACTION` уже вынесла значительную часть web runtime access в `packages/sdk`: server/profile/invite queries, server/channel/membership/message mutations, chat reads, auth actions, storage actions, media token action
+- следующий безопасный шаг внутри `Wave 26` - нормализовать chat runtime API/socket contract перед broad proxy-route cleanup
+- broad removal of `src/app/api/*` and `src/pages/api/*` is still not allowed until compatibility/fallback usage is explicitly inventoried
+
 ### Stage 6. `MySQL -> Postgres`
 
 Срок:

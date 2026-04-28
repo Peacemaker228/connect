@@ -26,9 +26,10 @@ Current completed slices inside this wave:
 - chat read/infinite-query path now uses shared SDK ownership while preserving pagination and realtime fallback behavior
 - auth login/register/logout runtime actions now use shared SDK ownership while preserving cookie-session behavior
 - storage upload/delete runtime actions now use shared SDK ownership while preserving staged upload lifecycle
+- media token runtime action now uses backend/API-owned token generation through the shared SDK while preserving current LiveKit behavior
 
 Current next slice inside this wave:
-- continue extraction through media token runtime action wrappers before broad proxy-route removal
+- normalize the remaining chat runtime API/socket contract before broad proxy-route removal
 
 ## In Scope
 
