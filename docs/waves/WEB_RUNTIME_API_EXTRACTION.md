@@ -34,7 +34,7 @@ Current completed slices inside this wave:
 - invite join fallback was moved off `pages/api/socket/servers/invite.ts`; the legacy invite socket route was then removed
 
 Current next slice inside this wave:
-- continue with narrow route-family cleanup based on the inventory below; inspect the message/direct-message legacy socket routes as the next route-family slice
+- continue with narrow route-family cleanup based on the inventory below; inspect and clean the message/direct-message legacy socket routes as the next route-family slice
 
 Current runtime decision:
 - `direct backend mode` is the active web runtime target for API reads/writes
