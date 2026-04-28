@@ -35,7 +35,7 @@ Current completed slices inside this wave:
 - legacy `pages/api/socket/messages/*` and `pages/api/socket/direct-messages/*` routes were removed after repeated code search confirmed no active callers; obsolete SDK socket-path normalization was removed
 
 Current next slice inside this wave:
-- continue with narrow route-family cleanup based on the inventory below; focus next on remaining `src/app/api/*` compatibility/fallback routes, not broad deletion
+- continue with narrow route-family cleanup based on the inventory below; focus next on `src/app/api/channels/*` + `src/app/api/members/*`, not broad deletion
 
 Current runtime decision:
 - `direct backend mode` is the active web runtime target for API reads/writes
