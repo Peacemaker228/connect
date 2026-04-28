@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { LogOut } from 'lucide-react'
+import { logoutSession } from '@sdk/actions/auth'
 
 import {
   DropdownMenu,
@@ -46,15 +47,7 @@ export function BackendUserMenu({ email, imageUrl, name }: BackendUserMenuProps)
     setIsSigningOut(true)
 
     try {
-      const response = await fetch('/api/auth/session/logout', {
-        method: 'POST',
-        credentials: 'include',
-        cache: 'no-store',
-      })
-
-      if (!response.ok) {
-        throw new Error(`Logout failed with status ${response.status}`)
-      }
+      await logoutSession()
 
       queryClient.setQueryData(['profile'], null)
       // queryClient.removeQueries({ queryKey: ['profile'] })

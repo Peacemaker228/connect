@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { AuthActionError, loginWithPassword, registerWithPassword } from '@sdk/actions/auth'
 
 import { Button } from '@/lib/shared/ui/button'
 import {
@@ -27,31 +28,7 @@ type AuthEntrypointFormProps = {
 
 type AuthEntrypointFormValues = z.infer<typeof authEntrypointSchema>
 
-type BackendErrorResponse = {
-  message?: string | string[]
-}
-
 const DEFAULT_REDIRECT_URL = '/'
-
-const getErrorMessage = async (response: Response) => {
-  const contentType = response.headers.get('content-type')
-
-  if (contentType?.includes('application/json')) {
-    const payload = (await response.json()) as BackendErrorResponse
-
-    if (Array.isArray(payload.message)) {
-      return payload.message[0] ?? 'Request failed'
-    }
-
-    if (typeof payload.message === 'string' && payload.message.trim()) {
-      return payload.message
-    }
-  }
-
-  const text = await response.text()
-
-  return text.trim() || 'Request failed'
-}
 
 export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
   const router = useRouter()
@@ -69,7 +46,6 @@ export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
   })
 
   const isRegister = mode === 'register'
-  const submitPath = isRegister ? '/api/auth/register' : '/api/auth/login'
   const title = isRegister ? 'Create account' : 'Welcome back'
   const description = isRegister
     ? 'Create a backend-owned account and start a cookie-backed session.'
@@ -94,29 +70,25 @@ export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
     setErrorMessage(null)
 
     try {
-      const response = await fetch(submitPath, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-        credentials: 'include',
-        cache: 'no-store',
-        body: JSON.stringify({
-          ...(isRegister ? { name: values.name } : {}),
+      if (isRegister) {
+        await registerWithPassword({
+          name: values.name,
           email: values.email,
           password: values.password,
-        }),
-      })
-
-      if (!response.ok) {
-        setErrorMessage(await getErrorMessage(response))
-        return
+        })
+      } else {
+        await loginWithPassword({
+          email: values.email,
+          password: values.password,
+        })
       }
 
       router.replace(redirectUrl)
       router.refresh()
-    } catch {
-      setErrorMessage('Unable to complete authentication right now')
+    } catch (error) {
+      setErrorMessage(
+        error instanceof AuthActionError ? error.message : 'Unable to complete authentication right now',
+      )
     }
   }
 
