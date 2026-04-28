@@ -206,7 +206,8 @@ Current `Wave 26` progress:
 - the first shared feature mutation extraction slices are already done for server CRUD and invite-code refresh
 - channel create/edit/delete mutations are now moved under shared SDK ownership
 - membership and server-membership mutations are now moved under shared SDK ownership
-- the next narrow step should continue with a practical message-mutation bundle before broad UI rewrites
+- message create/update/delete mutations are now moved under shared SDK ownership while preserving the current chat runtime contract
+- the next narrow step should continue with a practical chat-read query bundle before any full chat transport rewrite
 
 Completed side cleanup:
 - `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only

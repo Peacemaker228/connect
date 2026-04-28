@@ -14,14 +14,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Form, FormControl, FormField, FormItem } from '@/lib/shared/ui/form'
 import { Input } from '@/lib/shared/ui/input'
 import { Button } from '@/lib/shared/ui/button'
-import qs from 'query-string'
-import axios from 'axios'
 import { useParams, useRouter } from 'next/navigation'
 import { ERoutes } from '@app-core/routing/routes'
 import { useTranslations } from 'next-intl'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { chatInputSchema, IChatInputSchema } from '@app-core/schemas/chat-input-schema'
 import { buildStorageAccessPath, getUploadValueParts } from '@app-core/files/upload-file'
+import { useUpdateMessage } from '@sdk/mutations/message'
 
 interface IChatItemProps {
   id: string
@@ -54,6 +53,7 @@ export const ChatItem: FC<IChatItemProps> = ({
   const { onOpen } = useModal()
   const params = useParams()
   const router = useRouter()
+  const { mutateAsync: updateMessage } = useUpdateMessage()
 
   const t = useTranslations('ChannelPage')
   const commonTranslation = useTranslations('Common')
@@ -109,12 +109,7 @@ export const ChatItem: FC<IChatItemProps> = ({
 
   const handleSubmit = async (data: IChatInputSchema) => {
     try {
-      const url = qs.stringifyUrl({
-        url: `${socketUrl}/${id}`,
-        query: socketQuery,
-      })
-
-      await axios.patch(url, data)
+      await updateMessage({ apiUrl: `${socketUrl}/${id}`, query: socketQuery, payload: data })
 
       form.reset()
       setIsEditing(false)
