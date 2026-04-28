@@ -29,9 +29,10 @@ Current completed slices inside this wave:
 - media token runtime action now uses backend/API-owned token generation through the shared SDK while preserving current LiveKit behavior
 - chat runtime API/socket contract is now normalized, so chat reads/writes use domain API paths while realtime remains socket/event based
 - remaining `Next` API/proxy routes have been inventoried before broad deletion; only the already-retired `src/pages/api/socket/io.ts` route was removed
+- legacy `pages/api/socket/channels/*` and `pages/api/socket/members/[memberId]` routes were removed after repeated code search confirmed no active callers
 
 Current next slice inside this wave:
-- continue with narrow route-family cleanup based on the inventory below, starting with legacy `pages/api/socket/channels/*` + `pages/api/socket/members/*` if code search still shows no active callers
+- continue with narrow route-family cleanup based on the inventory below; the remaining legacy `pages/api/socket/servers/[serverId]/leave.ts` route is the next unused/dead candidate if repeated code search still shows no active callers
 
 Current runtime decision:
 - `direct backend mode` is the active web runtime target for API reads/writes
@@ -83,9 +84,6 @@ These routes had no active caller in `src`, `packages`, or `apps` code search du
 
 | Route | Reason kept |
 | --- | --- |
-| `src/pages/api/socket/channels/index.ts` | No active caller found; keep until channel fallback removal is split into its own route deletion slice. |
-| `src/pages/api/socket/channels/[channelId].ts` | No active caller found; keep until channel fallback removal is split into its own route deletion slice. |
-| `src/pages/api/socket/members/[memberId].ts` | No active caller found; keep until membership fallback removal is split into its own route deletion slice. |
 | `src/pages/api/socket/servers/[serverId]/leave.ts` | No active caller found; keep until membership/server fallback removal is split into its own route deletion slice. |
 
 ### Removed Routes
@@ -93,6 +91,9 @@ These routes had no active caller in `src`, `packages`, or `apps` code search du
 | Route | Proof | Replacement |
 | --- | --- | --- |
 | `src/pages/api/socket/io.ts` | No caller found by code search; route already returned `410 Socket transport moved to apps/api realtime gateway` | `SocketProvider` connects to backend realtime gateway at `${publicApiUrl}/realtime`. |
+| `src/pages/api/socket/channels/index.ts` | Repeated Segment 045 code search found no active `/api/socket/channels` callers outside docs and the route file itself | `packages/sdk/src/mutations/channel.ts` uses `/api/channels` through the backend-aware client. |
+| `src/pages/api/socket/channels/[channelId].ts` | Repeated Segment 045 code search found no active `/api/socket/channels/:channelId` callers outside docs and the route file itself | `packages/sdk/src/mutations/channel.ts` uses `/api/channels/:channelId` through the backend-aware client. |
+| `src/pages/api/socket/members/[memberId].ts` | Repeated Segment 045 code search found no active `/api/socket/members/:memberId` callers outside docs and the route file itself | `packages/sdk/src/mutations/membership.ts` uses `/api/members/:memberId` through the backend-aware client. |
 
 ### Broader Deletion Blockers
 
