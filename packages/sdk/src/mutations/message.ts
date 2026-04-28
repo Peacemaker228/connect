@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { Member, Message, Profile } from '@prisma/client'
-import { getBackendApiBaseUrl, privateApiInstance } from '../api/http-client'
+import { privateApiInstance } from '../api/http-client'
 
 type MessageWithMemberProfile = Message & {
   member: Member & {
@@ -22,16 +22,6 @@ type MessageWriteMutationParams = MessageMutationParams & {
   payload: MessageMutationPayload
 }
 
-const normalizeMessageApiUrl = (apiUrl: string) => {
-  if (!getBackendApiBaseUrl()) {
-    return apiUrl
-  }
-
-  return apiUrl
-    .replace('/api/socket/messages', '/api/messages')
-    .replace('/api/socket/direct-messages', '/api/direct-messages')
-}
-
 const createMessageMutationPath = (apiUrl: string, query?: Record<string, unknown>) => {
   const searchParams = new URLSearchParams()
 
@@ -44,9 +34,8 @@ const createMessageMutationPath = (apiUrl: string, query?: Record<string, unknow
   })
 
   const search = searchParams.toString()
-  const path = normalizeMessageApiUrl(apiUrl)
 
-  return search ? `${path}?${search}` : path
+  return search ? `${apiUrl}?${search}` : apiUrl
 }
 
 export const useCreateMessage = () => {
