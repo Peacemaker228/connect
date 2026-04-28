@@ -129,6 +129,7 @@ Target:
 - `pages/api` и `app/api` в `Next` для domain access должны остаться только временным compatibility layer
 - как web client data layer допустимы `TanStack Query` + `axios` (или другой thin HTTP client), но ownership должен оставаться у backend
 - для `Stage 5A` direct backend mode считается active runtime target; same-origin `Next` API fallback больше не должен блокировать нормализацию новых chat write paths, но broad proxy deletion всё равно требует отдельного inventory/cleanup шага
+- Segment 044 inventory зафиксировал remaining `Next` route surface в `docs/waves/WEB_RUNTIME_API_EXTRACTION.md`; future removal должен идти route-family slices, а не broad deletion
 
 ## Package Boundaries
 

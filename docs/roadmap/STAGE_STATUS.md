@@ -213,7 +213,9 @@ Current `Wave 26` progress:
 - media token runtime action is now moved under backend/API-owned token generation through shared SDK ownership while preserving current LiveKit behavior
 - chat runtime API/socket contract is now normalized so chat reads/writes use domain API paths while realtime remains socket/event based
 - Stage 5A active runtime assumption: direct backend mode is the target; same-origin `Next` API fallback is transitional and no longer a hard guarantee for newly normalized chat write paths
-- the next narrow step should run an inventory-first cleanup of remaining `Next` compatibility/proxy routes before any broad deletion
+- remaining `Next` compatibility/proxy routes have been inventoried in `docs/waves/WEB_RUNTIME_API_EXTRACTION.md`
+- the already-retired `src/pages/api/socket/io.ts` route was removed after code search showed no active callers and realtime transport was already owned by `apps/api`
+- the next narrow step should remove remaining dead/unused proxy route candidates route-family by route-family, starting with legacy `pages/api/socket/*` families that have no active callers
 
 Completed side cleanup:
 - `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only
