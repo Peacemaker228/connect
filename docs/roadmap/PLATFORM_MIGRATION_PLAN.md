@@ -481,7 +481,8 @@ Current execution note:
 - chat runtime API/socket contract now separates domain API paths from socket/event realtime paths
 - следующий безопасный шаг внутри `Wave 26` - inventory-first cleanup of remaining `Next` compatibility/proxy routes
 - active runtime target for `Stage 5A` is direct web-to-`apps/api` access through `packages/sdk`; same-origin `Next` API fallback is transitional compatibility, not a requirement for newly normalized chat write paths
-- broad removal of `src/app/api/*` and `src/pages/api/*` is still not allowed until compatibility/fallback usage is explicitly inventoried
+- Segment 044 inventory documented the remaining `Next` proxy route surface in `docs/waves/WEB_RUNTIME_API_EXTRACTION.md` and removed only the already-retired `src/pages/api/socket/io.ts` route
+- broad removal of `src/app/api/*` and `src/pages/api/*` is still not allowed; cleanup should proceed as narrow route-family slices using the Segment 044 inventory
 
 ### Stage 6. `MySQL -> Postgres`
 
