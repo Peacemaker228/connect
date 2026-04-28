@@ -215,7 +215,7 @@ Current `Wave 26` progress:
 - Stage 5A active runtime assumption: direct backend mode is the target; same-origin `Next` API fallback is transitional and no longer a hard guarantee for newly normalized chat write paths
 - remaining `Next` compatibility/proxy routes have been inventoried in `docs/waves/WEB_RUNTIME_API_EXTRACTION.md`
 - the already-retired `src/pages/api/socket/io.ts` route was removed after code search showed no active callers and realtime transport was already owned by `apps/api`
-- the next narrow step should remove remaining dead/unused proxy route candidates route-family by route-family, starting with legacy `pages/api/socket/*` families that have no active callers
+- the next narrow step should remove remaining dead/unused proxy route candidates route-family by route-family, starting with legacy `pages/api/socket/channels/*` + `pages/api/socket/members/*` if code search still shows no active callers
 
 Completed side cleanup:
 - `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only

@@ -31,7 +31,7 @@ Current completed slices inside this wave:
 - remaining `Next` API/proxy routes have been inventoried before broad deletion; only the already-retired `src/pages/api/socket/io.ts` route was removed
 
 Current next slice inside this wave:
-- continue with narrow route-by-route proxy cleanup based on the inventory below
+- continue with narrow route-family cleanup based on the inventory below, starting with legacy `pages/api/socket/channels/*` + `pages/api/socket/members/*` if code search still shows no active callers
 
 Current runtime decision:
 - `direct backend mode` is the active web runtime target for API reads/writes
