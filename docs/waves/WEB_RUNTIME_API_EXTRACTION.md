@@ -32,7 +32,7 @@ Current completed slices inside this wave:
 - legacy `pages/api/socket/channels/*` and `pages/api/socket/members/[memberId]` routes were removed after repeated code search confirmed no active callers
 
 Current next slice inside this wave:
-- continue with narrow route-family cleanup based on the inventory below; the remaining legacy `pages/api/socket/servers/[serverId]/leave.ts` route is the next unused/dead candidate if repeated code search still shows no active callers
+- continue with narrow route-family cleanup based on the inventory below; the legacy `pages/api/socket/servers/*` family is next, with `servers/[serverId]/leave.ts` as a dead candidate and `servers/invite.ts` kept if SDK fallback still references it
 
 Current runtime decision:
 - `direct backend mode` is the active web runtime target for API reads/writes
