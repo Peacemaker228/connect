@@ -1,15 +1,11 @@
 import { useMutation } from '@tanstack/react-query'
-import { getBackendApiBaseUrl, privateApiInstance } from '../api/http-client'
-
-const getJoinInviteRequestPath = () => {
-  return getBackendApiBaseUrl() ? '/api/invites/join' : '/api/socket/servers/invite'
-}
+import { privateApiInstance } from '../api/http-client'
 
 export const useJoinByInvite = () => {
   return useMutation({
     mutationFn: (inviteCode: string) =>
       privateApiInstance
-        .post<{ redirectUrl: string }>(getJoinInviteRequestPath(), { inviteCode })
+        .post<{ redirectUrl: string }>('/api/invites/join', { inviteCode })
         .then((res) => res.data),
   })
 }

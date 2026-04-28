@@ -12,7 +12,7 @@
 
 Continue `Wave 26 / Stage 5A` by cleaning the legacy `pages/api/socket/servers/*` route family after Segment 044 inventory and Segment 045 channels/members cleanup.
 
-This slice must distinguish between actually dead server socket routes and transitional fallback routes that are still referenced by SDK code.
+This slice removes the retired server socket routes after moving invite join off the legacy socket fallback.
 
 ## Required Reading
 
@@ -32,7 +32,8 @@ This slice must distinguish between actually dead server socket routes and trans
   - `src/pages/api/socket/servers/[serverId]/leave.ts`
   - `src/pages/api/socket/servers/invite.ts`
 - remove `src/pages/api/socket/servers/[serverId]/leave.ts` only if repeated code search still proves it has no active callers
-- keep `src/pages/api/socket/servers/invite.ts` if it is still used as SDK fallback
+- move invite join off `/api/socket/servers/invite` fallback and onto `/api/invites/join`
+- remove `src/pages/api/socket/servers/invite.ts` after the fallback is removed and code search proves no remaining active callers
 - update docs concisely with what was removed and what remains
 
 ### Out of Scope
@@ -66,22 +67,25 @@ Check for:
 If no active callers exist, delete:
 - `src/pages/api/socket/servers/[serverId]/leave.ts`
 
-Do not delete:
+### 3. Move and remove invite socket fallback
+
+Update `packages/sdk/src/mutations/invite.ts` so invite join uses `/api/invites/join` through the backend-aware client instead of `/api/socket/servers/invite`.
+
+After the SDK fallback is removed and code search confirms no active callers remain, delete:
 - `src/pages/api/socket/servers/invite.ts`
 
-unless code search proves it is no longer referenced and direct backend fallback behavior is explicitly handled. At the time of this brief, `packages/sdk/src/mutations/invite.ts` is expected to still reference `/api/socket/servers/invite` as fallback, so deletion is not expected.
-
-### 3. Keep active server/invite paths intact
+### 4. Keep active server/invite paths intact
 
 Server leave should continue through:
 - `packages/sdk/src/mutations/membership.ts`
 - backend-owned `/api/servers/:serverId/leave`
 - remaining `src/app/api/servers/[serverId]/leave` compatibility where applicable
 
-Invite join fallback should remain intact if still referenced by:
+Invite join should continue through:
 - `packages/sdk/src/mutations/invite.ts`
+- backend-owned `/api/invites/join`
 
-### 4. Update docs
+### 5. Update docs
 
 Update:
 - `docs/waves/WEB_RUNTIME_API_EXTRACTION.md`
@@ -93,12 +97,13 @@ Only add concise status updates. Do not duplicate the full inventory again.
 
 `direct backend mode` is the active target runtime for `Stage 5A`.
 
-Same-origin `Next` API fallback is transitional compatibility. This slice removes only server socket routes with no active callers and keeps fallback routes that are still referenced.
+Same-origin `Next` API fallback is transitional compatibility. This slice deliberately drops the legacy socket fallback for invite join and removes the retired server socket routes.
 
 ## Acceptance Criteria
 
 - `servers/[serverId]/leave` socket route is removed only if no active callers remain
-- `servers/invite` socket route is kept if SDK fallback still references it
+- invite join no longer references `/api/socket/servers/invite`
+- `servers/invite` socket route is removed after the SDK fallback is moved
 - no unrelated proxy routes are removed
 - server leave and invite join paths still typecheck
 - docs are updated concisely
@@ -108,7 +113,7 @@ Same-origin `Next` API fallback is transitional compatibility. This slice remove
 - typecheck
 - lint changed files where applicable
 - targeted code search proving no remaining active caller for deleted server socket routes
-- targeted code search proving any kept server socket route is still intentionally referenced
+- targeted code search proving no remaining active `/api/socket/servers/invite` caller outside docs
 - runtime sanity if available:
   - leave server
   - join invite
@@ -116,7 +121,7 @@ Same-origin `Next` API fallback is transitional compatibility. This slice remove
 ## Handoff Format
 
 - removed routes
-- kept server socket routes and why
+- invite fallback change
 - code-search proof
 - verification performed
 - any remaining legacy `pages/api/socket/*` routes
