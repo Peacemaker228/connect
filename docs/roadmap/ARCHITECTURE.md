@@ -131,7 +131,7 @@ Stage note:
 Сейчас проект — переходный монолит с уже вынесенным backend ownership для текущего domain/realtime слоя:
 - `Next App Router` как web shell и server-side redirect/data flow
 - `apps/api` как backend an owner для domain/realtime
-- remaining thin compatibility layers in `src/app/api/*`
+- no remaining `src/app/api/*` route files after `Wave 26` route-family cleanup
 - `Electron`
 - backend-owned auth/session flow
 - managed-cloud `S3-compatible` storage with historical public URL compatibility
@@ -155,7 +155,6 @@ Stage note:
 
 Временные решения:
 - `Next` как fullstack shell
-- remaining `Next` app-router compatibility/proxy layers around storage runtime access
 - historical public-URL compatibility in the storage layer
 - `LiveKit` как media layer
 - `MySQL` как текущая БД

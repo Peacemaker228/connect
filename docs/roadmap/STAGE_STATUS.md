@@ -225,7 +225,8 @@ Current `Wave 26` progress:
 - `src/app/api/messages`, `src/app/api/direct-messages`, and `src/app/api/livekit` app-router proxy routes were removed after code search confirmed active chat/media flows use backend-aware SDK paths and `apps/api` owns `/api/messages`, `/api/direct-messages`, and `/api/media/livekit-token`
 - `src/app/api/auth/*` login/register/logout and `src/app/api/user` app-router proxy routes were removed after code search confirmed active auth/profile flows use backend-aware SDK paths and `apps/api` owns `/api/auth/login/password`, `/api/auth/register/password`, `/api/auth/session/logout`, and `/api/auth/session`
 - `src/app/api/server-upload` app-router proxy route was removed after code search confirmed storage upload/delete flows use backend-aware SDK paths and `apps/api` owns `/api/storage/upload` and `/api/storage/file`
-- the next narrow step should continue from the remaining inventory; `src/app/api/storage/access/route.ts` remains active until file access URL building supports direct backend mode
+- `src/app/api/storage/access` app-router proxy route was removed after storage read URLs moved to direct backend `/api/storage/access` URLs while preserving backend-redirect and legacy URL compatibility
+- the `src/app/api/*` route-cleanup part of `Wave 26` is closed; no remaining `src/app/api` route files are expected after Segment 053
 
 Completed side cleanup:
 - `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only

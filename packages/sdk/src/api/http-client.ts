@@ -1,41 +1,12 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios'
-
-const DEFAULT_DEVELOPMENT_API_PORT = '4000'
-
-const normalizeBaseUrl = (url: string) => url.replace(/\/$/, '')
-
-const getConfiguredApiBaseUrl = () => {
-  const configuredUrl = process.env.NEXT_PUBLIC_API_URL?.trim()
-
-  return configuredUrl ? normalizeBaseUrl(configuredUrl) : ''
-}
-
-const getDevelopmentApiBaseUrl = () => {
-  if (process.env.NODE_ENV === 'production' || typeof window === 'undefined') {
-    return ''
-  }
-
-  const apiPort = process.env.NEXT_PUBLIC_API_PORT ?? DEFAULT_DEVELOPMENT_API_PORT
-
-  return `${window.location.protocol}//${window.location.hostname}:${apiPort}`
-}
+import {
+  getBrowserDevelopmentBackendApiBaseUrl,
+  getConfiguredBackendApiBaseUrl,
+  resolveBackendApiUrl,
+} from '@app-core/api/backend-api-url'
 
 export const getBackendApiBaseUrl = () => {
-  return getConfiguredApiBaseUrl() || getDevelopmentApiBaseUrl()
-}
-
-const resolveApiUrl = (path: string, baseUrl: string) => {
-  if (!baseUrl) {
-    return path
-  }
-
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`
-
-  if (baseUrl.endsWith('/api') && normalizedPath.startsWith('/api/')) {
-    return `${baseUrl}${normalizedPath.slice('/api'.length)}`
-  }
-
-  return `${baseUrl}${normalizedPath}`
+  return getConfiguredBackendApiBaseUrl() || getBrowserDevelopmentBackendApiBaseUrl()
 }
 
 const isAbsoluteUrl = (url: string) => {
@@ -49,7 +20,7 @@ const applyBackendApiBaseUrl = (config: InternalAxiosRequestConfig, withCredenti
     return config
   }
 
-  config.url = resolveApiUrl(config.url, baseUrl)
+  config.url = resolveBackendApiUrl(config.url, baseUrl)
   config.withCredentials = withCredentials
 
   return config
