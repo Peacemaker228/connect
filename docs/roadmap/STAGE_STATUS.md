@@ -159,7 +159,7 @@ Status: `done`
 Done:
 - backend-owned storage module exists in `apps/api`
 - storage provider token and provider shape exist behind the backend boundary
-- the current server-upload route is reduced to a thin proxy to backend storage ownership
+- the former `server-upload` route was reduced to a thin proxy during `Stage 5` and later removed during `Stage 5A`
 - multipart proxying to backend works through the shared backend proxy helper
 - the current runtime upload flow stays working while direct storage-vendor spread is reduced
 - cloud-first `S3-compatible` direction is fixed in docs and config shape
@@ -224,7 +224,8 @@ Current `Wave 26` progress:
 - `src/app/api/servers/*` app-router proxy routes were removed after code search confirmed active server flows use backend-aware SDK queries/mutations and `apps/api` owns `/api/servers`, `/api/servers/:serverId`, `/api/servers/:serverId/invite-code`, and `/api/servers/:serverId/leave`
 - `src/app/api/messages`, `src/app/api/direct-messages`, and `src/app/api/livekit` app-router proxy routes were removed after code search confirmed active chat/media flows use backend-aware SDK paths and `apps/api` owns `/api/messages`, `/api/direct-messages`, and `/api/media/livekit-token`
 - `src/app/api/auth/*` login/register/logout and `src/app/api/user` app-router proxy routes were removed after code search confirmed active auth/profile flows use backend-aware SDK paths and `apps/api` owns `/api/auth/login/password`, `/api/auth/register/password`, `/api/auth/session/logout`, and `/api/auth/session`
-- the next narrow step should continue `src/app/api/*` route-family cleanup from the remaining inventory; `src/app/api/storage/access/route.ts` remains active until file access URL building supports direct backend mode
+- `src/app/api/server-upload` app-router proxy route was removed after code search confirmed storage upload/delete flows use backend-aware SDK paths and `apps/api` owns `/api/storage/upload` and `/api/storage/file`
+- the next narrow step should continue from the remaining inventory; `src/app/api/storage/access/route.ts` remains active until file access URL building supports direct backend mode
 
 Completed side cleanup:
 - `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only

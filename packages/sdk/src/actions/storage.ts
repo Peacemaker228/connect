@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-import { getBackendApiBaseUrl, privateApiInstance } from '../api/http-client'
+import { privateApiInstance } from '../api/http-client'
 
 export type StorageUploadEndpoint = 'messageFile' | 'serverImage'
 
@@ -32,14 +32,6 @@ export class StorageActionError extends Error {
 }
 
 const DEFAULT_STORAGE_ERROR_MESSAGE = 'Storage request failed'
-
-const getStorageUploadPath = () => {
-  return getBackendApiBaseUrl() ? '/api/storage/upload' : '/api/server-upload'
-}
-
-const getStorageDeletePath = () => {
-  return getBackendApiBaseUrl() ? '/api/storage/file' : '/api/server-upload'
-}
 
 const getPayloadMessage = (payload: unknown) => {
   if (typeof payload === 'string') {
@@ -88,7 +80,7 @@ export const uploadStorageFile = async (endpoint: StorageUploadEndpoint, file: F
   formData.append('file', file)
 
   try {
-    const response = await privateApiInstance.post<StorageUploadResponse>(getStorageUploadPath(), formData)
+    const response = await privateApiInstance.post<StorageUploadResponse>('/api/storage/upload', formData)
 
     return response.data
   } catch (error) {
@@ -102,7 +94,7 @@ export const deleteStorageFile = async ({ endpoint, fileKey, fileUrl }: DeleteSt
   }
 
   try {
-    await privateApiInstance.delete(getStorageDeletePath(), {
+    await privateApiInstance.delete('/api/storage/file', {
       data: {
         endpoint,
         fileKey,
