@@ -68,8 +68,8 @@ const ChannelIdPage: FC<IChannelIdPageProps> = async ({ params }) => {
           />
         </>
       )}
-      {channel.type === 'AUDIO' && <MediaRoom chatId={channel.id} video={false} audio={true} />}
-      {channel.type === 'VIDEO' && <MediaRoom chatId={channel.id} video={true} audio={true} />}
+      {channel.type === 'AUDIO' && <MediaRoom chatId={channel.id} serverId={serverId} video={false} audio={true} />}
+      {channel.type === 'VIDEO' && <MediaRoom chatId={channel.id} serverId={serverId} video={true} audio={true} />}
     </div>
   )
 }
