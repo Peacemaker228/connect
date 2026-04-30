@@ -1,14 +1,12 @@
 'use client'
 
-import { FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { FC, useEffect, useMemo, useState } from 'react'
 import { ActionTooltip } from '@/lib/shared/features/action-tooltip'
 import { cn } from '@/lib/shared/utils/utils'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { buildStorageAccessPath } from '@/lib/shared/utils/upload-file'
-import { useQueryClient } from '@tanstack/react-query'
-import { fetchChatMessagesPage, getChatQueryKey, type ChatMessagesPage } from '@sdk/queries/chat'
-import { fetchServer, getServerQueryKey } from '@sdk/queries/server'
+import { usePrefetchServerEntry } from '@/lib/shared/data-access/navigation-sidebar/use-prefetch-server-entry'
 
 const SERVER_AVATAR_COLOR_CLASSES = [
   'bg-rose-500',
@@ -50,49 +48,26 @@ interface INavigationItemProps {
 }
 
 export const NavigationItem: FC<INavigationItemProps> = ({ id, imageUrl, initialChannelId, name }) => {
-  const params = useParams()
-  const queryClient = useQueryClient()
+  const params = useParams<{ serverId?: string }>()
   const router = useRouter()
+  const currentServerId = params?.serverId
   const [hasImageError, setHasImageError] = useState(false)
   const fileAccessPath = buildStorageAccessPath(imageUrl, 'serverImage')
   const avatarInitials = useMemo(() => getServerAvatarInitials(name), [name])
   const avatarColorClassName = useMemo(() => SERVER_AVATAR_COLOR_CLASSES[getColorIndex(`${name}:${id}`)], [name, id])
   const shouldShowImage = Boolean(fileAccessPath) && !hasImageError
+  const { prefetchServerEntry, waitForServerEntryPrefetch } = usePrefetchServerEntry({
+    currentServerId,
+    initialChannelId,
+    serverId: id,
+  })
 
   useEffect(() => {
     setHasImageError(false)
   }, [fileAccessPath])
 
-  const prefetchServerView = useCallback(() => {
-    const tasks: Promise<unknown>[] = [
-      queryClient.prefetchQuery({
-        queryKey: getServerQueryKey(id),
-        queryFn: () => fetchServer(id),
-      }),
-    ]
-
-    if (initialChannelId) {
-      tasks.push(
-        queryClient.prefetchInfiniteQuery({
-          initialPageParam: undefined as string | undefined,
-          queryKey: getChatQueryKey(`chat:${initialChannelId}`),
-          queryFn: ({ pageParam }) =>
-            fetchChatMessagesPage({
-              apiUrl: '/api/messages',
-              cursor: pageParam,
-              paramKey: 'channelId',
-              paramValue: initialChannelId,
-            }),
-          getNextPageParam: (lastPage: ChatMessagesPage) => lastPage?.nextCursor,
-        }),
-      )
-    }
-
-    return Promise.allSettled(tasks)
-  }, [id, initialChannelId, queryClient])
-
   const handleServerClick = async () => {
-    await prefetchServerView()
+    await waitForServerEntryPrefetch()
     router.push(initialChannelId ? `/servers/${id}/channels/${initialChannelId}` : `/servers/${id}`)
   }
 
@@ -101,8 +76,8 @@ export const NavigationItem: FC<INavigationItemProps> = ({ id, imageUrl, initial
       <button
         className="group relative flex items-center"
         onClick={handleServerClick}
-        onFocus={() => void prefetchServerView()}
-        onPointerEnter={() => void prefetchServerView()}>
+        onFocus={() => void prefetchServerEntry()}
+        onPointerEnter={() => void prefetchServerEntry()}>
         <div
           className={cn(
             'absolute left-0 bg-mainOrange rounded-r-full transition-all w-[4px]',
