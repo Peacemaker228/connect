@@ -1,3 +1,5 @@
+import { getPublicBackendApiBaseUrl, resolveBackendApiUrl } from '../api/backend-api-url'
+
 export type UploadEndpoint = 'messageFile' | 'serverImage'
 export type StoredUploadAccessKind = 'backend-redirect'
 
@@ -117,7 +119,7 @@ export const buildStorageAccessPath = (value: string, endpoint: UploadEndpoint) 
     searchParams.set('fileUrl', fileUrl)
   }
 
-  return `/api/storage/access?${searchParams.toString()}`
+  return resolveBackendApiUrl(`/api/storage/access?${searchParams.toString()}`, getPublicBackendApiBaseUrl())
 }
 
 export const serializeUploadValue = ({

@@ -38,15 +38,16 @@ Current completed slices inside this wave:
 - `src/app/api/messages`, `src/app/api/direct-messages`, and `src/app/api/livekit` app-router proxy routes were removed after repeated code search confirmed active chat/media flows use backend-aware SDK paths
 - `src/app/api/auth/*` login/register/logout and `src/app/api/user` app-router proxy routes were removed after repeated code search confirmed active auth/profile flows use backend-aware SDK paths
 - `src/app/api/server-upload` app-router proxy route was removed after repeated code search confirmed storage upload/delete flows use backend-owned `/api/storage/upload` and `/api/storage/file` through the shared SDK
+- `src/app/api/storage/access` app-router proxy route was removed after storage read URLs moved to direct backend `/api/storage/access` URLs while preserving backend-redirect and legacy URL compatibility
 
 Current next slice inside this wave:
-- continue with narrow route-family cleanup based on the inventory below; `src/app/api/storage/access/route.ts` remains active until file access URL building supports direct backend mode
+- the `src/app/api/*` route-cleanup part of this wave is closed; future work should keep direct backend access as the active runtime target
 
 Current runtime decision:
 - `direct backend mode` is the active web runtime target for API reads/writes
 - same-origin `Next` API fallback is transitional compatibility, not the long-term product contract
 - after chat contract normalization, chat writes do not need to preserve same-origin `Next` API fallback if direct backend mode is configured and verified
-- broad deletion of compatibility routes is still out of scope; future cleanup should proceed route-family by route-family using the inventory below
+- no remaining `src/app/api/*` or `src/pages/api/socket/*` route files are documented in this inventory after Segment 053
 
 ## Segment 044 Proxy Route Inventory
 
@@ -58,7 +59,7 @@ Inventory rule:
 
 | Route | Caller evidence | Why it remains |
 | --- | --- | --- |
-| `src/app/api/storage/access/route.ts` | `packages/app-core/src/files/upload-file.ts` builds `/api/storage/access?...` for stored file reads | Active backend-redirect read/access URL; not safe to remove until file access URL building supports direct backend mode. |
+| _None currently_ | Segment 053 moved stored file read URLs to direct backend `/api/storage/access` URLs. | No `src/app/api/*` route file remains. |
 
 ### Transitional Fallback Routes
 
@@ -104,12 +105,12 @@ These routes had no active caller in `src`, `packages`, or `apps` code search du
 | `src/app/api/auth/session/logout/route.ts` | Segment 051 code search found logout callers use `packages/sdk/src/actions/auth.ts`; direct backend mode resolves `/api/auth/session/logout` to `apps/api`. | `packages/sdk/src/actions/auth.ts` uses `/api/auth/session/logout` through the backend-aware client. |
 | `src/app/api/user/route.ts` | Segment 051 removed the `/api/user` fallback from `packages/sdk/src/queries/profile.ts`; no active caller remains. | `packages/sdk/src/queries/profile.ts` uses `/api/auth/session` through the backend-aware client and normalizes the session `profile`. |
 | `src/app/api/server-upload/route.ts` | Segment 052 removed the `/api/server-upload` fallback from `packages/sdk/src/actions/storage.ts`; no active caller remains. | `packages/sdk/src/actions/storage.ts` uses `/api/storage/upload` and `/api/storage/file` through the backend-aware client. |
+| `src/app/api/storage/access/route.ts` | Segment 053 moved `buildStorageAccessPath` to direct backend URLs and code search found no remaining `src/app/api/storage/access` dependency. | `packages/app-core/src/files/upload-file.ts` builds backend `/api/storage/access` URLs from the configured backend API origin. |
 
 ### Broader Deletion Blockers
 
-- `src/app/api/storage/access/route.ts` is still an active URL produced by `buildStorageAccessPath`.
-- No remaining SDK helper fallback route is documented in this inventory; storage access is tracked separately because it is an active URL builder, not a dead fallback.
-- No `src/pages/api/socket/*` HTTP compatibility route remains after Segment 047; future cleanup should focus on the remaining `src/app/api/storage/access/route.ts` compatibility path.
+- No `src/app/api/*` route file remains after Segment 053.
+- No `src/pages/api/socket/*` HTTP compatibility route remains after Segment 047.
 
 ## In Scope
 

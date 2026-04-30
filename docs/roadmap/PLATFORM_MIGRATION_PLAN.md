@@ -164,7 +164,7 @@ connect/
 Сейчас проект представляет собой переходный монолит с уже вынесенным backend ownership:
 - `Next App Router` для страниц и server-side redirect/data flow
 - `apps/api` как backend owner для текущего domain/realtime слоя
-- remaining thin compatibility layers in `src/app/api/*`
+- no remaining `src/app/api/*` route files after `Wave 26` route-family cleanup
 - `Electron` как desktop shell
 - backend-owned auth is now the active provider path; `Clerk` replacement work is largely complete and the remaining auth work is product-completeness
 - managed-cloud `S3-compatible` storage is now the active storage path, while historical public URL compatibility remains as transitional baggage
@@ -479,11 +479,11 @@ Current execution note:
 Текущий execution note:
 - `Wave 26 / WEB_RUNTIME_API_EXTRACTION` уже вынесла значительную часть web runtime access в `packages/sdk`: server/profile/invite queries, server/channel/membership/message mutations, chat reads, auth actions, storage actions, media token action
 - chat runtime API/socket contract now separates domain API paths from socket/event realtime paths
-- следующий безопасный шаг внутри `Wave 26` - inventory-first cleanup of remaining `Next` compatibility/proxy routes
+- `Wave 26` route-family cleanup has removed the remaining documented `Next` compatibility/proxy route files
 - active runtime target for `Stage 5A` is direct web-to-`apps/api` access through `packages/sdk`; same-origin `Next` API fallback is transitional compatibility, not a requirement for newly normalized chat write paths
 - Segment 044 inventory documented the remaining `Next` proxy route surface in `docs/waves/WEB_RUNTIME_API_EXTRACTION.md` and removed only the already-retired `src/pages/api/socket/io.ts` route
-- Segments 045-050 removed legacy `pages/api/socket/*` and the app-router proxy route families already covered by backend-aware SDK ownership: channels, members, servers, messages, direct-messages, and livekit
-- broad removal of `src/app/api/*` and `src/pages/api/*` is still not allowed; cleanup should proceed as narrow route-family slices using the Segment 044 inventory
+- Segments 045-053 removed legacy `pages/api/socket/*` and the app-router proxy route families already covered by backend-aware SDK/direct backend ownership: channels, members, servers, messages, direct-messages, livekit, auth/profile, server-upload, and storage access
+- broad removal remains disallowed as a migration practice; after Segment 053, no remaining `src/app/api/*` route file is expected in the current inventory
 
 ### Stage 6. `MySQL -> Postgres`
 
@@ -834,16 +834,17 @@ This checkpoint should happen near the end of the roadmap, right before the fina
 - `src/app/(invite)/*`
 - `src/app/(main)/*`
 - `src/middleware.ts`
-- `src/app/api/*`
-- `src/pages/api/*`
 
 Они являются текущим runtime shell и должны переноситься постепенно, не первыми.
+
+Historical note:
+- former `src/app/api/*` and `src/pages/api/*` compatibility route files were removed route-family by route-family during `Stage 5A`
+- new API/runtime ownership should stay in `apps/api` and shared packages, not be reintroduced under the web shell
 
 ### Future Move into `apps/api`
 
 Кандидаты на перенос в `Nest`:
-- remaining storage app-router compatibility routes:
-  - `src/app/api/storage/access/*`
+- none currently; storage access is owned by backend `/api/storage/access`
 
 ### Keep in `apps/desktop`
 

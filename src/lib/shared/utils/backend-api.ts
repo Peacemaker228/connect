@@ -1,130 +1,121 @@
-import { NextResponse } from 'next/server';
-import type { NextApiResponse } from 'next';
-
-const JSON_CONTENT_TYPE = 'application/json';
-const DEFAULT_INTERNAL_API_URL = `http://127.0.0.1:${process.env.API_PORT ?? '4000'}`;
+const JSON_CONTENT_TYPE = 'application/json'
+const DEFAULT_INTERNAL_API_URL = `http://127.0.0.1:${process.env.API_PORT ?? '4000'}`
 const FORWARDED_RESPONSE_HEADERS = [
   'cache-control',
   'x-storage-access-kind',
   'x-storage-access-upstream',
   'x-storage-access-compatibility',
-] as const;
+] as const
 
 type BackendApiRequest = {
-  path: string;
-  method?: string;
-  body?: BodyInit | Record<string, unknown> | unknown[];
-  headers?: Record<string, string | undefined>;
-  redirect?: RequestRedirect;
-};
+  path: string
+  method?: string
+  body?: BodyInit | Record<string, unknown> | unknown[]
+  headers?: Record<string, string | undefined>
+  redirect?: RequestRedirect
+}
 
 type ParsedBackendApiResponse =
   | {
-      contentType: string | null;
-      data: unknown;
-      forwardedHeaders: Record<string, string>;
-      location: string | null;
-      status: number;
-      setCookie: string[];
-      isJson: true;
+      contentType: string | null
+      data: unknown
+      forwardedHeaders: Record<string, string>
+      location: string | null
+      status: number
+      setCookie: string[]
+      isJson: true
     }
   | {
-      contentType: string | null;
-      data: string;
-      forwardedHeaders: Record<string, string>;
-      location: string | null;
-      status: number;
-      setCookie: string[];
-      isJson: false;
-    };
+      contentType: string | null
+      data: string
+      forwardedHeaders: Record<string, string>
+      location: string | null
+      status: number
+      setCookie: string[]
+      isJson: false
+    }
 
 const getInternalApiUrl = () => {
-  return process.env.API_INTERNAL_URL ?? DEFAULT_INTERNAL_API_URL;
-};
+  return process.env.API_INTERNAL_URL ?? DEFAULT_INTERNAL_API_URL
+}
 
 const getSetCookieHeaders = (response: Response) => {
   const responseHeaders = response.headers as Headers & {
-    getSetCookie?: () => string[];
-  };
-  const setCookieHeaders = responseHeaders.getSetCookie?.();
+    getSetCookie?: () => string[]
+  }
+  const setCookieHeaders = responseHeaders.getSetCookie?.()
 
   if (setCookieHeaders && setCookieHeaders.length > 0) {
-    return setCookieHeaders;
+    return setCookieHeaders
   }
 
-  const singleHeader = response.headers.get('set-cookie');
+  const singleHeader = response.headers.get('set-cookie')
 
-  return singleHeader ? [singleHeader] : [];
-};
+  return singleHeader ? [singleHeader] : []
+}
 
 const createRequestHeaders = (headers?: Record<string, string | undefined>) => {
-  const resolvedHeaders = new Headers();
+  const resolvedHeaders = new Headers()
 
   Object.entries(headers ?? {}).forEach(([key, value]) => {
     if (!value) {
-      return;
+      return
     }
 
-    resolvedHeaders.set(key, value);
-  });
+    resolvedHeaders.set(key, value)
+  })
 
-  return resolvedHeaders;
-};
+  return resolvedHeaders
+}
 
 const getForwardedResponseHeaders = (response: Response) => {
-  const forwardedHeaders: Record<string, string> = {};
+  const forwardedHeaders: Record<string, string> = {}
 
   FORWARDED_RESPONSE_HEADERS.forEach((headerName) => {
-    const headerValue = response.headers.get(headerName);
+    const headerValue = response.headers.get(headerName)
 
     if (headerValue) {
-      forwardedHeaders[headerName] = headerValue;
+      forwardedHeaders[headerName] = headerValue
     }
-  });
+  })
 
-  return forwardedHeaders;
-};
+  return forwardedHeaders
+}
 
 const isBodyInit = (body: BackendApiRequest['body']): body is BodyInit => {
   if (body === undefined) {
-    return false;
+    return false
   }
 
   if (typeof body === 'string' || body instanceof Blob || body instanceof FormData || body instanceof URLSearchParams) {
-    return true;
+    return true
   }
 
   if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) {
-    return true;
+    return true
   }
 
-  return typeof ReadableStream !== 'undefined' && body instanceof ReadableStream;
-};
+  return typeof ReadableStream !== 'undefined' && body instanceof ReadableStream
+}
 
 const createRequestBody = (body: BackendApiRequest['body'], headers: Headers) => {
   if (body === undefined) {
-    return undefined;
+    return undefined
   }
 
   if (isBodyInit(body)) {
-    return body;
+    return body
   }
 
   if (!headers.has('content-type')) {
-    headers.set('content-type', JSON_CONTENT_TYPE);
+    headers.set('content-type', JSON_CONTENT_TYPE)
   }
 
-  return JSON.stringify(body);
-};
+  return JSON.stringify(body)
+}
 
-export const requestBackendApi = async ({
-  path,
-  method = 'GET',
-  body,
-  headers,
-  redirect,
-}: BackendApiRequest) => {
-  const resolvedHeaders = createRequestHeaders(headers);
+export const requestBackendApi = async ({ path, method = 'GET', body, headers, redirect }: BackendApiRequest) => {
+  const resolvedHeaders = createRequestHeaders(headers)
 
   return fetch(new URL(path, getInternalApiUrl()), {
     method,
@@ -132,15 +123,15 @@ export const requestBackendApi = async ({
     body: createRequestBody(body, resolvedHeaders),
     cache: 'no-store',
     redirect,
-  });
-};
+  })
+}
 
 export const readBackendApiResponse = async (response: Response): Promise<ParsedBackendApiResponse> => {
-  const contentType = response.headers.get('content-type');
-  const forwardedHeaders = getForwardedResponseHeaders(response);
-  const location = response.headers.get('location');
-  const status = response.status;
-  const setCookie = getSetCookieHeaders(response);
+  const contentType = response.headers.get('content-type')
+  const forwardedHeaders = getForwardedResponseHeaders(response)
+  const location = response.headers.get('location')
+  const status = response.status
+  const setCookie = getSetCookieHeaders(response)
 
   if (contentType?.includes(JSON_CONTENT_TYPE)) {
     return {
@@ -151,7 +142,7 @@ export const readBackendApiResponse = async (response: Response): Promise<Parsed
       forwardedHeaders,
       isJson: true,
       data: await response.json(),
-    };
+    }
   }
 
   return {
@@ -162,61 +153,5 @@ export const readBackendApiResponse = async (response: Response): Promise<Parsed
     forwardedHeaders,
     isJson: false,
     data: await response.text(),
-  };
-};
-
-export const toNextProxyResponse = async (response: Response) => {
-  const parsedResponse = await readBackendApiResponse(response);
-  const proxyHeaders = new Headers();
-
-  parsedResponse.setCookie.forEach((cookieValue) => {
-    proxyHeaders.append('set-cookie', cookieValue);
-  });
-
-  Object.entries(parsedResponse.forwardedHeaders).forEach(([headerName, headerValue]) => {
-    proxyHeaders.set(headerName, headerValue);
-  });
-
-  if (parsedResponse.location) {
-    proxyHeaders.set('location', parsedResponse.location);
   }
-
-  if (parsedResponse.isJson) {
-    return NextResponse.json(parsedResponse.data, {
-      status: parsedResponse.status,
-      headers: proxyHeaders,
-    });
-  }
-
-  if (parsedResponse.contentType) {
-    proxyHeaders.set('content-type', parsedResponse.contentType);
-  }
-
-  return new NextResponse(parsedResponse.data, {
-    status: parsedResponse.status,
-    headers: proxyHeaders,
-  });
-};
-
-export const writePagesProxyResponse = (
-  res: NextApiResponse,
-  parsedResponse: ParsedBackendApiResponse,
-) => {
-  if (parsedResponse.setCookie.length > 0) {
-    res.setHeader('Set-Cookie', parsedResponse.setCookie);
-  }
-
-  Object.entries(parsedResponse.forwardedHeaders).forEach(([headerName, headerValue]) => {
-    res.setHeader(headerName, headerValue);
-  });
-
-  if (parsedResponse.isJson) {
-    return res.status(parsedResponse.status).json(parsedResponse.data);
-  }
-
-  if (parsedResponse.location) {
-    res.setHeader('Location', parsedResponse.location);
-  }
-
-  return res.status(parsedResponse.status).send(parsedResponse.data);
-};
+}
