@@ -34,6 +34,7 @@ Current completed slices inside this wave:
 - invite join fallback was moved off `pages/api/socket/servers/invite.ts`; the legacy invite socket route was then removed
 - legacy `pages/api/socket/messages/*` and `pages/api/socket/direct-messages/*` routes were removed after repeated code search confirmed no active callers; obsolete SDK socket-path normalization was removed
 - `src/app/api/channels/*` and `src/app/api/members/[memberId]` app-router proxy routes were removed after repeated code search confirmed active channel/member flows use backend-aware SDK mutations
+- `src/app/api/servers/*` app-router proxy routes were removed after repeated code search confirmed active server flows use backend-aware SDK queries/mutations
 
 Current next slice inside this wave:
 - continue with narrow route-family cleanup based on the inventory below; remaining `src/app/api/*` routes must still be removed route-family by route-family, not by broad deletion
@@ -64,10 +65,6 @@ Inventory rule:
 | `src/app/api/auth/register/route.ts` | `packages/sdk/src/actions/auth.ts` fallback `/api/auth/register` | `POST /api/auth/register/password` |
 | `src/app/api/auth/session/logout/route.ts` | `packages/sdk/src/actions/auth.ts` uses `/api/auth/session/logout` | `POST /api/auth/session/logout` |
 | `src/app/api/user/route.ts` | `packages/sdk/src/queries/profile.ts` fallback `/api/user` | `GET /api/auth/session` |
-| `src/app/api/servers/route.ts` | `packages/sdk/src/queries/server.ts`, `packages/sdk/src/mutations/server.ts` same-origin fallback | `/api/servers` |
-| `src/app/api/servers/[serverId]/route.ts` | `packages/sdk/src/queries/server.ts`, `packages/sdk/src/mutations/server.ts` same-origin fallback | `/api/servers/:serverId` |
-| `src/app/api/servers/[serverId]/invite-code/route.ts` | `packages/sdk/src/mutations/server.ts` same-origin fallback | `/api/servers/:serverId/invite-code` |
-| `src/app/api/servers/[serverId]/leave/route.ts` | `packages/sdk/src/mutations/membership.ts` same-origin fallback | `/api/servers/:serverId/leave` |
 | `src/app/api/messages/route.ts` | `src/app/(main)/(routes)/*/channels/[channelId]/page.tsx` passes `/api/messages` to chat read helper; direct mode goes to backend | `GET /api/messages` |
 | `src/app/api/direct-messages/route.ts` | `src/app/(main)/(routes)/*/conversations/[memberId]/page.tsx` passes `/api/direct-messages` to chat read helper; direct mode goes to backend | `GET /api/direct-messages` |
 | `src/app/api/server-upload/route.ts` | `packages/sdk/src/actions/storage.ts` fallback `/api/server-upload` | `/api/storage/upload`, `/api/storage/file` |
@@ -99,6 +96,10 @@ These routes had no active caller in `src`, `packages`, or `apps` code search du
 | `src/app/api/channels/[channelId]/route.ts` | Segment 048 code search found channel update/delete callers use `@sdk/mutations/channel`; direct backend mode resolves `/api/channels/:channelId` to `apps/api`. | `packages/sdk/src/mutations/channel.ts` uses `/api/channels/:channelId` through the backend-aware client. |
 | `src/app/api/members/[memberId]/route.ts` and services | Segment 048 code search found member role/kick callers use `@sdk/mutations/membership`; direct backend mode resolves `/api/members/:memberId` to `apps/api`. | `packages/sdk/src/mutations/membership.ts` uses `/api/members/:memberId` through the backend-aware client. |
 | `src/app/api/utils.ts` | After Segment 048 route removal, no remaining callers imported `getServerId`. | No replacement needed. |
+| `src/app/api/servers/route.ts` | Segment 049 code search found server list/create callers use `@sdk/queries/server` and `@sdk/mutations/server`; direct backend mode resolves `/api/servers` to `apps/api`. | `packages/sdk/src/queries/server.ts` and `packages/sdk/src/mutations/server.ts` use `/api/servers` through the backend-aware client. |
+| `src/app/api/servers/[serverId]/route.ts` | Segment 049 code search found server detail/update/delete callers use `@sdk/queries/server` and `@sdk/mutations/server`; direct backend mode resolves `/api/servers/:serverId` to `apps/api`. | `packages/sdk/src/queries/server.ts` and `packages/sdk/src/mutations/server.ts` use `/api/servers/:serverId` through the backend-aware client. |
+| `src/app/api/servers/[serverId]/invite-code/route.ts` | Segment 049 code search found invite-code refresh callers use `@sdk/mutations/server`; direct backend mode resolves `/api/servers/:serverId/invite-code` to `apps/api`. | `packages/sdk/src/mutations/server.ts` uses `/api/servers/:serverId/invite-code` through the backend-aware client. |
+| `src/app/api/servers/[serverId]/leave/route.ts` | Segment 049 code search found leave-server callers use `@sdk/mutations/membership`; direct backend mode resolves `/api/servers/:serverId/leave` to `apps/api`. | `packages/sdk/src/mutations/membership.ts` uses `/api/servers/:serverId/leave` through the backend-aware client. |
 
 ### Broader Deletion Blockers
 
