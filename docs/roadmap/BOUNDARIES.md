@@ -90,7 +90,8 @@ Target:
 - subscription model
 
 Сейчас:
-- transport ownership уже находится в `apps/api`, а legacy `src/pages/api/socket/*` остался как transitional HTTP compatibility layer
+- transport ownership уже находится в `apps/api`
+- legacy `src/pages/api/socket/*` HTTP compatibility layer has been removed during `Stage 5A`
 - клиентские hooks уже работают против backend-owned realtime transport через общие contracts
 
 Target:

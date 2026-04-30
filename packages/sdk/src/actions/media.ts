@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-import { getBackendApiBaseUrl, privateApiInstance } from '../api/http-client'
+import { privateApiInstance } from '../api/http-client'
 
 export type LiveKitTokenRequest = {
   room: string
@@ -24,10 +24,6 @@ export class MediaActionError extends Error {
 }
 
 const DEFAULT_MEDIA_ERROR_MESSAGE = 'Media request failed'
-
-const getLiveKitTokenPath = () => {
-  return getBackendApiBaseUrl() ? '/api/media/livekit-token' : '/api/livekit'
-}
 
 const getPayloadMessage = (payload: unknown) => {
   if (typeof payload === 'string') {
@@ -72,7 +68,7 @@ const toMediaActionError = (error: unknown) => {
 
 export const getLiveKitToken = async ({ room, username }: LiveKitTokenRequest) => {
   try {
-    const response = await privateApiInstance.get<LiveKitTokenResponse>(getLiveKitTokenPath(), {
+    const response = await privateApiInstance.get<LiveKitTokenResponse>('/api/media/livekit-token', {
       params: {
         room,
         username,

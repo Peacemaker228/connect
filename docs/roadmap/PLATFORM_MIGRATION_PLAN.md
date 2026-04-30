@@ -164,7 +164,7 @@ connect/
 Сейчас проект представляет собой переходный монолит с уже вынесенным backend ownership:
 - `Next App Router` для страниц и server-side redirect/data flow
 - `apps/api` как backend owner для текущего domain/realtime слоя
-- thin compatibility layers в `src/app/api/*` и части `src/pages/api/socket/*`
+- remaining thin compatibility layers in `src/app/api/*`
 - `Electron` как desktop shell
 - backend-owned auth is now the active provider path; `Clerk` replacement work is largely complete and the remaining auth work is product-completeness
 - managed-cloud `S3-compatible` storage is now the active storage path, while historical public URL compatibility remains as transitional baggage
@@ -203,7 +203,7 @@ connect/
 Сейчас переходное состояние такое:
 - core domain logic уже живёт в `apps/api`
 - thin compatibility flow всё ещё проходит через `app/api`
-- часть transitional HTTP entrypoints всё ещё остаётся в `pages/api/socket/*`
+- legacy `pages/api/socket/*` compatibility has been removed during `Stage 5A`
 - auth/profile resolution всё ещё проходит через web runtime
 
 Вынос в `Nest` даст:
@@ -482,6 +482,7 @@ Current execution note:
 - следующий безопасный шаг внутри `Wave 26` - inventory-first cleanup of remaining `Next` compatibility/proxy routes
 - active runtime target for `Stage 5A` is direct web-to-`apps/api` access through `packages/sdk`; same-origin `Next` API fallback is transitional compatibility, not a requirement for newly normalized chat write paths
 - Segment 044 inventory documented the remaining `Next` proxy route surface in `docs/waves/WEB_RUNTIME_API_EXTRACTION.md` and removed only the already-retired `src/pages/api/socket/io.ts` route
+- Segments 045-050 removed legacy `pages/api/socket/*` and the app-router proxy route families already covered by backend-aware SDK ownership: channels, members, servers, messages, direct-messages, and livekit
 - broad removal of `src/app/api/*` and `src/pages/api/*` is still not allowed; cleanup should proceed as narrow route-family slices using the Segment 044 inventory
 
 ### Stage 6. `MySQL -> Postgres`
@@ -841,14 +842,12 @@ This checkpoint should happen near the end of the roadmap, right before the fina
 ### Future Move into `apps/api`
 
 Кандидаты на перенос в `Nest`:
-- remaining compatibility HTTP handlers in `src/pages/api/socket/*`
-- `src/app/api/servers/*`
-- `src/app/api/channels/*`
-- `src/app/api/messages/*`
-- `src/app/api/direct-messages/*`
-- `src/app/api/members/*`
-- `src/app/api/server-upload/*`
-- `src/app/api/livekit/*`
+- remaining auth/profile app-router compatibility routes:
+  - `src/app/api/auth/*`
+  - `src/app/api/user/*`
+- remaining storage app-router compatibility routes:
+  - `src/app/api/server-upload/*`
+  - `src/app/api/storage/access/*`
 
 ### Keep in `apps/desktop`
 
