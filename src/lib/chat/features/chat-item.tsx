@@ -19,7 +19,7 @@ import { ERoutes } from '@app-core/routing/routes'
 import { useTranslations } from 'next-intl'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { chatInputSchema, IChatInputSchema } from '@app-core/schemas/chat-input-schema'
-import { buildStorageAccessPath, getUploadValueParts } from '@app-core/files/upload-file'
+import { buildStorageAccessPath, getUploadValueParts } from '@/lib/shared/utils/upload-file'
 import { useUpdateMessage } from '@sdk/mutations/message'
 
 interface IChatItemProps {

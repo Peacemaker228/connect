@@ -5,7 +5,7 @@ import { ActionTooltip } from '@/lib/shared/features/action-tooltip'
 import { cn } from '@/lib/shared/utils/utils'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { buildStorageAccessPath } from '@app-core/files/upload-file'
+import { buildStorageAccessPath } from '@/lib/shared/utils/upload-file'
 
 const SERVER_AVATAR_COLOR_CLASSES = [
   'bg-rose-500',
