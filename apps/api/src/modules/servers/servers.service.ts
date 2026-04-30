@@ -1,15 +1,15 @@
-import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
-import { MemberRole } from '@prisma/client';
-import { randomUUID } from 'crypto';
+import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common'
+import { MemberRole } from '@prisma/client'
+import { randomUUID } from 'crypto'
 
-import { GENERAL_CHANNEL_NAME } from '../../common/constants/domain.constants';
-import { PrismaService } from '../../common/database/prisma.service';
-import { StorageService } from '../storage/storage.service';
+import { GENERAL_CHANNEL_NAME } from '../../common/constants/domain.constants'
+import { PrismaService } from '../../common/database/prisma.service'
+import { StorageService } from '../storage/storage.service'
 
 type ServerMutationBody = {
-  name?: string;
-  imageUrl?: string | null;
-};
+  name?: string
+  imageUrl?: string | null
+}
 
 @Injectable()
 export class ServersService {
@@ -19,17 +19,17 @@ export class ServersService {
   ) {}
 
   async createServer(profileId: string | undefined, body: ServerMutationBody) {
-    const resolvedProfileId = this.requireProfileId(profileId);
-    const { name, imageUrl } = body;
+    const resolvedProfileId = this.requireProfileId(profileId)
+    const { name, imageUrl } = body
 
     if (!name) {
-      throw new HttpException('Name is required', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Name is required', HttpStatus.BAD_REQUEST)
     }
 
     const finalizedImageUrl =
       typeof imageUrl === 'string'
         ? await this.storageService.finalizeStoredValue(resolvedProfileId, 'serverImage', imageUrl)
-        : imageUrl;
+        : imageUrl
 
     return this.prisma.server.create({
       data: {
@@ -55,13 +55,13 @@ export class ServersService {
           ],
         },
       },
-    });
+    })
   }
 
   async getServers(profileId: string | undefined) {
-    const resolvedProfileId = this.requireProfileId(profileId);
+    const resolvedProfileId = this.requireProfileId(profileId)
 
-    return this.prisma.server.findMany({
+    const servers = await this.prisma.server.findMany({
       where: {
         members: {
           some: {
@@ -69,14 +69,33 @@ export class ServersService {
           },
         },
       },
-    });
+      include: {
+        channels: {
+          where: {
+            name: GENERAL_CHANNEL_NAME,
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+          select: {
+            id: true,
+          },
+          take: 1,
+        },
+      },
+    })
+
+    return servers.map(({ channels, ...server }) => ({
+      ...server,
+      initialChannelId: channels[0]?.id ?? null,
+    }))
   }
 
   async getServer(profileId: string | undefined, serverId: string) {
-    this.requireProfileId(profileId);
+    this.requireProfileId(profileId)
 
     if (!serverId) {
-      throw new HttpException('Server ID Missing', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Server ID Missing', HttpStatus.BAD_REQUEST)
     }
 
     const server = await this.prisma.server.findUnique({
@@ -98,26 +117,26 @@ export class ServersService {
           },
         },
       },
-    });
+    })
 
     if (!server) {
-      throw new NotFoundException('Server not found');
+      throw new NotFoundException('Server not found')
     }
 
-    return server;
+    return server
   }
 
   async updateServer(profileId: string | undefined, serverId: string, body: ServerMutationBody) {
-    const resolvedProfileId = this.requireProfileId(profileId);
+    const resolvedProfileId = this.requireProfileId(profileId)
 
     if (!serverId) {
-      throw new HttpException('Server ID Missing', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Server ID Missing', HttpStatus.BAD_REQUEST)
     }
 
     const finalizedImageUrl =
       typeof body.imageUrl === 'string'
         ? await this.storageService.finalizeStoredValue(resolvedProfileId, 'serverImage', body.imageUrl)
-        : body.imageUrl;
+        : body.imageUrl
 
     return this.prisma.server.update({
       where: {
@@ -128,14 +147,14 @@ export class ServersService {
         name: body.name,
         imageUrl: typeof finalizedImageUrl === 'string' ? finalizedImageUrl : undefined,
       },
-    });
+    })
   }
 
   async deleteServer(profileId: string | undefined, serverId: string) {
-    const resolvedProfileId = this.requireProfileId(profileId);
+    const resolvedProfileId = this.requireProfileId(profileId)
 
     if (!serverId) {
-      throw new HttpException('Server ID Missing', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Server ID Missing', HttpStatus.BAD_REQUEST)
     }
 
     return this.prisma.server.delete({
@@ -143,14 +162,14 @@ export class ServersService {
         id: serverId,
         profileId: resolvedProfileId,
       },
-    });
+    })
   }
 
   async regenerateInviteCode(profileId: string | undefined, serverId: string) {
-    const resolvedProfileId = this.requireProfileId(profileId);
+    const resolvedProfileId = this.requireProfileId(profileId)
 
     if (!serverId) {
-      throw new HttpException('Server ID Missing', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Server ID Missing', HttpStatus.BAD_REQUEST)
     }
 
     return this.prisma.server.update({
@@ -161,14 +180,14 @@ export class ServersService {
       data: {
         inviteCode: randomUUID(),
       },
-    });
+    })
   }
 
   async leaveServer(profileId: string | undefined, serverId: string) {
-    const resolvedProfileId = this.requireProfileId(profileId);
+    const resolvedProfileId = this.requireProfileId(profileId)
 
     if (!serverId) {
-      throw new HttpException('Server ID Missing', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Server ID Missing', HttpStatus.BAD_REQUEST)
     }
 
     return this.prisma.server.update({
@@ -190,14 +209,14 @@ export class ServersService {
           },
         },
       },
-    });
+    })
   }
 
   private requireProfileId(profileId: string | undefined) {
     if (!profileId) {
-      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED)
     }
 
-    return profileId;
+    return profileId
   }
 }

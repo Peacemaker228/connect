@@ -45,10 +45,11 @@ const getColorIndex = (value: string) => {
 interface INavigationItemProps {
   id: string
   imageUrl: string
+  initialChannelId?: string | null
   name: string
 }
 
-export const NavigationItem: FC<INavigationItemProps> = ({ id, imageUrl, name }) => {
+export const NavigationItem: FC<INavigationItemProps> = ({ id, imageUrl, initialChannelId, name }) => {
   const params = useParams()
   const router = useRouter()
   const [hasImageError, setHasImageError] = useState(false)
@@ -62,7 +63,7 @@ export const NavigationItem: FC<INavigationItemProps> = ({ id, imageUrl, name })
   }, [fileAccessPath])
 
   const handleServerClick = () => {
-    router.push(`/servers/${id}`)
+    router.push(initialChannelId ? `/servers/${id}/channels/${initialChannelId}` : `/servers/${id}`)
   }
 
   return (
