@@ -36,6 +36,7 @@ Current completed slices inside this wave:
 - `src/app/api/channels/*` and `src/app/api/members/[memberId]` app-router proxy routes were removed after repeated code search confirmed active channel/member flows use backend-aware SDK mutations
 - `src/app/api/servers/*` app-router proxy routes were removed after repeated code search confirmed active server flows use backend-aware SDK queries/mutations
 - `src/app/api/messages`, `src/app/api/direct-messages`, and `src/app/api/livekit` app-router proxy routes were removed after repeated code search confirmed active chat/media flows use backend-aware SDK paths
+- `src/app/api/auth/*` login/register/logout and `src/app/api/user` app-router proxy routes were removed after repeated code search confirmed active auth/profile flows use backend-aware SDK paths
 
 Current next slice inside this wave:
 - continue with narrow route-family cleanup based on the inventory below; remaining `src/app/api/*` routes must still be removed route-family by route-family, not by broad deletion
@@ -62,10 +63,6 @@ Inventory rule:
 
 | Route | Caller evidence | Direct backend owner |
 | --- | --- | --- |
-| `src/app/api/auth/login/route.ts` | `packages/sdk/src/actions/auth.ts` fallback `/api/auth/login` | `POST /api/auth/login/password` |
-| `src/app/api/auth/register/route.ts` | `packages/sdk/src/actions/auth.ts` fallback `/api/auth/register` | `POST /api/auth/register/password` |
-| `src/app/api/auth/session/logout/route.ts` | `packages/sdk/src/actions/auth.ts` uses `/api/auth/session/logout` | `POST /api/auth/session/logout` |
-| `src/app/api/user/route.ts` | `packages/sdk/src/queries/profile.ts` fallback `/api/user` | `GET /api/auth/session` |
 | `src/app/api/server-upload/route.ts` | `packages/sdk/src/actions/storage.ts` fallback `/api/server-upload` | `/api/storage/upload`, `/api/storage/file` |
 
 ### Unused / Dead Route Candidates Kept For A Later Narrow Slice
@@ -101,6 +98,10 @@ These routes had no active caller in `src`, `packages`, or `apps` code search du
 | `src/app/api/messages/route.ts` | Segment 050 code search found channel chat read callers pass `/api/messages` into the backend-aware SDK chat query; direct backend mode resolves `/api/messages` to `apps/api`. | `packages/sdk/src/queries/chat.ts` uses `/api/messages` through the backend-aware client while preserving pagination/cache semantics. |
 | `src/app/api/direct-messages/route.ts` | Segment 050 code search found direct-message chat read callers pass `/api/direct-messages` into the backend-aware SDK chat query; direct backend mode resolves `/api/direct-messages` to `apps/api`. | `packages/sdk/src/queries/chat.ts` uses `/api/direct-messages` through the backend-aware client while preserving pagination/cache semantics. |
 | `src/app/api/livekit/route.ts` | Segment 050 removed the `/api/livekit` fallback from `packages/sdk/src/actions/media.ts`; no active caller remains. | `packages/sdk/src/actions/media.ts` uses `/api/media/livekit-token` through the backend-aware client. |
+| `src/app/api/auth/login/route.ts` | Segment 051 removed the `/api/auth/login` fallback from `packages/sdk/src/actions/auth.ts`; no active caller remains. | `packages/sdk/src/actions/auth.ts` uses `/api/auth/login/password` through the backend-aware client. |
+| `src/app/api/auth/register/route.ts` | Segment 051 removed the `/api/auth/register` fallback from `packages/sdk/src/actions/auth.ts`; no active caller remains. | `packages/sdk/src/actions/auth.ts` uses `/api/auth/register/password` through the backend-aware client. |
+| `src/app/api/auth/session/logout/route.ts` | Segment 051 code search found logout callers use `packages/sdk/src/actions/auth.ts`; direct backend mode resolves `/api/auth/session/logout` to `apps/api`. | `packages/sdk/src/actions/auth.ts` uses `/api/auth/session/logout` through the backend-aware client. |
+| `src/app/api/user/route.ts` | Segment 051 removed the `/api/user` fallback from `packages/sdk/src/queries/profile.ts`; no active caller remains. | `packages/sdk/src/queries/profile.ts` uses `/api/auth/session` through the backend-aware client and normalizes the session `profile`. |
 
 ### Broader Deletion Blockers
 
