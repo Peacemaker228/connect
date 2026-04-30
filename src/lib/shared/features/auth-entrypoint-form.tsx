@@ -36,6 +36,7 @@ export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
   const redirectUrl =
     searchParams?.get('redirect_url')?.trim() || DEFAULT_REDIRECT_URL
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isRedirecting, setIsRedirecting] = useState(false)
   const form = useForm<AuthEntrypointFormValues>({
     resolver: zodResolver(authEntrypointSchema),
     defaultValues: {
@@ -65,6 +66,7 @@ export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
   const secondaryLink = `${secondaryHref}${
     secondarySearchParams.size > 0 ? `?${secondarySearchParams.toString()}` : ''
   }`
+  const isLoading = form.formState.isSubmitting || isRedirecting
 
   const handleSubmit = async (values: AuthEntrypointFormValues) => {
     setErrorMessage(null)
@@ -83,9 +85,11 @@ export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
         })
       }
 
+      setIsRedirecting(true)
       router.replace(redirectUrl)
       router.refresh()
     } catch (error) {
+      setIsRedirecting(false)
       setErrorMessage(
         error instanceof AuthActionError ? error.message : 'Unable to complete authentication right now',
       )
@@ -116,7 +120,7 @@ export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
                   <FormControl>
                     <Input
                       autoComplete="name"
-                      disabled={form.formState.isSubmitting}
+                      disabled={isLoading}
                       placeholder="Your name"
                       {...field}
                     />
@@ -138,7 +142,7 @@ export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
                 <FormControl>
                   <Input
                     autoComplete="email"
-                    disabled={form.formState.isSubmitting}
+                    disabled={isLoading}
                     placeholder="name@example.com"
                     type="email"
                     {...field}
@@ -160,7 +164,7 @@ export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
                 <FormControl>
                   <Input
                     autoComplete={isRegister ? 'new-password' : 'current-password'}
-                    disabled={form.formState.isSubmitting}
+                    disabled={isLoading}
                     placeholder="At least 8 characters"
                     type="password"
                     {...field}
@@ -179,9 +183,9 @@ export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
 
           <Button
             className="w-full"
-            disabled={form.formState.isSubmitting}
+            disabled={isLoading}
             type="submit">
-            {form.formState.isSubmitting ? 'Please wait...' : submitLabel}
+            {isLoading ? 'Please wait...' : submitLabel}
           </Button>
         </form>
       </Form>
