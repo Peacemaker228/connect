@@ -37,7 +37,7 @@ Current completed slices inside this wave:
 - `src/app/api/servers/*` app-router proxy routes were removed after repeated code search confirmed active server flows use backend-aware SDK queries/mutations
 
 Current next slice inside this wave:
-- continue with narrow route-family cleanup based on the inventory below; remaining `src/app/api/*` routes must still be removed route-family by route-family, not by broad deletion
+- continue with narrow route-family cleanup based on the inventory below; focus next on `src/app/api/messages`, `src/app/api/direct-messages`, and `src/app/api/livekit` as a bounded chat/media PR
 
 Current runtime decision:
 - `direct backend mode` is the active web runtime target for API reads/writes
