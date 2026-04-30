@@ -221,7 +221,8 @@ Current `Wave 26` progress:
 - legacy `src/pages/api/socket/messages/*` and `src/pages/api/socket/direct-messages/*` routes were removed after repeated code search showed no active callers, and obsolete SDK socket-path normalization was removed
 - `src/app/api/channels/*` and `src/app/api/members/[memberId]` app-router proxy routes were removed after code search confirmed active flows use backend-aware SDK mutations and `apps/api` owns `/api/channels` + `/api/members/:memberId`
 - `src/app/api/utils.ts` was removed after the channel/member proxy cleanup left no callers
-- the next narrow step should continue `src/app/api/*` route-family cleanup with `src/app/api/servers/*`; `src/app/api/storage/access/route.ts` remains active until file access URL building supports direct backend mode
+- `src/app/api/servers/*` app-router proxy routes were removed after code search confirmed active server flows use backend-aware SDK queries/mutations and `apps/api` owns `/api/servers`, `/api/servers/:serverId`, `/api/servers/:serverId/invite-code`, and `/api/servers/:serverId/leave`
+- the next narrow step should continue `src/app/api/*` route-family cleanup from the remaining inventory; `src/app/api/storage/access/route.ts` remains active until file access URL building supports direct backend mode
 
 Completed side cleanup:
 - `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only
