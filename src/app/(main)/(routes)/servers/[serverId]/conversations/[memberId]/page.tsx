@@ -67,7 +67,15 @@ const MemberIdPage: FC<IMemberIdPageProps> = async ({ params, searchParams }) =>
         serverId={serverId}
         type={'conversation'}
       />
-      {video && <MediaRoom chatId={conversation.id} video={true} audio={true} />}
+      {video && (
+        <MediaRoom
+          chatId={conversation.id}
+          leaveRedirectHref={`${ERoutes.SERVERS}/${serverId}${ERoutes.CONVERSATIONS}/${memberId}`}
+          serverId={serverId}
+          video={true}
+          audio={true}
+        />
+      )}
       {!video && (
         <>
           <ChatMessages

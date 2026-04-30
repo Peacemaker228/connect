@@ -567,6 +567,13 @@ Current execution note:
 ### Deferred Late-Roadmap Auth Product Work
 
 This checkpoint exists for auth-product capabilities that are useful but not required to finish provider replacement:
+- auth hardening before production/final React-Vite decision:
+  - CSRF strategy for cookie auth
+  - login/register rate limiting and brute-force protection
+  - integration/e2e coverage for access expiry, refresh rotation, logout, expired refresh, and protected-route behavior
+  - production cookie/CORS/secure/domain verification
+  - review of the custom token format against a standard JWT/PASETO-style implementation
+  - session/device management UX if product scope requires it
 - `email verification`
 - `password reset`
 - similar late auth-product completeness tasks
@@ -584,6 +591,13 @@ This checkpoint should happen near the end of the roadmap, right before the fina
 
 Вывод:
 - это последний крупный шаг, а не первый
+
+## Auth Runtime Note for Future React/Vite Decision
+
+- current `Next` runtime auth is not the final simplified React/Vite shape
+- while `Next` still owns middleware, server-side redirects, and `currentProfile()` checks, auth needs backend-owned `HttpOnly` access/refresh cookies plus SDK refresh-on-401 support
+- after a future `React + Vite` move, auth can be simplified to direct backend API requests, `TanStack Query`, SDK HTTP client ownership, refresh-on-401, and client protected-route guards based on the refresh/session marker
+- this simplification belongs to the final `Next.js -> React` decision path, not to the current `Stage 5A` cleanup
 
 ## 11. Sprint-Based Execution Plan
 

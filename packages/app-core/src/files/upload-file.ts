@@ -1,5 +1,3 @@
-import { getPublicBackendApiBaseUrl, resolveBackendApiUrl } from '../api/backend-api-url'
-
 export type UploadEndpoint = 'messageFile' | 'serverImage'
 export type StoredUploadAccessKind = 'backend-redirect'
 
@@ -98,7 +96,7 @@ export const getUploadValueParts = (value: string, endpoint: UploadEndpoint) => 
   return parseMetadataUploadValue(value) ?? parseLegacyUploadValue(value, endpoint)
 }
 
-export const buildStorageAccessPath = (value: string, endpoint: UploadEndpoint) => {
+export const buildStorageAccessRequestPath = (value: string, endpoint: UploadEndpoint) => {
   const { accessKind, fileKey, fileUrl } = getUploadValueParts(value, endpoint)
 
   if (!fileKey && !fileUrl) {
@@ -119,7 +117,7 @@ export const buildStorageAccessPath = (value: string, endpoint: UploadEndpoint) 
     searchParams.set('fileUrl', fileUrl)
   }
 
-  return resolveBackendApiUrl(`/api/storage/access?${searchParams.toString()}`, getPublicBackendApiBaseUrl())
+  return `/api/storage/access?${searchParams.toString()}`
 }
 
 export const serializeUploadValue = ({

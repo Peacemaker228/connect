@@ -40,7 +40,12 @@ export const NavigationSidebar = () => {
       <ScrollArea className={'flex-1 w-full'}>
         {servers?.map((server) => (
           <div key={server.id} className={'mb-4'}>
-            <NavigationItem id={server.id} name={server.name} imageUrl={server.imageUrl} />
+            <NavigationItem
+              id={server.id}
+              initialChannelId={server.initialChannelId}
+              name={server.name}
+              imageUrl={server.imageUrl}
+            />
           </div>
         ))}
       </ScrollArea>

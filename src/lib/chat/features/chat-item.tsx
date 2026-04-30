@@ -19,7 +19,7 @@ import { ERoutes } from '@app-core/routing/routes'
 import { useTranslations } from 'next-intl'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { chatInputSchema, IChatInputSchema } from '@app-core/schemas/chat-input-schema'
-import { buildStorageAccessPath, getUploadValueParts } from '@app-core/files/upload-file'
+import { buildStorageAccessPath, getUploadValueParts } from '@/lib/shared/utils/upload-file'
 import { useUpdateMessage } from '@sdk/mutations/message'
 
 interface IChatItemProps {
@@ -122,7 +122,7 @@ export const ChatItem: FC<IChatItemProps> = ({
     <div className="relative group flex items-center hover:bg-black/5 p-4 transition w-full">
       <div className={'group flex gap-x-2 items-start w-full'}>
         <div onClick={onMemberClick} className={'cursor-pointer hover:drop-shadow-md transition'}>
-          <UserAvatar src={member.profile.imageUrl} />
+          <UserAvatar name={member.profile.name} src={member.profile.imageUrl} />
         </div>
         <div className={'flex flex-col w-full'}>
           <div className="flex items-center gap-x-2">

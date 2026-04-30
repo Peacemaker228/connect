@@ -2,13 +2,19 @@ import { headers } from 'next/headers'
 
 const DEFAULT_PUBLIC_API_URL = `http://127.0.0.1:${process.env.API_PORT ?? '4000'}`
 
-const normalizeUrl = (url: string) => url.replace(/\/$/, '')
+const normalizeOriginUrl = (url: string) => {
+  try {
+    return new URL(url).origin
+  } catch {
+    return url.trim().replace(/\/+$/, '')
+  }
+}
 
-export const getPublicApiUrl = () => {
+export const getPublicApiOrigin = () => {
   const configuredUrl = process.env.NEXT_PUBLIC_API_URL ?? process.env.API_EXTERNAL_URL
 
   if (configuredUrl) {
-    return normalizeUrl(configuredUrl)
+    return normalizeOriginUrl(configuredUrl)
   }
 
   const headerStore = headers()
@@ -23,7 +29,7 @@ export const getPublicApiUrl = () => {
     const apiUrl = new URL(`${forwardedProto}://${forwardedHost}`)
     apiUrl.port = process.env.API_PORT ?? '4000'
 
-    return normalizeUrl(apiUrl.origin)
+    return normalizeOriginUrl(apiUrl.origin)
   } catch {
     return DEFAULT_PUBLIC_API_URL
   }

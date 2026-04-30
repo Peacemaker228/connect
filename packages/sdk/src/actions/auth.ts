@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { type AxiosResponse } from 'axios'
 
 import { privateApiInstance } from '../api/http-client'
 
@@ -81,6 +81,22 @@ export const registerWithPassword = async (payload: AuthRegisterPayload) => {
 export const logoutSession = async () => {
   try {
     const response = await privateApiInstance.post('/api/auth/session/logout')
+
+    return response.data
+  } catch (error) {
+    throw toAuthActionError(error)
+  }
+}
+
+let refreshSessionRequest: Promise<AxiosResponse> | null = null
+
+export const refreshSession = async () => {
+  try {
+    refreshSessionRequest ??= privateApiInstance.post('/api/auth/session/refresh').finally(() => {
+      refreshSessionRequest = null
+    })
+
+    const response = await refreshSessionRequest
 
     return response.data
   } catch (error) {

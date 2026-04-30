@@ -1,17 +1,24 @@
 'use client'
 
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { FC, type MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { LiveKitRoom, VideoConference } from '@livekit/components-react'
 import '@livekit/components-styles'
 import { MediaDeviceFailure, Room } from 'livekit-client'
 import { getProfileName } from '@app-core/profiles/get-profile-name'
+import { ERoutes } from '@app-core/routing/routes'
 import { toast } from '@/lib/shared/utils/hooks/use-toast'
 import { useGetProfile } from '@sdk/queries/profile'
 import { getLiveKitToken } from '@sdk/actions/media'
+import { useGetServer } from '@sdk/queries/server'
+import { ChannelType } from '@prisma/client'
+import { EGeneral } from '@/types'
+import { useRouter } from 'next/navigation'
 
 interface IMediaRoomProps {
   chatId: string
+  leaveRedirectHref?: string
+  serverId: string
   video: boolean
   audio: boolean
 }
@@ -49,11 +56,17 @@ const getDeviceErrorDescription = (failure?: MediaDeviceFailure, kind?: MediaDev
   }
 }
 
-export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, chatId }) => {
+export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, chatId, leaveRedirectHref, serverId }) => {
+  const router = useRouter()
   const { profile } = useGetProfile()
+  const { data: server } = useGetServer(serverId)
   const [token, setToken] = useState('')
   const room = useMemo(() => new Room(), [])
   const isStartingMediaRef = useRef(false)
+  const isLeaveRequestedRef = useRef(false)
+  const generalChannelId = server?.channels.find(
+    (channel) => channel.name === EGeneral.GENERAL && channel.type === ChannelType.TEXT,
+  )?.id
 
   const showMediaFailureToast = useCallback((failure?: MediaDeviceFailure, kind?: MediaDeviceKind) => {
     toast({
@@ -227,6 +240,28 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, chatId }) => {
     [showMediaFailureToast],
   )
 
+  const handleConferenceClickCapture = useCallback((event: MouseEvent<HTMLDivElement>) => {
+    const target = event.target
+
+    if (target instanceof Element && target.closest('.lk-disconnect-button')) {
+      isLeaveRequestedRef.current = true
+    }
+  }, [])
+
+  const handleDisconnected = useCallback(() => {
+    if (!isLeaveRequestedRef.current) {
+      return
+    }
+
+    isLeaveRequestedRef.current = false
+    router.replace(
+      leaveRedirectHref ??
+        (generalChannelId
+          ? `${ERoutes.SERVERS}/${serverId}${ERoutes.CHANNELS}/${generalChannelId}`
+          : `${ERoutes.SERVERS}/${serverId}`),
+    )
+  }, [generalChannelId, leaveRedirectHref, router, serverId])
+
   if (token === '') {
     return (
       <div className={'flex flex-col flex-1 justify-center items-center'}>
@@ -247,9 +282,10 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, chatId }) => {
       audio={false}
       lang={'ru-RU'}
       onConnected={handleConnected}
+      onDisconnected={handleDisconnected}
       onError={handleRoomError}
       onMediaDeviceFailure={handleMediaDeviceFailure}>
-      <VideoConference lang={'ru-RU'} />
+      <VideoConference lang={'ru-RU'} onClickCapture={handleConferenceClickCapture} />
     </LiveKitRoom>
   )
 }

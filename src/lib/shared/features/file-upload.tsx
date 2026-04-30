@@ -6,7 +6,7 @@ import { FileIcon, Loader2, X } from 'lucide-react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { ImageUpload } from '@/lib/shared/ui/icons/components/ImageUpload'
-import { buildStorageAccessPath, getUploadValueParts, serializeUploadValue, UploadEndpoint } from '@app-core/files/upload-file'
+import { buildStorageAccessPath, getUploadValueParts, serializeUploadValue, UploadEndpoint } from '@/lib/shared/utils/upload-file'
 import { uploadStorageFile } from '@sdk/actions/storage'
 
 interface IFileUploadProps {

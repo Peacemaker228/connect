@@ -40,23 +40,41 @@ const createChatQueryPath = (
   return `${apiUrl}?${searchParams.toString()}`
 }
 
+export const getChatQueryKey = (queryKey: string) => [queryKey] as const
+
+export const fetchChatMessagesPage = async ({
+  apiUrl,
+  cursor,
+  paramKey,
+  paramValue,
+}: {
+  apiUrl: string
+  cursor?: string
+  paramKey: ChatQueryParams['paramKey']
+  paramValue: string
+}) => {
+  const response = await privateApiInstance.get<ChatMessagesPage>(
+    createChatQueryPath(apiUrl, {
+      cursor,
+      paramKey,
+      paramValue,
+    }),
+  )
+
+  return response.data
+}
+
 export const useChatQuery = ({ queryKey, paramKey, paramValue, apiUrl, isConnected }: ChatQueryParams) => {
-  const fetchMessages = async (cursor?: string) => {
-    const response = await privateApiInstance.get<ChatMessagesPage>(
-      createChatQueryPath(apiUrl, {
-        cursor,
+  const { data, fetchNextPage, hasNextPage, status, isFetchingNextPage } = useInfiniteQuery({
+    initialPageParam: undefined as string | undefined,
+    queryKey: getChatQueryKey(queryKey),
+    queryFn: ({ pageParam }) =>
+      fetchChatMessagesPage({
+        apiUrl,
+        cursor: pageParam,
         paramKey,
         paramValue,
       }),
-    )
-
-    return response.data
-  }
-
-  const { data, fetchNextPage, hasNextPage, status, isFetchingNextPage } = useInfiniteQuery({
-    initialPageParam: undefined as string | undefined,
-    queryKey: [queryKey],
-    queryFn: ({ pageParam }) => fetchMessages(pageParam),
     getNextPageParam: (lastPage) => lastPage?.nextCursor,
     refetchInterval: isConnected ? false : 1000,
   })

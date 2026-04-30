@@ -1,17 +1,24 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import axios from 'axios'
 import { TServerMembersProfiles } from '@/types'
 import { Server } from '@prisma/client'
 import { privateApiInstance } from '../api/http-client'
 
+export type ServerListItem = Server & {
+  initialChannelId: string | null
+}
+
+export const getServerQueryKey = (serverId: string) => ['server', serverId] as const
+
+export const fetchServer = (serverId: string) =>
+  privateApiInstance.get<TServerMembersProfiles>(`/api/servers/${serverId}`).then((res) => res.data)
+
 export const useGetServer = (serverId: string) => {
   return useQuery({
-    queryKey: ['server', serverId],
-    queryFn: () =>
-      privateApiInstance
-        .get<TServerMembersProfiles>(`/api/servers/${serverId}`)
-        .then((res) => res.data),
+    queryKey: getServerQueryKey(serverId),
+    queryFn: () => fetchServer(serverId),
     enabled: !!serverId,
+    placeholderData: keepPreviousData,
     retry: (failureCount, error) => {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
         return false
@@ -25,6 +32,6 @@ export const useGetServer = (serverId: string) => {
 export const useGetServers = () => {
   return useQuery({
     queryKey: ['servers'],
-    queryFn: () => privateApiInstance.get<Server[]>(`/api/servers`).then((res) => res.data),
+    queryFn: () => privateApiInstance.get<ServerListItem[]>(`/api/servers`).then((res) => res.data),
   })
 }
