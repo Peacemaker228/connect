@@ -843,7 +843,6 @@ This checkpoint should happen near the end of the roadmap, right before the fina
 
 Кандидаты на перенос в `Nest`:
 - remaining storage app-router compatibility routes:
-  - `src/app/api/server-upload/*`
   - `src/app/api/storage/access/*`
 
 ### Keep in `apps/desktop`
