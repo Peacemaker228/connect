@@ -204,7 +204,7 @@ connect/
 - core domain logic уже живёт в `apps/api`
 - thin compatibility flow всё ещё проходит через `app/api`
 - legacy `pages/api/socket/*` compatibility has been removed during `Stage 5A`
-- auth/profile resolution всё ещё проходит через web runtime
+- auth/profile app-router proxy fallback has been removed during `Stage 5A`; auth/profile resolution now uses backend-owned endpoints through shared runtime helpers/SDK
 
 Вынос в `Nest` даст:
 - модульность
@@ -842,9 +842,6 @@ This checkpoint should happen near the end of the roadmap, right before the fina
 ### Future Move into `apps/api`
 
 Кандидаты на перенос в `Nest`:
-- remaining auth/profile app-router compatibility routes:
-  - `src/app/api/auth/*`
-  - `src/app/api/user/*`
 - remaining storage app-router compatibility routes:
   - `src/app/api/server-upload/*`
   - `src/app/api/storage/access/*`

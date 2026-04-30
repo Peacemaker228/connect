@@ -223,6 +223,7 @@ Current `Wave 26` progress:
 - `src/app/api/utils.ts` was removed after the channel/member proxy cleanup left no callers
 - `src/app/api/servers/*` app-router proxy routes were removed after code search confirmed active server flows use backend-aware SDK queries/mutations and `apps/api` owns `/api/servers`, `/api/servers/:serverId`, `/api/servers/:serverId/invite-code`, and `/api/servers/:serverId/leave`
 - `src/app/api/messages`, `src/app/api/direct-messages`, and `src/app/api/livekit` app-router proxy routes were removed after code search confirmed active chat/media flows use backend-aware SDK paths and `apps/api` owns `/api/messages`, `/api/direct-messages`, and `/api/media/livekit-token`
+- `src/app/api/auth/*` login/register/logout and `src/app/api/user` app-router proxy routes were removed after code search confirmed active auth/profile flows use backend-aware SDK paths and `apps/api` owns `/api/auth/login/password`, `/api/auth/register/password`, `/api/auth/session/logout`, and `/api/auth/session`
 - the next narrow step should continue `src/app/api/*` route-family cleanup from the remaining inventory; `src/app/api/storage/access/route.ts` remains active until file access URL building supports direct backend mode
 
 Completed side cleanup:

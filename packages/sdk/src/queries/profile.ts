@@ -1,22 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import axios from 'axios'
 import { Profile } from '@prisma/client'
-import { getBackendApiBaseUrl, privateApiInstance } from '../api/http-client'
+import { privateApiInstance } from '../api/http-client'
 
 type BackendAuthSession = {
   profile: Profile | null
-}
-
-const getProfileRequestPath = () => {
-  return getBackendApiBaseUrl() ? '/api/auth/session' : '/api/user'
-}
-
-const resolveProfileResponse = (data: Profile | BackendAuthSession) => {
-  if ('profile' in data) {
-    return data.profile
-  }
-
-  return data
 }
 
 export const useGetProfile = () => {
@@ -24,9 +12,9 @@ export const useGetProfile = () => {
     queryKey: ['profile'],
     queryFn: async () => {
       try {
-        const response = await privateApiInstance.get<Profile | BackendAuthSession>(getProfileRequestPath())
+        const response = await privateApiInstance.get<BackendAuthSession>('/api/auth/session')
 
-        return resolveProfileResponse(response.data)
+        return response.data.profile
       } catch (error) {
         if (axios.isAxiosError(error) && [401, 404].includes(error.response?.status ?? 0)) {
           return null

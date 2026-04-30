@@ -155,7 +155,7 @@ Stage note:
 
 Временные решения:
 - `Next` как fullstack shell
-- remaining `Next` app-router compatibility/proxy layers around auth/profile/storage runtime access
+- remaining `Next` app-router compatibility/proxy layers around storage runtime access
 - historical public-URL compatibility in the storage layer
 - `LiveKit` как media layer
 - `MySQL` как текущая БД

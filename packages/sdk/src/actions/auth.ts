@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-import { getBackendApiBaseUrl, privateApiInstance } from '../api/http-client'
+import { privateApiInstance } from '../api/http-client'
 
 export type AuthLoginPayload = {
   email: string
@@ -24,18 +24,6 @@ export class AuthActionError extends Error {
 }
 
 const DEFAULT_AUTH_ERROR_MESSAGE = 'Request failed'
-
-const getPasswordLoginPath = () => {
-  return getBackendApiBaseUrl()
-    ? '/api/auth/login/password'
-    : '/api/auth/login'
-}
-
-const getPasswordRegisterPath = () => {
-  return getBackendApiBaseUrl()
-    ? '/api/auth/register/password'
-    : '/api/auth/register'
-}
 
 const getPayloadMessage = (payload: unknown) => {
   if (typeof payload === 'string') {
@@ -72,7 +60,7 @@ const toAuthActionError = (error: unknown) => {
 
 export const loginWithPassword = async (payload: AuthLoginPayload) => {
   try {
-    const response = await privateApiInstance.post(getPasswordLoginPath(), payload)
+    const response = await privateApiInstance.post('/api/auth/login/password', payload)
 
     return response.data
   } catch (error) {
@@ -82,7 +70,7 @@ export const loginWithPassword = async (payload: AuthLoginPayload) => {
 
 export const registerWithPassword = async (payload: AuthRegisterPayload) => {
   try {
-    const response = await privateApiInstance.post(getPasswordRegisterPath(), payload)
+    const response = await privateApiInstance.post('/api/auth/register/password', payload)
 
     return response.data
   } catch (error) {
