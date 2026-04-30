@@ -137,6 +137,7 @@ Auth runtime note:
 - while `Next` remains the web shell, auth must support backend-owned `HttpOnly` access/refresh cookies, refresh-on-401 in the SDK client, and middleware handling for protected route entry
 - if the product later moves to `React + Vite`, auth routing can be simplified: the client should use direct backend API requests, `TanStack Query` + the SDK HTTP client, refresh-on-401, and a client route guard that treats the refresh/session cookie as the session marker
 - the future React/Vite model should not reintroduce `Next` API/proxy routes or server-side web-shell auth ownership
+- before production/final React-Vite decision, run a focused auth hardening checkpoint covering CSRF, rate limiting, refresh/logout tests, production cookie/CORS verification, token-format review, and optional session/device UX
 
 ## Package Boundaries
 

@@ -147,6 +147,13 @@ Done:
 
 Remaining:
 - deferred late-roadmap auth product work only:
+  - auth hardening before production/final React-Vite decision:
+    - CSRF strategy for cookie auth
+    - login/register rate limiting and brute-force protection
+    - integration/e2e coverage for access expiry, refresh rotation, logout, expired refresh, and protected-route behavior
+    - production cookie/CORS/secure/domain verification
+    - review of the custom token format against a standard JWT/PASETO-style implementation
+    - session/device management UX if product scope requires it
   - `email verification`
   - `password reset`
   - similar non-blocking auth-product completeness work

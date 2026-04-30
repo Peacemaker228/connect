@@ -567,6 +567,13 @@ Current execution note:
 ### Deferred Late-Roadmap Auth Product Work
 
 This checkpoint exists for auth-product capabilities that are useful but not required to finish provider replacement:
+- auth hardening before production/final React-Vite decision:
+  - CSRF strategy for cookie auth
+  - login/register rate limiting and brute-force protection
+  - integration/e2e coverage for access expiry, refresh rotation, logout, expired refresh, and protected-route behavior
+  - production cookie/CORS/secure/domain verification
+  - review of the custom token format against a standard JWT/PASETO-style implementation
+  - session/device management UX if product scope requires it
 - `email verification`
 - `password reset`
 - similar late auth-product completeness tasks
