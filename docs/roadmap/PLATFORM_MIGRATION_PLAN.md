@@ -585,6 +585,13 @@ This checkpoint should happen near the end of the roadmap, right before the fina
 Вывод:
 - это последний крупный шаг, а не первый
 
+## Auth Runtime Note for Future React/Vite Decision
+
+- current `Next` runtime auth is not the final simplified React/Vite shape
+- while `Next` still owns middleware, server-side redirects, and `currentProfile()` checks, auth needs backend-owned `HttpOnly` access/refresh cookies plus SDK refresh-on-401 support
+- after a future `React + Vite` move, auth can be simplified to direct backend API requests, `TanStack Query`, SDK HTTP client ownership, refresh-on-401, and client protected-route guards based on the refresh/session marker
+- this simplification belongs to the final `Next.js -> React` decision path, not to the current `Stage 5A` cleanup
+
 ## 11. Sprint-Based Execution Plan
 
 ### Sprint 1. Architecture and Boundaries

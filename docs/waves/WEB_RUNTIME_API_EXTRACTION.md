@@ -49,6 +49,13 @@ Current runtime decision:
 - after chat contract normalization, chat writes do not need to preserve same-origin `Next` API fallback if direct backend mode is configured and verified
 - no remaining `src/app/api/*` or `src/pages/api/socket/*` route files are documented in this inventory after Segment 053
 
+Auth runtime note:
+- current auth is still shaped by the `Next` web shell: middleware, server-side redirects, and `currentProfile()` checks still exist
+- therefore current auth needs backend-owned `HttpOnly` access/refresh cookies, SDK refresh-on-401 behavior, and middleware handling for protected route entry
+- this is not the final simplified React/Vite auth shape
+- if/when the project moves to `React + Vite`, auth should be simplified toward direct backend API requests, `TanStack Query`, SDK HTTP client ownership, refresh-on-401, and client protected-route guards based on the refresh/session marker
+- do not treat this future simplification as a reason to reintroduce `Next` API/proxy routes during `Stage 5A`
+
 ## Segment 044 Proxy Route Inventory
 
 Inventory rule:

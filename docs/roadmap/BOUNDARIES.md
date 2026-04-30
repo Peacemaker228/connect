@@ -132,6 +132,12 @@ Target:
 - для `Stage 5A` direct backend mode считается active runtime target; same-origin `Next` API fallback больше не должен блокировать нормализацию новых chat write paths, но broad proxy deletion всё равно требует отдельного inventory/cleanup шага
 - Segment 044 inventory зафиксировал remaining `Next` route surface в `docs/waves/WEB_RUNTIME_API_EXTRACTION.md`; future removal должен идти route-family slices, а не broad deletion
 
+Auth runtime note:
+- current auth transport is intentionally a little heavier than a pure React/Vite client because `Next` still owns middleware, server-side redirects, and `currentProfile()` checks in the web shell
+- while `Next` remains the web shell, auth must support backend-owned `HttpOnly` access/refresh cookies, refresh-on-401 in the SDK client, and middleware handling for protected route entry
+- if the product later moves to `React + Vite`, auth routing can be simplified: the client should use direct backend API requests, `TanStack Query` + the SDK HTTP client, refresh-on-401, and a client route guard that treats the refresh/session cookie as the session marker
+- the future React/Vite model should not reintroduce `Next` API/proxy routes or server-side web-shell auth ownership
+
 ## Package Boundaries
 
 ### `packages/app-core`
