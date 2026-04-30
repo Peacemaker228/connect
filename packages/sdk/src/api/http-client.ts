@@ -30,6 +30,55 @@ export const publicApiInstance = axios.create()
 
 export const privateApiInstance = axios.create()
 
+const authRefreshApiInstance = axios.create()
+
+type AuthRetryRequestConfig = InternalAxiosRequestConfig & {
+  _authRetry?: boolean
+}
+
+let authRefreshRequest: Promise<unknown> | null = null
+
+const isAuthRefreshEligibleRequest = (config: InternalAxiosRequestConfig | undefined) => {
+  const url = config?.url
+
+  if (!url) {
+    return false
+  }
+
+  return (
+    !url.includes('/api/auth/login/password') &&
+    !url.includes('/api/auth/register/password') &&
+    !url.includes('/api/auth/session/logout') &&
+    !url.includes('/api/auth/session/refresh')
+  )
+}
+
 publicApiInstance.interceptors.request.use((config) => applyBackendApiBaseUrl(config, false))
 
 privateApiInstance.interceptors.request.use((config) => applyBackendApiBaseUrl(config, true))
+
+authRefreshApiInstance.interceptors.request.use((config) => applyBackendApiBaseUrl(config, true))
+
+privateApiInstance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (!axios.isAxiosError(error) || error.response?.status !== 401) {
+      throw error
+    }
+
+    const originalConfig = error.config as AuthRetryRequestConfig | undefined
+
+    if (!originalConfig || originalConfig._authRetry || !isAuthRefreshEligibleRequest(originalConfig)) {
+      throw error
+    }
+
+    originalConfig._authRetry = true
+    authRefreshRequest ??= authRefreshApiInstance.post('/api/auth/session/refresh').finally(() => {
+      authRefreshRequest = null
+    })
+
+    await authRefreshRequest
+
+    return privateApiInstance(originalConfig)
+  },
+)

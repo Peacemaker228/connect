@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export const AUTH_PUBLIC_ROUTE_PATTERNS = ['/', '/invite(.*)', '/sign-in(.*)', '/sign-up(.*)']
 
 const BACKEND_ACCESS_TOKEN_COOKIE = 'ax-access-token'
+const BACKEND_REFRESH_TOKEN_COOKIE = 'ax-refresh-token'
 
 const AUTH_PUBLIC_ROUTE_REGEXES = [/^\/$/, /^\/invite(?:\/.*)?$/, /^\/sign-in(?:\/.*)?$/, /^\/sign-up(?:\/.*)?$/]
 
@@ -22,7 +23,7 @@ export const authMiddleware = (request: NextRequest) => {
     return NextResponse.next()
   }
 
-  if (request.cookies.has(BACKEND_ACCESS_TOKEN_COOKIE)) {
+  if (request.cookies.has(BACKEND_ACCESS_TOKEN_COOKIE) || request.cookies.has(BACKEND_REFRESH_TOKEN_COOKIE)) {
     return NextResponse.next()
   }
 
