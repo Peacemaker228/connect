@@ -33,7 +33,7 @@ Current wave order:
 - `Wave 24` = `STORAGE_ACCESS_POLICY_FOUNDATION`
 - `Wave 25` = `STORAGE_STAGED_UPLOAD_SWEEPER`
 - `Wave 26` = `WEB_RUNTIME_API_EXTRACTION`
-- `Wave 27` = `VENDOR_REPO_CLEANUP` (optional side cleanup)
+- `Wave 27` = `VENDOR_REPO_CLEANUP` (done)
 
 ## Status by Stage
 
@@ -144,6 +144,7 @@ Done:
 - app-shell auth provider and middleware now run on backend-owned auth flow instead of `Clerk`
 - residual `Clerk` imports are removed from `server-upload`, `uploadthing`, and the legacy `ensure-profile` helper path
 - repo-level `Clerk` leftovers are removed from package/build/electron glue: the dead `@clerk/nextjs` dependency is gone, build env no longer carries `CLERK_*`, and desktop bridge naming is auth-neutral
+- legacy `CLERK` auth identity provider values are removed through a separate destructive Prisma cleanup migration before the schema enum is narrowed; `PASSWORD` is now the only auth identity provider in the current data model
 
 Remaining:
 - deferred late-roadmap auth product work only:
@@ -200,11 +201,11 @@ Remaining:
 
 The next correct step by plan is:
 
-1. start `Stage 5A` with web runtime API extraction
-2. reduce remaining `Next` `app/api` and `pages/api` compatibility/proxy layers
-3. move web runtime closer to direct backend access through `packages/sdk`
-4. keep the now-stable auth/storage boundaries intact during the extraction
-5. do not mix this with `Postgres` migration or media rewrite
+1. commit/review the completed `Wave 27 / VENDOR_REPO_CLEANUP` slice
+2. prepare the next roadmap step as a separate controlled stage
+3. keep `Stage 5A` direct-backend runtime assumptions intact
+4. do not reintroduce `Next` API/proxy routes under `src/app/api/*` or `src/pages/api/socket/*`
+5. do not mix vendor cleanup follow-ups with `Postgres` migration or media rewrite
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
@@ -234,10 +235,13 @@ Current `Wave 26` progress:
 - `src/app/api/server-upload` app-router proxy route was removed after code search confirmed storage upload/delete flows use backend-aware SDK paths and `apps/api` owns `/api/storage/upload` and `/api/storage/file`
 - `src/app/api/storage/access` app-router proxy route was removed after storage read URLs moved to direct backend `/api/storage/access` URLs while preserving backend-redirect and legacy URL compatibility
 - the `src/app/api/*` route-cleanup part of `Wave 26` is closed; no remaining `src/app/api` route files are expected after Segment 053
+- Stage 5A runtime closeout sweep confirmed that `src/app/api/*` and `src/pages/api/socket/*` route files remain absent
+- Stage 5A runtime closeout sweep found no active dependency on removed `Next` product API/proxy routes across auth login/register/logout/session refresh/protected entry, storage upload/delete/access URLs, chat reads/writes and realtime separation, media token/leave behavior, server switch prefetch/routing, or socket URL construction
 - auth runtime note is documented for the future `React + Vite` decision: current `Next` shell auth remains heavier because of middleware/server-side route checks, while the future React/Vite shape can simplify to direct backend requests, SDK refresh-on-401, and client protected-route guards
 
 Completed side cleanup:
 - `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only
 
-Optional side cleanup:
-- `Wave 27 / VENDOR_REPO_CLEANUP` may be run to remove dead repo-level `Clerk` and `UploadThing` leftovers without changing the main `Stage 5A` path
+Completed cleanup:
+- `Wave 27 / VENDOR_REPO_CLEANUP` removed remaining dead repo-level vendor leftovers without changing the stable `Stage 5A` runtime path
+- the narrow Prisma auth-provider enum cleanup removed the legacy `CLERK` provider value after backend-owned password auth became the only active identity provider

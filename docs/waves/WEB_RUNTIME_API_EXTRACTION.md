@@ -39,15 +39,18 @@ Current completed slices inside this wave:
 - `src/app/api/auth/*` login/register/logout and `src/app/api/user` app-router proxy routes were removed after repeated code search confirmed active auth/profile flows use backend-aware SDK paths
 - `src/app/api/server-upload` app-router proxy route was removed after repeated code search confirmed storage upload/delete flows use backend-owned `/api/storage/upload` and `/api/storage/file` through the shared SDK
 - `src/app/api/storage/access` app-router proxy route was removed after storage read URLs moved to direct backend `/api/storage/access` URLs while preserving backend-redirect and legacy URL compatibility
+- Stage 5A runtime closeout sweep found no active dependency on removed `Next` product API/proxy routes in auth, storage, chat, media, server switch, or socket URL construction
 
-Current next slice inside this wave:
-- the `src/app/api/*` route-cleanup part of this wave is closed; future work should keep direct backend access as the active runtime target
+Current next slice:
+- `Wave 26 / WEB_RUNTIME_API_EXTRACTION` is stable enough to hand off; the next mandatory wave is `Wave 27 / VENDOR_REPO_CLEANUP`
+- future work should keep direct backend access as the active runtime target and must not reintroduce `src/app/api/*` or `src/pages/api/socket/*` product API/proxy ownership
 
 Current runtime decision:
 - `direct backend mode` is the active web runtime target for API reads/writes
 - same-origin `Next` API fallback is transitional compatibility, not the long-term product contract
 - after chat contract normalization, chat writes do not need to preserve same-origin `Next` API fallback if direct backend mode is configured and verified
-- no remaining `src/app/api/*` or `src/pages/api/socket/*` route files are documented in this inventory after Segment 053
+- no remaining `src/app/api/*` or `src/pages/api/socket/*` route files are documented in this inventory after the closeout sweep
+- socket transport uses the backend realtime gateway at the public API origin plus `/realtime`, with the public API origin normalized away from any REST `/api` suffix
 
 Auth runtime note:
 - current auth is still shaped by the `Next` web shell: middleware, server-side redirects, and `currentProfile()` checks still exist
@@ -112,7 +115,7 @@ These routes had no active caller in `src`, `packages`, or `apps` code search du
 | `src/app/api/auth/session/logout/route.ts` | Segment 051 code search found logout callers use `packages/sdk/src/actions/auth.ts`; direct backend mode resolves `/api/auth/session/logout` to `apps/api`. | `packages/sdk/src/actions/auth.ts` uses `/api/auth/session/logout` through the backend-aware client. |
 | `src/app/api/user/route.ts` | Segment 051 removed the `/api/user` fallback from `packages/sdk/src/queries/profile.ts`; no active caller remains. | `packages/sdk/src/queries/profile.ts` uses `/api/auth/session` through the backend-aware client and normalizes the session `profile`. |
 | `src/app/api/server-upload/route.ts` | Segment 052 removed the `/api/server-upload` fallback from `packages/sdk/src/actions/storage.ts`; no active caller remains. | `packages/sdk/src/actions/storage.ts` uses `/api/storage/upload` and `/api/storage/file` through the backend-aware client. |
-| `src/app/api/storage/access/route.ts` | Segment 053 moved `buildStorageAccessPath` to direct backend URLs and code search found no remaining `src/app/api/storage/access` dependency. | `packages/app-core/src/files/upload-file.ts` builds backend `/api/storage/access` URLs from the configured backend API origin. |
+| `src/app/api/storage/access/route.ts` | Segment 053 moved `buildStorageAccessPath` to direct backend URLs and code search found no remaining `src/app/api/storage/access` dependency. | `src/lib/shared/utils/upload-file.ts` resolves app-core storage access request paths against the configured backend API origin. |
 
 ### Broader Deletion Blockers
 

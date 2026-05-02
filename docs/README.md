@@ -31,8 +31,8 @@
 - [waves/STORAGE_RUNTIME_READ_RESOLUTION.md](./waves/STORAGE_RUNTIME_READ_RESOLUTION.md) - Wave 23, closed runtime-read/file-access wave inside `Stage 5`
 - [waves/STORAGE_ACCESS_POLICY_FOUNDATION.md](./waves/STORAGE_ACCESS_POLICY_FOUNDATION.md) - Wave 24, closed storage-access-policy wave inside `Stage 5`
 - [waves/STORAGE_STAGED_UPLOAD_SWEEPER.md](./waves/STORAGE_STAGED_UPLOAD_SWEEPER.md) - Wave 25, closed narrow staged-upload cleanup wave that closes `Stage 5`
-- [waves/WEB_RUNTIME_API_EXTRACTION.md](./waves/WEB_RUNTIME_API_EXTRACTION.md) - Wave 26, current web runtime extraction wave for `Stage 5A`
-- [waves/VENDOR_REPO_CLEANUP.md](./waves/VENDOR_REPO_CLEANUP.md) - Wave 27, optional tiny repo-level cleanup for dead `Clerk` and `UploadThing` leftovers
+- [waves/WEB_RUNTIME_API_EXTRACTION.md](./waves/WEB_RUNTIME_API_EXTRACTION.md) - Wave 26, closed web runtime extraction wave for `Stage 5A`
+- [waves/VENDOR_REPO_CLEANUP.md](./waves/VENDOR_REPO_CLEANUP.md) - Wave 27, closed repo-level cleanup for dead `Clerk` and `UploadThing` leftovers
 
 ## Wave Sequence
 

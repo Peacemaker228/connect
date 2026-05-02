@@ -27,7 +27,6 @@ model Profile {
 }
 
 enum AuthIdentityProvider {
-  CLERK
   PASSWORD
 }
 
