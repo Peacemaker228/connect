@@ -1,12 +1,8 @@
 import { useMutation } from '@tanstack/react-query'
-import { Member, Message, Profile } from '@prisma/client'
+import type { ChatMessageDto } from '@app-core/contracts'
 import { privateApiInstance } from '../api/http-client'
 
-type MessageWithMemberProfile = Message & {
-  member: Member & {
-    profile: Profile
-  }
-}
+type MessageWithMemberProfile = ChatMessageDto
 
 export type MessageMutationPayload = {
   content?: string

@@ -1,17 +1,14 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import axios from 'axios'
-import { TServerMembersProfiles } from '@/types'
-import { Server } from '@prisma/client'
+import type { ServerListItemDto, ServerMembersProfilesDto } from '@app-core/contracts'
 import { privateApiInstance } from '../api/http-client'
 
-export type ServerListItem = Server & {
-  initialChannelId: string | null
-}
+export type ServerListItem = ServerListItemDto
 
 export const getServerQueryKey = (serverId: string) => ['server', serverId] as const
 
 export const fetchServer = (serverId: string) =>
-  privateApiInstance.get<TServerMembersProfiles>(`/api/servers/${serverId}`).then((res) => res.data)
+  privateApiInstance.get<ServerMembersProfilesDto>(`/api/servers/${serverId}`).then((res) => res.data)
 
 export const useGetServer = (serverId: string) => {
   return useQuery({
