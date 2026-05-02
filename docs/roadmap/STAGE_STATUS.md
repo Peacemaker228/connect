@@ -218,10 +218,10 @@ Done:
 - the setup route no longer uses the web-shell Prisma runtime for initial server routing
 - server routing guards under `src/app/(main)/(routes)/servers/[serverId]` no longer use the web-shell Prisma runtime
 - conversation bootstrap under `src/app/(main)/(routes)/servers/[serverId]/conversations/[memberId]` no longer uses the web-shell Prisma runtime
+- invite validation under `src/app/(invite)/(routes)/invite/[inviteCode]` no longer uses the web-shell Prisma runtime
 
 Remaining:
-- route-family slices for the remaining temporary `Next` server-side direct Prisma reads
-- invite validation cleanup under `src/app/(invite)/(routes)/invite/[inviteCode]`
+- final caller sweep and removal of unused `src/lib/shared/utils/db.ts`
 - separate provider-switch/data-migration plan after boundary cleanup
 
 ## Next Correct Step
@@ -229,7 +229,7 @@ Remaining:
 The next correct step by plan is:
 
 1. continue `Wave 28 / PRISMA_BOUNDARY_PREP`
-2. run the invite validation route-family cleanup under `src/app/(invite)/(routes)/invite/[inviteCode]`
+2. run the final Prisma boundary closeout sweep and remove unused `src/lib/shared/utils/db.ts` if it has no callers
 3. keep `Stage 5A` direct-backend runtime assumptions intact
 4. do not reintroduce `Next` API/proxy routes under `src/app/api/*` or `src/pages/api/socket/*`
 5. do not change `DATABASE_URL`, the Prisma datasource provider, or runtime DB behavior until the boundary cleanup segments are complete

@@ -46,9 +46,11 @@ Done:
 - the setup route no longer reads Prisma directly from the web shell and now uses the backend-owned servers API for initial routing
 - server routing guards under `src/app/(main)/(routes)/servers/[serverId]` no longer read Prisma directly from the web shell
 - conversation bootstrap under `src/app/(main)/(routes)/servers/[serverId]/conversations/[memberId]` no longer reads Prisma directly from the web shell
+- invite validation under `src/app/(invite)/(routes)/invite/[inviteCode]` no longer reads Prisma directly from the web shell
 
 Remaining route-family candidates:
-- invite validation under `src/app/(invite)/(routes)/invite/[inviteCode]`
+- none currently known in `src/app`
+- `src/lib/shared/utils/db.ts` remains as an unused web-shell Prisma runtime helper and should be removed after a final caller sweep
 
 ## In Scope
 
@@ -80,12 +82,12 @@ Remaining route-family candidates:
 
 The next implementation slice should be:
 
-- remove direct Prisma reads from the invite validation route-family under `src/app/(invite)/(routes)/invite/[inviteCode]`
-- move public invite-code validation behind a backend-owned invite validation API contract
-- preserve invite page rendering, browser auto-join mode, and current join flow semantics
+- run a final caller sweep for `src/lib/shared/utils/db.ts`
+- remove the unused web-shell Prisma runtime helper if no callers remain
+- confirm no `src/app/*`, `packages/sdk`, or browser/shared UI code imports generated Prisma runtime/types
 - keep Prisma schema, migrations, datasource provider, and runtime DB behavior unchanged
 
-Invite validation is a public-route segment, so it must not accidentally require authenticated backend headers.
+This is a closeout slice for `Wave 28 / PRISMA_BOUNDARY_PREP`, not the provider switch.
 
 ## References
 
