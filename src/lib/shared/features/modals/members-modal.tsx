@@ -6,7 +6,7 @@ import { Check, GavelIcon, Loader2, MoreVertical, Shield, ShieldAlert, ShieldChe
 import { TServerMembersProfiles } from '@/types'
 import { ScrollArea } from '@/lib/shared/ui/scroll-area'
 import { UserAvatar } from '@/lib/shared/features/user-avatar'
-import { MemberRole } from '@prisma/client'
+import { MemberRole } from '@app-core/contracts'
 import { ReactNode, useState } from 'react'
 import {
   DropdownMenu,

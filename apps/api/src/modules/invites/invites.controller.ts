@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 
 import { CurrentProfileId } from '../auth/decorators/current-profile-id.decorator';
 import { RequireAuthGuard } from '../auth/guards/require-auth.guard';
@@ -11,14 +11,19 @@ type JoinInviteBody = {
 };
 
 @Controller('invites')
-@UseGuards(RequireAuthGuard)
 export class InvitesController {
   constructor(
     private readonly invitesService: InvitesService,
     private readonly realtimeGateway: RealtimeGateway,
   ) {}
 
+  @Get('validate/:inviteCode')
+  validateInvite(@Param('inviteCode') inviteCode: string) {
+    return this.invitesService.validateInvite(inviteCode);
+  }
+
   @Post('join')
+  @UseGuards(RequireAuthGuard)
   async joinInvite(
     @CurrentProfileId() profileId: string,
     @Body() body: JoinInviteBody,

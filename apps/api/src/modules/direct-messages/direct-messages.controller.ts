@@ -31,6 +31,15 @@ export class DirectMessagesController {
     return this.directMessagesService.getMessages(profileId, conversationId, cursor);
   }
 
+  @Post('conversations/:memberId')
+  getOrCreateConversation(
+    @CurrentProfileId() profileId: string,
+    @Param('memberId') memberId: string,
+    @Query('serverId') serverId: string | undefined,
+  ) {
+    return this.directMessagesService.getOrCreateConversation(profileId, serverId, memberId);
+  }
+
   @Post()
   @HttpCode(HttpStatus.OK)
   async createMessage(

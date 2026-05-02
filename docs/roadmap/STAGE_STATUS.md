@@ -34,6 +34,7 @@ Current wave order:
 - `Wave 25` = `STORAGE_STAGED_UPLOAD_SWEEPER`
 - `Wave 26` = `WEB_RUNTIME_API_EXTRACTION`
 - `Wave 27` = `VENDOR_REPO_CLEANUP` (done)
+- `Wave 28` = `PRISMA_BOUNDARY_PREP`
 
 ## Status by Stage
 
@@ -197,15 +198,41 @@ Remaining:
   - decide whether public URL compatibility stays temporary or moves toward stronger metadata/file-key ownership later
   - decide whether the current `backend-redirect` contract later evolves into `signed-url` or `proxy-stream` access for stronger backend ownership
 
+### Stage 6. MySQL -> Postgres
+
+Status: `active`
+
+Current wave:
+- `Wave 28 / PRISMA_BOUNDARY_PREP`
+
+Current intent:
+- prepare Prisma and data-contract boundaries before changing the database provider
+- remove generated Prisma type leakage from `packages/sdk` and browser/shared UI contracts
+- inventory and reduce temporary `Next` server-side direct Prisma reads in narrow route-family slices
+- keep `DATABASE_URL`, Prisma datasource provider, schema provider, migrations, and runtime DB behavior unchanged until boundary cleanup is complete
+
+Done:
+- `Prisma boundary inventory / pre-Stage6 preparation` exists in `docs/delegation/briefs/SEGMENT_BRIEF_055_PRISMA_BOUNDARY_INVENTORY.md`
+- generated Prisma model/enum type leakage has been removed from `packages/sdk`
+- generated Prisma model/enum type leakage has been removed from browser/shared UI
+- the setup route no longer uses the web-shell Prisma runtime for initial server routing
+- server routing guards under `src/app/(main)/(routes)/servers/[serverId]` no longer use the web-shell Prisma runtime
+- conversation bootstrap under `src/app/(main)/(routes)/servers/[serverId]/conversations/[memberId]` no longer uses the web-shell Prisma runtime
+- invite validation under `src/app/(invite)/(routes)/invite/[inviteCode]` no longer uses the web-shell Prisma runtime
+- the final Wave 28 caller sweep found no remaining `src/lib/shared/utils/db.ts` callers, and the unused web-shell Prisma helper has been removed
+
+Remaining:
+- separate provider-switch/data-migration plan after boundary cleanup
+
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. commit/review the completed `Wave 27 / VENDOR_REPO_CLEANUP` slice
-2. prepare the next roadmap step as a separate controlled stage
+1. close `Wave 28 / PRISMA_BOUNDARY_PREP`
+2. prepare a separate Stage 6 provider-switch/data-migration plan
 3. keep `Stage 5A` direct-backend runtime assumptions intact
 4. do not reintroduce `Next` API/proxy routes under `src/app/api/*` or `src/pages/api/socket/*`
-5. do not mix vendor cleanup follow-ups with `Postgres` migration or media rewrite
+5. do not change `DATABASE_URL`, the Prisma datasource provider, or runtime DB behavior outside a dedicated provider-switch segment
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import axios from 'axios'
-import { Profile } from '@prisma/client'
+import type { ProfileDto } from '@app-core/contracts'
 import { privateApiInstance } from '../api/http-client'
 
 type BackendAuthSession = {
-  profile: Profile | null
+  profile: ProfileDto | null
 }
 
 export const useGetProfile = () => {

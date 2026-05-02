@@ -1,4 +1,4 @@
-import { MemberRole } from '@prisma/client'
+import { MemberRole } from '@app-core/contracts'
 import { ShieldAlert, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/shared/utils/utils'
 

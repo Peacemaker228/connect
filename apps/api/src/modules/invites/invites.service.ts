@@ -7,6 +7,27 @@ import { PrismaService } from '../../common/database/prisma.service';
 export class InvitesService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async validateInvite(inviteCode: string | undefined) {
+    if (!inviteCode) {
+      return {
+        isValidInvite: false,
+      };
+    }
+
+    const server = await this.prisma.server.findUnique({
+      where: {
+        inviteCode,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    return {
+      isValidInvite: Boolean(server),
+    };
+  }
+
   async joinInvite(profileId: string | undefined, inviteCode: string | undefined) {
     const resolvedProfileId = this.requireProfileId(profileId);
 

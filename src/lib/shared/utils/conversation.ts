@@ -1,66 +1,56 @@
-import { db } from '@/lib/shared/utils/db'
+import type { ConversationWithMembersDto } from '@app-core/contracts'
+import type { BackendAuthHeaders } from '@/lib/shared/utils/backend-auth-context'
+import { readBackendApiResponse, requestBackendApi } from '@/lib/shared/utils/backend-api'
 
-export const getOrCreateConversation = async (memberOneId: string, memberTwoId: string) => {
-  let conversation =
-    (await findConversation(memberOneId, memberTwoId)) || (await findConversation(memberTwoId, memberOneId))
-
-  if (!conversation) {
-    conversation = await createNewConversation(memberOneId, memberTwoId)
-  }
-
-  return conversation
+type GetOrCreateConversationParams = {
+  authHeaders: BackendAuthHeaders
+  memberId: string
+  serverId: string
 }
 
-const findConversation = async (memberOneId: string, memberTwoId: string) => {
-  try {
-    return await db.conversation.findFirst({
-      where: {
-        AND: [
-          {
-            memberOneId,
-            memberTwoId,
-          },
-        ],
-      },
-      include: {
-        memberOne: {
-          include: {
-            profile: true,
-          },
-        },
-        memberTwo: {
-          include: {
-            profile: true,
-          },
-        },
-      },
-    })
-  } catch {
-    return null
-  }
-}
+export type ConversationBootstrapResult =
+  | {
+      status: 'ok'
+      conversation: ConversationWithMembersDto
+    }
+  | {
+      status: 'unauthorized'
+    }
+  | {
+      status: 'not-found'
+    }
 
-const createNewConversation = async (memberOneId: string, memberTwoId: string) => {
-  try {
-    return await db.conversation.create({
-      data: {
-        memberOneId,
-        memberTwoId,
-      },
-      include: {
-        memberOne: {
-          include: {
-            profile: true,
-          },
-        },
-        memberTwo: {
-          include: {
-            profile: true,
-          },
-        },
-      },
-    })
-  } catch {
-    return null
+export const getOrCreateConversation = async ({
+  authHeaders,
+  memberId,
+  serverId,
+}: GetOrCreateConversationParams): Promise<ConversationBootstrapResult> => {
+  const response = await requestBackendApi({
+    path: `/api/direct-messages/conversations/${memberId}?serverId=${encodeURIComponent(serverId)}`,
+    method: 'POST',
+    headers: authHeaders,
+  })
+
+  if (response.status === 401) {
+    return { status: 'unauthorized' }
+  }
+
+  if (response.status === 404) {
+    return { status: 'not-found' }
+  }
+
+  if (!response.ok) {
+    throw new Error(`Failed to get conversation bootstrap snapshot: ${response.status}`)
+  }
+
+  const parsedResponse = await readBackendApiResponse(response)
+
+  if (!parsedResponse.isJson) {
+    throw new Error(`Unexpected conversation bootstrap response status: ${parsedResponse.status}`)
+  }
+
+  return {
+    status: 'ok',
+    conversation: parsedResponse.data as ConversationWithMembersDto,
   }
 }

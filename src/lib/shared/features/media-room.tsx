@@ -11,7 +11,7 @@ import { toast } from '@/lib/shared/utils/hooks/use-toast'
 import { useGetProfile } from '@sdk/queries/profile'
 import { getLiveKitToken } from '@sdk/actions/media'
 import { useGetServer } from '@sdk/queries/server'
-import { ChannelType } from '@prisma/client'
+import { ChannelType } from '@app-core/contracts'
 import { EGeneral } from '@/types'
 import { useRouter } from 'next/navigation'
 

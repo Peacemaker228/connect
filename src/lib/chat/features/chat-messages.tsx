@@ -1,6 +1,6 @@
 'use client'
 
-import { Member, Message, Profile } from '@prisma/client'
+import type { ChatMessageDto, MemberDto } from '@app-core/contracts'
 import { getChatMessagesRealtimeKey, getChatMessagesUpdateRealtimeKey } from '@app-core/contracts/message-slice-realtime'
 import { ElementRef, FC, Fragment, useRef } from 'react'
 import { TChannelConversation } from '@/types'
@@ -13,15 +13,11 @@ import { useChatSocket } from '@/lib/shared/data-access/chat/use-chat-socket'
 import { useChatQuery } from '@/lib/shared/data-access/chat/use-chat-query'
 import { useChatScroll } from '@/lib/shared/utils/hooks/use-chat-scroll'
 
-type MessageWithMemberWithProfile = Message & {
-  member: Member & {
-    profile: Profile
-  }
-}
+type MessageWithMemberWithProfile = ChatMessageDto
 
 interface IChatMessagesProps {
   name: string
-  member: Member
+  member: MemberDto
   chatId: string
   messageApiUrl: string
   messageQuery: Record<string, string>

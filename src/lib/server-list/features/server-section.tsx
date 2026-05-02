@@ -1,6 +1,6 @@
 'use client'
 
-import { ChannelType, MemberRole } from '@prisma/client'
+import type { ChannelType, MemberRole } from '@app-core/contracts'
 import { TSearchType, TServerMembersProfiles } from '@/types'
 import { FC } from 'react'
 import { ActionTooltip } from '@/lib/shared/features/action-tooltip'

@@ -1,9 +1,8 @@
 import React, { FC, PropsWithChildren } from 'react'
-import { currentProfile } from '@/lib/shared/utils/current-profile'
-import { db } from '@/lib/shared/utils/db'
 import { redirect } from 'next/navigation'
 import { ERoutes } from '@app-core/routing/routes'
 import { ServerSidebar } from '@/lib/server-list/features'
+import { getServerRouteGuardAuth, getServerRouteGuardServer } from '@/lib/shared/utils/server-route-guard'
 
 interface IServerIdLayoutProps {
   params: Promise<{ serverId: string }>
@@ -11,24 +10,19 @@ interface IServerIdLayoutProps {
 
 const ServerIdLayout: FC<PropsWithChildren<IServerIdLayoutProps>> = async ({ children, params }) => {
   const { serverId } = await params
-  const profile = await currentProfile()
+  const auth = await getServerRouteGuardAuth()
 
-  if (!profile) {
+  if (!auth) {
     return redirect(ERoutes.SIGN_IN)
   }
 
-  const server = await db.server.findUnique({
-    where: {
-      id: serverId,
-      members: {
-        some: {
-          profileId: profile.id,
-        },
-      },
-    },
-  })
+  const serverResult = await getServerRouteGuardServer(serverId, auth.headers)
 
-  if (!server) return redirect(ERoutes.MAIN_PAGE)
+  if (serverResult.status === 'unauthorized') {
+    return redirect(ERoutes.SIGN_IN)
+  }
+
+  if (serverResult.status !== 'ok') return redirect(ERoutes.MAIN_PAGE)
 
   return (
     <div className="h-full">

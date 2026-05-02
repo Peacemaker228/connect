@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { EGeneral } from '@/types'
-import { ChannelType } from '@prisma/client'
+import { ChannelType } from '@app-core/contracts'
 
 export const channelFormSchema = z.object({
   name: z

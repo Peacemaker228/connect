@@ -1,4 +1,4 @@
-import { Profile } from '@prisma/client'
+import type { ProfileDto } from '@app-core/contracts'
 
 import { readBackendApiResponse, requestBackendApi } from '@/lib/shared/utils/backend-api'
 
@@ -6,7 +6,7 @@ type BackendAuthSession = {
   isAuthenticated: boolean
   strategy: 'anonymous' | 'profile-header' | 'access-token'
   sessionId: string | null
-  profile: Profile | null
+  profile: ProfileDto | null
   user: {
     id: string
     displayName: string | null

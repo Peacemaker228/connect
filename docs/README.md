@@ -33,6 +33,7 @@
 - [waves/STORAGE_STAGED_UPLOAD_SWEEPER.md](./waves/STORAGE_STAGED_UPLOAD_SWEEPER.md) - Wave 25, closed narrow staged-upload cleanup wave that closes `Stage 5`
 - [waves/WEB_RUNTIME_API_EXTRACTION.md](./waves/WEB_RUNTIME_API_EXTRACTION.md) - Wave 26, closed web runtime extraction wave for `Stage 5A`
 - [waves/VENDOR_REPO_CLEANUP.md](./waves/VENDOR_REPO_CLEANUP.md) - Wave 27, closed repo-level cleanup for dead `Clerk` and `UploadThing` leftovers
+- [waves/PRISMA_BOUNDARY_PREP.md](./waves/PRISMA_BOUNDARY_PREP.md) - Wave 28, active Prisma boundary-prep wave for `Stage 6`
 
 ## Wave Sequence
 
@@ -63,6 +64,7 @@
 25. Wave 25 - `STORAGE_STAGED_UPLOAD_SWEEPER`
 26. Wave 26 - `WEB_RUNTIME_API_EXTRACTION`
 27. Wave 27 - `VENDOR_REPO_CLEANUP`
+28. Wave 28 - `PRISMA_BOUNDARY_PREP`
 
 ## Delegation
 
@@ -120,6 +122,7 @@
 - [delegation/briefs/SEGMENT_BRIEF_051_APP_API_AUTH_PROFILE_CLEANUP.md](./delegation/briefs/SEGMENT_BRIEF_051_APP_API_AUTH_PROFILE_CLEANUP.md)
 - [delegation/briefs/SEGMENT_BRIEF_052_APP_API_SERVER_UPLOAD_CLEANUP.md](./delegation/briefs/SEGMENT_BRIEF_052_APP_API_SERVER_UPLOAD_CLEANUP.md)
 - [delegation/briefs/SEGMENT_BRIEF_053_STORAGE_ACCESS_DIRECT_BACKEND_CLEANUP.md](./delegation/briefs/SEGMENT_BRIEF_053_STORAGE_ACCESS_DIRECT_BACKEND_CLEANUP.md)
+- [delegation/briefs/SEGMENT_BRIEF_055_PRISMA_BOUNDARY_INVENTORY.md](./delegation/briefs/SEGMENT_BRIEF_055_PRISMA_BOUNDARY_INVENTORY.md)
 
 ## Recommended Reading Order
 

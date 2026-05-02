@@ -1,4 +1,4 @@
-import { ChannelType } from '@prisma/client'
+import { ChannelType } from '@app-core/contracts'
 
 const ns = {
   langToggle: 'Toggle Language',

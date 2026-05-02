@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import { ChannelType, Server } from '@prisma/client'
+import type { ChannelType, ServerDto } from '@app-core/contracts'
 import { privateApiInstance } from '../api/http-client'
 
 export type ChannelMutationPayload = {
@@ -30,7 +30,7 @@ export const useCreateChannel = () => {
   return useMutation({
     mutationFn: ({ serverId, payload }: ChannelMutationParams & { payload: ChannelMutationPayload }) =>
       privateApiInstance
-        .post<Server>(createServerScopedPath('/api/channels', serverId), payload)
+        .post<ServerDto>(createServerScopedPath('/api/channels', serverId), payload)
         .then((res) => res.data),
   })
 }
@@ -39,7 +39,7 @@ export const useUpdateChannel = () => {
   return useMutation({
     mutationFn: ({ serverId, channelId, payload }: UpdateChannelMutationParams) =>
       privateApiInstance
-        .patch<Server>(createServerScopedPath(`/api/channels/${channelId}`, serverId), payload)
+        .patch<ServerDto>(createServerScopedPath(`/api/channels/${channelId}`, serverId), payload)
         .then((res) => res.data),
   })
 }
@@ -48,7 +48,7 @@ export const useDeleteChannel = () => {
   return useMutation({
     mutationFn: ({ serverId, channelId }: DeleteChannelMutationParams) =>
       privateApiInstance
-        .delete<Server>(createServerScopedPath(`/api/channels/${channelId}`, serverId))
+        .delete<ServerDto>(createServerScopedPath(`/api/channels/${channelId}`, serverId))
         .then((res) => res.data),
   })
 }

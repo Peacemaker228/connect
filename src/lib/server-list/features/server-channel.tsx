@@ -1,6 +1,6 @@
 'use client'
 
-import { Channel, ChannelType, MemberRole, Server } from '@prisma/client'
+import { ChannelType, type ChannelDto, type MemberRole, type ServerDto } from '@app-core/contracts'
 import React, { FC } from 'react'
 import { Edit, Hash, Lock, Mic, Trash, Video } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
@@ -12,8 +12,8 @@ import { useTranslations } from 'next-intl'
 import { TModalType, useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 
 interface IServerChannelProps {
-  channel: Channel
-  server: Server
+  channel: ChannelDto
+  server: ServerDto
   role?: MemberRole
 }
 

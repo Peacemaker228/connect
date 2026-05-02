@@ -1,16 +1,18 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Member, MemberRole, Profile, Server } from '@prisma/client'
-import { TServerMembersProfiles } from '@/types'
+import type {
+  MemberRole,
+  ServerDto,
+  ServerMembersProfilesDto,
+  ServerMembershipSnapshotDto,
+} from '@app-core/contracts'
 import { privateApiInstance } from '../api/http-client'
 
-export type ServerMembershipSnapshot = Server & {
-  members: (Member & { profile: Profile })[]
-}
+export type ServerMembershipSnapshot = ServerMembershipSnapshotDto
 
 type MemberMutationParams = {
   serverId: string
   memberId: string
-  currentServer?: TServerMembersProfiles
+  currentServer?: ServerMembersProfilesDto
 }
 
 type UpdateMemberRoleParams = MemberMutationParams & {
@@ -25,8 +27,8 @@ const createServerScopedPath = (path: string, serverId: string) => {
 
 const mergeMembershipSnapshot = (
   updatedServer: ServerMembershipSnapshot,
-  currentServer?: TServerMembersProfiles,
-): TServerMembersProfiles => {
+  currentServer?: ServerMembersProfilesDto,
+): ServerMembersProfilesDto => {
   return {
     ...currentServer,
     ...updatedServer,
@@ -76,10 +78,10 @@ export const useLeaveServer = () => {
 
   return useMutation({
     mutationFn: async (serverId: string) => {
-      const leftServer = await privateApiInstance.patch<Server>(`/api/servers/${serverId}/leave`).then((res) => res.data)
+      const leftServer = await privateApiInstance.patch<ServerDto>(`/api/servers/${serverId}/leave`).then((res) => res.data)
       let nextServerId: string | undefined
 
-      queryClient.setQueryData<Server[]>(['servers'], (servers = []) => {
+      queryClient.setQueryData<ServerDto[]>(['servers'], (servers = []) => {
         const nextServers = servers.filter((server) => server.id !== serverId)
         nextServerId = nextServers[0]?.id
 

@@ -1,12 +1,8 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { Member, Message, Profile } from '@prisma/client'
+import type { ChatMessageDto } from '@app-core/contracts'
 import { privateApiInstance } from '../api/http-client'
 
-export type ChatMessage = Message & {
-  member: Member & {
-    profile: Profile
-  }
-}
+export type ChatMessage = ChatMessageDto
 
 export type ChatMessagesPage = {
   items: ChatMessage[]
