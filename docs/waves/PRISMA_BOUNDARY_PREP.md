@@ -22,7 +22,8 @@ Mapping:
 
 - `apps/api` remains the backend owner for active domain/runtime data access
 - `PrismaService` in `apps/api` can continue owning backend Prisma access
-- `src/lib/shared/utils/db.ts` and direct `src/app/*` Prisma reads are temporary web-shell server-side reads
+- direct `src/app/*` Prisma reads have been removed from the web shell
+- the old web-shell Prisma helper `src/lib/shared/utils/db.ts` has been removed after a clean caller sweep
 - `packages/sdk` and browser/shared UI should not keep depending on generated Prisma model types as long-term contracts
 - no segment in this wave should change `DATABASE_URL`, Prisma datasource provider, schema provider, production DB, or migration cutover behavior
 
@@ -34,9 +35,9 @@ Known Prisma boundary findings are documented in:
 
 Main findings:
 - backend-owned Prisma usage is already concentrated in `apps/api` services through `PrismaService`
-- `src/lib/shared/utils/db.ts` still creates a second Prisma runtime for the `Next` web shell
-- several `src/app/*` server components still read directly from Prisma for setup, invite validation, server routing, channel/member validation, and conversation bootstrap
-- `packages/sdk` and client/shared UI still import generated Prisma model/enum types from `@prisma/client`
+- the former web-shell Prisma helper `src/lib/shared/utils/db.ts` has been removed
+- the previously direct `src/app/*` server component reads now use backend-owned API contracts/helpers
+- `packages/sdk` and client/shared UI no longer import generated Prisma model/enum types from `@prisma/client`
 
 ## Current Progress
 
@@ -47,10 +48,11 @@ Done:
 - server routing guards under `src/app/(main)/(routes)/servers/[serverId]` no longer read Prisma directly from the web shell
 - conversation bootstrap under `src/app/(main)/(routes)/servers/[serverId]/conversations/[memberId]` no longer reads Prisma directly from the web shell
 - invite validation under `src/app/(invite)/(routes)/invite/[inviteCode]` no longer reads Prisma directly from the web shell
+- final caller sweep found no remaining `src/lib/shared/utils/db.ts` callers, and the unused helper was removed
 
 Remaining route-family candidates:
 - none currently known in `src/app`
-- `src/lib/shared/utils/db.ts` remains as an unused web-shell Prisma runtime helper and should be removed after a final caller sweep
+- none currently known in web/shared runtime code
 
 ## In Scope
 
@@ -78,16 +80,17 @@ Remaining route-family candidates:
 - preserve direct-backend runtime assumptions from `Stage 5A`
 - keep backend Prisma ownership in `apps/api`
 
-## Next Correct Slice
+## Closeout Result
 
-The next implementation slice should be:
+`Wave 28 / PRISMA_BOUNDARY_PREP` is complete as a boundary-prep wave:
 
-- run a final caller sweep for `src/lib/shared/utils/db.ts`
-- remove the unused web-shell Prisma runtime helper if no callers remain
-- confirm no `src/app/*`, `packages/sdk`, or browser/shared UI code imports generated Prisma runtime/types
-- keep Prisma schema, migrations, datasource provider, and runtime DB behavior unchanged
+- `packages/sdk` is free of generated Prisma client imports
+- browser/shared UI is free of generated Prisma client imports
+- `src/app/*` no longer performs direct Prisma reads through the web-shell helper
+- `src/lib/shared/utils/db.ts` has been removed
+- backend-owned Prisma usage remains in `apps/api`
 
-This is a closeout slice for `Wave 28 / PRISMA_BOUNDARY_PREP`, not the provider switch.
+The next Stage 6 work should be a separate provider-switch/data-migration plan. This wave does not change Prisma schema, migrations, datasource provider, or `DATABASE_URL`.
 
 ## References
 

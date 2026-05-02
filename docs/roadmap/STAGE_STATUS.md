@@ -219,20 +219,20 @@ Done:
 - server routing guards under `src/app/(main)/(routes)/servers/[serverId]` no longer use the web-shell Prisma runtime
 - conversation bootstrap under `src/app/(main)/(routes)/servers/[serverId]/conversations/[memberId]` no longer uses the web-shell Prisma runtime
 - invite validation under `src/app/(invite)/(routes)/invite/[inviteCode]` no longer uses the web-shell Prisma runtime
+- the final Wave 28 caller sweep found no remaining `src/lib/shared/utils/db.ts` callers, and the unused web-shell Prisma helper has been removed
 
 Remaining:
-- final caller sweep and removal of unused `src/lib/shared/utils/db.ts`
 - separate provider-switch/data-migration plan after boundary cleanup
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. continue `Wave 28 / PRISMA_BOUNDARY_PREP`
-2. run the final Prisma boundary closeout sweep and remove unused `src/lib/shared/utils/db.ts` if it has no callers
+1. close `Wave 28 / PRISMA_BOUNDARY_PREP`
+2. prepare a separate Stage 6 provider-switch/data-migration plan
 3. keep `Stage 5A` direct-backend runtime assumptions intact
 4. do not reintroduce `Next` API/proxy routes under `src/app/api/*` or `src/pages/api/socket/*`
-5. do not change `DATABASE_URL`, the Prisma datasource provider, or runtime DB behavior until the boundary cleanup segments are complete
+5. do not change `DATABASE_URL`, the Prisma datasource provider, or runtime DB behavior outside a dedicated provider-switch segment
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
