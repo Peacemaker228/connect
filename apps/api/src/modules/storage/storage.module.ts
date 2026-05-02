@@ -24,9 +24,7 @@ import { StorageService } from './storage.service';
           return s3CompatibleStorageProvider;
         }
 
-        throw new Error(
-          `Unsupported storage provider: ${activeProvider}. The UploadThing compatibility provider is disabled; use s3-compatible storage.`,
-        );
+        throw new Error(`Unsupported storage provider: ${activeProvider}. Use s3-compatible storage.`);
       },
       inject: [ConfigService, S3CompatibleStorageProvider],
     },

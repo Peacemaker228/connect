@@ -33,7 +33,7 @@ Current wave order:
 - `Wave 24` = `STORAGE_ACCESS_POLICY_FOUNDATION`
 - `Wave 25` = `STORAGE_STAGED_UPLOAD_SWEEPER`
 - `Wave 26` = `WEB_RUNTIME_API_EXTRACTION`
-- `Wave 27` = `VENDOR_REPO_CLEANUP` (mandatory next cleanup after Stage 5A closeout)
+- `Wave 27` = `VENDOR_REPO_CLEANUP` (done)
 
 ## Status by Stage
 
@@ -144,6 +144,7 @@ Done:
 - app-shell auth provider and middleware now run on backend-owned auth flow instead of `Clerk`
 - residual `Clerk` imports are removed from `server-upload`, `uploadthing`, and the legacy `ensure-profile` helper path
 - repo-level `Clerk` leftovers are removed from package/build/electron glue: the dead `@clerk/nextjs` dependency is gone, build env no longer carries `CLERK_*`, and desktop bridge naming is auth-neutral
+- legacy `CLERK` auth identity provider values are removed through a separate destructive Prisma cleanup migration before the schema enum is narrowed; `PASSWORD` is now the only auth identity provider in the current data model
 
 Remaining:
 - deferred late-roadmap auth product work only:
@@ -200,10 +201,11 @@ Remaining:
 
 The next correct step by plan is:
 
-1. start mandatory `Wave 27 / VENDOR_REPO_CLEANUP`
-2. keep `Stage 5A` direct-backend runtime assumptions intact while cleaning repo-level vendor leftovers
-3. do not reintroduce `Next` API/proxy routes under `src/app/api/*` or `src/pages/api/socket/*`
-4. do not mix this with `Postgres` migration or media rewrite
+1. commit/review the completed `Wave 27 / VENDOR_REPO_CLEANUP` slice
+2. prepare the next roadmap step as a separate controlled stage
+3. keep `Stage 5A` direct-backend runtime assumptions intact
+4. do not reintroduce `Next` API/proxy routes under `src/app/api/*` or `src/pages/api/socket/*`
+5. do not mix vendor cleanup follow-ups with `Postgres` migration or media rewrite
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
@@ -240,5 +242,6 @@ Current `Wave 26` progress:
 Completed side cleanup:
 - `Wave 22 / CLERK_REPO_CLEANUP` is done and should stay repo hygiene only
 
-Mandatory next cleanup:
-- `Wave 27 / VENDOR_REPO_CLEANUP` should run next to remove dead repo-level vendor leftovers without changing the stable `Stage 5A` runtime path
+Completed cleanup:
+- `Wave 27 / VENDOR_REPO_CLEANUP` removed remaining dead repo-level vendor leftovers without changing the stable `Stage 5A` runtime path
+- the narrow Prisma auth-provider enum cleanup removed the legacy `CLERK` provider value after backend-owned password auth became the only active identity provider
