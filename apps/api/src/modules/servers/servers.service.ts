@@ -92,15 +92,20 @@ export class ServersService {
   }
 
   async getServer(profileId: string | undefined, serverId: string) {
-    this.requireProfileId(profileId)
+    const resolvedProfileId = this.requireProfileId(profileId)
 
     if (!serverId) {
       throw new HttpException('Server ID Missing', HttpStatus.BAD_REQUEST)
     }
 
-    const server = await this.prisma.server.findUnique({
+    const server = await this.prisma.server.findFirst({
       where: {
         id: serverId,
+        members: {
+          some: {
+            profileId: resolvedProfileId,
+          },
+        },
       },
       include: {
         channels: {

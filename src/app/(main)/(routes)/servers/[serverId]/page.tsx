@@ -1,49 +1,34 @@
 import { FC } from 'react'
 import { redirect } from 'next/navigation'
 import { ERoutes } from '@app-core/routing/routes'
-import { db } from '@/lib/shared/utils/db'
 import { EGeneral } from '@/types'
-import { currentProfile } from '@/lib/shared/utils/current-profile'
+import { getServerRouteGuardAuth, getServerRouteGuardServer } from '@/lib/shared/utils/server-route-guard'
 
 interface IServerIdPageProps {
   params: Promise<{ serverId: string }>
 }
 
 const ServerIdPage: FC<IServerIdPageProps> = async ({ params }) => {
-  const profile = await currentProfile()
+  const auth = await getServerRouteGuardAuth()
 
-  if (!profile) {
+  if (!auth) {
     return redirect(ERoutes.SIGN_IN)
   }
 
   const { serverId } = await params
 
-  const server = await db.server.findUnique({
-    where: {
-      id: serverId,
-      members: {
-        some: {
-          profileId: profile.id,
-        },
-      },
-    },
-    include: {
-      channels: {
-        where: {
-          name: EGeneral.GENERAL,
-        },
-        orderBy: {
-          createdAt: 'asc',
-        },
-      },
-    },
-  })
+  const serverResult = await getServerRouteGuardServer(serverId, auth.headers)
 
-  if (!server) {
+  if (serverResult.status === 'unauthorized') {
+    return redirect(ERoutes.SIGN_IN)
+  }
+
+  if (serverResult.status !== 'ok') {
     return redirect(ERoutes.MAIN_PAGE)
   }
 
-  const initialChannel = server?.channels[0]
+  const { server } = serverResult
+  const initialChannel = server.channels.find((channel) => channel.name === EGeneral.GENERAL)
 
   if (!initialChannel || initialChannel?.name !== EGeneral.GENERAL) {
     return redirect(ERoutes.MAIN_PAGE)

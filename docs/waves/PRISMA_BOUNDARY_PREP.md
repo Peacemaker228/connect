@@ -44,11 +44,11 @@ Done:
 - `packages/sdk` no longer imports generated Prisma model/enum types from `@prisma/client`
 - browser/shared UI no longer imports generated Prisma model/enum types from `@prisma/client`
 - the setup route no longer reads Prisma directly from the web shell and now uses the backend-owned servers API for initial routing
+- server routing guards under `src/app/(main)/(routes)/servers/[serverId]` no longer read Prisma directly from the web shell
 
 Remaining route-family candidates:
-- server routing guards under `src/app/(main)/(routes)/servers/[serverId]`
-- invite validation under `src/app/(invite)/(routes)/invite/[inviteCode]`
 - conversation bootstrap under `src/app/(main)/(routes)/servers/[serverId]/conversations/[memberId]`
+- invite validation under `src/app/(invite)/(routes)/invite/[inviteCode]`
 
 ## In Scope
 
@@ -80,9 +80,9 @@ Remaining route-family candidates:
 
 The next implementation slice should be:
 
-- remove direct Prisma reads from the server routing guard route-family under `src/app/(main)/(routes)/servers/[serverId]`
-- use backend-owned API contracts/helpers for server, channel, and member validation
-- preserve membership checks and redirect behavior; do not weaken `GET /api/servers/:serverId` access semantics
+- remove direct Prisma reads from the conversation bootstrap route-family under `src/app/(main)/(routes)/servers/[serverId]/conversations/[memberId]`
+- move get-or-create conversation ownership behind a backend-owned direct-messages/conversation API contract
+- preserve member/server validation, redirect behavior, direct-message query params, and media leave behavior
 - keep Prisma schema, migrations, datasource provider, and runtime DB behavior unchanged
 
 Invite validation should remain a separate public-route segment because it has different auth semantics and may need a dedicated public backend validation endpoint.
