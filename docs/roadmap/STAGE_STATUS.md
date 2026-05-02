@@ -35,6 +35,7 @@ Current wave order:
 - `Wave 26` = `WEB_RUNTIME_API_EXTRACTION`
 - `Wave 27` = `VENDOR_REPO_CLEANUP` (done)
 - `Wave 28` = `PRISMA_BOUNDARY_PREP`
+- `Wave 29` = `POSTGRES_PROVIDER_SWITCH_PLAN`
 
 ## Status by Stage
 
@@ -203,13 +204,13 @@ Remaining:
 Status: `active`
 
 Current wave:
-- `Wave 28 / PRISMA_BOUNDARY_PREP`
+- `Wave 29 / POSTGRES_PROVIDER_SWITCH_PLAN`
 
 Current intent:
-- prepare Prisma and data-contract boundaries before changing the database provider
-- remove generated Prisma type leakage from `packages/sdk` and browser/shared UI contracts
-- inventory and reduce temporary `Next` server-side direct Prisma reads in narrow route-family slices
-- keep `DATABASE_URL`, Prisma datasource provider, schema provider, migrations, and runtime DB behavior unchanged until boundary cleanup is complete
+- create the separate Stage 6 provider-switch/data-migration plan after `Wave 28`
+- define future implementation segments for schema/provider diff audit, local Postgres env, migration strategy, data export/import, staging validation, rollback, and cutover
+- keep this as a planning wave, not the provider switch itself
+- keep `DATABASE_URL`, Prisma datasource provider, `prisma/schema.prisma`, migrations, and runtime DB behavior unchanged during this planning wave
 
 Done:
 - `Prisma boundary inventory / pre-Stage6 preparation` exists in `docs/delegation/briefs/SEGMENT_BRIEF_055_PRISMA_BOUNDARY_INVENTORY.md`
@@ -220,19 +221,22 @@ Done:
 - conversation bootstrap under `src/app/(main)/(routes)/servers/[serverId]/conversations/[memberId]` no longer uses the web-shell Prisma runtime
 - invite validation under `src/app/(invite)/(routes)/invite/[inviteCode]` no longer uses the web-shell Prisma runtime
 - the final Wave 28 caller sweep found no remaining `src/lib/shared/utils/db.ts` callers, and the unused web-shell Prisma helper has been removed
+- `Wave 28 / PRISMA_BOUNDARY_PREP` is closed as boundary-prep only and did not change Prisma schema, migrations, datasource provider, `DATABASE_URL`, or runtime DB behavior
+- `Wave 29 / POSTGRES_PROVIDER_SWITCH_PLAN` exists as the Stage 6 planning wave for the future provider switch/data migration
 
 Remaining:
-- separate provider-switch/data-migration plan after boundary cleanup
+- no provider switch has been performed yet
+- first implementation segment after planning: schema/provider diff audit
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. close `Wave 28 / PRISMA_BOUNDARY_PREP`
-2. prepare a separate Stage 6 provider-switch/data-migration plan
+1. start the first implementation segment after planning: schema/provider diff audit
+2. keep the audit read-only until a dedicated provider-switch segment exists
 3. keep `Stage 5A` direct-backend runtime assumptions intact
 4. do not reintroduce `Next` API/proxy routes under `src/app/api/*` or `src/pages/api/socket/*`
-5. do not change `DATABASE_URL`, the Prisma datasource provider, or runtime DB behavior outside a dedicated provider-switch segment
+5. do not change `DATABASE_URL`, the Prisma datasource provider, `prisma/schema.prisma`, migrations, or runtime DB behavior during the audit segment
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
