@@ -71,6 +71,64 @@ export class DirectMessagesService {
     };
   }
 
+  async getOrCreateConversation(
+    profileId: string | undefined,
+    serverId: string | undefined,
+    memberId: string | undefined,
+  ) {
+    const resolvedProfileId = this.requireProfileId(profileId);
+
+    if (!serverId) {
+      throw new HttpException('Server ID Missing', HttpStatus.BAD_REQUEST);
+    }
+
+    if (!memberId) {
+      throw new HttpException('Member ID Missing', HttpStatus.BAD_REQUEST);
+    }
+
+    const currentMember = await this.prisma.member.findFirst({
+      where: {
+        serverId,
+        profileId: resolvedProfileId,
+      },
+      include: {
+        profile: true,
+      },
+    });
+
+    if (!currentMember) {
+      throw new HttpException('Current Member Not Found', HttpStatus.NOT_FOUND);
+    }
+
+    const targetMember = await this.prisma.member.findFirst({
+      where: {
+        id: memberId,
+        serverId,
+      },
+      include: {
+        profile: true,
+      },
+    });
+
+    if (!targetMember) {
+      throw new HttpException('Member Not Found', HttpStatus.NOT_FOUND);
+    }
+
+    const existingConversation = await this.findConversation(currentMember.id, targetMember.id);
+
+    if (existingConversation) {
+      return existingConversation;
+    }
+
+    return this.prisma.conversation.create({
+      data: {
+        memberOneId: currentMember.id,
+        memberTwoId: targetMember.id,
+      },
+      include: CONVERSATION_INCLUDE,
+    });
+  }
+
   async createMessage(
     profileId: string | undefined,
     conversationId: string | undefined,
@@ -254,6 +312,24 @@ export class DirectMessagesService {
       directMessage,
       member,
     };
+  }
+
+  private async findConversation(memberOneId: string, memberTwoId: string) {
+    return this.prisma.conversation.findFirst({
+      where: {
+        OR: [
+          {
+            memberOneId,
+            memberTwoId,
+          },
+          {
+            memberOneId: memberTwoId,
+            memberTwoId: memberOneId,
+          },
+        ],
+      },
+      include: CONVERSATION_INCLUDE,
+    });
   }
 
   private requireProfileId(profileId: string | undefined) {

@@ -45,9 +45,9 @@ Done:
 - browser/shared UI no longer imports generated Prisma model/enum types from `@prisma/client`
 - the setup route no longer reads Prisma directly from the web shell and now uses the backend-owned servers API for initial routing
 - server routing guards under `src/app/(main)/(routes)/servers/[serverId]` no longer read Prisma directly from the web shell
+- conversation bootstrap under `src/app/(main)/(routes)/servers/[serverId]/conversations/[memberId]` no longer reads Prisma directly from the web shell
 
 Remaining route-family candidates:
-- conversation bootstrap under `src/app/(main)/(routes)/servers/[serverId]/conversations/[memberId]`
 - invite validation under `src/app/(invite)/(routes)/invite/[inviteCode]`
 
 ## In Scope
@@ -80,12 +80,12 @@ Remaining route-family candidates:
 
 The next implementation slice should be:
 
-- remove direct Prisma reads from the conversation bootstrap route-family under `src/app/(main)/(routes)/servers/[serverId]/conversations/[memberId]`
-- move get-or-create conversation ownership behind a backend-owned direct-messages/conversation API contract
-- preserve member/server validation, redirect behavior, direct-message query params, and media leave behavior
+- remove direct Prisma reads from the invite validation route-family under `src/app/(invite)/(routes)/invite/[inviteCode]`
+- move public invite-code validation behind a backend-owned invite validation API contract
+- preserve invite page rendering, browser auto-join mode, and current join flow semantics
 - keep Prisma schema, migrations, datasource provider, and runtime DB behavior unchanged
 
-Invite validation should remain a separate public-route segment because it has different auth semantics and may need a dedicated public backend validation endpoint.
+Invite validation is a public-route segment, so it must not accidentally require authenticated backend headers.
 
 ## References
 

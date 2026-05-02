@@ -66,6 +66,14 @@ export interface MessageDto {
   updatedAt: DomainTimestamp
 }
 
+export interface ConversationDto {
+  id: string
+  memberOneId: string
+  memberTwoId: string
+  createdAt: DomainTimestamp
+  updatedAt: DomainTimestamp
+}
+
 export type MemberWithProfileDto = MemberDto & {
   profile: ProfileDto
 }
@@ -85,4 +93,9 @@ export type ServerMembershipSnapshotDto = ServerDto & {
 
 export type ChatMessageDto = MessageDto & {
   member: MemberWithProfileDto
+}
+
+export type ConversationWithMembersDto = ConversationDto & {
+  memberOne: MemberWithProfileDto
+  memberTwo: MemberWithProfileDto
 }
