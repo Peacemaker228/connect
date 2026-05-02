@@ -1,8 +1,20 @@
 export type DomainTimestamp = Date
 
-export type ChannelType = 'TEXT' | 'AUDIO' | 'VIDEO'
+export const ChannelType = {
+  TEXT: 'TEXT',
+  AUDIO: 'AUDIO',
+  VIDEO: 'VIDEO',
+} as const
 
-export type MemberRole = 'ADMIN' | 'MODERATOR' | 'GUEST'
+export type ChannelType = (typeof ChannelType)[keyof typeof ChannelType]
+
+export const MemberRole = {
+  ADMIN: 'ADMIN',
+  MODERATOR: 'MODERATOR',
+  GUEST: 'GUEST',
+} as const
+
+export type MemberRole = (typeof MemberRole)[keyof typeof MemberRole]
 
 export interface ProfileDto {
   id: string

@@ -1,6 +1,6 @@
 'use client'
 
-import { Member, Profile, Server } from '@prisma/client'
+import type { MemberWithProfileDto, ServerDto } from '@app-core/contracts'
 import { FC } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { cn } from '@/lib/shared/utils/utils'
@@ -9,8 +9,8 @@ import { roleIconMap } from '@/lib/shared/utils/role-icon-map'
 import { ERoutes } from '@app-core/routing/routes'
 
 interface IServerMemberProps {
-  member: Member & { profile: Profile }
-  server: Server
+  member: MemberWithProfileDto
+  server: ServerDto
 }
 
 export const ServerMember: FC<IServerMemberProps> = ({ member }) => {

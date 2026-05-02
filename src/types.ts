@@ -1,9 +1,6 @@
-import { Server, Member, Profile, Channel } from '@prisma/client'
+import type { ServerMembersProfilesDto } from '@app-core/contracts'
 
-export type TServerMembersProfiles = Server & {
-  members: (Member & { profile: Profile })[]
-  channels: Channel[]
-}
+export type TServerMembersProfiles = ServerMembersProfilesDto
 
 export enum EGeneral {
   GENERAL = 'general',

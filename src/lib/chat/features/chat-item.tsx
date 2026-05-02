@@ -1,6 +1,6 @@
 'use client'
 
-import { Member, Profile } from '@prisma/client'
+import type { MemberDto, MemberWithProfileDto } from '@app-core/contracts'
 import { FC, useEffect, useState } from 'react'
 import { UserAvatar } from '@/lib/shared/features/user-avatar'
 import { ActionTooltip } from '@/lib/shared/features/action-tooltip'
@@ -25,13 +25,11 @@ import { useUpdateMessage } from '@sdk/mutations/message'
 interface IChatItemProps {
   id: string
   content: string
-  member: Member & {
-    profile: Profile
-  }
+  member: MemberWithProfileDto
   timestamp: string
   fileUrl: string | null
   deleted: boolean
-  currentMember: Member
+  currentMember: MemberDto
   isUpdated: boolean
   messageApiUrl: string
   messageQuery: Record<string, string>

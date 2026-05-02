@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { Channel, ChannelType, Server } from '@prisma/client'
+import type { ChannelDto, ChannelType, ServerDto } from '@app-core/contracts'
 
 export type TModalType =
   | 'createServer'
@@ -15,9 +15,9 @@ export type TModalType =
   | 'deleteMessage'
 
 interface IModalData {
-  server?: Server
+  server?: ServerDto
   channelType?: ChannelType
-  channel?: Channel
+  channel?: ChannelDto
   apiUrl?: string
   // может быть любое значение
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

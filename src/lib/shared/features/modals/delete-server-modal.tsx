@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { DeleteModal } from '@/lib/shared/features/modals/common/delete-modal'
 import { ERoutes } from '@app-core/routing/routes'
 import { useQueryClient } from '@tanstack/react-query'
-import { Server } from '@prisma/client'
+import type { ServerDto } from '@app-core/contracts'
 import { useDeleteServer } from '@sdk/mutations/server'
 
 export const DeleteServerModal = () => {
@@ -28,7 +28,7 @@ export const DeleteServerModal = () => {
 
       await deleteServer(server.id)
 
-      const nextServers = queryClient.setQueryData<Server[]>(['servers'], (servers = []) => {
+      const nextServers = queryClient.setQueryData<ServerDto[]>(['servers'], (servers = []) => {
         return servers.filter((item) => item.id !== server.id)
       })
 

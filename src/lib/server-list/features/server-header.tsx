@@ -2,7 +2,7 @@
 
 import { TServerMembersProfiles } from '@/types'
 import { FC } from 'react'
-import { MemberRole } from '@prisma/client'
+import { MemberRole } from '@app-core/contracts'
 import {
   DropdownMenu,
   DropdownMenuContent,

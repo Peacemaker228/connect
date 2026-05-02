@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
-import { Server } from '@prisma/client'
+import type { ServerDto } from '@app-core/contracts'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { useStagedUpload } from '@/lib/shared/utils/hooks/use-staged-upload'
 import { serverFormSchema } from '@app-core/schemas/server-form-schema'
@@ -37,7 +37,7 @@ export const CreateServerModal = () => {
     try {
       const createdServer = await createServer(data)
 
-      queryClient.setQueryData<Server[]>(['servers'], (servers = []) => {
+      queryClient.setQueryData<ServerDto[]>(['servers'], (servers = []) => {
         if (servers.some((server) => server.id === createdServer.id)) {
           return servers
         }

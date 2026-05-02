@@ -1,13 +1,9 @@
 import { useSocket } from '../../providers'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import { Member, Message, Profile } from '@prisma/client'
+import type { ChatMessageDto } from '@app-core/contracts'
 
-type TMessageMemberProfile = Message & {
-  member: Member & {
-    profile: Profile
-  }
-}
+type TMessageMemberProfile = ChatMessageDto
 
 interface IChatSocket {
   addKey: string

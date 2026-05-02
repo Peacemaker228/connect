@@ -2,7 +2,7 @@
 
 import { FC, useEffect } from 'react'
 import { ScrollArea } from '@/lib/shared/ui/scroll-area'
-import { ChannelType } from '@prisma/client'
+import { ChannelType } from '@app-core/contracts'
 import { Hash, Mic, Settings, Video } from 'lucide-react'
 import { Separator } from '@/lib/shared/ui/separator'
 import {
