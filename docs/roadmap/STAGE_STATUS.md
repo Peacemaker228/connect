@@ -213,19 +213,23 @@ Current intent:
 
 Done:
 - `Prisma boundary inventory / pre-Stage6 preparation` exists in `docs/delegation/briefs/SEGMENT_BRIEF_055_PRISMA_BOUNDARY_INVENTORY.md`
+- generated Prisma model/enum type leakage has been removed from `packages/sdk`
+- generated Prisma model/enum type leakage has been removed from browser/shared UI
+- the setup route no longer uses the web-shell Prisma runtime for initial server routing
 
 Remaining:
-- first boundary-only implementation slice: remove `@prisma/client` imports from `packages/sdk` by introducing stable app-core/API contracts
-- follow-up boundary slices for browser/shared UI Prisma type imports
-- route-family slices for temporary `Next` server-side direct Prisma reads
+- route-family slices for the remaining temporary `Next` server-side direct Prisma reads
+- server routing guard cleanup under `src/app/(main)/(routes)/servers/[serverId]`
+- invite validation cleanup under `src/app/(invite)/(routes)/invite/[inviteCode]`
+- conversation bootstrap cleanup under `src/app/(main)/(routes)/servers/[serverId]/conversations/[memberId]`
 - separate provider-switch/data-migration plan after boundary cleanup
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. start `Wave 28 / PRISMA_BOUNDARY_PREP`
-2. run the first boundary-only segment that removes generated Prisma type leakage from `packages/sdk`
+1. continue `Wave 28 / PRISMA_BOUNDARY_PREP`
+2. run the server routing guard route-family cleanup under `src/app/(main)/(routes)/servers/[serverId]`
 3. keep `Stage 5A` direct-backend runtime assumptions intact
 4. do not reintroduce `Next` API/proxy routes under `src/app/api/*` or `src/pages/api/socket/*`
 5. do not change `DATABASE_URL`, the Prisma datasource provider, or runtime DB behavior until the boundary cleanup segments are complete

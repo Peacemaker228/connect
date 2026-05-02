@@ -38,6 +38,18 @@ Main findings:
 - several `src/app/*` server components still read directly from Prisma for setup, invite validation, server routing, channel/member validation, and conversation bootstrap
 - `packages/sdk` and client/shared UI still import generated Prisma model/enum types from `@prisma/client`
 
+## Current Progress
+
+Done:
+- `packages/sdk` no longer imports generated Prisma model/enum types from `@prisma/client`
+- browser/shared UI no longer imports generated Prisma model/enum types from `@prisma/client`
+- the setup route no longer reads Prisma directly from the web shell and now uses the backend-owned servers API for initial routing
+
+Remaining route-family candidates:
+- server routing guards under `src/app/(main)/(routes)/servers/[serverId]`
+- invite validation under `src/app/(invite)/(routes)/invite/[inviteCode]`
+- conversation bootstrap under `src/app/(main)/(routes)/servers/[serverId]/conversations/[memberId]`
+
 ## In Scope
 
 - introducing stable app-core/API DTOs and enums for SDK/UI-facing contracts
@@ -64,15 +76,16 @@ Main findings:
 - preserve direct-backend runtime assumptions from `Stage 5A`
 - keep backend Prisma ownership in `apps/api`
 
-## First Correct Slice
+## Next Correct Slice
 
-The first implementation slice should be:
+The next implementation slice should be:
 
-- remove generated Prisma type leakage from `packages/sdk`
-- add or reuse stable DTOs/enums in `packages/app-core`
-- keep backend services, Prisma schema, migrations, datasource provider, and runtime behavior unchanged
+- remove direct Prisma reads from the server routing guard route-family under `src/app/(main)/(routes)/servers/[serverId]`
+- use backend-owned API contracts/helpers for server, channel, and member validation
+- preserve membership checks and redirect behavior; do not weaken `GET /api/servers/:serverId` access semantics
+- keep Prisma schema, migrations, datasource provider, and runtime DB behavior unchanged
 
-This should be done before moving Next server-side reads or changing any database provider configuration.
+Invite validation should remain a separate public-route segment because it has different auth semantics and may need a dedicated public backend validation endpoint.
 
 ## References
 
