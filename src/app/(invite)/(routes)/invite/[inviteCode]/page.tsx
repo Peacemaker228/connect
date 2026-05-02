@@ -1,6 +1,6 @@
 import { FC } from 'react'
-import { db } from '@/lib/shared/utils/db'
 import { InvitePageClient } from './invite-page-client'
+import { validateInviteCode } from '@/lib/shared/utils/invite-validation'
 
 interface IInvitePageProps {
   params: Promise<{ inviteCode: string }>
@@ -11,19 +11,12 @@ const InvitePage: FC<IInvitePageProps> = async ({ params, searchParams }) => {
   const { inviteCode } = await params
   const { mode } = await searchParams
 
-  const server = await db.server.findUnique({
-    where: {
-      inviteCode,
-    },
-    select: {
-      id: true,
-    },
-  })
+  const isValidInvite = await validateInviteCode(inviteCode)
 
   return (
     <InvitePageClient
       inviteCode={inviteCode}
-      isValidInvite={Boolean(server)}
+      isValidInvite={isValidInvite}
       shouldAutoJoinInBrowser={mode === 'browser'}
     />
   )
