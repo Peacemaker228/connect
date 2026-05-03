@@ -223,20 +223,22 @@ Done:
 - the final Wave 28 caller sweep found no remaining `src/lib/shared/utils/db.ts` callers, and the unused web-shell Prisma helper has been removed
 - `Wave 28 / PRISMA_BOUNDARY_PREP` is closed as boundary-prep only and did not change Prisma schema, migrations, datasource provider, `DATABASE_URL`, or runtime DB behavior
 - `Wave 29 / POSTGRES_PROVIDER_SWITCH_PLAN` exists as the Stage 6 planning wave for the future provider switch/data migration
+- `schema/provider diff audit` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_056_SCHEMA_PROVIDER_DIFF_AUDIT.md`
+- the audit recommends a clean Postgres baseline instead of translating the current incomplete MySQL migration history
 
 Remaining:
 - no provider switch has been performed yet
-- first implementation segment after planning: schema/provider diff audit
+- next implementation segment after audit: local Postgres baseline design
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. start the first implementation segment after planning: schema/provider diff audit
-2. keep the audit read-only until a dedicated provider-switch segment exists
+1. start `local-postgres-baseline-design`
+2. keep the segment design/planning only unless separately approved to add isolated local Postgres infrastructure
 3. keep `Stage 5A` direct-backend runtime assumptions intact
 4. do not reintroduce `Next` API/proxy routes under `src/app/api/*` or `src/pages/api/socket/*`
-5. do not change `DATABASE_URL`, the Prisma datasource provider, `prisma/schema.prisma`, migrations, or runtime DB behavior during the audit segment
+5. do not change `DATABASE_URL`, the Prisma datasource provider, `prisma/schema.prisma`, migrations, or runtime DB behavior during the baseline-design segment
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
