@@ -231,17 +231,19 @@ Done:
 - isolated local-only Postgres validation Compose config and env examples exist under `infra/postgres`
 - `mysql-data-audit-query-pack` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_059_MYSQL_DATA_AUDIT_QUERY_PACK.md`
 - the query pack covers orphan rows, enum parity, case/collation duplicates, DateTime sanity, row counts, and aggregate parity
+- `mysql-data-audit-run-and-report` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_060_MYSQL_DATA_AUDIT_RUN_REPORT.md`
+- the local MySQL data-audit run found no blocking data-audit findings
 
 Remaining:
 - no provider switch has been performed yet
-- next segment should run the read-only MySQL data-audit query pack and capture pass/review/fail results
+- next segment should create an isolated Postgres validation schema path and generate/review a clean local validation baseline
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. start `mysql-data-audit-run-and-report`
-2. run the read-only query pack against current MySQL and capture pass/review/fail findings
+1. start `postgres-validation-schema-baseline`
+2. generate/review a clean Postgres baseline for local validation only
 3. keep `Stage 5A` direct-backend runtime assumptions intact
 4. do not reintroduce `Next` API/proxy routes under `src/app/api/*` or `src/pages/api/socket/*`
 5. do not change `DATABASE_URL`, the Prisma datasource provider, `prisma/schema.prisma`, migrations, or runtime DB behavior during the next segment

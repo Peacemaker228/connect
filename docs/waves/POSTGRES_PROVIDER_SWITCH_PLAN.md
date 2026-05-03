@@ -201,10 +201,11 @@ Done:
 - first relation strategy is to preserve current Prisma-managed relation behavior where supported and defer DB foreign-key hardening
 - `local-postgres-validation-infra` added isolated local-only Postgres Compose config and validation env examples without changing runtime code
 - `mysql-data-audit-query-pack` added executable read-only MySQL queries for orphan rows, enum parity, case/collation duplicates, DateTime sanity, row counts, and aggregate parity
+- `mysql-data-audit-run-and-report` ran the read-only query pack against local MySQL and found no blocking data-audit findings
 
 Next:
-- `mysql-data-audit-run-and-report`
-- run the read-only query pack against current MySQL and capture pass/review/fail findings
+- `postgres-validation-schema-baseline`
+- create an isolated Postgres validation schema path and generate/review a clean local validation baseline
 - keep active `DATABASE_URL`, `provider = "mysql"`, `prisma/schema.prisma`, migrations, and runtime behavior unchanged
 
 ## Verification
