@@ -225,20 +225,22 @@ Done:
 - `Wave 29 / POSTGRES_PROVIDER_SWITCH_PLAN` exists as the Stage 6 planning wave for the future provider switch/data migration
 - `schema/provider diff audit` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_056_SCHEMA_PROVIDER_DIFF_AUDIT.md`
 - the audit recommends a clean Postgres baseline instead of translating the current incomplete MySQL migration history
+- `local-postgres-baseline-design` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_057_LOCAL_POSTGRES_BASELINE_DESIGN.md`
+- the first Postgres baseline strategy is clean baseline with current Prisma-managed relation behavior preserved where supported
 
 Remaining:
 - no provider switch has been performed yet
-- next implementation segment after audit: local Postgres baseline design
+- next segment requires either separate approval for isolated local Postgres validation infrastructure or a docs-only MySQL data-audit query pack
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. start `local-postgres-baseline-design`
-2. keep the segment design/planning only unless separately approved to add isolated local Postgres infrastructure
+1. start `local-postgres-validation-infra` only if separately approved to add isolated local Postgres infrastructure
+2. otherwise prepare `mysql-data-audit-query-pack` as the next docs-only segment
 3. keep `Stage 5A` direct-backend runtime assumptions intact
 4. do not reintroduce `Next` API/proxy routes under `src/app/api/*` or `src/pages/api/socket/*`
-5. do not change `DATABASE_URL`, the Prisma datasource provider, `prisma/schema.prisma`, migrations, or runtime DB behavior during the baseline-design segment
+5. do not change `DATABASE_URL`, the Prisma datasource provider, `prisma/schema.prisma`, migrations, or runtime DB behavior during the next segment
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
