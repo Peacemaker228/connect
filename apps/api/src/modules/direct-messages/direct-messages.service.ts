@@ -114,6 +114,10 @@ export class DirectMessagesService {
       throw new HttpException('Member Not Found', HttpStatus.NOT_FOUND);
     }
 
+    if (targetMember.id === currentMember.id) {
+      throw new HttpException('Self Conversation Not Allowed', HttpStatus.BAD_REQUEST);
+    }
+
     const existingConversation = await this.findConversation(currentMember.id, targetMember.id);
 
     if (existingConversation) {

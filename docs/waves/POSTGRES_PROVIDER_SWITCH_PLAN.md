@@ -202,6 +202,7 @@ Done:
 - `local-postgres-validation-infra` added isolated local-only Postgres Compose config and validation env examples without changing runtime code
 - `mysql-data-audit-query-pack` added executable read-only MySQL queries for orphan rows, enum parity, case/collation duplicates, DateTime sanity, row counts, and aggregate parity
 - `mysql-data-audit-run-and-report` ran the read-only query pack against local MySQL and found no blocking data-audit findings
+- `direct-message-self-conversation-policy` documented that self-DM conversations are invalid, blocked new self-conversation bootstrap in backend/web guards, and left the two existing local self-conversation rows as review/data-cleanup candidates
 
 Next:
 - `postgres-validation-schema-baseline`

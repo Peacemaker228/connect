@@ -233,6 +233,8 @@ Done:
 - the query pack covers orphan rows, enum parity, case/collation duplicates, DateTime sanity, row counts, and aggregate parity
 - `mysql-data-audit-run-and-report` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_060_MYSQL_DATA_AUDIT_RUN_REPORT.md`
 - the local MySQL data-audit run found no blocking data-audit findings
+- `direct-message-self-conversation-policy` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_061_DIRECT_MESSAGE_SELF_CONVERSATION_POLICY.md`
+- new direct-message self-conversation bootstrap is blocked in backend/web guards; the two existing local self-conversation rows remain review/data-cleanup candidates
 
 Remaining:
 - no provider switch has been performed yet
