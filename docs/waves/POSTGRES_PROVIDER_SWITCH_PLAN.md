@@ -92,6 +92,7 @@ Key result:
 - first Postgres baseline should be a clean baseline, not migration-history translation
 - first relation strategy should preserve current Prisma-managed relation behavior where supported, with DB foreign-key hardening deferred to a later segment
 - local validation env naming should use `POSTGRES_VALIDATION_DATABASE_URL`, not active `DATABASE_URL`
+- isolated local Postgres validation infrastructure exists in `infra/postgres` after `local-postgres-validation-infra`
 
 ### 3. Migration strategy
 
@@ -197,10 +198,11 @@ Done:
 - `local-postgres-baseline-design` completed as a design-only report
 - baseline strategy is clean Postgres baseline with active `DATABASE_URL` left untouched
 - first relation strategy is to preserve current Prisma-managed relation behavior where supported and defer DB foreign-key hardening
+- `local-postgres-validation-infra` added isolated local-only Postgres Compose config and validation env examples without changing runtime code
 
 Next:
-- `local-postgres-validation-infra`, if separately approved to add isolated local Postgres infrastructure
-- otherwise `mysql-data-audit-query-pack` as the next docs-only segment
+- `mysql-data-audit-query-pack`
+- prepare executable MySQL data-audit queries for orphan rows, enum parity, case/collation duplicates, DateTime parity, and row counts
 - keep active `DATABASE_URL`, `provider = "mysql"`, `prisma/schema.prisma`, migrations, and runtime behavior unchanged
 
 ## Verification
