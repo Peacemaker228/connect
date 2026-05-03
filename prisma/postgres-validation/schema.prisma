@@ -1,0 +1,224 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("POSTGRES_VALIDATION_DATABASE_URL")
+  shadowDatabaseUrl = env("POSTGRES_VALIDATION_SHADOW_DATABASE_URL")
+  relationMode      = "prisma"
+}
+
+model Profile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  name      String
+  imageUrl  String   @db.Text
+  email     String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  servers        Server[]
+  members        Member[]
+  channels       Channel[]
+  authSessions   AuthSession[]
+  authIdentities AuthIdentity[]
+
+  @@map("profile")
+}
+
+enum AuthIdentityProvider {
+  PASSWORD
+}
+
+enum AuthSessionStatus {
+  ACTIVE
+  REVOKED
+}
+
+model AuthIdentity {
+  id                  String               @id @default(uuid())
+  provider            AuthIdentityProvider
+  subject             String               @db.VarChar(191)
+  profileId           String
+  profile             Profile              @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  email               String?              @db.Text
+  emailNormalized     String?              @db.VarChar(191)
+  lastAuthenticatedAt DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  passwordCredential AuthPasswordCredential?
+
+  @@unique([provider, subject])
+  @@index([profileId])
+  @@index([emailNormalized])
+  @@map("authidentity")
+}
+
+model AuthPasswordCredential {
+  identityId   String       @id
+  identity     AuthIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  passwordHash String       @db.Text
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@map("authpasswordcredential")
+}
+
+model AuthSession {
+  id                    String            @id
+  profileId             String
+  profile               Profile           @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId                String
+  status                AuthSessionStatus @default(ACTIVE)
+  refreshTokenHash      String            @unique @db.VarChar(191)
+  refreshTokenExpiresAt DateTime
+  userAgent             String?           @db.Text
+  ipAddress             String?           @db.VarChar(191)
+  lastAccessedAt        DateTime?
+  revokedAt             DateTime?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  @@index([profileId])
+  @@index([userId])
+  @@index([status])
+  @@index([refreshTokenExpiresAt])
+  @@map("authsession")
+}
+
+model Server {
+  id         String @id @default(uuid())
+  name       String
+  imageUrl   String @db.Text
+  inviteCode String @unique
+
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  members  Member[]
+  channels Channel[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
+  @@map("server")
+}
+
+enum MemberRole {
+  ADMIN
+  MODERATOR
+  GUEST
+}
+
+model Member {
+  id        String     @id @default(uuid())
+  role      MemberRole @default(GUEST)
+  profileId String
+  profile   Profile    @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  serverId String
+  server   Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  messages       Message[]
+  directMessages DirectMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  conversationsInitiated Conversation[] @relation("MemberOne")
+  conversationsReceived  Conversation[] @relation("MemberTwo")
+
+  @@unique([profileId, serverId])
+  @@index([profileId])
+  @@index([serverId])
+  @@map("member")
+}
+
+enum ChannelType {
+  TEXT
+  AUDIO
+  VIDEO
+}
+
+model Channel {
+  id   String      @id @default(uuid())
+  name String
+  type ChannelType @default(TEXT)
+
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  serverId String
+  server   Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+
+  @@index([profileId])
+  @@index([serverId])
+  @@map("channel")
+}
+
+model Message {
+  id      String @id @default(uuid())
+  content String @db.Text
+
+  fileUrl String? @db.Text
+
+  memberId String
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  channelId String
+
+  deleted Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([channelId])
+  @@index([memberId])
+  @@map("message")
+}
+
+model Conversation {
+  id String @id @default(uuid())
+
+  memberOneId String
+  memberOne   Member @relation("MemberOne", fields: [memberOneId], references: [id], onDelete: Cascade)
+
+  memberTwoId String
+  memberTwo   Member @relation("MemberTwo", fields: [memberTwoId], references: [id], onDelete: Cascade)
+
+  directMessages DirectMessage[]
+
+  @@unique([memberOneId, memberTwoId])
+  @@index([memberTwoId])
+  @@index([memberOneId])
+  @@map("conversation")
+}
+
+model DirectMessage {
+  id      String  @id @default(uuid())
+  content String  @db.Text
+  fileUrl String? @db.Text
+
+  memberId String
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  deleted Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([memberId])
+  @@index([conversationId])
+  @@map("directmessage")
+}

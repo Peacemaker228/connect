@@ -235,17 +235,19 @@ Done:
 - the local MySQL data-audit run found no blocking data-audit findings
 - `direct-message-self-conversation-policy` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_061_DIRECT_MESSAGE_SELF_CONVERSATION_POLICY.md`
 - new direct-message self-conversation bootstrap is blocked in backend/web guards; the two existing local self-conversation rows remain review/data-cleanup candidates
+- `postgres-validation-schema-baseline` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_062_POSTGRES_VALIDATION_SCHEMA_BASELINE.md`
+- isolated validation-only Prisma artifacts exist under `prisma/postgres-validation`, with a generated clean Postgres baseline reviewed but not applied
 
 Remaining:
 - no provider switch has been performed yet
-- next segment should create an isolated Postgres validation schema path and generate/review a clean local validation baseline
+- next segment should apply the isolated clean baseline to disposable local Postgres validation only and capture empty-database schema/drift verification
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. start `postgres-validation-schema-baseline`
-2. generate/review a clean Postgres baseline for local validation only
+1. start `postgres-validation-baseline-apply-and-drift-check`
+2. apply the isolated clean baseline to disposable local Postgres validation only and capture empty-database schema/drift verification
 3. keep `Stage 5A` direct-backend runtime assumptions intact
 4. do not reintroduce `Next` API/proxy routes under `src/app/api/*` or `src/pages/api/socket/*`
 5. do not change `DATABASE_URL`, the Prisma datasource provider, `prisma/schema.prisma`, migrations, or runtime DB behavior during the next segment

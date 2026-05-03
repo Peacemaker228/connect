@@ -9,6 +9,8 @@ This directory is for isolated Stage 6 validation only. It must not change the a
 Files:
 - `docker-compose.validation.yml` starts a local-only Postgres validation service.
 - `postgres-validation.env.example` documents validation env names.
+- `../../prisma/postgres-validation/schema.prisma` defines the validation-only Prisma schema path.
+- `../../prisma/postgres-validation/migrations/00000000000000_clean_baseline/migration.sql` contains the generated clean local validation baseline for review.
 
 Default local settings:
 - service/container: `connect-postgres-validation`
@@ -59,5 +61,5 @@ docker compose -f infra/postgres/docker-compose.validation.yml down -v
 - Do not set active `DATABASE_URL` to `POSTGRES_VALIDATION_DATABASE_URL`.
 - Do not point `apps/api` or `apps/web` at these variables.
 - Do not change `provider = "mysql"` in the active Prisma schema in this segment.
-- Do not create, edit, or run Prisma migrations as part of this infrastructure segment.
+- Do not create, edit, or run active Prisma migrations as part of this infrastructure segment.
 - Use this service only for later approved validation/baseline work.
