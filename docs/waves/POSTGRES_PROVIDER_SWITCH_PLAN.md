@@ -188,6 +188,7 @@ Rules:
 - forbidden changes are explicit for `DATABASE_URL`, Prisma provider, `schema.prisma`, migrations, and runtime behavior
 - the schema/provider diff audit is complete
 - the local Postgres baseline design is complete
+- the MySQL data-audit query pack is complete
 
 ## Current Progress
 
@@ -199,10 +200,11 @@ Done:
 - baseline strategy is clean Postgres baseline with active `DATABASE_URL` left untouched
 - first relation strategy is to preserve current Prisma-managed relation behavior where supported and defer DB foreign-key hardening
 - `local-postgres-validation-infra` added isolated local-only Postgres Compose config and validation env examples without changing runtime code
+- `mysql-data-audit-query-pack` added executable read-only MySQL queries for orphan rows, enum parity, case/collation duplicates, DateTime sanity, row counts, and aggregate parity
 
 Next:
-- `mysql-data-audit-query-pack`
-- prepare executable MySQL data-audit queries for orphan rows, enum parity, case/collation duplicates, DateTime parity, and row counts
+- `mysql-data-audit-run-and-report`
+- run the read-only query pack against current MySQL and capture pass/review/fail findings
 - keep active `DATABASE_URL`, `provider = "mysql"`, `prisma/schema.prisma`, migrations, and runtime behavior unchanged
 
 ## Verification
