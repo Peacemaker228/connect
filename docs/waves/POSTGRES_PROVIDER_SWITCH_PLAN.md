@@ -204,10 +204,11 @@ Done:
 - `mysql-data-audit-run-and-report` ran the read-only query pack against local MySQL and found no blocking data-audit findings
 - `direct-message-self-conversation-policy` documented that self-DM conversations are invalid, blocked new self-conversation bootstrap in backend/web guards, and left the two existing local self-conversation rows as review/data-cleanup candidates
 - `postgres-validation-schema-baseline` added an isolated Postgres validation Prisma schema path and generated/reviewed a clean local validation baseline without changing active MySQL runtime files
+- `postgres-validation-baseline-apply-and-drift-check` was attempted but blocked because the disposable local Postgres validation database was not reachable in the current shell and required local Postgres tooling was unavailable
 
 Next:
-- `postgres-validation-baseline-apply-and-drift-check`
-- apply the isolated clean baseline to disposable local Postgres validation only and capture empty-database schema/drift verification
+- `postgres-validation-runtime-unblock-and-apply-drift-rerun`
+- make disposable local Postgres validation reachable, then rerun isolated baseline apply and empty-database schema/drift verification
 - keep active `DATABASE_URL`, `provider = "mysql"`, `prisma/schema.prisma`, migrations, and runtime behavior unchanged
 
 ## Verification
