@@ -203,10 +203,11 @@ Done:
 - `mysql-data-audit-query-pack` added executable read-only MySQL queries for orphan rows, enum parity, case/collation duplicates, DateTime sanity, row counts, and aggregate parity
 - `mysql-data-audit-run-and-report` ran the read-only query pack against local MySQL and found no blocking data-audit findings
 - `direct-message-self-conversation-policy` documented that self-DM conversations are invalid, blocked new self-conversation bootstrap in backend/web guards, and left the two existing local self-conversation rows as review/data-cleanup candidates
+- `postgres-validation-schema-baseline` added an isolated Postgres validation Prisma schema path and generated/reviewed a clean local validation baseline without changing active MySQL runtime files
 
 Next:
-- `postgres-validation-schema-baseline`
-- create an isolated Postgres validation schema path and generate/review a clean local validation baseline
+- `postgres-validation-baseline-apply-and-drift-check`
+- apply the isolated clean baseline to disposable local Postgres validation only and capture empty-database schema/drift verification
 - keep active `DATABASE_URL`, `provider = "mysql"`, `prisma/schema.prisma`, migrations, and runtime behavior unchanged
 
 ## Verification
