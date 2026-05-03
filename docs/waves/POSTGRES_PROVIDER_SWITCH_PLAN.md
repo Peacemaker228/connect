@@ -63,6 +63,13 @@ Rules:
 - no migration edits
 - no runtime behavior change
 
+Status:
+- done in [SEGMENT_BRIEF_056_SCHEMA_PROVIDER_DIFF_AUDIT.md](../delegation/briefs/SEGMENT_BRIEF_056_SCHEMA_PROVIDER_DIFF_AUDIT.md)
+
+Key result:
+- current migration history is not a reliable provider-switch path because it lacks a full schema baseline and contains only a MySQL-specific destructive enum cleanup
+- recommended direction is a clean Postgres baseline after relation strategy and data-audit decisions
+
 ### 2. Local Postgres environment
 
 Goal:
@@ -77,6 +84,10 @@ Expected outputs:
 Rules:
 - do not repoint the default application runtime until a later cutover segment
 - keep MySQL as the current active provider while local Postgres validation is introduced
+
+Status:
+- next segment: `local-postgres-baseline-design`
+- this segment should still be design/planning only unless separately approved to add local infrastructure files
 
 ### 3. Migration strategy
 
@@ -170,7 +181,21 @@ Rules:
 - `Wave 28` remains closed as boundary-prep only
 - this wave clearly states that it is planning-only
 - forbidden changes are explicit for `DATABASE_URL`, Prisma provider, `schema.prisma`, migrations, and runtime behavior
-- the next implementation segment after this planning wave is `schema/provider diff audit`
+- the schema/provider diff audit is complete
+- the next segment is `local-postgres-baseline-design`
+
+## Current Progress
+
+Done:
+- `schema/provider diff audit` completed as a read-only report
+- the audit recommends a clean Postgres baseline rather than translating the current migration history
+- provider switch blockers are documented: missing full baseline, MySQL-specific migration SQL, unresolved relation strategy, missing data audits, missing staging and rollback plans
+
+Next:
+- `local-postgres-baseline-design`
+- decide the first Postgres baseline relation strategy
+- design local Postgres validation environment and isolated env naming
+- define data-audit queries/checklists before any schema/provider/runtime change
 
 ## Verification
 
