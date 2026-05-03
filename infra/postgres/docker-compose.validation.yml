@@ -1,0 +1,24 @@
+name: connect-postgres-validation
+
+services:
+  postgres-validation:
+    image: postgres:16-alpine
+    container_name: connect-postgres-validation
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_VALIDATION_DB:-connect_validation}
+      POSTGRES_USER: ${POSTGRES_VALIDATION_USER:-connect_validation}
+      POSTGRES_PASSWORD: ${POSTGRES_VALIDATION_PASSWORD:-connect_validation_password}
+    ports:
+      - "${POSTGRES_VALIDATION_PORT:-5433}:5432"
+    volumes:
+      - connect-postgres-validation-data:/var/lib/postgresql/data
+    healthcheck:
+      test: 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"'
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  connect-postgres-validation-data:

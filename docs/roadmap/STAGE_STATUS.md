@@ -227,17 +227,19 @@ Done:
 - the audit recommends a clean Postgres baseline instead of translating the current incomplete MySQL migration history
 - `local-postgres-baseline-design` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_057_LOCAL_POSTGRES_BASELINE_DESIGN.md`
 - the first Postgres baseline strategy is clean baseline with current Prisma-managed relation behavior preserved where supported
+- `local-postgres-validation-infra` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_058_LOCAL_POSTGRES_VALIDATION_INFRA.md`
+- isolated local-only Postgres validation Compose config and env examples exist under `infra/postgres`
 
 Remaining:
 - no provider switch has been performed yet
-- next segment requires either separate approval for isolated local Postgres validation infrastructure or a docs-only MySQL data-audit query pack
+- next segment should prepare executable MySQL data-audit queries before baseline generation or import work
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. start `local-postgres-validation-infra` only if separately approved to add isolated local Postgres infrastructure
-2. otherwise prepare `mysql-data-audit-query-pack` as the next docs-only segment
+1. start `mysql-data-audit-query-pack`
+2. prepare executable MySQL data-audit queries for orphan rows, enum parity, case/collation duplicates, DateTime parity, and row counts
 3. keep `Stage 5A` direct-backend runtime assumptions intact
 4. do not reintroduce `Next` API/proxy routes under `src/app/api/*` or `src/pages/api/socket/*`
 5. do not change `DATABASE_URL`, the Prisma datasource provider, `prisma/schema.prisma`, migrations, or runtime DB behavior during the next segment
