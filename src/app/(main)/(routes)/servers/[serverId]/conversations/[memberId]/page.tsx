@@ -48,6 +48,10 @@ const MemberIdPage: FC<IMemberIdPageProps> = async ({ params, searchParams }) =>
     return redirect(ERoutes.MAIN_PAGE)
   }
 
+  if (currentMember.id === memberId) {
+    return redirect(`${ERoutes.SERVERS}/${serverId}`)
+  }
+
   const conversationResult = await getOrCreateConversation({
     authHeaders: auth.headers,
     memberId,
