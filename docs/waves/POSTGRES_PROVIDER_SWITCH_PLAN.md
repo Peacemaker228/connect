@@ -86,8 +86,12 @@ Rules:
 - keep MySQL as the current active provider while local Postgres validation is introduced
 
 Status:
-- next segment: `local-postgres-baseline-design`
-- this segment should still be design/planning only unless separately approved to add local infrastructure files
+- done in [SEGMENT_BRIEF_057_LOCAL_POSTGRES_BASELINE_DESIGN.md](../delegation/briefs/SEGMENT_BRIEF_057_LOCAL_POSTGRES_BASELINE_DESIGN.md)
+
+Key result:
+- first Postgres baseline should be a clean baseline, not migration-history translation
+- first relation strategy should preserve current Prisma-managed relation behavior where supported, with DB foreign-key hardening deferred to a later segment
+- local validation env naming should use `POSTGRES_VALIDATION_DATABASE_URL`, not active `DATABASE_URL`
 
 ### 3. Migration strategy
 
@@ -182,7 +186,7 @@ Rules:
 - this wave clearly states that it is planning-only
 - forbidden changes are explicit for `DATABASE_URL`, Prisma provider, `schema.prisma`, migrations, and runtime behavior
 - the schema/provider diff audit is complete
-- the next segment is `local-postgres-baseline-design`
+- the local Postgres baseline design is complete
 
 ## Current Progress
 
@@ -190,12 +194,14 @@ Done:
 - `schema/provider diff audit` completed as a read-only report
 - the audit recommends a clean Postgres baseline rather than translating the current migration history
 - provider switch blockers are documented: missing full baseline, MySQL-specific migration SQL, unresolved relation strategy, missing data audits, missing staging and rollback plans
+- `local-postgres-baseline-design` completed as a design-only report
+- baseline strategy is clean Postgres baseline with active `DATABASE_URL` left untouched
+- first relation strategy is to preserve current Prisma-managed relation behavior where supported and defer DB foreign-key hardening
 
 Next:
-- `local-postgres-baseline-design`
-- decide the first Postgres baseline relation strategy
-- design local Postgres validation environment and isolated env naming
-- define data-audit queries/checklists before any schema/provider/runtime change
+- `local-postgres-validation-infra`, if separately approved to add isolated local Postgres infrastructure
+- otherwise `mysql-data-audit-query-pack` as the next docs-only segment
+- keep active `DATABASE_URL`, `provider = "mysql"`, `prisma/schema.prisma`, migrations, and runtime behavior unchanged
 
 ## Verification
 
