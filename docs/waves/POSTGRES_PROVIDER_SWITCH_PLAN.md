@@ -205,10 +205,11 @@ Done:
 - `direct-message-self-conversation-policy` documented that self-DM conversations are invalid, blocked new self-conversation bootstrap in backend/web guards, and left the two existing local self-conversation rows as review/data-cleanup candidates
 - `postgres-validation-schema-baseline` added an isolated Postgres validation Prisma schema path and generated/reviewed a clean local validation baseline without changing active MySQL runtime files
 - `postgres-validation-baseline-apply-and-drift-check` was attempted but blocked because the disposable local Postgres validation database was not reachable in the current shell and required local Postgres tooling was unavailable
+- `postgres-validation-runtime-unblock-and-apply-drift-rerun` applied the isolated clean baseline to disposable local Postgres validation and captured a clean empty-database drift check
 
 Next:
-- `postgres-validation-runtime-unblock-and-apply-drift-rerun`
-- make disposable local Postgres validation reachable, then rerun isolated baseline apply and empty-database schema/drift verification
+- `mysql-to-postgres-local-import-rehearsal-plan`
+- define the local-only MySQL-to-Postgres import rehearsal sequence, including table order, transform rules, verification queries, retry behavior, and no-production guardrails
 - keep active `DATABASE_URL`, `provider = "mysql"`, `prisma/schema.prisma`, migrations, and runtime behavior unchanged
 
 ## Verification
