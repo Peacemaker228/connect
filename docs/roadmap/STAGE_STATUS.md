@@ -241,17 +241,19 @@ Done:
 - baseline apply/drift is blocked because the disposable local Postgres validation database is not reachable in the current shell and required local Postgres tooling is unavailable
 - `postgres-validation-runtime-unblock-and-apply-drift-rerun` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_064_POSTGRES_VALIDATION_RUNTIME_UNBLOCK_APPLY_DRIFT.md`
 - the isolated clean baseline was applied to disposable local Postgres validation and Prisma reported no empty-database schema drift
+- `mysql-to-postgres-local-import-rehearsal-plan` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_065_MYSQL_POSTGRES_LOCAL_IMPORT_REHEARSAL_PLAN.md`
+- the local-only import rehearsal plan defines table order, transform rules, reset/retry strategy, verification queries, parity checks, pass/review/fail criteria, and no-production guardrails
 
 Remaining:
 - no provider switch has been performed yet
-- next segment should define the local-only MySQL-to-Postgres import rehearsal sequence, including table order, transform rules, verification queries, retry behavior, and no-production guardrails
+- next segment should implement local-only import rehearsal tooling and verification scripts with strict source/target allowlists, reset-to-baseline preflight, table-order import, and post-import parity reporting
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. start `mysql-to-postgres-local-import-rehearsal-plan`
-2. define the local-only MySQL-to-Postgres import rehearsal sequence, including table order, transform rules, verification queries, retry behavior, and no-production guardrails
+1. start `mysql-to-postgres-local-import-rehearsal-tooling`
+2. implement local-only import rehearsal tooling and verification scripts with strict source/target allowlists, reset-to-baseline preflight, table-order import, and post-import parity reporting
 3. keep `Stage 5A` direct-backend runtime assumptions intact
 4. do not reintroduce `Next` API/proxy routes under `src/app/api/*` or `src/pages/api/socket/*`
 5. do not change `DATABASE_URL`, the Prisma datasource provider, `prisma/schema.prisma`, migrations, or runtime DB behavior during the next segment
