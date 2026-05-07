@@ -214,11 +214,12 @@ Done:
 - `local-postgres-dev-switch-implementation` switched local development to Postgres with disposable local data; active local Prisma provider is now `postgresql`, while staging/production migration remains separate
 - `local-postgres-dev-smoke` is passed by user report for the migration/runtime path
 - `prisma-7-local-upgrade` upgraded local Prisma CLI/client packages to `7.8.0`, moved datasource URL resolution to `prisma.config.ts`, and updated backend runtime to use the Postgres driver adapter
+- `local-mysql-retirement` downgraded local MySQL assumptions: active local development uses Postgres, and MySQL remains only an explicit rehearsal/production-migration source through `MYSQL_REHEARSAL_SOURCE_DATABASE_URL`
 
 Next:
-- `local-mysql-retirement`
-- remove or downgrade local MySQL assumptions from local docs/scripts where appropriate
-- keep production migration, staging, rollback, and production runbook work separate
+- `production-postgres-migration-runbook-plan`
+- create a self-contained production migration runbook plan before staging or production cutover
+- keep production migration, staging, rollback, and microphone/media follow-up work separate
 
 ## Production Runbook Requirement
 

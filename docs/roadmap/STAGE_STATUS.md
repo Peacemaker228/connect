@@ -258,10 +258,12 @@ Done:
 - `local-postgres-dev-smoke` is passed by user report for the migration/runtime path
 - `prisma-7-local-upgrade` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_071_LOCAL_POSTGRES_DEV_SMOKE_PRISMA7.md`
 - Prisma CLI/client packages are now `7.8.0`; datasource URL resolution moved to `prisma.config.ts`, and backend Prisma runtime uses the Postgres driver adapter
+- `local-mysql-retirement` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_072_LOCAL_MYSQL_RETIREMENT.md`
+- active local development now uses Postgres; MySQL remains only as an explicit legacy/rehearsal/production-migration source, and rehearsal tooling requires `MYSQL_REHEARSAL_SOURCE_DATABASE_URL` instead of active `DATABASE_URL`
 
 Remaining:
 - production provider switch has not been performed yet
-- next segment should retire or downgrade local MySQL assumptions while keeping production migration and the production runbook separate
+- next segment should plan the self-contained production Postgres migration runbook before staging or production cutover
 
 ## Next Correct Step
 
@@ -273,12 +275,12 @@ The next correct step by plan is:
 4. do not reintroduce `Next` API/proxy routes under `src/app/api/*` or `src/pages/api/socket/*`
 5. keep production migration, staging, rollback, and production runbook work out of the local dev switch implementation segment
 
-Updated next step after the reported smoke pass:
+Updated next step after local MySQL retirement:
 
-1. start `local-mysql-retirement`
-2. remove or downgrade local MySQL assumptions from local docs/scripts where appropriate
-3. keep production migration tooling and the production runbook requirement intact
-4. track the reported microphone/media issue separately from Stage 6 migration work
+1. start `production-postgres-migration-runbook-plan`
+2. create a self-contained production migration runbook plan usable outside this chat context
+3. keep staging/production untouched until that runbook exists and is reviewed
+4. track the reported microphone/media issue separately from Stage 6 database migration work
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
