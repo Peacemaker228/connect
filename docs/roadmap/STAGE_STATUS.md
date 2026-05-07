@@ -273,15 +273,19 @@ Remaining:
 - maintenance/write-freeze mechanism is not defined yet
 - production server env inventory, PM2 topology, Nginx routing, and secret rotation order still need operator review before server deploy
 - Postgres target installation/hosting strategy is still undecided
+- production maintenance/deploy/cutover planning is intentionally deferred until the final production migration window
 
 ## Next Correct Step
 
-The next correct step by plan is:
+The next correct Stage 6 production step is deferred by operator decision.
+
+When production migration work resumes at the end of the local/reborn migration path:
 
 1. start `production-reborn-maintenance-deploy-plan`
 2. define the exact maintenance/write-freeze mechanism, reviewed server `.env` inventory template, PM2 web/API topology, Nginx routing plan, and secret rotation order
 3. document maintenance/process smoke that can run before DB cutover, and keep full DB-backed smoke after Postgres import/`DATABASE_URL` cutover
-4. track the reported microphone/media issue separately from Stage 6 database migration work
+4. keep the planned order: maintenance -> merge/deploy reborn to main/prod -> DB migration/cutover -> full DB-backed smoke
+5. track the reported microphone/media issue separately from Stage 6 database migration work
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
