@@ -210,11 +210,18 @@ Done:
 - `mysql-to-postgres-local-import-rehearsal-tooling` added local-only guarded tooling for preflight, dry-run checks, reset-to-baseline, table-order import, and parity reporting; actual import was not executed
 - `mysql-to-postgres-local-import-rehearsal-dry-run-report` captured a successful no-write preflight/dry-run report with source row counts, clean orphan/enum/DateTime checks, empty Postgres validation target counts, and no Prisma drift; actual import was not executed
 - `mysql-to-postgres-local-import-rehearsal-run-report` ran the first actual local-only import rehearsal into disposable Postgres validation with explicit reset/execute/confirm flags; all 98 rows imported with row-count and aggregate parity, post-import orphan/enum/DateTime checks clean, and the two self-conversation rows retained as review-only parity data
+- `local-postgres-dev-switch-plan` documented that local development can switch to Postgres without preserving local MySQL data, while production still requires a separate controlled migration and self-contained runbook
 
 Next:
-- `postgres-validation-runtime-smoke-plan`
-- define local-only runtime smoke validation against the imported disposable Postgres validation database without changing active runtime configuration or switching the provider
-- keep active `DATABASE_URL`, `provider = "mysql"`, `prisma/schema.prisma`, migrations, and runtime behavior unchanged
+- `local-postgres-dev-switch-implementation`
+- perform the local-only Postgres dev switch without preserving local MySQL data, keeping production migration and production runbook work separate
+- scope any provider/env/runtime changes to local development only; do not target staging or production and do not treat the local disposable-data switch as the production migration path
+
+## Production Runbook Requirement
+
+The local dev switch is intentionally allowed to discard local MySQL data. Production is not.
+
+Before any production cutover, Stage 6 must produce a self-contained production migration runbook that can be used outside this chat context and shared with another assistant/session while operating on the server. It must include environment inventory, backup/restore verification, migration commands, parity checks, deployment order, secret updates, smoke tests, rollback triggers/commands, monitoring checks, and a place to paste server outputs and assistant observations.
 
 ## Verification
 

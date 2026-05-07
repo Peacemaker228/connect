@@ -36,6 +36,7 @@ Current wave order:
 - `Wave 27` = `VENDOR_REPO_CLEANUP` (done)
 - `Wave 28` = `PRISMA_BOUNDARY_PREP`
 - `Wave 29` = `POSTGRES_PROVIDER_SWITCH_PLAN`
+- `Wave 30` = `LOCAL_POSTGRES_DEV_SWITCH`
 
 ## Status by Stage
 
@@ -204,13 +205,13 @@ Remaining:
 Status: `active`
 
 Current wave:
-- `Wave 29 / POSTGRES_PROVIDER_SWITCH_PLAN`
+- `Wave 30 / LOCAL_POSTGRES_DEV_SWITCH`
 
 Current intent:
 - create the separate Stage 6 provider-switch/data-migration plan after `Wave 28`
 - define future implementation segments for schema/provider diff audit, local Postgres env, migration strategy, data export/import, staging validation, rollback, and cutover
-- keep this as a planning wave, not the provider switch itself
-- keep `DATABASE_URL`, Prisma datasource provider, `prisma/schema.prisma`, migrations, and runtime DB behavior unchanged during this planning wave
+- keep production migration separate from the local disposable-data Postgres dev switch
+- keep staging/production untouched during local dev switch work
 
 Done:
 - `Prisma boundary inventory / pre-Stage6 preparation` exists in `docs/delegation/briefs/SEGMENT_BRIEF_055_PRISMA_BOUNDARY_INVENTORY.md`
@@ -249,20 +250,23 @@ Done:
 - the local-only preflight/dry-run report passed with `actualImportExecuted=false`, source row counts captured, source orphan/enum/DateTime checks clean, target counts empty, and Prisma drift reporting no difference
 - `mysql-to-postgres-local-import-rehearsal-run-report` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_068_MYSQL_POSTGRES_LOCAL_IMPORT_REHEARSAL_RUN_REPORT.md`
 - the first actual local-only import rehearsal imported all 98 local MySQL rows into disposable Postgres validation with explicit reset/execute/confirm flags; post-import row counts and aggregate parity passed, orphan/enum/DateTime checks stayed clean, and the two self-conversation rows remain review-only parity data
+- `local-postgres-dev-switch-plan` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_069_LOCAL_POSTGRES_DEV_SWITCH_PLAN.md`
+- local development is allowed to switch to Postgres without preserving local MySQL data; production remains a separate controlled migration path that requires a self-contained runbook usable outside this chat context
+- `Wave 30 / LOCAL_POSTGRES_DEV_SWITCH` exists in `docs/waves/LOCAL_POSTGRES_DEV_SWITCH.md`
 
 Remaining:
 - no provider switch has been performed yet
-- next segment should define local-only runtime smoke validation against the imported disposable Postgres validation database without changing active runtime configuration or switching the provider
+- next segment should perform the local-only Postgres dev switch without preserving local MySQL data, while keeping production migration and the production runbook separate
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. start `postgres-validation-runtime-smoke-plan`
-2. define local-only runtime smoke validation against the imported disposable Postgres validation database, including auth/profile/server/channel/message/direct-message checks and explicit rollback/reset boundaries
+1. start `local-postgres-dev-switch-implementation`
+2. perform the local-only Postgres dev switch without preserving local MySQL data
 3. keep `Stage 5A` direct-backend runtime assumptions intact
 4. do not reintroduce `Next` API/proxy routes under `src/app/api/*` or `src/pages/api/socket/*`
-5. do not change `DATABASE_URL`, the Prisma datasource provider, `prisma/schema.prisma`, migrations, or runtime DB behavior during the next segment
+5. keep production migration, staging, rollback, and production runbook work out of the local dev switch implementation segment
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
