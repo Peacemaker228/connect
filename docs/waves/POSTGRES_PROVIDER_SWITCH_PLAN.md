@@ -215,10 +215,12 @@ Done:
 - `local-postgres-dev-smoke` is passed by user report for the migration/runtime path
 - `prisma-7-local-upgrade` upgraded local Prisma CLI/client packages to `7.8.0`, moved datasource URL resolution to `prisma.config.ts`, and updated backend runtime to use the Postgres driver adapter
 - `local-mysql-retirement` downgraded local MySQL assumptions: active local development uses Postgres, and MySQL remains only an explicit rehearsal/production-migration source through `MYSQL_REHEARSAL_SOURCE_DATABASE_URL`
+- `production-postgres-migration-runbook-plan` added a self-contained production migration runbook plan in `docs/runbooks/PRODUCTION_POSTGRES_MIGRATION_RUNBOOK.md`, covering environment inventory, backup/restore verification, staging rehearsal, write-freeze, export/import, parity checks, deployment/secret update order, smoke tests, rollback, monitoring, and incident output capture
+- follow-up wave documented in [PRODUCTION_POSTGRES_MIGRATION_RUNBOOK_PLAN.md](./PRODUCTION_POSTGRES_MIGRATION_RUNBOOK_PLAN.md)
 
 Next:
-- `production-postgres-migration-runbook-plan`
-- create a self-contained production migration runbook plan before staging or production cutover
+- `production-postgres-migration-runbook-review`
+- review the self-contained production migration runbook with an operator and fill environment-specific placeholders before staging or production work
 - keep production migration, staging, rollback, and microphone/media follow-up work separate
 
 ## Production Runbook Requirement
@@ -226,6 +228,11 @@ Next:
 The local dev switch is intentionally allowed to discard local MySQL data. Production is not.
 
 Before any production cutover, Stage 6 must produce a self-contained production migration runbook that can be used outside this chat context and shared with another assistant/session while operating on the server. It must include environment inventory, backup/restore verification, migration commands, parity checks, deployment order, secret updates, smoke tests, rollback triggers/commands, monitoring checks, and a place to paste server outputs and assistant observations.
+
+Status:
+- drafted in [PRODUCTION_POSTGRES_MIGRATION_RUNBOOK.md](../runbooks/PRODUCTION_POSTGRES_MIGRATION_RUNBOOK.md)
+- documented by [SEGMENT_BRIEF_073_PRODUCTION_POSTGRES_MIGRATION_RUNBOOK_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_073_PRODUCTION_POSTGRES_MIGRATION_RUNBOOK_PLAN.md)
+- still requires operator review and environment-specific command placeholders before staging or production use
 
 ## Verification
 
