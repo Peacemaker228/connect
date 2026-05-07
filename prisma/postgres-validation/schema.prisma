@@ -3,10 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider          = "postgresql"
-  url               = env("POSTGRES_VALIDATION_DATABASE_URL")
-  shadowDatabaseUrl = env("POSTGRES_VALIDATION_SHADOW_DATABASE_URL")
-  relationMode      = "prisma"
+  provider     = "postgresql"
+  relationMode = "prisma"
 }
 
 model Profile {

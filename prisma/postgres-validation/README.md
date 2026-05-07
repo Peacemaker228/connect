@@ -28,7 +28,7 @@ bun.cmd x prisma validate --schema prisma/postgres-validation/schema.prisma
 Baseline generation command used for review:
 
 ```bash
-bun.cmd x prisma migrate diff --from-empty --to-schema-datamodel prisma/postgres-validation/schema.prisma --script
+bun.cmd x prisma migrate diff --from-empty --to-schema prisma/postgres-validation/schema.prisma --script
 ```
 
 The first baseline keeps `relationMode = "prisma"` to preserve the current Prisma-managed relation behavior. The generated SQL therefore has tables, primary keys, enums, unique constraints, and indexes, but does not add database foreign-key constraints.

@@ -212,10 +212,12 @@ Done:
 - `mysql-to-postgres-local-import-rehearsal-run-report` ran the first actual local-only import rehearsal into disposable Postgres validation with explicit reset/execute/confirm flags; all 98 rows imported with row-count and aggregate parity, post-import orphan/enum/DateTime checks clean, and the two self-conversation rows retained as review-only parity data
 - `local-postgres-dev-switch-plan` documented that local development can switch to Postgres without preserving local MySQL data, while production still requires a separate controlled migration and self-contained runbook
 - `local-postgres-dev-switch-implementation` switched local development to Postgres with disposable local data; active local Prisma provider is now `postgresql`, while staging/production migration remains separate
+- `local-postgres-dev-smoke` is passed by user report for the migration/runtime path
+- `prisma-7-local-upgrade` upgraded local Prisma CLI/client packages to `7.8.0`, moved datasource URL resolution to `prisma.config.ts`, and updated backend runtime to use the Postgres driver adapter
 
 Next:
-- `local-postgres-dev-smoke`
-- run local API/web smoke checks against Postgres and document compatibility findings
+- `local-mysql-retirement`
+- remove or downgrade local MySQL assumptions from local docs/scripts where appropriate
 - keep production migration, staging, rollback, and production runbook work separate
 
 ## Production Runbook Requirement
