@@ -243,17 +243,19 @@ Done:
 - the isolated clean baseline was applied to disposable local Postgres validation and Prisma reported no empty-database schema drift
 - `mysql-to-postgres-local-import-rehearsal-plan` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_065_MYSQL_POSTGRES_LOCAL_IMPORT_REHEARSAL_PLAN.md`
 - the local-only import rehearsal plan defines table order, transform rules, reset/retry strategy, verification queries, parity checks, pass/review/fail criteria, and no-production guardrails
+- `mysql-to-postgres-local-import-rehearsal-tooling` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_066_MYSQL_POSTGRES_LOCAL_IMPORT_REHEARSAL_TOOLING.md`
+- local-only tooling now exists for guarded preflight, dry-run checks, reset-to-baseline, table-order import, and parity reporting; actual import was not executed
 
 Remaining:
 - no provider switch has been performed yet
-- next segment should implement local-only import rehearsal tooling and verification scripts with strict source/target allowlists, reset-to-baseline preflight, table-order import, and post-import parity reporting
+- next segment should run the new tooling in preflight/dry-run mode against reachable local MySQL and local Postgres validation, capture the full no-write report, and confirm readiness for an explicit actual import rehearsal
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. start `mysql-to-postgres-local-import-rehearsal-tooling`
-2. implement local-only import rehearsal tooling and verification scripts with strict source/target allowlists, reset-to-baseline preflight, table-order import, and post-import parity reporting
+1. start `mysql-to-postgres-local-import-rehearsal-dry-run-report`
+2. run the new tooling in preflight/dry-run mode against reachable local MySQL and local Postgres validation, capture the full no-write report, and confirm readiness for an explicit actual import rehearsal
 3. keep `Stage 5A` direct-backend runtime assumptions intact
 4. do not reintroduce `Next` API/proxy routes under `src/app/api/*` or `src/pages/api/socket/*`
 5. do not change `DATABASE_URL`, the Prisma datasource provider, `prisma/schema.prisma`, migrations, or runtime DB behavior during the next segment
