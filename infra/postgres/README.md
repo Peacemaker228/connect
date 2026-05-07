@@ -11,6 +11,7 @@ Files:
 - `postgres-validation.env.example` documents validation env names.
 - `../../prisma/postgres-validation/schema.prisma` defines the validation-only Prisma schema path.
 - `../../prisma/postgres-validation/migrations/00000000000000_clean_baseline/migration.sql` contains the generated clean local validation baseline for review.
+- `../../scripts/stage6/mysql-postgres-local-import-rehearsal.ts` provides local-only preflight, reset, import, and parity tooling.
 
 Default local settings:
 - service/container: `connect-postgres-validation`
@@ -40,6 +41,18 @@ Check status:
 
 ```bash
 docker compose -f infra/postgres/docker-compose.validation.yml ps
+```
+
+Run import rehearsal preflight without writing to Postgres:
+
+```bash
+bun.cmd scripts/stage6/mysql-postgres-local-import-rehearsal.ts --mode preflight
+```
+
+Run dry-run checks without writing to Postgres:
+
+```bash
+bun.cmd scripts/stage6/mysql-postgres-local-import-rehearsal.ts --mode dry-run
 ```
 
 ## Teardown
