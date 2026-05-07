@@ -263,20 +263,24 @@ Done:
 - active local development now uses Postgres; MySQL remains only as an explicit legacy/rehearsal/production-migration source, and rehearsal tooling requires `MYSQL_REHEARSAL_SOURCE_DATABASE_URL` instead of active `DATABASE_URL`
 - `production-postgres-migration-runbook-plan` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_073_PRODUCTION_POSTGRES_MIGRATION_RUNBOOK_PLAN.md`
 - `docs/runbooks/PRODUCTION_POSTGRES_MIGRATION_RUNBOOK.md` now exists as a self-contained operator-facing plan covering environment inventory, backups, restore verification, staging rehearsal, maintenance/write-freeze, export/import, parity checks, deploy order, secret updates, smoke tests, rollback, monitoring, and incident/output capture
+- `production-current-state-inventory-env-gap-audit` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_074_PRODUCTION_CURRENT_STATE_ENV_GAP_AUDIT.md`
+- the production runbook now documents known VPS/PM2/Nginx/current deploy/server `.env` facts, current reborn/runtime env requirements, obsolete Clerk/UploadThing env handling, required secret rotation, and the future order: maintenance -> deploy reborn -> maintenance/process smoke -> DB migration/cutover -> full DB-backed smoke
 
 Remaining:
 - production provider switch has not been performed yet
 - staging rehearsal has not been performed yet
 - production-safe migration tooling or command path still needs separate review/implementation
-- the production runbook still needs operator review and environment-specific command placeholders before staging or production use
+- maintenance/write-freeze mechanism is not defined yet
+- production server env inventory, PM2 topology, Nginx routing, and secret rotation order still need operator review before server deploy
+- Postgres target installation/hosting strategy is still undecided
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. start `production-postgres-migration-runbook-review`
-2. review `docs/runbooks/PRODUCTION_POSTGRES_MIGRATION_RUNBOOK.md` with an operator and fill environment-specific placeholders
-3. decide the next separately scoped staging rehearsal or production-safe migration tooling segment
+1. start `production-reborn-maintenance-deploy-plan`
+2. define the exact maintenance/write-freeze mechanism, reviewed server `.env` inventory template, PM2 web/API topology, Nginx routing plan, and secret rotation order
+3. document maintenance/process smoke that can run before DB cutover, and keep full DB-backed smoke after Postgres import/`DATABASE_URL` cutover
 4. track the reported microphone/media issue separately from Stage 6 database migration work
 
 Current `Wave 26` progress:
