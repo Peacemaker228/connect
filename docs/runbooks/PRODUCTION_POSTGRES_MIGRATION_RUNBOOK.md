@@ -82,6 +82,86 @@ Required secret handling:
 - do not commit `.env.production`
 - do not paste secret values into docs, issue comments, or assistant messages
 
+## Production Current State And Env Gap Audit
+
+Source:
+- [SEGMENT_BRIEF_074_PRODUCTION_CURRENT_STATE_ENV_GAP_AUDIT.md](../delegation/briefs/SEGMENT_BRIEF_074_PRODUCTION_CURRENT_STATE_ENV_GAP_AUDIT.md)
+
+Known production state:
+- VPS
+- PM2 + Nginx
+- current deploy shape is `git pull`, build, `pm2 restart`, and desktop upload
+- MySQL is manually installed on the same server
+- target Postgres is likely on the same server; Docker may be decided later
+- production env file is server `.env`
+- known non-secret production env values include `NODE_ENV=production` and `PORT=3000`
+- maintenance/write-freeze mechanism is not defined yet
+- production env is from an older Clerk/UploadThing-era runtime
+- secrets were previously exposed in chat, so controlled rotation is required
+
+Required reborn/runtime env inventory:
+
+| Group | Variables | Notes |
+| --- | --- | --- |
+| Web process | `NODE_ENV`, `PORT` | known non-secret values are `NODE_ENV=production` and `PORT=3000`; confirm PM2/Nginx topology before deploy. |
+| API process | `API_PORT`, optional `API_GLOBAL_PREFIX` | default API port is `4000`; default prefix is `api`. |
+| Browser/API routing | `NEXT_PUBLIC_API_URL`, optional `NEXT_PUBLIC_API_PORT`, optional `API_EXTERNAL_URL` | `NEXT_PUBLIC_API_URL` is the public direct-backend API base URL and may include `/api`. |
+| Server/API routing | `API_INTERNAL_URL` | used by Next server utilities and auth middleware to call the backend API. |
+| CORS | `API_CORS_ALLOWED_ORIGINS` or `API_CORS_ORIGINS` | required for credentialed production CORS; values must be exact origins. |
+| Database | `DATABASE_URL` | current reborn runtime expects `postgresql`; production MySQL remains source of truth until cutover completion. |
+| Backend auth | `AUTH_TOKEN_SECRET`, optional `AUTH_ACCESS_TOKEN_TTL_SECONDS`, optional `AUTH_REFRESH_TOKEN_TTL_SECONDS` | production must not use the dev fallback secret. |
+| Storage | `STORAGE_BUCKET`, `STORAGE_PUBLIC_BASE_URL`, `STORAGE_S3_ENDPOINT`, `STORAGE_S3_ACCESS_KEY_ID`, `STORAGE_S3_SECRET_ACCESS_KEY` | required for active S3-compatible provider. |
+| Storage options | `STORAGE_ACTIVE_PROVIDER`, `STORAGE_TARGET_PROVIDER`, `STORAGE_MANAGED_CLOUD`, `STORAGE_S3_REGION`, `STORAGE_S3_FORCE_PATH_STYLE`, `STORAGE_KEY_PREFIX` | optional; defaults must be reviewed for production. |
+| Storage sweeper | `STORAGE_STAGED_SWEEPER_ENABLED`, `STORAGE_STAGED_SWEEPER_INTERVAL_MINUTES`, `STORAGE_STAGED_SWEEPER_MAX_AGE_HOURS`, `STORAGE_STAGED_SWEEPER_MAX_OBJECTS` | optional; decide separately from DB cutover. |
+| LiveKit | `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `NEXT_PUBLIC_LIVEKIT_URL` | required for current media token flow and frontend LiveKit room. |
+| Build metadata | `NEXT_PUBLIC_APP_VERSION`, `NEXT_PUBLIC_APP_ENV`, optional `NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL` | `NEXT_PUBLIC_*` changes require rebuild. |
+
+Current gaps before maintenance deploy:
+
+| Gap | Status | Required decision |
+| --- | --- | --- |
+| Maintenance/write-freeze mechanism | blocker | define how writes are stopped before deploy and DB migration |
+| Server `.env` inventory | blocker | produce reviewed inventory without publishing values |
+| `NODE_ENV` / `PORT` | review | keep `NODE_ENV=production`, confirm `PORT=3000` matches Nginx/PM2 web process |
+| PM2 topology | blocker | decide process names and restart order for web and API |
+| Nginx routing | blocker | decide API/realtime proxying and public API origin shape |
+| Reborn API env | blocker | define `API_PORT`, `NEXT_PUBLIC_API_URL`, `API_INTERNAL_URL`, and `API_CORS_ALLOWED_ORIGINS` |
+| Backend auth secret | blocker | create/rotate `AUTH_TOKEN_SECRET`; do not use dev fallback |
+| S3-compatible storage env | blocker | confirm all required `STORAGE_*` values |
+| Secret rotation | blocker | rotate exposed DB, auth, storage, LiveKit, old Clerk, old UploadThing, and deploy/upload secrets |
+| Postgres target | blocker for cutover | decide same-server package vs Docker and backup/monitoring strategy |
+
+Obsolete env vars:
+- `CLERK_*`
+- `NEXT_PUBLIC_CLERK_*`
+- `CLERK_SECRET_KEY`
+- `UPLOADTHING_*`
+- `UT_*`
+
+Handling:
+- do not repeat values
+- do not remove ad hoc
+- remove only as part of reviewed maintenance env update
+- rotate obsolete provider secrets because they were exposed
+- keep historical UploadThing file URL compatibility in data/runtime where current storage access supports it
+
+Required future sequence:
+1. Define maintenance/write-freeze.
+2. Enter maintenance/write-freeze on current production runtime.
+3. Backup current server `.env`, PM2 config, Nginx config, and MySQL.
+4. Merge/deploy reborn code and build artifacts while public writes remain frozen.
+5. Apply reviewed env update and secret rotation plan without publishing values.
+6. Start/verify PM2 web/API process topology and Nginx routing.
+7. Run maintenance/process smoke only.
+8. Run final MySQL backup/export and Postgres import/cutover.
+9. Run full DB-backed runtime smoke after Postgres import and `DATABASE_URL` cutover.
+10. Lift maintenance only after parity and smoke gates pass.
+
+Important:
+- current reborn backend Prisma runtime uses the Postgres driver adapter and expects a `postgresql` `DATABASE_URL`
+- pre-cutover smoke before DB migration can only be maintenance/process smoke, not full product smoke against MySQL
+- full auth/server/channel/message/storage DB-backed smoke belongs after Postgres import/cutover
+
 ## Global Go/No-Go Gates
 
 Do not start staging rehearsal unless all are true:
@@ -389,8 +469,19 @@ Gate:
 
 Purpose:
 - switch runtime to Postgres only after final import and parity pass
+- keep the earlier maintenance deploy separate from public DB-backed enablement
 
-Deployment order:
+Maintenance deploy order before DB cutover:
+1. Enter maintenance/write-freeze on the current production runtime.
+2. Backup current server `.env`, PM2 config, Nginx config, and MySQL.
+3. Merge/deploy reborn code and build artifacts while public writes remain frozen.
+4. Apply reviewed env update and secret rotation plan.
+5. Start/verify PM2 web/API process topology.
+6. Verify Nginx routing for web, API, and realtime.
+7. Run maintenance/process smoke only.
+8. Continue to DB migration/cutover only if maintenance/process smoke passes.
+
+DB-backed enablement order:
 1. Keep production app in write-freeze.
 2. Confirm final import passed.
 3. Confirm parity checks passed.

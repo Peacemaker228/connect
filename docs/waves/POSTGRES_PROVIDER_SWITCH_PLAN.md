@@ -217,10 +217,11 @@ Done:
 - `local-mysql-retirement` downgraded local MySQL assumptions: active local development uses Postgres, and MySQL remains only an explicit rehearsal/production-migration source through `MYSQL_REHEARSAL_SOURCE_DATABASE_URL`
 - `production-postgres-migration-runbook-plan` added a self-contained production migration runbook plan in `docs/runbooks/PRODUCTION_POSTGRES_MIGRATION_RUNBOOK.md`, covering environment inventory, backup/restore verification, staging rehearsal, write-freeze, export/import, parity checks, deployment/secret update order, smoke tests, rollback, monitoring, and incident output capture
 - follow-up wave documented in [PRODUCTION_POSTGRES_MIGRATION_RUNBOOK_PLAN.md](./PRODUCTION_POSTGRES_MIGRATION_RUNBOOK_PLAN.md)
+- `production-current-state-inventory-env-gap-audit` documented known production state versus current reborn/runtime env requirements, including PM2/Nginx/API/CORS/auth/storage/LiveKit/database gaps, obsolete Clerk/UploadThing env handling, controlled secret rotation, and maintenance-before-cutover sequencing
 
 Next:
-- `production-postgres-migration-runbook-review`
-- review the self-contained production migration runbook with an operator and fill environment-specific placeholders before staging or production work
+- `production-reborn-maintenance-deploy-plan`
+- define the exact maintenance/write-freeze mechanism, reviewed server env inventory, PM2/Nginx topology, secret rotation order, and maintenance/process smoke checklist before any server deploy
 - keep production migration, staging, rollback, and microphone/media follow-up work separate
 
 ## Production Runbook Requirement

@@ -36,11 +36,12 @@ Forbidden:
 Done:
 - `docs/runbooks/PRODUCTION_POSTGRES_MIGRATION_RUNBOOK.md` exists as a self-contained production migration runbook plan
 - `production-postgres-migration-runbook-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_073_PRODUCTION_POSTGRES_MIGRATION_RUNBOOK_PLAN.md`
+- `production-current-state-inventory-env-gap-audit` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_074_PRODUCTION_CURRENT_STATE_ENV_GAP_AUDIT.md`
+- the runbook now includes known production state, current reborn/runtime env requirements, obsolete Clerk/UploadThing env handling, secret rotation requirement, and maintenance-before-cutover sequencing
 
 Next:
-- `production-postgres-migration-runbook-review`
-- review the runbook with an operator
-- fill environment-specific placeholders and decide the next staging rehearsal or production-safe migration tooling segment
+- `production-reborn-maintenance-deploy-plan`
+- define the maintenance/write-freeze mechanism, server env inventory template, PM2/Nginx topology, secret rotation order, and non-DB smoke checklist before any server deploy
 
 ## Acceptance Criteria
 
@@ -49,6 +50,8 @@ Next:
 - local Postgres switch is not treated as production proof
 - staging/prod are untouched
 - rollback, backup, restore verification, parity checks, deployment order, smoke tests, monitoring, and output capture are documented
+- production current-state/env gaps are documented without exposing secrets
+- future order is explicit: maintenance -> deploy reborn -> maintenance/process smoke -> DB migration/cutover -> full DB-backed smoke
 
 ## References
 
