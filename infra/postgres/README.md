@@ -1,14 +1,15 @@
 # Postgres
 
-Local Postgres validation artifacts live here.
+Local Postgres artifacts live here.
 
-This directory is for isolated Stage 6 validation only. It must not change the active application `DATABASE_URL`, Prisma datasource provider, `prisma/schema.prisma`, migrations, or runtime code.
+This directory is for local Stage 6 Postgres development and validation only. It must not target staging or production.
 
 ## Validation Service
 
 Files:
 - `docker-compose.validation.yml` starts a local-only Postgres validation service.
 - `postgres-validation.env.example` documents validation env names.
+- `postgres-dev.env.example` documents the local active `DATABASE_URL` value for disposable Postgres development.
 - `../../prisma/postgres-validation/schema.prisma` defines the validation-only Prisma schema path.
 - `../../prisma/postgres-validation/migrations/00000000000000_clean_baseline/migration.sql` contains the generated clean local validation baseline for review.
 - `../../scripts/stage6/mysql-postgres-local-import-rehearsal.ts` provides local-only preflight, reset, import, and parity tooling.
@@ -18,10 +19,13 @@ Default local settings:
 - database: `connect_validation`
 - user: `connect_validation`
 - host port: `5433`
+- active local dev URL env name: `DATABASE_URL`
 - validation URL env name: `POSTGRES_VALIDATION_DATABASE_URL`
 - optional shadow URL env name: `POSTGRES_VALIDATION_SHADOW_DATABASE_URL`
 
-The active app runtime continues to use `DATABASE_URL` for the current MySQL database.
+After `Wave 30 / LOCAL_POSTGRES_DEV_SWITCH`, active local development uses Postgres through `DATABASE_URL`.
+
+Local data is disposable. The local switch does not preserve local MySQL data and is not the production migration path.
 
 ## Setup
 
@@ -41,6 +45,30 @@ Check status:
 
 ```bash
 docker compose -f infra/postgres/docker-compose.validation.yml ps
+```
+
+Set local active Prisma/runtime database URL:
+
+```bash
+set DATABASE_URL=postgresql://connect_validation:connect_validation_password@localhost:5433/connect_validation?schema=public
+```
+
+PowerShell:
+
+```powershell
+$env:DATABASE_URL="postgresql://connect_validation:connect_validation_password@localhost:5433/connect_validation?schema=public"
+```
+
+Reset disposable local Postgres and apply the active Prisma schema:
+
+```bash
+bun.cmd x prisma db push --force-reset --accept-data-loss
+```
+
+Generate the active Prisma client:
+
+```bash
+bun.cmd x prisma generate
 ```
 
 Run import rehearsal preflight without writing to Postgres:
@@ -71,8 +99,8 @@ docker compose -f infra/postgres/docker-compose.validation.yml down -v
 
 ## Guardrails
 
-- Do not set active `DATABASE_URL` to `POSTGRES_VALIDATION_DATABASE_URL`.
-- Do not point `apps/api` or `apps/web` at these variables.
-- Do not change `provider = "mysql"` in the active Prisma schema in this segment.
-- Do not create, edit, or run active Prisma migrations as part of this infrastructure segment.
-- Use this service only for later approved validation/baseline work.
+- Use these URLs only for local development and validation.
+- Do not target staging or production with this Compose service.
+- Do not treat local disposable-data reset as production migration proof.
+- Do not delete local MySQL data as part of the local Postgres switch.
+- Keep production migration, rollback, and cutover runbooks separate.

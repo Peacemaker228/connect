@@ -21,7 +21,8 @@ Preferred source env:
 - `MYSQL_REHEARSAL_SOURCE_DATABASE_URL`
 
 Fallback source env:
-- `DATABASE_URL`, only if it passes the local MySQL allowlist
+- historical fallback: `DATABASE_URL`, only if it passes the local MySQL allowlist
+- after `Wave 30 / LOCAL_POSTGRES_DEV_SWITCH`, active local `DATABASE_URL` is Postgres, so use `MYSQL_REHEARSAL_SOURCE_DATABASE_URL` explicitly for any MySQL source rehearsal
 
 Preflight:
 
@@ -51,7 +52,7 @@ Guardrails:
 - source URL must be local `mysql`
 - target URL must be local `postgresql`
 - target must be `POSTGRES_VALIDATION_DATABASE_URL`
-- active `DATABASE_URL` must not be repointed to Postgres
+- active local `DATABASE_URL` may be Postgres after `Wave 30`; do not rely on it as the MySQL source
 - no staging or production target is allowed
 - actual import is never the default mode
 - actual import requires `--reset-target`, `--execute-import`, and `--confirm-disposable-target`

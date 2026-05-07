@@ -56,6 +56,17 @@ The local switch may start from an empty Postgres database or minimal fixtures. 
    - remove or downgrade local MySQL assumptions from local docs/scripts where appropriate
    - keep production migration tooling and runbook requirements intact
 
+## Current Progress
+
+Done:
+- `local-postgres-dev-switch-plan` documented that local development can switch to Postgres without preserving local MySQL data
+- `local-postgres-dev-switch-implementation` switched the active local Prisma datasource provider to `postgresql`, added local Postgres `DATABASE_URL` example docs, reset/applied the clean local Postgres schema, and generated the Prisma client
+
+Next:
+- `local-postgres-dev-smoke`
+- run local API/web smoke checks against Postgres and document compatibility findings
+- keep staging/production and production runbook work separate
+
 ## Production Runbook Reminder
 
 Before production cutover, create a separate self-contained production migration runbook.
