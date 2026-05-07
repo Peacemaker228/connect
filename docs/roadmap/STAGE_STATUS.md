@@ -247,17 +247,19 @@ Done:
 - local-only tooling now exists for guarded preflight, dry-run checks, reset-to-baseline, table-order import, and parity reporting; actual import was not executed
 - `mysql-to-postgres-local-import-rehearsal-dry-run-report` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_067_MYSQL_POSTGRES_LOCAL_IMPORT_REHEARSAL_DRY_RUN_REPORT.md`
 - the local-only preflight/dry-run report passed with `actualImportExecuted=false`, source row counts captured, source orphan/enum/DateTime checks clean, target counts empty, and Prisma drift reporting no difference
+- `mysql-to-postgres-local-import-rehearsal-run-report` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_068_MYSQL_POSTGRES_LOCAL_IMPORT_REHEARSAL_RUN_REPORT.md`
+- the first actual local-only import rehearsal imported all 98 local MySQL rows into disposable Postgres validation with explicit reset/execute/confirm flags; post-import row counts and aggregate parity passed, orphan/enum/DateTime checks stayed clean, and the two self-conversation rows remain review-only parity data
 
 Remaining:
 - no provider switch has been performed yet
-- next segment should run the first actual local-only import rehearsal against disposable Postgres validation with explicit write flags and a clean-baseline reset immediately before the run
+- next segment should define local-only runtime smoke validation against the imported disposable Postgres validation database without changing active runtime configuration or switching the provider
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. start `mysql-to-postgres-local-import-rehearsal-run-report`
-2. reset disposable local Postgres validation to the clean baseline, run the first explicitly guarded actual local import rehearsal, and capture row count parity, orphan checks, enum checks, DateTime checks, aggregate parity, self-conversation review count, and drift/schema verification
+1. start `postgres-validation-runtime-smoke-plan`
+2. define local-only runtime smoke validation against the imported disposable Postgres validation database, including auth/profile/server/channel/message/direct-message checks and explicit rollback/reset boundaries
 3. keep `Stage 5A` direct-backend runtime assumptions intact
 4. do not reintroduce `Next` API/proxy routes under `src/app/api/*` or `src/pages/api/socket/*`
 5. do not change `DATABASE_URL`, the Prisma datasource provider, `prisma/schema.prisma`, migrations, or runtime DB behavior during the next segment

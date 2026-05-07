@@ -209,10 +209,11 @@ Done:
 - `mysql-to-postgres-local-import-rehearsal-plan` defined the local-only import rehearsal plan, including table order, transform rules, reset/retry strategy, parity checks, pass/review/fail criteria, and no-production guardrails
 - `mysql-to-postgres-local-import-rehearsal-tooling` added local-only guarded tooling for preflight, dry-run checks, reset-to-baseline, table-order import, and parity reporting; actual import was not executed
 - `mysql-to-postgres-local-import-rehearsal-dry-run-report` captured a successful no-write preflight/dry-run report with source row counts, clean orphan/enum/DateTime checks, empty Postgres validation target counts, and no Prisma drift; actual import was not executed
+- `mysql-to-postgres-local-import-rehearsal-run-report` ran the first actual local-only import rehearsal into disposable Postgres validation with explicit reset/execute/confirm flags; all 98 rows imported with row-count and aggregate parity, post-import orphan/enum/DateTime checks clean, and the two self-conversation rows retained as review-only parity data
 
 Next:
-- `mysql-to-postgres-local-import-rehearsal-run-report`
-- run the first actual local-only import rehearsal against disposable Postgres validation with explicit write flags, reset the target to the clean baseline before the run, capture full parity/drift results, and keep active MySQL runtime unchanged
+- `postgres-validation-runtime-smoke-plan`
+- define local-only runtime smoke validation against the imported disposable Postgres validation database without changing active runtime configuration or switching the provider
 - keep active `DATABASE_URL`, `provider = "mysql"`, `prisma/schema.prisma`, migrations, and runtime behavior unchanged
 
 ## Verification
