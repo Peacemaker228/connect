@@ -40,7 +40,8 @@ Done:
 - the runbook now includes known production state, current reborn/runtime env requirements, obsolete Clerk/UploadThing env handling, secret rotation requirement, and maintenance-before-cutover sequencing
 
 Next:
-- `production-reborn-maintenance-deploy-plan`
+- deferred by operator decision until the final production migration window
+- when resumed, start `production-reborn-maintenance-deploy-plan`
 - define the maintenance/write-freeze mechanism, server env inventory template, PM2/Nginx topology, secret rotation order, and non-DB smoke checklist before any server deploy
 
 ## Acceptance Criteria

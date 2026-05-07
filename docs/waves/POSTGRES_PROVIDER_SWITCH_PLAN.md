@@ -220,7 +220,8 @@ Done:
 - `production-current-state-inventory-env-gap-audit` documented known production state versus current reborn/runtime env requirements, including PM2/Nginx/API/CORS/auth/storage/LiveKit/database gaps, obsolete Clerk/UploadThing env handling, controlled secret rotation, and maintenance-before-cutover sequencing
 
 Next:
-- `production-reborn-maintenance-deploy-plan`
+- production maintenance/deploy/cutover planning is deferred by operator decision until the final production migration window
+- when resumed, start `production-reborn-maintenance-deploy-plan`
 - define the exact maintenance/write-freeze mechanism, reviewed server env inventory, PM2/Nginx topology, secret rotation order, and maintenance/process smoke checklist before any server deploy
 - keep production migration, staging, rollback, and microphone/media follow-up work separate
 
