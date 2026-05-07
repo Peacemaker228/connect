@@ -211,11 +211,12 @@ Done:
 - `mysql-to-postgres-local-import-rehearsal-dry-run-report` captured a successful no-write preflight/dry-run report with source row counts, clean orphan/enum/DateTime checks, empty Postgres validation target counts, and no Prisma drift; actual import was not executed
 - `mysql-to-postgres-local-import-rehearsal-run-report` ran the first actual local-only import rehearsal into disposable Postgres validation with explicit reset/execute/confirm flags; all 98 rows imported with row-count and aggregate parity, post-import orphan/enum/DateTime checks clean, and the two self-conversation rows retained as review-only parity data
 - `local-postgres-dev-switch-plan` documented that local development can switch to Postgres without preserving local MySQL data, while production still requires a separate controlled migration and self-contained runbook
+- `local-postgres-dev-switch-implementation` switched local development to Postgres with disposable local data; active local Prisma provider is now `postgresql`, while staging/production migration remains separate
 
 Next:
-- `local-postgres-dev-switch-implementation`
-- perform the local-only Postgres dev switch without preserving local MySQL data, keeping production migration and production runbook work separate
-- scope any provider/env/runtime changes to local development only; do not target staging or production and do not treat the local disposable-data switch as the production migration path
+- `local-postgres-dev-smoke`
+- run local API/web smoke checks against Postgres and document compatibility findings
+- keep production migration, staging, rollback, and production runbook work separate
 
 ## Production Runbook Requirement
 

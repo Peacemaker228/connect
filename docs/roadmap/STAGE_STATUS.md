@@ -253,17 +253,19 @@ Done:
 - `local-postgres-dev-switch-plan` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_069_LOCAL_POSTGRES_DEV_SWITCH_PLAN.md`
 - local development is allowed to switch to Postgres without preserving local MySQL data; production remains a separate controlled migration path that requires a self-contained runbook usable outside this chat context
 - `Wave 30 / LOCAL_POSTGRES_DEV_SWITCH` exists in `docs/waves/LOCAL_POSTGRES_DEV_SWITCH.md`
+- `local-postgres-dev-switch-implementation` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_070_LOCAL_POSTGRES_DEV_SWITCH_IMPLEMENTATION.md`
+- active local Prisma provider is now `postgresql`; local Postgres env examples/docs exist, the clean local schema was applied to disposable Postgres, and Prisma client generation completed
 
 Remaining:
-- no provider switch has been performed yet
-- next segment should perform the local-only Postgres dev switch without preserving local MySQL data, while keeping production migration and the production runbook separate
+- production provider switch has not been performed yet
+- next segment should smoke local API/web runtime against Postgres while keeping production migration and the production runbook separate
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. start `local-postgres-dev-switch-implementation`
-2. perform the local-only Postgres dev switch without preserving local MySQL data
+1. start `local-postgres-dev-smoke`
+2. run local API/web smoke checks against Postgres and document compatibility findings
 3. keep `Stage 5A` direct-backend runtime assumptions intact
 4. do not reintroduce `Next` API/proxy routes under `src/app/api/*` or `src/pages/api/socket/*`
 5. keep production migration, staging, rollback, and production runbook work out of the local dev switch implementation segment

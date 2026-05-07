@@ -1,6 +1,8 @@
 # Postgres Validation Prisma Schema
 
-This directory contains validation-only Prisma artifacts for Stage 6 local Postgres baseline review.
+This directory contains the original validation-only Prisma artifacts for Stage 6 local Postgres baseline review.
+
+After `Wave 30 / LOCAL_POSTGRES_DEV_SWITCH`, active local development uses `prisma/schema.prisma` with `provider = "postgresql"` and local `DATABASE_URL`. The artifacts in this directory remain useful as the reviewed baseline reference and validation history.
 
 Files:
 - `schema.prisma` is an isolated Postgres validation schema.
@@ -8,8 +10,8 @@ Files:
 
 Guardrails:
 - Do not use this schema as the active application schema.
-- Do not point active `DATABASE_URL` at Postgres validation.
-- Do not edit `prisma/schema.prisma` for validation-only work.
+- Use active local `DATABASE_URL` only for disposable local development.
+- Do not use these validation artifacts as staging or production cutover instructions.
 - Do not edit active `prisma/migrations`.
 - Do not run data import/export, cleanup, staging, or production cutover from this directory.
 
