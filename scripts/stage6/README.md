@@ -17,12 +17,13 @@ Purpose:
 Required target env:
 - `POSTGRES_VALIDATION_DATABASE_URL`
 
-Preferred source env:
+Required source env:
 - `MYSQL_REHEARSAL_SOURCE_DATABASE_URL`
 
-Fallback source env:
-- historical fallback: `DATABASE_URL`, only if it passes the local MySQL allowlist
-- after `Wave 30 / LOCAL_POSTGRES_DEV_SWITCH`, active local `DATABASE_URL` is Postgres, so use `MYSQL_REHEARSAL_SOURCE_DATABASE_URL` explicitly for any MySQL source rehearsal
+Source note:
+- after `Wave 30 / LOCAL_POSTGRES_DEV_SWITCH`, active local `DATABASE_URL` is Postgres
+- MySQL source rehearsals must set `MYSQL_REHEARSAL_SOURCE_DATABASE_URL` explicitly
+- active `DATABASE_URL` is not used as a MySQL rehearsal source
 
 Preflight:
 
@@ -52,7 +53,7 @@ Guardrails:
 - source URL must be local `mysql`
 - target URL must be local `postgresql`
 - target must be `POSTGRES_VALIDATION_DATABASE_URL`
-- active local `DATABASE_URL` may be Postgres after `Wave 30`; do not rely on it as the MySQL source
+- active local `DATABASE_URL` is Postgres after `Wave 30`; it is not a MySQL source
 - no staging or production target is allowed
 - actual import is never the default mode
 - actual import requires `--reset-target`, `--execute-import`, and `--confirm-disposable-target`

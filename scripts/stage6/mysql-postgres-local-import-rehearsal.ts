@@ -279,7 +279,7 @@ function parseDatabaseUrl(raw: string | undefined, envName: string, expectedKind
 }
 
 function sourceUrl() {
-  return process.env[MYSQL_ENV_NAME] || process.env.DATABASE_URL;
+  return process.env[MYSQL_ENV_NAME];
 }
 
 function run(command: string, args: string[], options?: { input?: string; env?: NodeJS.ProcessEnv }) {
@@ -533,7 +533,7 @@ function preflight(source: ReturnType<typeof parseDatabaseUrl>, target: ReturnTy
   }
 
   return {
-    source: { scheme: source.protocol, host: source.host, port: source.port, database: source.database, env: process.env[MYSQL_ENV_NAME] ? MYSQL_ENV_NAME : 'DATABASE_URL' },
+    source: { scheme: source.protocol, host: source.host, port: source.port, database: source.database, env: MYSQL_ENV_NAME },
     target: { scheme: target.protocol, host: target.host, port: target.port, database: target.database, env: POSTGRES_ENV_NAME },
     tableOrder: TABLES.map((table) => table.name),
     baselineSql: BASELINE_SQL_PATH,
@@ -568,7 +568,7 @@ function runImport(source: ReturnType<typeof parseDatabaseUrl>, target: ReturnTy
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
-  const source = parseDatabaseUrl(sourceUrl(), process.env[MYSQL_ENV_NAME] ? MYSQL_ENV_NAME : 'DATABASE_URL', 'mysql');
+  const source = parseDatabaseUrl(sourceUrl(), MYSQL_ENV_NAME, 'mysql');
   const target = parseDatabaseUrl(process.env[POSTGRES_ENV_NAME], POSTGRES_ENV_NAME, 'postgresql');
   const output: Record<string, unknown> = {
     mode: args.mode,

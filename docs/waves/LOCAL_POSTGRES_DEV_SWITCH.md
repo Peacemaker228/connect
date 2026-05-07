@@ -63,11 +63,12 @@ Done:
 - `local-postgres-dev-switch-implementation` switched the active local Prisma datasource provider to `postgresql`, added local Postgres `DATABASE_URL` example docs, reset/applied the clean local Postgres schema, and generated the Prisma client
 - `local-postgres-dev-smoke` is passed by user report for the migration/runtime path
 - Prisma packages were upgraded to `7.8.0`; the repo now uses `prisma.config.ts` for datasource URL resolution and `@prisma/adapter-pg` for backend runtime
+- `local-mysql-retirement` removed the active `DATABASE_URL` fallback from MySQL rehearsal tooling and clarified that local development uses Postgres while MySQL remains only a legacy/rehearsal/production-migration source
 
 Next:
-- `local-mysql-retirement`
-- remove or downgrade local MySQL assumptions from local docs/scripts where appropriate
-- keep staging/production and production runbook work separate
+- `production-postgres-migration-runbook-plan`
+- create a self-contained production migration runbook plan before any staging or production cutover
+- keep the microphone/media follow-up separate from Stage 6 database work
 
 Review:
 - microphone/media behavior needs a separate follow-up: mic can appear enabled while speech does not trigger the usual active indicator/audio
@@ -86,6 +87,7 @@ That runbook must be usable outside this chat context and should include exact c
 - production migration remains separate
 - staging/production are untouched
 - local smoke checks are documented before local MySQL assumptions are retired
+- MySQL source support remains available only through explicit rehearsal/production-migration env names
 
 ## References
 
