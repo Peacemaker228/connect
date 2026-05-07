@@ -208,10 +208,11 @@ Done:
 - `postgres-validation-runtime-unblock-and-apply-drift-rerun` applied the isolated clean baseline to disposable local Postgres validation and captured a clean empty-database drift check
 - `mysql-to-postgres-local-import-rehearsal-plan` defined the local-only import rehearsal plan, including table order, transform rules, reset/retry strategy, parity checks, pass/review/fail criteria, and no-production guardrails
 - `mysql-to-postgres-local-import-rehearsal-tooling` added local-only guarded tooling for preflight, dry-run checks, reset-to-baseline, table-order import, and parity reporting; actual import was not executed
+- `mysql-to-postgres-local-import-rehearsal-dry-run-report` captured a successful no-write preflight/dry-run report with source row counts, clean orphan/enum/DateTime checks, empty Postgres validation target counts, and no Prisma drift; actual import was not executed
 
 Next:
-- `mysql-to-postgres-local-import-rehearsal-dry-run-report`
-- run the new tooling in preflight/dry-run mode against reachable local MySQL and local Postgres validation, capture the full no-write report, and confirm readiness for an explicit actual import rehearsal
+- `mysql-to-postgres-local-import-rehearsal-run-report`
+- run the first actual local-only import rehearsal against disposable Postgres validation with explicit write flags, reset the target to the clean baseline before the run, capture full parity/drift results, and keep active MySQL runtime unchanged
 - keep active `DATABASE_URL`, `provider = "mysql"`, `prisma/schema.prisma`, migrations, and runtime behavior unchanged
 
 ## Verification
