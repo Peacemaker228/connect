@@ -37,6 +37,7 @@ Current wave order:
 - `Wave 28` = `PRISMA_BOUNDARY_PREP`
 - `Wave 29` = `POSTGRES_PROVIDER_SWITCH_PLAN`
 - `Wave 30` = `LOCAL_POSTGRES_DEV_SWITCH`
+- `Wave 31` = `PRODUCTION_POSTGRES_MIGRATION_RUNBOOK_PLAN`
 
 ## Status by Stage
 
@@ -205,7 +206,7 @@ Remaining:
 Status: `active`
 
 Current wave:
-- `Wave 30 / LOCAL_POSTGRES_DEV_SWITCH`
+- `Wave 31 / PRODUCTION_POSTGRES_MIGRATION_RUNBOOK_PLAN`
 
 Current intent:
 - create the separate Stage 6 provider-switch/data-migration plan after `Wave 28`
@@ -260,26 +261,22 @@ Done:
 - Prisma CLI/client packages are now `7.8.0`; datasource URL resolution moved to `prisma.config.ts`, and backend Prisma runtime uses the Postgres driver adapter
 - `local-mysql-retirement` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_072_LOCAL_MYSQL_RETIREMENT.md`
 - active local development now uses Postgres; MySQL remains only as an explicit legacy/rehearsal/production-migration source, and rehearsal tooling requires `MYSQL_REHEARSAL_SOURCE_DATABASE_URL` instead of active `DATABASE_URL`
+- `production-postgres-migration-runbook-plan` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_073_PRODUCTION_POSTGRES_MIGRATION_RUNBOOK_PLAN.md`
+- `docs/runbooks/PRODUCTION_POSTGRES_MIGRATION_RUNBOOK.md` now exists as a self-contained operator-facing plan covering environment inventory, backups, restore verification, staging rehearsal, maintenance/write-freeze, export/import, parity checks, deploy order, secret updates, smoke tests, rollback, monitoring, and incident/output capture
 
 Remaining:
 - production provider switch has not been performed yet
-- next segment should plan the self-contained production Postgres migration runbook before staging or production cutover
+- staging rehearsal has not been performed yet
+- production-safe migration tooling or command path still needs separate review/implementation
+- the production runbook still needs operator review and environment-specific command placeholders before staging or production use
 
 ## Next Correct Step
 
 The next correct step by plan is:
 
-1. start `local-postgres-dev-smoke`
-2. run local API/web smoke checks against Postgres and document compatibility findings
-3. keep `Stage 5A` direct-backend runtime assumptions intact
-4. do not reintroduce `Next` API/proxy routes under `src/app/api/*` or `src/pages/api/socket/*`
-5. keep production migration, staging, rollback, and production runbook work out of the local dev switch implementation segment
-
-Updated next step after local MySQL retirement:
-
-1. start `production-postgres-migration-runbook-plan`
-2. create a self-contained production migration runbook plan usable outside this chat context
-3. keep staging/production untouched until that runbook exists and is reviewed
+1. start `production-postgres-migration-runbook-review`
+2. review `docs/runbooks/PRODUCTION_POSTGRES_MIGRATION_RUNBOOK.md` with an operator and fill environment-specific placeholders
+3. decide the next separately scoped staging rehearsal or production-safe migration tooling segment
 4. track the reported microphone/media issue separately from Stage 6 database migration work
 
 Current `Wave 26` progress:
