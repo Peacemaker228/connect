@@ -61,11 +61,16 @@ The local switch may start from an empty Postgres database or minimal fixtures. 
 Done:
 - `local-postgres-dev-switch-plan` documented that local development can switch to Postgres without preserving local MySQL data
 - `local-postgres-dev-switch-implementation` switched the active local Prisma datasource provider to `postgresql`, added local Postgres `DATABASE_URL` example docs, reset/applied the clean local Postgres schema, and generated the Prisma client
+- `local-postgres-dev-smoke` is passed by user report for the migration/runtime path
+- Prisma packages were upgraded to `7.8.0`; the repo now uses `prisma.config.ts` for datasource URL resolution and `@prisma/adapter-pg` for backend runtime
 
 Next:
-- `local-postgres-dev-smoke`
-- run local API/web smoke checks against Postgres and document compatibility findings
+- `local-mysql-retirement`
+- remove or downgrade local MySQL assumptions from local docs/scripts where appropriate
 - keep staging/production and production runbook work separate
+
+Review:
+- microphone/media behavior needs a separate follow-up: mic can appear enabled while speech does not trigger the usual active indicator/audio
 
 ## Production Runbook Reminder
 
@@ -76,6 +81,7 @@ That runbook must be usable outside this chat context and should include exact c
 ## Acceptance Criteria
 
 - local development can run on Postgres
+- Prisma CLI/client generation works on Prisma `7.8.0`
 - local MySQL data preservation is explicitly out of scope
 - production migration remains separate
 - staging/production are untouched
@@ -86,3 +92,4 @@ That runbook must be usable outside this chat context and should include exact c
 - [POSTGRES_PROVIDER_SWITCH_PLAN.md](./POSTGRES_PROVIDER_SWITCH_PLAN.md)
 - [STAGE_STATUS.md](../roadmap/STAGE_STATUS.md)
 - [SEGMENT_BRIEF_069_LOCAL_POSTGRES_DEV_SWITCH_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_069_LOCAL_POSTGRES_DEV_SWITCH_PLAN.md)
+- [SEGMENT_BRIEF_071_LOCAL_POSTGRES_DEV_SMOKE_PRISMA7.md](../delegation/briefs/SEGMENT_BRIEF_071_LOCAL_POSTGRES_DEV_SMOKE_PRISMA7.md)

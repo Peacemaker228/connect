@@ -344,6 +344,7 @@ function runPostgres(target: ReturnType<typeof parseDatabaseUrl>, sql: string) {
 function prismaDiff(targetUrl: string) {
   const env = {
     ...process.env,
+    DATABASE_URL: targetUrl,
     POSTGRES_VALIDATION_DATABASE_URL: targetUrl,
     POSTGRES_VALIDATION_SHADOW_DATABASE_URL:
       process.env.POSTGRES_VALIDATION_SHADOW_DATABASE_URL ||
@@ -355,9 +356,8 @@ function prismaDiff(targetUrl: string) {
     'prisma',
     'migrate',
     'diff',
-    '--from-url',
-    targetUrl,
-    '--to-schema-datamodel',
+    '--from-config-datasource',
+    '--to-schema',
     POSTGRES_SCHEMA_PATH,
     '--exit-code',
   ], { env });
