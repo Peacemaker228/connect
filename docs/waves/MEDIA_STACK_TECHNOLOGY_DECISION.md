@@ -262,6 +262,36 @@ Open decisions:
 Next recommended segment:
 - `media-client-boundary-design`
 
+## Segment 080 Media Client Boundary Findings
+
+Future web/desktop media client boundary ownership is documented in `docs/delegation/briefs/SEGMENT_BRIEF_080_MEDIA_CLIENT_BOUNDARY_DESIGN.md`.
+
+Client ownership shape:
+- app UI shell passes domain scope, mode, initial desired media state, and leave redirect behavior
+- media entry mapper normalizes channel, private conversation, and future meeting entries into one boundary
+- media feature controller/hook coordinates SDK commands, realtime events, provider adapter connection, desired state, leave, and reconnect
+- SDK media commands should expose app-domain commands such as resolve room access, join, leave, desired-state updates, publish/unpublish, screen share, reconnect, and resume
+- realtime event subscription should consume the Segment 078 media event names
+- provider adapter hides LiveKit now and future provider details later
+- browser capture/renderer layer remains responsible for device prompts, preferred-device fallback, local capture, rendering, and user-visible device errors
+
+Design decisions:
+- project media state, browser device state, and provider adapter state must be separate
+- channel `AUDIO`, channel `VIDEO`, private video call, and future meeting entries use one client boundary and differ by scope, mode, initial desired state, and leave policy
+- current behaviors to preserve include AUDIO mic-only, VIDEO mic+camera, private video mic+camera, channel/private leave redirects, preferred-device fallback, and device error toasts
+- browser capture/render stays client-side, while room access, permissions, lifecycle, participant sessions, and reconnect policy stay owned by `apps/api`
+- LiveKit client imports/components should later be contained behind a client provider adapter without deleting LiveKit during the transition
+
+Open decisions:
+- exact client file/package placement for controller, adapter, and renderer/capture layer
+- whether the first transitional adapter can wrap `VideoConference` or should split controls earlier
+- SDK route/command names and app-core contract file split
+- whether media signaling uses a dedicated namespace/gateway or extends existing realtime
+- device error taxonomy placement between shared contracts and client-only adapter code
+
+Next recommended segment:
+- `sfu-turn-architecture-design`
+
 ## Guardrails
 
 Forbidden in this wave:
