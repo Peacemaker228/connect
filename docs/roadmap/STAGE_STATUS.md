@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `app-core-media-contracts-code`.
+The next Stage 8 segment should be `sdk-media-command-surface`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- move to Stage 8 `app-core-media-contracts-code`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `sdk-media-command-surface`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `queued / implementation planned`
+Status: `in progress / app-core contracts landed`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -368,9 +368,11 @@ Current rule:
 
 Done:
 - ordered MVP implementation roadmap exists in `docs/waves/MEDIA_MVP_IMPLEMENTATION_PLAN.md`
+- `app-core-media-contracts-code` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_084_APP_CORE_MEDIA_CONTRACTS_CODE.md`
+- vendor-neutral media contract types are exported from `packages/app-core/src/contracts/media-provider.ts` through the existing `packages/app-core/src/contracts/index.ts` barrel
+- room scope/mode, participant session identity, permissions, desired/published state, track model, lifecycle, reconnect/resume, screen-share policy, error taxonomy, and command/event names now have app-core type shapes
 
 Remaining:
-- run `app-core-media-contracts-code`
 - run `sdk-media-command-surface`
 - run `backend-livekit-adapter-containment`
 - run `client-livekit-adapter-containment`
@@ -384,7 +386,7 @@ Remaining:
 - run `final-media-mvp-parity-load-smoke`
 
 Next likely work:
-- start `app-core-media-contracts-code`
+- start `sdk-media-command-surface`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
