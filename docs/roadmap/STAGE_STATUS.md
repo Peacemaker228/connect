@@ -280,7 +280,7 @@ Remaining:
 
 The active next track is `Stage 7 / Media Preparation`.
 
-The next Stage 7 segment should be `media-runtime-inventory`.
+The next Stage 7 segment should be `media-contract-boundary-inventory`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -319,16 +319,18 @@ Done:
 - self-hosted LiveKit is not the target architecture; it is only a possible temporary bridge
 - `docs/waves/MEDIA_STACK_TECHNOLOGY_DECISION.md` documents the decision
 - `docs/delegation/briefs/SEGMENT_BRIEF_075_MEDIA_STACK_TECHNOLOGY_DECISION.md` documents the segment result
+- `media-runtime-inventory` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_076_MEDIA_RUNTIME_INVENTORY.md`
+- current LiveKit runtime flow, channel/private-call differences, token inputs, join/leave behavior, device startup/error handling, reconnect/disconnect behavior, and coupling points are documented
+- current runtime risks are documented: direct transitive `livekit-client` import, display-name token identity, caller-provided room/username, no explicit auth/domain guard in the media controller file, broad publish/subscribe grants, and no project-owned reconnect/screen-share/participant lifecycle
 
 Remaining:
-- run `media-runtime-inventory`
 - run `media-contract-boundary-inventory`
 - design the `apps/api` media control-plane and signaling contract
 - document local/prod topology for `mediasoup + coturn` before any implementation
 - keep current `LiveKit` runtime in place until a later scoped implementation wave
 
 Next likely work:
-- start `media-runtime-inventory`, not Stage 6 production-track work and not a media rewrite
+- start `media-contract-boundary-inventory`, not Stage 6 production-track work and not a media rewrite
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
