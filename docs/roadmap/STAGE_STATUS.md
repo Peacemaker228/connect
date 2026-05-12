@@ -280,7 +280,7 @@ Remaining:
 
 The active next track is `Stage 7 / Media Preparation`.
 
-The next Stage 7 segment should be `media-client-boundary-design`.
+The next Stage 7 segment should be `sfu-turn-architecture-design`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -330,14 +330,17 @@ Done:
 - `media-control-plane-design` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_079_MEDIA_CONTROL_PLANE_DESIGN.md`
 - future `apps/api` media ownership is documented for `MediaAccessService`, `MediaRoomService`, `MediaParticipantSessionService`, `MediaPermissionService`, `MediaSignalingGateway`, and a provider adapter boundary
 - REST command ownership, WebSocket/signaling event ownership, auth/domain checks, backend-resolved room scope, stable participant/session identity, lifecycle flow, permission evaluation, reconnect/resume, screen-share policy, and transitional LiveKit bridge direction are documented
+- `media-client-boundary-design` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_080_MEDIA_CLIENT_BOUNDARY_DESIGN.md`
+- future web/desktop media client ownership is documented for the app UI shell, media entry mapper, media feature controller/hook, SDK commands, realtime event subscription, provider adapter, and browser capture/renderer layer
+- project media state, browser device state, and provider adapter state are separated, while current channel/private-call entry behavior, leave redirects, preferred-device fallback, user-visible device errors, and transitional LiveKit containment are preserved
 
 Remaining:
-- design the media client boundary, SDK/app-core consumption path, and web/desktop responsibilities for the future control-plane
 - document local/prod topology for `mediasoup + coturn` before any implementation
+- design and later contain the transitional LiveKit client adapter without deleting LiveKit until parity is proven
 - keep current `LiveKit` runtime in place until a later scoped implementation wave
 
 Next likely work:
-- start `media-client-boundary-design`, not Stage 6 production-track work and not a media rewrite
+- start `sfu-turn-architecture-design`, not Stage 6 production-track work and not a media rewrite
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
