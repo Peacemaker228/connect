@@ -74,6 +74,13 @@ Acceptance:
 - no runtime behavior changes
 - no LiveKit, mediasoup, or coturn implementation logic leaks into app-level contracts
 
+Segment 084 result:
+- status: `complete`
+- contract shapes landed in `packages/app-core/src/contracts/media-provider.ts`
+- existing barrel export in `packages/app-core/src/contracts/index.ts` continues to expose the media contract surface
+- compatibility aliases keep the current room-access names available while the SDK moves to the new command surface
+- next segment: `sdk-media-command-surface`
+
 ### 2. `sdk-media-command-surface`
 
 Goal:
@@ -374,15 +381,20 @@ Out of scope for MVP implementation planning:
 
 Production media infra should get its own runbook/implementation wave after local MVP parity is proven.
 
-## Blockers Before First Code Segment
+## First Code Segment Result
 
-Before `app-core-media-contracts-code`:
-- accept Segment 078 contract vocabulary as the code target
-- choose contract file split under `packages/app-core`
-- keep provider access metadata explicitly transitional
-- confirm no LiveKit/mediasoup/coturn runtime imports enter app-core contracts
-- define type export path compatibility so existing imports do not churn unnecessarily
-- keep first PR narrow to contracts only
+`app-core-media-contracts-code` is complete.
+
+Result:
+- Segment 078 contract vocabulary is the code target
+- the first pass stayed in `packages/app-core/src/contracts/media-provider.ts`
+- provider access metadata remains explicitly transitional
+- app-core contracts do not import media vendors or infra packages
+- existing media contract exports remain available through the current barrel path
+- the segment stayed narrow to contracts and docs only
+
+Next code segment:
+- `sdk-media-command-surface`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -403,5 +415,5 @@ Reason:
 - LiveKit containment is planned
 - MVP implementation order, fallback, and acceptance are now documented
 
-Next active work should move to the first code segment:
-- `app-core-media-contracts-code`
+Next active work should move to the SDK command segment:
+- `sdk-media-command-surface`
