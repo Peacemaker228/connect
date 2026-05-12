@@ -329,6 +329,52 @@ Open decisions:
 Next recommended segment:
 - `livekit-adapter-containment`
 
+## Segment 082 LiveKit Adapter Containment Findings
+
+Current LiveKit containment planning is documented in `docs/delegation/briefs/SEGMENT_BRIEF_082_LIVEKIT_ADAPTER_CONTAINMENT.md`.
+
+Current coupling:
+- backend token creation uses `livekit-server-sdk` directly in `MediaController`
+- SDK exposes `getLiveKitToken` with caller-provided `room` and `username`
+- `MediaRoom` owns `LiveKitRoom`, `VideoConference`, `@livekit/components-styles`, `Room`, `MediaDeviceFailure`, token loading, device startup, and LiveKit leave detection
+- browser runtime reads `NEXT_PUBLIC_LIVEKIT_URL`
+- intentional leave depends on `.lk-disconnect-button`
+
+Containment target:
+- backend token creation should move behind `MediaProviderAdapter` / `LiveKitMediaProviderAdapter`
+- future backend access should resolve app scope, stable identity, participant session, and permissions before creating provider access metadata
+- client LiveKit imports/components/styles should move behind `LiveKitClientAdapter`
+- feature/controller code should consume app media state/actions, not LiveKit runtime objects
+- LiveKit remains the transitional provider until parity is proven and a later replacement wave is explicitly scoped
+
+Staged implementation plan:
+1. app-core contract code segment
+2. SDK command segment
+3. backend LiveKit adapter segment
+4. client LiveKit adapter segment
+5. parity smoke segment
+
+Parity checks:
+- channel `AUDIO` mic-only
+- channel `VIDEO` mic+camera
+- private conversation video mode
+- channel/private leave redirects
+- preferred-device fallback
+- user-visible device errors
+- mute/camera/screen-share controls remain working
+- no behavior regression and no media dependency/infra addition during containment
+
+Open decisions:
+- wrap `VideoConference` whole or split controls earlier
+- whether to add explicit root `livekit-client` dependency during containment
+- CSS containment for LiveKit styles
+- `/api/media/livekit-token` deprecation path
+- auth guard/domain check timing
+- transition of `NEXT_PUBLIC_LIVEKIT_URL` into backend provider access metadata
+
+Next recommended segment:
+- `media-mvp-implementation-plan`
+
 ## Guardrails
 
 Forbidden in this wave:
