@@ -280,7 +280,7 @@ Remaining:
 
 The active next track is `Stage 7 / Media Preparation`.
 
-The next Stage 7 segment should be `livekit-adapter-containment`.
+The next Stage 7 segment should be `media-mvp-implementation-plan`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -336,13 +336,16 @@ Done:
 - `sfu-turn-architecture-design` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_081_SFU_TURN_ARCHITECTURE_DESIGN.md`
 - future topology is documented for `apps/api` control-plane traffic, mediasoup WebRTC media traffic, coturn STUN/TURN relay traffic, local dev assumptions, single-server VPS production MVP, security, scaling, and observability
 - SFU/TURN guardrail is fixed: no media dependencies, infra, env, firewall, Docker, systemd, Nginx, or production deploy changes before a separate implementation segment
+- `livekit-adapter-containment` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_082_LIVEKIT_ADAPTER_CONTAINMENT.md`
+- current LiveKit coupling is documented across backend token signing, SDK token action, `MediaRoom` LiveKit components/runtime/styles/device handling, `NEXT_PUBLIC_LIVEKIT_URL`, and `.lk-disconnect-button` leave detection
+- staged backend/client containment is documented for `LiveKitMediaProviderAdapter`, `LiveKitClientAdapter`, future app-core contracts, SDK commands, backend adapter, client adapter, and parity smoke
 
 Remaining:
-- design and later contain the transitional LiveKit client adapter without deleting LiveKit until parity is proven
+- turn Stage 7 design work into an ordered media MVP implementation plan before changing runtime code
 - keep current `LiveKit` runtime in place until a later scoped implementation wave
 
 Next likely work:
-- start `livekit-adapter-containment`, not Stage 6 production-track work and not a media rewrite
+- start `media-mvp-implementation-plan`, not Stage 6 production-track work and not a media rewrite
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
