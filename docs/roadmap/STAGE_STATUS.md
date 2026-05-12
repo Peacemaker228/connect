@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `sdk-media-command-surface`.
+The next Stage 8 segment should be `backend-livekit-adapter-containment`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `sdk-media-command-surface`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `backend-livekit-adapter-containment`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / app-core contracts landed`
+Status: `in progress / sdk media command surface landed`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -371,9 +371,10 @@ Done:
 - `app-core-media-contracts-code` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_084_APP_CORE_MEDIA_CONTRACTS_CODE.md`
 - vendor-neutral media contract types are exported from `packages/app-core/src/contracts/media-provider.ts` through the existing `packages/app-core/src/contracts/index.ts` barrel
 - room scope/mode, participant session identity, permissions, desired/published state, track model, lifecycle, reconnect/resume, screen-share policy, error taxonomy, and command/event names now have app-core type shapes
+- `sdk-media-command-surface` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_085_SDK_MEDIA_COMMAND_SURFACE.md`
+- future SDK media commands are exported from `packages/sdk/src/actions/media.ts` while the current `getLiveKitToken` runtime path remains compatible
 
 Remaining:
-- run `sdk-media-command-surface`
 - run `backend-livekit-adapter-containment`
 - run `client-livekit-adapter-containment`
 - run `livekit-parity-smoke`
@@ -386,7 +387,7 @@ Remaining:
 - run `final-media-mvp-parity-load-smoke`
 
 Next likely work:
-- start `sdk-media-command-surface`
+- start `backend-livekit-adapter-containment`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
