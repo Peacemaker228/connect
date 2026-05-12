@@ -232,6 +232,36 @@ Design boundary:
 Next recommended segment:
 - `media-control-plane-design`
 
+## Segment 079 Media Control-Plane Findings
+
+Future `apps/api` media control-plane ownership is documented in `docs/delegation/briefs/SEGMENT_BRIEF_079_MEDIA_CONTROL_PLANE_DESIGN.md`.
+
+Backend ownership shape:
+- `MediaAccessService` resolves room scope and enforces backend auth/domain access
+- `MediaRoomService` creates/resolves rooms and owns room lifecycle state/events
+- `MediaParticipantSessionService` owns participant sessions, intentional leave, disconnect, reconnect, resume, and expiry
+- `MediaPermissionService` evaluates join, publish audio, publish video, publish screen share, subscribe, and moderate permissions
+- `MediaSignalingGateway` owns media WebSocket/signaling commands and emits Segment 078 media events
+- `MediaProviderAdapter` hides transitional LiveKit access now and future mediasoup/coturn-backed provider details later
+
+Design decisions:
+- REST owns durable request/response commands: resolve room access, join, leave, close, and access snapshots
+- WebSocket/signaling owns realtime session binding, desired media state updates, track publish/unpublish, screen-share commands, reconnect/resume, provider signaling envelopes, and server events
+- media access must use `RequireAuthGuard` and `CurrentProfileId`, then resolve server membership, channel access, conversation membership, or future meeting access in backend services
+- caller-provided `room` and `username` must be replaced by backend-resolved room scope plus stable `profileId`, `memberId`, `participantSessionId`, and presentation-only `displayName`
+- private calls, channel calls, future meetings, and large-room/stage modes continue to use one control-plane family and differ by scope, mode, policy, and permissions
+- LiveKit remains a transitional bridge; token creation should later move behind the provider adapter without deleting the current runtime in this planning segment
+
+Open decisions:
+- whether media signaling extends the existing `realtime` namespace or uses a dedicated media namespace
+- initial participant-session persistence strategy
+- whether resume needs a separate `resumeToken`
+- exact REST route names and app-core contract file split
+- persistent channel versus private-call room persistence semantics
+
+Next recommended segment:
+- `media-client-boundary-design`
+
 ## Guardrails
 
 Forbidden in this wave:

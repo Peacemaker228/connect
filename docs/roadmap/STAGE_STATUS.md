@@ -280,7 +280,7 @@ Remaining:
 
 The active next track is `Stage 7 / Media Preparation`.
 
-The next Stage 7 segment should be `media-control-plane-design`.
+The next Stage 7 segment should be `media-client-boundary-design`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -327,14 +327,17 @@ Done:
 - contract boundary rule is fixed: private calls, channel calls, future meetings, and large-room/stage modes must share one media engine/control-plane and differ by room scope and permissions
 - `media-contract-shape-design` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_078_MEDIA_CONTRACT_SHAPE_DESIGN.md`
 - concrete docs-only contract shapes are documented for room scope/mode, participant/session identity, permissions, desired vs published state, track model, lifecycle commands/events, reconnect/resume, screen-share policy, error taxonomy, client commands, and server event names
+- `media-control-plane-design` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_079_MEDIA_CONTROL_PLANE_DESIGN.md`
+- future `apps/api` media ownership is documented for `MediaAccessService`, `MediaRoomService`, `MediaParticipantSessionService`, `MediaPermissionService`, `MediaSignalingGateway`, and a provider adapter boundary
+- REST command ownership, WebSocket/signaling event ownership, auth/domain checks, backend-resolved room scope, stable participant/session identity, lifecycle flow, permission evaluation, reconnect/resume, screen-share policy, and transitional LiveKit bridge direction are documented
 
 Remaining:
-- design the `apps/api` media control-plane and signaling contract
+- design the media client boundary, SDK/app-core consumption path, and web/desktop responsibilities for the future control-plane
 - document local/prod topology for `mediasoup + coturn` before any implementation
 - keep current `LiveKit` runtime in place until a later scoped implementation wave
 
 Next likely work:
-- start `media-control-plane-design`, not Stage 6 production-track work and not a media rewrite
+- start `media-client-boundary-design`, not Stage 6 production-track work and not a media rewrite
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
