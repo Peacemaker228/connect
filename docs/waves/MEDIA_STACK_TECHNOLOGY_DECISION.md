@@ -375,6 +375,43 @@ Open decisions:
 Next recommended segment:
 - `media-mvp-implementation-plan`
 
+## Segment 083 Media MVP Implementation Plan Findings
+
+The ordered MVP implementation roadmap is documented in `docs/waves/MEDIA_MVP_IMPLEMENTATION_PLAN.md`.
+
+Segment result:
+- `docs/delegation/briefs/SEGMENT_BRIEF_083_MEDIA_MVP_IMPLEMENTATION_PLAN.md` documents the docs-only planning slice
+- Stage 7 planning can close with implementation queued
+- next active implementation segment should be `app-core-media-contracts-code`
+
+MVP objective:
+- first working project-owned media path without LiveKit for private/small-room flow
+- current LiveKit remains fallback/bridge until parity passes
+- production media infra rollout remains separate and later
+
+Implementation order:
+1. `app-core-media-contracts-code`
+2. `sdk-media-command-surface`
+3. `backend-livekit-adapter-containment`
+4. `client-livekit-adapter-containment`
+5. `livekit-parity-smoke`
+6. `backend-media-control-plane-implementation`
+7. `client-media-controller-boundary`
+8. `local-mediasoup-dependency-prototype`
+9. `local-coturn-turn-credential`
+10. `mediasoup-client-adapter`
+11. `mvp-private-small-room-replacement`
+12. `final-media-mvp-parity-load-smoke`
+
+Guardrails:
+- implementation must happen in small PRs, not one rewrite
+- do not remove LiveKit until replacement parity passes
+- do not add production media infra/env/deploy changes in MVP planning or early implementation
+- do not mix this with Stage 6 production database cutover
+
+Next recommended segment:
+- `app-core-media-contracts-code`
+
 ## Guardrails
 
 Forbidden in this wave:

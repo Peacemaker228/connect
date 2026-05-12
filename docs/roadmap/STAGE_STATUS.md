@@ -39,6 +39,7 @@ Current wave order:
 - `Wave 30` = `LOCAL_POSTGRES_DEV_SWITCH`
 - `Wave 31` = `PRODUCTION_POSTGRES_MIGRATION_RUNBOOK_PLAN`
 - `Wave 32` = `MEDIA_STACK_TECHNOLOGY_DECISION`
+- `Wave 33` = `MEDIA_MVP_IMPLEMENTATION_PLAN`
 
 ## Status by Stage
 
@@ -278,9 +279,9 @@ Remaining:
 
 ## Next Correct Step
 
-The active next track is `Stage 7 / Media Preparation`.
+The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 7 segment should be `media-mvp-implementation-plan`.
+The next Stage 8 segment should be `app-core-media-contracts-code`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -294,7 +295,7 @@ When production migration work resumes at the end of the local/reborn migration 
 
 ### Stage 7. Media Preparation
 
-Status: `active / planning`
+Status: `planning complete / implementation queued`
 
 Current wave:
 - `Wave 32 / MEDIA_STACK_TECHNOLOGY_DECISION`
@@ -339,13 +340,51 @@ Done:
 - `livekit-adapter-containment` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_082_LIVEKIT_ADAPTER_CONTAINMENT.md`
 - current LiveKit coupling is documented across backend token signing, SDK token action, `MediaRoom` LiveKit components/runtime/styles/device handling, `NEXT_PUBLIC_LIVEKIT_URL`, and `.lk-disconnect-button` leave detection
 - staged backend/client containment is documented for `LiveKitMediaProviderAdapter`, `LiveKitClientAdapter`, future app-core contracts, SDK commands, backend adapter, client adapter, and parity smoke
+- `media-mvp-implementation-plan` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_083_MEDIA_MVP_IMPLEMENTATION_PLAN.md`
+- `docs/waves/MEDIA_MVP_IMPLEMENTATION_PLAN.md` defines the ordered MVP implementation roadmap, dependencies, guardrails, acceptance criteria, rollback/fallback rules, production rollout boundary, and first code segment recommendation
 
 Remaining:
-- turn Stage 7 design work into an ordered media MVP implementation plan before changing runtime code
-- keep current `LiveKit` runtime in place until a later scoped implementation wave
+- none for Stage 7 planning
 
 Next likely work:
-- start `media-mvp-implementation-plan`, not Stage 6 production-track work and not a media rewrite
+- move to Stage 8 `app-core-media-contracts-code`, not Stage 6 production-track work and not a one-shot media rewrite
+
+### Stage 8. Media MVP
+
+Status: `queued / implementation planned`
+
+Current wave:
+- `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
+
+Intent:
+- deliver the first working project-owned media path without LiveKit for private/small-room flow
+- keep current LiveKit runtime as fallback/bridge until parity passes
+- implement in small scoped PRs, not one rewrite
+
+Current rule:
+- do not remove LiveKit before parity
+- do not add production media infra/deploy/env changes in MVP code segments
+- do not mix media MVP work with Stage 6 production database cutover
+
+Done:
+- ordered MVP implementation roadmap exists in `docs/waves/MEDIA_MVP_IMPLEMENTATION_PLAN.md`
+
+Remaining:
+- run `app-core-media-contracts-code`
+- run `sdk-media-command-surface`
+- run `backend-livekit-adapter-containment`
+- run `client-livekit-adapter-containment`
+- run `livekit-parity-smoke`
+- run `backend-media-control-plane-implementation`
+- run `client-media-controller-boundary`
+- run `local-mediasoup-dependency-prototype`
+- run `local-coturn-turn-credential`
+- run `mediasoup-client-adapter`
+- run `mvp-private-small-room-replacement`
+- run `final-media-mvp-parity-load-smoke`
+
+Next likely work:
+- start `app-core-media-contracts-code`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
