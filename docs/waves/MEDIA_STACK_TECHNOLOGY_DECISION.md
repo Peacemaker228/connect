@@ -172,6 +172,40 @@ Known gaps/risks:
 Next recommended segment:
 - `media-contract-boundary-inventory`
 
+## Segment 077 Contract Boundary Findings
+
+Current seed contract:
+- `packages/app-core/src/contracts/media-provider.ts` already has vendor-neutral room, participant, access, permission, state patch, and provider concepts
+- it does not mention LiveKit directly
+- it can carry transitional token/endpoint fields while LiveKit remains the bridge
+
+Missing contract areas before control-plane design:
+- room scope union for `channel`, `conversation`, and future `meeting`
+- room mode for persistent channel, private call, meeting, large room, and stage-like behavior
+- stable participant identity: `profileId`, `memberId`, `participantSessionId`, optional connection identity, and display name as presentation only
+- granular permissions: join, publish audio, publish video, publish screen share, subscribe, and moderate
+- room lifecycle commands/events for resolve/create/join/leave/close
+- participant lifecycle states/events for joined, left, disconnected, reconnecting, reconnected, and expired
+- media state split between desired local intent and confirmed published state
+- track model with id, kind, source, owner participant session, and state
+- reconnect model with timeout/resume policy and intentional-leave vs network-disconnect distinction
+- screen-share policy and active presenter model
+- stable media error taxonomy
+- client command names and server event names
+
+Boundary rule:
+- private calls, channel calls, future meetings, and large-room/stage modes must use one media engine and one control-plane family
+- differences belong in room scope, room mode, permissions, lifecycle policy, subscription/publish policy, and moderation policy
+- differences must not become separate media engines, unrelated APIs, separate client runtimes, or separate room/participant state models
+
+Gap classification:
+- pass: a vendor-neutral seed contract exists and captures rough room/participant/access/permission concepts
+- review: decide how to split facade, command, query, event, transitional token/endpoint, and client-only device-error contracts
+- block: media control-plane design needs explicit room scope, stable participant/session identity, permission, lifecycle, track, reconnect, screen-share, error, command, and event contracts first
+
+Next recommended segment:
+- `media-control-plane-design`
+
 ## Guardrails
 
 Forbidden in this wave:
