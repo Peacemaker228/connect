@@ -99,6 +99,14 @@ Acceptance:
 - existing LiveKit token action remains compatible
 - no runtime media path switches yet
 
+Segment 085 result:
+- status: `complete`
+- future SDK media command actions landed in `packages/sdk/src/actions/media.ts`
+- command payloads and response shapes use the Segment 084 app-core media contracts where available
+- `getLiveKitToken` still calls `/api/media/livekit-token` and the current `MediaRoom` token flow is unchanged
+- future control-plane endpoints are not wired to UI and remain blocked on backend implementation
+- next segment: `backend-livekit-adapter-containment`
+
 ### 3. `backend-livekit-adapter-containment`
 
 Goal:
@@ -394,7 +402,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Next code segment:
-- `sdk-media-command-surface`
+- `backend-livekit-adapter-containment`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -415,5 +423,5 @@ Reason:
 - LiveKit containment is planned
 - MVP implementation order, fallback, and acceptance are now documented
 
-Next active work should move to the SDK command segment:
-- `sdk-media-command-surface`
+Next active work should move to backend adapter containment:
+- `backend-livekit-adapter-containment`
