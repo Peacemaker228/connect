@@ -280,7 +280,7 @@ Remaining:
 
 The active next track is `Stage 7 / Media Preparation`.
 
-The next Stage 7 segment should be `sfu-turn-architecture-design`.
+The next Stage 7 segment should be `livekit-adapter-containment`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -333,14 +333,16 @@ Done:
 - `media-client-boundary-design` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_080_MEDIA_CLIENT_BOUNDARY_DESIGN.md`
 - future web/desktop media client ownership is documented for the app UI shell, media entry mapper, media feature controller/hook, SDK commands, realtime event subscription, provider adapter, and browser capture/renderer layer
 - project media state, browser device state, and provider adapter state are separated, while current channel/private-call entry behavior, leave redirects, preferred-device fallback, user-visible device errors, and transitional LiveKit containment are preserved
+- `sfu-turn-architecture-design` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_081_SFU_TURN_ARCHITECTURE_DESIGN.md`
+- future topology is documented for `apps/api` control-plane traffic, mediasoup WebRTC media traffic, coturn STUN/TURN relay traffic, local dev assumptions, single-server VPS production MVP, security, scaling, and observability
+- SFU/TURN guardrail is fixed: no media dependencies, infra, env, firewall, Docker, systemd, Nginx, or production deploy changes before a separate implementation segment
 
 Remaining:
-- document local/prod topology for `mediasoup + coturn` before any implementation
 - design and later contain the transitional LiveKit client adapter without deleting LiveKit until parity is proven
 - keep current `LiveKit` runtime in place until a later scoped implementation wave
 
 Next likely work:
-- start `sfu-turn-architecture-design`, not Stage 6 production-track work and not a media rewrite
+- start `livekit-adapter-containment`, not Stage 6 production-track work and not a media rewrite
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

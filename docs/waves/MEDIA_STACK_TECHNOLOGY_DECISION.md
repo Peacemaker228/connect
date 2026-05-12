@@ -292,6 +292,43 @@ Open decisions:
 Next recommended segment:
 - `sfu-turn-architecture-design`
 
+## Segment 081 SFU / TURN Architecture Findings
+
+Future `mediasoup + coturn` topology is documented in `docs/delegation/briefs/SEGMENT_BRIEF_081_SFU_TURN_ARCHITECTURE_DESIGN.md`.
+
+Topology decisions:
+- `apps/api` owns HTTPS/WSS signaling and control-plane traffic
+- mediasoup owns WebRTC media routing through worker/router/WebRTC transport layers
+- coturn owns STUN/TURN/NAT traversal and relay traffic
+- signaling/control messages, WebRTC media packets, and TURN relay traffic are separate paths
+- local development should use disposable bounded port assumptions and no production secrets
+- single-server VPS MVP should run `apps/api`, mediasoup, and coturn on the same host first, using the public IP as the media/TURN announced address where needed
+- TLS/HTTPS/WSS stays at the app reverse-proxy boundary; media UDP/TCP traffic is not proxied through Nginx
+
+Security/networking decisions:
+- no anonymous TURN/open relay
+- prefer short-lived/backend-issued TURN credentials
+- keep TURN secrets server-side and out of repo/docs
+- restrict firewall exposure to selected mediasoup RTC and coturn listener/relay ranges
+- treat TURN relay bandwidth, media joins, and credential issuance as abuse surfaces
+
+Scaling/ops decisions:
+- start single mediasoup node first
+- use worker/core alignment and room pinning before distributed SFU
+- defer Redis/pubsub until multi-instance signaling/session state is required
+- observe ICE failures, reconnects, transport failures, bitrate/packet loss, direct-vs-relay path, and room/participant lifecycle
+
+Open decisions:
+- exact mediasoup and coturn port ranges
+- Docker vs systemd vs PM2/process ownership later
+- dedicated media gateway versus existing realtime extension
+- TURN credential TTL/refresh strategy
+- TCP/TLS fallback strategy
+- recording/egress remains out of scope
+
+Next recommended segment:
+- `livekit-adapter-containment`
+
 ## Guardrails
 
 Forbidden in this wave:
@@ -318,3 +355,5 @@ Forbidden in this wave:
 - LiveKit self-hosting: https://docs.livekit.io/transport/self-hosting/
 - mediasoup documentation: https://mediasoup.org/documentation/
 - coturn project: https://github.com/coturn/coturn
+- WebRTC peer connection basics: https://webrtc.org/getting-started/peer-connections
+- MDN WebRTC protocols overview: https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Protocols
