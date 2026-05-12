@@ -38,6 +38,7 @@ Current wave order:
 - `Wave 29` = `POSTGRES_PROVIDER_SWITCH_PLAN`
 - `Wave 30` = `LOCAL_POSTGRES_DEV_SWITCH`
 - `Wave 31` = `PRODUCTION_POSTGRES_MIGRATION_RUNBOOK_PLAN`
+- `Wave 32` = `MEDIA_STACK_TECHNOLOGY_DECISION`
 
 ## Status by Stage
 
@@ -203,10 +204,10 @@ Remaining:
 
 ### Stage 6. MySQL -> Postgres
 
-Status: `active`
+Status: `local complete / production deferred`
 
 Current wave:
-- `Wave 31 / PRODUCTION_POSTGRES_MIGRATION_RUNBOOK_PLAN`
+- none active for production
 
 Current intent:
 - create the separate Stage 6 provider-switch/data-migration plan after `Wave 28`
@@ -277,7 +278,11 @@ Remaining:
 
 ## Next Correct Step
 
-The next correct Stage 6 production step is deferred by operator decision.
+The active next track is `Stage 7 / Media Preparation`.
+
+The next Stage 7 segment should be `media-runtime-inventory`.
+
+The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
 When production migration work resumes at the end of the local/reborn migration path:
 
@@ -286,6 +291,44 @@ When production migration work resumes at the end of the local/reborn migration 
 3. document maintenance/process smoke that can run before DB cutover, and keep full DB-backed smoke after Postgres import/`DATABASE_URL` cutover
 4. keep the planned order: maintenance -> merge/deploy reborn to main/prod -> DB migration/cutover -> full DB-backed smoke
 5. track the reported microphone/media issue separately from Stage 6 database migration work
+
+### Stage 7. Media Preparation
+
+Status: `active / planning`
+
+Current wave:
+- `Wave 32 / MEDIA_STACK_TECHNOLOGY_DECISION`
+
+Intent:
+- prepare the architecture for the future media rewrite
+- replace the managed/LiveKit-shaped media runtime with a project-owned media boundary
+- keep current LiveKit runtime in place until a later scoped implementation wave
+
+Current rule:
+- do not patch isolated LiveKit/microphone symptoms unless explicitly requested
+- do not add media dependencies or deploy media infra without a scoped implementation wave
+- keep production Stage 6 cutover deferred until the end
+
+Done:
+- target stack is fixed as `mediasoup + coturn`
+- `mediasoup` is the target SFU/media routing layer
+- `coturn` is the target TURN/STUN/NAT traversal layer
+- `apps/api` is the target signaling/control-plane owner
+- target product model is Discord-like persistent channels plus private calls and future Zoom-like meetings/conferences
+- all interaction modes should share one media engine/control-plane; differences belong in room scope and permissions
+- self-hosted LiveKit is not the target architecture; it is only a possible temporary bridge
+- `docs/waves/MEDIA_STACK_TECHNOLOGY_DECISION.md` documents the decision
+- `docs/delegation/briefs/SEGMENT_BRIEF_075_MEDIA_STACK_TECHNOLOGY_DECISION.md` documents the segment result
+
+Remaining:
+- run `media-runtime-inventory`
+- run `media-contract-boundary-inventory`
+- design the `apps/api` media control-plane and signaling contract
+- document local/prod topology for `mediasoup + coturn` before any implementation
+- keep current `LiveKit` runtime in place until a later scoped implementation wave
+
+Next likely work:
+- start `media-runtime-inventory`, not Stage 6 production-track work and not a media rewrite
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

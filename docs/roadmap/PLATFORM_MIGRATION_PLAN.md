@@ -521,6 +521,15 @@ Current execution note:
 Результат:
 - появляется архитектурная база под media rewrite
 
+Current Stage 7 decision:
+- target media stack is `mediasoup + coturn`
+- `mediasoup` owns the SFU/media routing role
+- `coturn` owns the TURN/STUN/NAT traversal role
+- `apps/api` owns signaling/control-plane decisions
+- product interaction model targets Discord-like persistent channels, private calls, and future Zoom-like meetings/conferences through one shared media engine
+- self-hosted LiveKit is not the target architecture; it is only a possible temporary bridge
+- this decision is documented in `docs/waves/MEDIA_STACK_TECHNOLOGY_DECISION.md`
+
 ### Stage 8. Media MVP
 
 Срок:
