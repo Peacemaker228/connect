@@ -123,6 +123,55 @@ This decision changes the next Stage 7 order:
 7. `livekit-adapter-containment`
 8. `media-mvp-implementation-plan`
 
+## Segment 076 Runtime Inventory Findings
+
+Current runtime flow:
+
+```text
+channel AUDIO/VIDEO route or private conversation ?video=true route
+  -> server/auth route guard
+  -> MediaRoom(chatId = channel.id or conversation.id)
+  -> SDK getLiveKitToken(room = chatId, username = profile display name)
+  -> apps/api GET /api/media/livekit-token
+  -> LiveKit AccessToken(roomJoin + publish + subscribe)
+  -> LiveKitRoom(serverUrl = NEXT_PUBLIC_LIVEKIT_URL)
+  -> onConnected starts requested microphone/camera
+  -> VideoConference owns active conference UI controls
+```
+
+Current coupling points:
+- `livekit-server-sdk` token generation in `apps/api`
+- `@livekit/components-react` and `@livekit/components-styles` in `MediaRoom`
+- direct `livekit-client` import for `Room` and `MediaDeviceFailure`
+- `NEXT_PUBLIC_LIVEKIT_URL` in browser runtime
+- LiveKit grants for room join, publish, and subscribe
+- LiveKit `VideoConference` ownership of mute/camera/screen-share controls
+- `.lk-disconnect-button` click detection for intentional leave
+
+Runtime findings that the next contract segment must preserve:
+- channel `AUDIO` starts with microphone only
+- channel `VIDEO` starts with microphone and camera
+- private conversation video mode starts with microphone and camera
+- channel rooms are scoped to `channel.id`
+- private rooms are scoped to `conversation.id`
+- channel leave returns to a general text channel or server fallback
+- private call leave returns to the conversation chat route without `?video=true`
+- local device startup retries preferred device first, then default
+- device permission/in-use/not-found errors surface to users
+- intentional leave is distinct from unexpected disconnect
+
+Known gaps/risks:
+- `livekit-client` is directly imported but not explicitly declared in root `package.json`
+- media token identity is a display name, not a stable profile/member/user id
+- media token endpoint accepts caller-provided `room` and `username`
+- media controller has no explicit auth guard or domain permission check in the file
+- token grants always allow publish and subscribe
+- screen share, reconnect, participant lifecycle, and post-join mute/camera state are not project-owned
+- backend media ownership is token issuance only, not room/session/control-plane ownership
+
+Next recommended segment:
+- `media-contract-boundary-inventory`
+
 ## Guardrails
 
 Forbidden in this wave:
