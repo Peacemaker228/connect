@@ -117,11 +117,12 @@ This decision changes the next Stage 7 order:
 1. `media-stack-technology-decision`
 2. `media-runtime-inventory`
 3. `media-contract-boundary-inventory`
-4. `media-control-plane-design`
-5. `media-client-boundary-design`
-6. `sfu-turn-architecture-design`
-7. `livekit-adapter-containment`
-8. `media-mvp-implementation-plan`
+4. `media-contract-shape-design`
+5. `media-control-plane-design`
+6. `media-client-boundary-design`
+7. `sfu-turn-architecture-design`
+8. `livekit-adapter-containment`
+9. `media-mvp-implementation-plan`
 
 ## Segment 076 Runtime Inventory Findings
 
@@ -202,6 +203,31 @@ Gap classification:
 - pass: a vendor-neutral seed contract exists and captures rough room/participant/access/permission concepts
 - review: decide how to split facade, command, query, event, transitional token/endpoint, and client-only device-error contracts
 - block: media control-plane design needs explicit room scope, stable participant/session identity, permission, lifecycle, track, reconnect, screen-share, error, command, and event contracts first
+
+Next recommended segment:
+- `media-control-plane-design`
+
+## Segment 078 Contract Shape Findings
+
+Concrete vendor-neutral contract shapes are documented in `docs/delegation/briefs/SEGMENT_BRIEF_078_MEDIA_CONTRACT_SHAPE_DESIGN.md`.
+
+Shape areas:
+- room scope and mode: `channel`, `conversation`, future `meeting`, persistent channel, private call, meeting, large room, and stage
+- participant/session identity: `profileId`, optional `memberId`, `participantSessionId`, optional `connectionId`, and display name as presentation-only data
+- permissions: join, publish audio, publish video, publish screen share, subscribe, and moderate
+- media state: desired local intent separated from confirmed published state
+- track model: id, owner participant session, kind, source, state, and UI metadata
+- room lifecycle commands/events: resolve, create/resolve, join, leave, close
+- participant lifecycle commands/events: join, leave, disconnected, reconnecting, reconnected, expired
+- reconnect/resume: timeout policy, resume handle, disconnect reason, and intentional-leave distinction
+- screen-share policy: active presenter, max active shares, and replacement policy
+- error taxonomy: stable media error codes for auth, permission, room, device, publish/subscribe, transport, reconnect, provider, and unknown failures
+- client commands and server events as app media concepts, not vendor API concepts
+
+Design boundary:
+- these are docs-only shapes, not committed `packages/app-core` code
+- they do not design mediasoup transport internals
+- `apps/api` control-plane design should map to these shapes before any implementation segment
 
 Next recommended segment:
 - `media-control-plane-design`

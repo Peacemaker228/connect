@@ -325,6 +325,8 @@ Done:
 - `media-contract-boundary-inventory` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_077_MEDIA_CONTRACT_BOUNDARY_INVENTORY.md`
 - missing vendor-neutral media contract areas are documented: room scope/mode, stable participant/session identity, granular permissions, room and participant lifecycle, desired vs published media state, track model, reconnect model, screen-share policy, error taxonomy, client commands, and server events
 - contract boundary rule is fixed: private calls, channel calls, future meetings, and large-room/stage modes must share one media engine/control-plane and differ by room scope and permissions
+- `media-contract-shape-design` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_078_MEDIA_CONTRACT_SHAPE_DESIGN.md`
+- concrete docs-only contract shapes are documented for room scope/mode, participant/session identity, permissions, desired vs published state, track model, lifecycle commands/events, reconnect/resume, screen-share policy, error taxonomy, client commands, and server event names
 
 Remaining:
 - design the `apps/api` media control-plane and signaling contract
