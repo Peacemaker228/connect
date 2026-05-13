@@ -248,6 +248,15 @@ Acceptance:
 - provider adapter state is not leaked to feature entry points
 - current LiveKit fallback remains intact
 
+Segment 090 result:
+- status: `complete`
+- `media-room-entry` now maps channel and private route entries to app-core `MediaRoomScope`, `MediaRoomMode`, and desired-state shapes
+- `useMediaRoomController` can call backend `joinRoom` and `leaveRoom` while keeping `getLiveKitToken` as the active LiveKit fallback token source
+- `MediaRoom` now consumes the client media entry/controller boundary before rendering the unchanged `LiveKitClientAdapter`
+- channel `AUDIO`, channel `VIDEO`, and private video route entry behavior remains mapped to the same audio/video intent and leave redirect behavior
+- no LiveKit removal, backend/API mutation, media dependency, env, infra, route behavior, or microphone fix was made
+- next segment: `local-mediasoup-dependency-prototype`
+
 ### 8. `local-mediasoup-dependency-prototype`
 
 Goal:
@@ -436,7 +445,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `client-media-controller-boundary`
+- `local-mediasoup-dependency-prototype`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -457,5 +466,5 @@ Reason:
 - LiveKit containment is planned
 - MVP implementation order, fallback, and acceptance are now documented
 
-Next active work should move to client media controller boundary:
-- `client-media-controller-boundary`
+Next active work should move to the local media provider prototype:
+- `local-mediasoup-dependency-prototype`

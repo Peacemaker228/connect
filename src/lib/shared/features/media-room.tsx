@@ -1,64 +1,55 @@
 'use client'
 
-import { FC, useCallback, useEffect, useState } from 'react'
+import { FC, useCallback } from 'react'
 import { Loader2 } from 'lucide-react'
 import { getProfileName } from '@app-core/profiles/get-profile-name'
 import { ERoutes } from '@app-core/routing/routes'
 import { useGetProfile } from '@sdk/queries/profile'
-import { getLiveKitToken } from '@sdk/actions/media'
 import { useGetServer } from '@sdk/queries/server'
 import { ChannelType } from '@app-core/contracts'
 import { EGeneral } from '@/types'
 import { useRouter } from 'next/navigation'
 
 import { LiveKitClientAdapter } from './media/livekit-client-adapter'
+import type { MediaRoomEntry } from './media/media-room-entry'
+import { useMediaRoomController } from './media/use-media-room-controller'
 
 interface IMediaRoomProps {
-  chatId: string
+  mediaEntry: MediaRoomEntry
   leaveRedirectHref?: string
   serverId: string
   video: boolean
   audio: boolean
 }
 
-export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, chatId, leaveRedirectHref, serverId }) => {
+export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leaveRedirectHref, serverId }) => {
   const router = useRouter()
   const { profile } = useGetProfile()
   const { data: server } = useGetServer(serverId)
-  const [token, setToken] = useState('')
   const generalChannelId = server?.channels.find(
     (channel) => channel.name === EGeneral.GENERAL && channel.type === ChannelType.TEXT,
   )?.id
-
-  useEffect(() => {
-    const name = getProfileName({
-      firstName: null,
-      lastName: null,
-      username: profile?.name ?? null,
-    })
-
-    if (!profile?.name) return
-
-    ;(async () => {
-      try {
-        const data = await getLiveKitToken({ room: chatId, username: name })
-        setToken(data.token)
-      } catch (error) {
-        console.error('[livekit] failed to fetch room token', error)
-      }
-    })()
-  }, [chatId, profile?.name])
+  const name = getProfileName({
+    firstName: null,
+    lastName: null,
+    username: profile?.name ?? null,
+  })
+  const { liveKitToken, leaveControlPlane } = useMediaRoomController({
+    mediaEntry,
+    displayName: profile?.name ? name : null,
+  })
 
   const handleLeave = useCallback(() => {
+    void leaveControlPlane()
     router.replace(
       leaveRedirectHref ??
         (generalChannelId
           ? `${ERoutes.SERVERS}/${serverId}${ERoutes.CHANNELS}/${generalChannelId}`
           : `${ERoutes.SERVERS}/${serverId}`),
     )
-  }, [generalChannelId, leaveRedirectHref, router, serverId])
+  }, [generalChannelId, leaveControlPlane, leaveRedirectHref, router, serverId])
 
-  if (token === '') {
+  if (liveKitToken === '') {
     return (
       <div className={'flex flex-col flex-1 justify-center items-center'}>
         <Loader2 className="h-7 w-7 text-zinc-500 animate-spin my-4" />
@@ -67,5 +58,5 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, chatId, leaveRedi
     )
   }
 
-  return <LiveKitClientAdapter token={token} video={video} audio={audio} onLeave={handleLeave} />
+  return <LiveKitClientAdapter token={liveKitToken} video={video} audio={audio} onLeave={handleLeave} />
 }

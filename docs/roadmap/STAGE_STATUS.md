@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `client-media-controller-boundary`.
+The next Stage 8 segment should be `local-mediasoup-dependency-prototype`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `client-media-controller-boundary`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `local-mediasoup-dependency-prototype`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / backend control-plane skeleton implemented`
+Status: `in progress / client media controller boundary implemented`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -383,9 +383,12 @@ Done:
 - `apps/api` media now has `MediaAccessService`, `MediaRoomService`, `MediaParticipantSessionService`, and `MediaPermissionService` skeleton ownership
 - authenticated control-plane endpoints now exist for room resolve, join, leave, and close while the compatibility `GET /api/media/livekit-token` path remains unchanged
 - channel and conversation media scope access now resolves backend-owned profile/member/session identity before transitional LiveKit provider access
+- `client-media-controller-boundary` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_090_CLIENT_MEDIA_CONTROLLER_BOUNDARY.md`
+- channel and private media route entries now map to app-core media room scope/mode shapes before reaching the runtime feature
+- `useMediaRoomController` can call backend `joinRoom`/`leaveRoom` while keeping `getLiveKitToken` as the active LiveKit fallback token path
+- `LiveKitClientAdapter` remains the active provider UI and route leave redirects are unchanged
 
 Remaining:
-- run `client-media-controller-boundary`
 - run `local-mediasoup-dependency-prototype`
 - run `local-coturn-turn-credential`
 - run `mediasoup-client-adapter`
@@ -393,7 +396,7 @@ Remaining:
 - run `final-media-mvp-parity-load-smoke`
 
 Next likely work:
-- start `client-media-controller-boundary`
+- start `local-mediasoup-dependency-prototype`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

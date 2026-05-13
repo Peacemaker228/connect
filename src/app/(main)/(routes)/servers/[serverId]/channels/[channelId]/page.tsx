@@ -3,6 +3,7 @@ import { ERoutes } from '@app-core/routing/routes'
 import { redirect } from 'next/navigation'
 import { ChatHeader, ChatInput, ChatMessages } from '@/lib/chat/features'
 import { MediaRoom } from '@/lib/shared/features/media-room'
+import { createChannelMediaRoomEntry } from '@/lib/shared/features/media/media-room-entry'
 import { getServerRouteGuardAuth, getServerRouteGuardServer } from '@/lib/shared/utils/server-route-guard'
 
 interface IChannelIdPageProps {
@@ -44,6 +45,14 @@ const ChannelIdPage: FC<IChannelIdPageProps> = async ({ params }) => {
     channelId: channel.id,
     serverId: channel.serverId,
   }
+  const mediaEntry =
+    channel.type === 'AUDIO' || channel.type === 'VIDEO'
+      ? createChannelMediaRoomEntry({
+          serverId,
+          channelId: channel.id,
+          channelType: channel.type,
+        })
+      : null
 
   return (
     <div className="bg-white dark:bg-[#313338] flex flex-col h-full">
@@ -68,8 +77,12 @@ const ChannelIdPage: FC<IChannelIdPageProps> = async ({ params }) => {
           />
         </>
       )}
-      {channel.type === 'AUDIO' && <MediaRoom chatId={channel.id} serverId={serverId} video={false} audio={true} />}
-      {channel.type === 'VIDEO' && <MediaRoom chatId={channel.id} serverId={serverId} video={true} audio={true} />}
+      {channel.type === 'AUDIO' && mediaEntry && (
+        <MediaRoom mediaEntry={mediaEntry} serverId={serverId} video={false} audio={true} />
+      )}
+      {channel.type === 'VIDEO' && mediaEntry && (
+        <MediaRoom mediaEntry={mediaEntry} serverId={serverId} video={true} audio={true} />
+      )}
     </div>
   )
 }
