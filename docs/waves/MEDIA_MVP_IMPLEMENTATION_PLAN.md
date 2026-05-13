@@ -185,6 +185,14 @@ Acceptance:
 - device fallback/toasts pass
 - mute/camera/screen-share still works
 
+Segment 088 result:
+- status: `review`
+- static route/token/adapter parity checks passed for channel `AUDIO`, channel `VIDEO`, private video mode, leave redirects, preferred-device fallback code, device error toast code, and LiveKit `VideoConference` controls
+- `getLiveKitToken` still calls `/api/media/livekit-token`, and backend media still returns `{ token }` through `LiveKitMediaProviderAdapter`
+- manual authenticated browser/device/LiveKit session checks were not executed in this docs/report-only segment
+- no runtime fixes, SDK/API/UI behavior changes, dependency changes, env/infra changes, or LiveKit removal were made
+- next segment: `backend-media-control-plane-implementation`
+
 ### 6. `backend-media-control-plane-implementation`
 
 Goal:
@@ -418,7 +426,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Next code segment:
-- `livekit-parity-smoke`
+- `backend-media-control-plane-implementation`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -439,5 +447,5 @@ Reason:
 - LiveKit containment is planned
 - MVP implementation order, fallback, and acceptance are now documented
 
-Next active work should move to LiveKit parity smoke:
-- `livekit-parity-smoke`
+Next active work should move to backend media control-plane implementation:
+- `backend-media-control-plane-implementation`
