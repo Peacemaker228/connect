@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { getOrCreateConversation } from '@/lib/shared/utils/conversation'
 import { ChatHeader, ChatInput, ChatMessages } from '@/lib/chat/features'
 import { MediaRoom } from '@/lib/shared/features/media-room'
+import { createConversationMediaRoomEntry } from '@/lib/shared/features/media/media-room-entry'
 import { getServerRouteGuardAuth, getServerRouteGuardServer } from '@/lib/shared/utils/server-route-guard'
 
 interface IMemberIdPageProps {
@@ -74,6 +75,10 @@ const MemberIdPage: FC<IMemberIdPageProps> = async ({ params, searchParams }) =>
   const messageQuery = {
     conversationId: conversation.id,
   }
+  const mediaEntry = createConversationMediaRoomEntry({
+    serverId,
+    conversationId: conversation.id,
+  })
 
   return (
     <div className="bg-white dark:bg-[#313338] flex flex-col h-full">
@@ -85,7 +90,7 @@ const MemberIdPage: FC<IMemberIdPageProps> = async ({ params, searchParams }) =>
       />
       {video && (
         <MediaRoom
-          chatId={conversation.id}
+          mediaEntry={mediaEntry}
           leaveRedirectHref={`${ERoutes.SERVERS}/${serverId}${ERoutes.CONVERSATIONS}/${memberId}`}
           serverId={serverId}
           video={true}
