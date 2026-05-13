@@ -155,6 +155,14 @@ Acceptance:
 - feature/UI code begins consuming app media boundary instead of direct LiveKit concepts
 - current LiveKit fallback still active
 
+Segment 087 result:
+- status: `complete`
+- `LiveKitClientAdapter` now owns `@livekit/components-react`, `@livekit/components-styles`, `livekit-client`, `LiveKitRoom`, `VideoConference`, `Room`, `MediaDeviceFailure`, and `.lk-disconnect-button` handling
+- current `MediaRoom` keeps token fetch, route entry, profile/server lookup, and leave redirect ownership
+- channel audio/video, private video mode, preferred-device fallback, device error toasts, and leave redirects are preserved by containment
+- no backend, SDK contract, dependency, env, infra, route, or product behavior changes were made
+- next segment: `livekit-parity-smoke`
+
 ### 5. `livekit-parity-smoke`
 
 Goal:
@@ -410,7 +418,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Next code segment:
-- `client-livekit-adapter-containment`
+- `livekit-parity-smoke`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -431,5 +439,5 @@ Reason:
 - LiveKit containment is planned
 - MVP implementation order, fallback, and acceptance are now documented
 
-Next active work should move to client adapter containment:
-- `client-livekit-adapter-containment`
+Next active work should move to LiveKit parity smoke:
+- `livekit-parity-smoke`

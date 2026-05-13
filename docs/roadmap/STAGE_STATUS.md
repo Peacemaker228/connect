@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `client-livekit-adapter-containment`.
+The next Stage 8 segment should be `livekit-parity-smoke`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `client-livekit-adapter-containment`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `livekit-parity-smoke`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / backend LiveKit adapter contained`
+Status: `in progress / client LiveKit adapter contained`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -375,9 +375,10 @@ Done:
 - future SDK media commands are exported from `packages/sdk/src/actions/media.ts` while the current `getLiveKitToken` runtime path remains compatible
 - `backend-livekit-adapter-containment` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_086_BACKEND_LIVEKIT_ADAPTER_CONTAINMENT.md`
 - current backend token generation is delegated through `MediaProviderAdapter` / `LiveKitMediaProviderAdapter` while `GET /api/media/livekit-token` keeps the same request and response shape
+- `client-livekit-adapter-containment` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_087_CLIENT_LIVEKIT_ADAPTER_CONTAINMENT.md`
+- current client LiveKit components, styles, `Room`, media device failure handling, preferred-device fallback, and disconnect-button detection are contained in `LiveKitClientAdapter` while `MediaRoom` keeps the current token and route entry flow
 
 Remaining:
-- run `client-livekit-adapter-containment`
 - run `livekit-parity-smoke`
 - run `backend-media-control-plane-implementation`
 - run `client-media-controller-boundary`
@@ -388,7 +389,7 @@ Remaining:
 - run `final-media-mvp-parity-load-smoke`
 
 Next likely work:
-- start `client-livekit-adapter-containment`
+- start `livekit-parity-smoke`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
