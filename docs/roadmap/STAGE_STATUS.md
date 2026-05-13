@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `backend-media-control-plane-implementation`.
+The next Stage 8 segment should be `client-media-controller-boundary`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `backend-media-control-plane-implementation`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `client-media-controller-boundary`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / LiveKit parity smoke reviewed`
+Status: `in progress / backend control-plane skeleton implemented`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -379,9 +379,12 @@ Done:
 - current client LiveKit components, styles, `Room`, media device failure handling, preferred-device fallback, and disconnect-button detection are contained in `LiveKitClientAdapter` while `MediaRoom` keeps the current token and route entry flow
 - `livekit-parity-smoke` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_088_LIVEKIT_PARITY_SMOKE.md`
 - static/build parity checks passed for the current LiveKit path; manual authenticated browser/device/LiveKit session smoke remains review-only
+- `backend-media-control-plane-implementation` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_089_BACKEND_MEDIA_CONTROL_PLANE_IMPLEMENTATION.md`
+- `apps/api` media now has `MediaAccessService`, `MediaRoomService`, `MediaParticipantSessionService`, and `MediaPermissionService` skeleton ownership
+- authenticated control-plane endpoints now exist for room resolve, join, leave, and close while the compatibility `GET /api/media/livekit-token` path remains unchanged
+- channel and conversation media scope access now resolves backend-owned profile/member/session identity before transitional LiveKit provider access
 
 Remaining:
-- run `backend-media-control-plane-implementation`
 - run `client-media-controller-boundary`
 - run `local-mediasoup-dependency-prototype`
 - run `local-coturn-turn-credential`
@@ -390,7 +393,7 @@ Remaining:
 - run `final-media-mvp-parity-load-smoke`
 
 Next likely work:
-- start `backend-media-control-plane-implementation`
+- start `client-media-controller-boundary`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
