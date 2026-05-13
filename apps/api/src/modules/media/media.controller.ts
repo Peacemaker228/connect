@@ -1,15 +1,85 @@
-import { BadRequestException, Controller, Get, Inject, Query } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Inject,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 
+import { CurrentProfileId } from '../auth/decorators/current-profile-id.decorator';
+import { RequireAuthGuard } from '../auth/guards/require-auth.guard';
+import { MediaAccessService } from './media-access.service';
+import { MediaParticipantSessionService } from './media-participant-session.service';
+import { MediaPermissionService } from './media-permission.service';
 import {
   MEDIA_PROVIDER_ADAPTER,
   MediaProviderAdapter,
 } from './media-provider.adapter';
+import { MediaRoomService } from './media-room.service';
+import type {
+  CloseRoomCommandPayload,
+  JoinRoomCommandPayload,
+  LeaveRoomCommandPayload,
+  MediaError,
+  MediaParticipantSession,
+  MediaPermissionSnapshot,
+  MediaProviderAccessMetadata,
+  MediaReconnectPolicy,
+  MediaRoomDescriptor,
+  MediaScreenSharePolicy,
+  MediaStateSnapshot,
+  ResolveRoomAccessCommandPayload,
+} from '../../../../../packages/app-core/src/contracts';
+
+type MediaSignalingCommandEnvelope = {
+  command?: string;
+  payload?: {
+    requestId?: string;
+  };
+};
+
+type ResolveRoomAccessResponse = {
+  room: MediaRoomDescriptor;
+  permissions: MediaPermissionSnapshot;
+  screenSharePolicy: MediaScreenSharePolicy;
+  reconnectPolicy: MediaReconnectPolicy;
+  providerAccess?: MediaProviderAccessMetadata;
+};
+
+type JoinRoomResponse = ResolveRoomAccessResponse & {
+  participantSession: MediaParticipantSession;
+  state: MediaStateSnapshot;
+};
+
+type LeaveRoomResponse = {
+  room?: MediaRoomDescriptor;
+  participantSession?: MediaParticipantSession;
+  state?: MediaStateSnapshot;
+};
+
+type CloseRoomResponse = {
+  room: MediaRoomDescriptor;
+};
+
+type MediaCommandAcknowledgement = {
+  requestId: string;
+  accepted: boolean;
+  error?: MediaError;
+};
 
 @Controller('media')
 export class MediaController {
   constructor(
     @Inject(MEDIA_PROVIDER_ADAPTER)
     private readonly mediaProviderAdapter: MediaProviderAdapter,
+    private readonly mediaAccessService: MediaAccessService,
+    private readonly mediaRoomService: MediaRoomService,
+    private readonly mediaParticipantSessionService: MediaParticipantSessionService,
+    private readonly mediaPermissionService: MediaPermissionService,
   ) {}
 
   @Get('livekit-token')
@@ -29,5 +99,131 @@ export class MediaController {
       room,
       username,
     });
+  }
+
+  @Post('rooms/resolve')
+  @UseGuards(RequireAuthGuard)
+  async resolveRoomAccess(
+    @CurrentProfileId() profileId: string | undefined,
+    @Body() body: ResolveRoomAccessCommandPayload | undefined,
+  ): Promise<ResolveRoomAccessResponse> {
+    const access = await this.mediaAccessService.resolveRoomAccess(
+      profileId,
+      body?.scope,
+      body?.mode,
+    );
+    const room = this.mediaRoomService.resolveRoom(access);
+    const permissions = this.mediaPermissionService.getPermissionSnapshot(access);
+
+    return {
+      room,
+      permissions,
+      screenSharePolicy: this.mediaPermissionService.getScreenSharePolicy(),
+      reconnectPolicy: this.mediaPermissionService.getReconnectPolicy(),
+    };
+  }
+
+  @Post('rooms/join')
+  @UseGuards(RequireAuthGuard)
+  async joinRoom(
+    @CurrentProfileId() profileId: string | undefined,
+    @Body() body: JoinRoomCommandPayload | undefined,
+  ): Promise<JoinRoomResponse> {
+    const access = await this.mediaAccessService.resolveRoomAccess(
+      profileId,
+      body?.scope,
+      body?.mode,
+    );
+    const resolvedRoom = this.mediaRoomService.resolveRoom(access);
+    const { participantSession, state } = this.mediaParticipantSessionService.createSession({
+      roomId: resolvedRoom.roomId,
+      identity: access.identity,
+      desiredState: body?.desiredState,
+    });
+    const room = this.mediaRoomService.activateRoom(resolvedRoom.roomId);
+    const permissions = this.mediaPermissionService.getPermissionSnapshot(
+      access,
+      participantSession.participantSessionId,
+    );
+    const providerAccess = await this.mediaProviderAdapter.createRoomAccess({
+      room: room.roomId,
+      username: participantSession.participantSessionId,
+    });
+
+    return {
+      room,
+      permissions,
+      participantSession,
+      state,
+      screenSharePolicy: this.mediaPermissionService.getScreenSharePolicy(),
+      reconnectPolicy: this.mediaPermissionService.getReconnectPolicy(),
+      providerAccess: {
+        token: providerAccess.token,
+        metadata: {
+          provider: 'livekit-bridge',
+        },
+      },
+    };
+  }
+
+  @Post('rooms/leave')
+  @UseGuards(RequireAuthGuard)
+  async leaveRoom(
+    @CurrentProfileId() profileId: string | undefined,
+    @Body() body: LeaveRoomCommandPayload | undefined,
+  ): Promise<LeaveRoomResponse> {
+    const { participantSession, state } = this.mediaParticipantSessionService.leaveSession({
+      profileId,
+      roomId: body?.roomId,
+      participantSessionId: body?.participantSessionId,
+    });
+    const room = this.mediaRoomService.getRoom(participantSession.roomId);
+
+    return {
+      room,
+      participantSession,
+      state,
+    };
+  }
+
+  @Post('rooms/close')
+  @UseGuards(RequireAuthGuard)
+  async closeRoom(
+    @CurrentProfileId() profileId: string | undefined,
+    @Body() body: CloseRoomCommandPayload | undefined,
+  ): Promise<CloseRoomResponse> {
+    const existingRoom = this.mediaRoomService.getRoom(body?.roomId);
+    const access = await this.mediaAccessService.resolveRoomAccess(
+      profileId,
+      existingRoom.scope,
+      existingRoom.mode,
+    );
+    const permissions = this.mediaPermissionService.getPermissionSnapshot(access);
+
+    if (!permissions.permissions.moderate) {
+      throw new ForbiddenException('Room close requires moderation permission');
+    }
+
+    return {
+      room: this.mediaRoomService.closeRoom(existingRoom.roomId),
+    };
+  }
+
+  @Post('commands')
+  @UseGuards(RequireAuthGuard)
+  acknowledgeMediaCommand(
+    @Body() body: MediaSignalingCommandEnvelope | undefined,
+  ): MediaCommandAcknowledgement {
+    const error: MediaError = {
+      code: 'unknown',
+      message: 'Media signaling command handling is not implemented yet',
+      recoverable: true,
+    };
+
+    return {
+      requestId: body?.payload?.requestId ?? 'unknown',
+      accepted: false,
+      error,
+    };
   }
 }

@@ -217,6 +217,16 @@ Acceptance:
 - caller-provided room/username no longer defines the target control-plane identity
 - LiveKit can still be used as provider adapter behind the control-plane
 
+Segment 089 result:
+- status: `complete`
+- `apps/api` now has `MediaAccessService`, `MediaRoomService`, `MediaParticipantSessionService`, and `MediaPermissionService`
+- new authenticated control-plane routes exist for `resolveRoomAccess`, `joinRoom`, `leaveRoom`, and `closeRoom` at the SDK provisional paths
+- `/api/media/commands` exists as a non-implemented signaling acknowledgement boundary for future command handling
+- channel and conversation access now use backend auth/domain checks before producing app media room/session envelopes
+- `joinRoom` creates backend-owned participant session ids and can request a transitional LiveKit provider token behind the existing adapter
+- the old `GET /api/media/livekit-token` path and current UI token flow are unchanged
+- next segment: `client-media-controller-boundary`
+
 ### 7. `client-media-controller-boundary`
 
 Goal:
@@ -425,8 +435,8 @@ Result:
 - existing media contract exports remain available through the current barrel path
 - the segment stayed narrow to contracts and docs only
 
-Next code segment:
-- `backend-media-control-plane-implementation`
+Current next code segment:
+- `client-media-controller-boundary`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -447,5 +457,5 @@ Reason:
 - LiveKit containment is planned
 - MVP implementation order, fallback, and acceptance are now documented
 
-Next active work should move to backend media control-plane implementation:
-- `backend-media-control-plane-implementation`
+Next active work should move to client media controller boundary:
+- `client-media-controller-boundary`
