@@ -127,6 +127,14 @@ Acceptance:
 - no product behavior change
 - backend LiveKit-specific code is no longer owned directly by the controller path
 
+Segment 086 result:
+- status: `complete`
+- `MediaProviderAdapter` is now the backend media provider boundary for current room access token creation
+- `LiveKitMediaProviderAdapter` owns `livekit-server-sdk` `AccessToken` construction and current env validation
+- `MediaController` preserves `GET /api/media/livekit-token`, query params `{ room, username }`, and response `{ token }`
+- no UI, SDK runtime flow, dependencies, env, infra, or production deploy docs changed
+- next segment: `client-livekit-adapter-containment`
+
 ### 4. `client-livekit-adapter-containment`
 
 Goal:
@@ -402,7 +410,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Next code segment:
-- `backend-livekit-adapter-containment`
+- `client-livekit-adapter-containment`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -423,5 +431,5 @@ Reason:
 - LiveKit containment is planned
 - MVP implementation order, fallback, and acceptance are now documented
 
-Next active work should move to backend adapter containment:
-- `backend-livekit-adapter-containment`
+Next active work should move to client adapter containment:
+- `client-livekit-adapter-containment`

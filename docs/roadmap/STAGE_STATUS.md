@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `backend-livekit-adapter-containment`.
+The next Stage 8 segment should be `client-livekit-adapter-containment`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `backend-livekit-adapter-containment`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `client-livekit-adapter-containment`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / sdk media command surface landed`
+Status: `in progress / backend LiveKit adapter contained`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -373,9 +373,10 @@ Done:
 - room scope/mode, participant session identity, permissions, desired/published state, track model, lifecycle, reconnect/resume, screen-share policy, error taxonomy, and command/event names now have app-core type shapes
 - `sdk-media-command-surface` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_085_SDK_MEDIA_COMMAND_SURFACE.md`
 - future SDK media commands are exported from `packages/sdk/src/actions/media.ts` while the current `getLiveKitToken` runtime path remains compatible
+- `backend-livekit-adapter-containment` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_086_BACKEND_LIVEKIT_ADAPTER_CONTAINMENT.md`
+- current backend token generation is delegated through `MediaProviderAdapter` / `LiveKitMediaProviderAdapter` while `GET /api/media/livekit-token` keeps the same request and response shape
 
 Remaining:
-- run `backend-livekit-adapter-containment`
 - run `client-livekit-adapter-containment`
 - run `livekit-parity-smoke`
 - run `backend-media-control-plane-implementation`
@@ -387,7 +388,7 @@ Remaining:
 - run `final-media-mvp-parity-load-smoke`
 
 Next likely work:
-- start `backend-livekit-adapter-containment`
+- start `client-livekit-adapter-containment`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
