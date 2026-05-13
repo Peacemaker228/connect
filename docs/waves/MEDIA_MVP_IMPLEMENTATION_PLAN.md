@@ -277,6 +277,17 @@ Acceptance:
 - current LiveKit fallback remains usable
 - no production rollout behavior changes
 
+Segment 091 result:
+- status: `complete`
+- `mediasoup@3.19.22` is installed as a server-side dependency
+- Bun `trustedDependencies` includes `mediasoup` so the required worker postinstall can run
+- a one-off local Node smoke created a mediasoup worker/router successfully
+- `MediasoupPrototypeService` isolates worker/router startup and health reporting behind backend media module ownership
+- authenticated `GET /api/media/prototype/mediasoup/health` can lazily start and report the local prototype
+- the prototype is disabled in production runtime via `NODE_ENV === 'production'`
+- LiveKit remains the active fallback/provider path; no UI switch, coturn, `mediasoup-client`, env, infra, Docker, PM2, Nginx, firewall, production deploy docs, or microphone fix was added
+- next segment: `local-coturn-turn-credential`
+
 ### 9. `local-coturn-turn-credential`
 
 Goal:
@@ -445,7 +456,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `local-mediasoup-dependency-prototype`
+- `local-coturn-turn-credential`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -466,5 +477,5 @@ Reason:
 - LiveKit containment is planned
 - MVP implementation order, fallback, and acceptance are now documented
 
-Next active work should move to the local media provider prototype:
-- `local-mediasoup-dependency-prototype`
+Next active work should move to local TURN credential support:
+- `local-coturn-turn-credential`

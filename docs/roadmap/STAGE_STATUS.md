@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `local-mediasoup-dependency-prototype`.
+The next Stage 8 segment should be `local-coturn-turn-credential`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `local-mediasoup-dependency-prototype`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `local-coturn-turn-credential`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / client media controller boundary implemented`
+Status: `in progress / local mediasoup prototype ready`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -387,16 +387,19 @@ Done:
 - channel and private media route entries now map to app-core media room scope/mode shapes before reaching the runtime feature
 - `useMediaRoomController` can call backend `joinRoom`/`leaveRoom` while keeping `getLiveKitToken` as the active LiveKit fallback token path
 - `LiveKitClientAdapter` remains the active provider UI and route leave redirects are unchanged
+- `local-mediasoup-dependency-prototype` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_091_LOCAL_MEDIASOUP_DEPENDENCY_PROTOTYPE.md`
+- server-side `mediasoup@3.19.22` is installed locally, with Bun trusting the mediasoup postinstall needed for the worker binary
+- `MediasoupPrototypeService` can lazily create a local worker/router behind an authenticated debug health endpoint
+- current LiveKit token/provider/client runtime remains unchanged and no coturn, `mediasoup-client`, UI switch, or production infra was added
 
 Remaining:
-- run `local-mediasoup-dependency-prototype`
 - run `local-coturn-turn-credential`
 - run `mediasoup-client-adapter`
 - run `mvp-private-small-room-replacement`
 - run `final-media-mvp-parity-load-smoke`
 
 Next likely work:
-- start `local-mediasoup-dependency-prototype`
+- start `local-coturn-turn-credential`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

@@ -76,6 +76,7 @@
     "js-cookie": "^3.0.5",
     "livekit-server-sdk": "^2.8.1",
     "lucide-react": "^0.453.0",
+    "mediasoup": "3.19.22",
     "next": "14.2.15",
     "next-intl": "^3.26.3",
     "next-themes": "^0.3.0",
@@ -148,5 +149,8 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
     }
-  }
+  },
+  "trustedDependencies": [
+    "mediasoup"
+  ]
 }

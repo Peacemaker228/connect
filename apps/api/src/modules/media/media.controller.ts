@@ -12,6 +12,10 @@ import {
 
 import { CurrentProfileId } from '../auth/decorators/current-profile-id.decorator';
 import { RequireAuthGuard } from '../auth/guards/require-auth.guard';
+import {
+  LocalMediasoupPrototypeHealth,
+  MediasoupPrototypeService,
+} from './mediasoup-prototype.service';
 import { MediaAccessService } from './media-access.service';
 import { MediaParticipantSessionService } from './media-participant-session.service';
 import { MediaPermissionService } from './media-permission.service';
@@ -80,6 +84,7 @@ export class MediaController {
     private readonly mediaRoomService: MediaRoomService,
     private readonly mediaParticipantSessionService: MediaParticipantSessionService,
     private readonly mediaPermissionService: MediaPermissionService,
+    private readonly mediasoupPrototypeService: MediasoupPrototypeService,
   ) {}
 
   @Get('livekit-token')
@@ -225,5 +230,11 @@ export class MediaController {
       accepted: false,
       error,
     };
+  }
+
+  @Get('prototype/mediasoup/health')
+  @UseGuards(RequireAuthGuard)
+  getMediasoupPrototypeHealth(): Promise<LocalMediasoupPrototypeHealth> {
+    return this.mediasoupPrototypeService.getHealth();
   }
 }

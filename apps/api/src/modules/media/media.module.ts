@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { LiveKitMediaProviderAdapter } from './livekit-media-provider.adapter';
+import { MediasoupPrototypeService } from './mediasoup-prototype.service';
 import { MediaAccessService } from './media-access.service';
 import { MediaController } from './media.controller';
 import { MediaParticipantSessionService } from './media-participant-session.service';
@@ -16,6 +17,7 @@ import { MediaRoomService } from './media-room.service';
     MediaRoomService,
     MediaParticipantSessionService,
     MediaPermissionService,
+    MediasoupPrototypeService,
     {
       provide: MEDIA_PROVIDER_ADAPTER,
       useExisting: LiveKitMediaProviderAdapter,
