@@ -338,6 +338,17 @@ Acceptance:
 - backend can create mediasoup transport metadata needed by a future browser adapter
 - current LiveKit fallback remains available
 
+Segment 093 result:
+- status: `complete`
+- `MediasoupPrototypeService` now creates local mediasoup WebRTC transports for `send` and `recv` prototype directions
+- authenticated `POST /api/media/prototype/mediasoup/transports` returns `transportId`, `iceParameters`, `iceCandidates`, `dtlsParameters`, and optional `sctpParameters`
+- the transport response can include local TURN credential metadata when requested, while missing local TURN env and production runtime remain disabled safely
+- authenticated `POST /api/media/prototype/mediasoup/transports/:transportId/connect` provides the DTLS connect skeleton for the future browser adapter
+- prototype transports are process-local and intentionally not a production session model yet
+- current LiveKit fallback/provider/client path remains unchanged
+- no browser SFU client package, UI switch, production infra/env/deploy config, relay service rollout, or microphone fix was added
+- next segment: `browser-sfu-adapter`
+
 ### 11. `browser-sfu-adapter`
 
 Goal:
@@ -468,7 +479,7 @@ Production rollout is separate and later.
 Out of scope for MVP implementation planning:
 - VPS firewall commands
 - Docker/systemd/Nginx configs
-- production coturn deployment
+- production TURN service rollout
 - production mediasoup process management
 - production TURN credentials/secrets
 - production monitoring/alerting rollout
@@ -489,7 +500,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `backend-mediasoup-transport-prototype`
+- `browser-sfu-adapter`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -510,5 +521,5 @@ Reason:
 - LiveKit containment is planned
 - MVP implementation order, fallback, and acceptance are now documented
 
-Next active work should move to the backend mediasoup transport prototype:
-- `backend-mediasoup-transport-prototype`
+Next active work should move to the browser SFU adapter:
+- `browser-sfu-adapter`

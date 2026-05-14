@@ -309,7 +309,7 @@ Out of scope:
 - recording/egress
 - distributed SFU
 - cross-region routing
-- production firewall commands
+- production network access commands
 - Docker/systemd/Nginx config files
 - dependency installation
 
