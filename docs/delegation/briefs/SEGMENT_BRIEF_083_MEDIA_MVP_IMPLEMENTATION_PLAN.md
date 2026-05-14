@@ -63,7 +63,7 @@ Ordered implementation segments:
 7. `client-media-controller-boundary`
 8. `local-mediasoup-dependency-prototype`
 9. `local-coturn-turn-credential`
-10. `mediasoup-client-adapter`
+10. `browser-sfu-adapter`
 11. `mvp-private-small-room-replacement`
 12. `final-media-mvp-parity-load-smoke`
 
