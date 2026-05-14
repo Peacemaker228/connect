@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `local-sfu-direct-turn-smoke`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `local-coturn-turn-relay-unblock`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / mediasoup produce-consume prototype ready`
+Status: `in progress / direct browser SFU smoke passed, TURN relay blocked`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -415,14 +415,25 @@ Done:
 - `SfuClientAdapter.createConsumerMetadata(...)` and `SfuClientAdapter.consume(metadata)` can request and consume backend consumer metadata through an existing receive transport
 - prototype consumers default to unpaused because no consumer resume command exists yet
 - current `MediaRoom` still renders `LiveKitClientAdapter` by default, and no current route is switched to SFU
+- `local-sfu-direct-turn-smoke` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_096_LOCAL_SFU_DIRECT_TURN_SMOKE.md`
+- `MediaModule` imports `AuthModule` so authenticated media prototype endpoints can resolve `RequireAuthGuard` at Nest runtime
+- a dev-only authenticated `/media/sfu-smoke` route can manually exercise `SfuClientAdapter` through health, send/recv transport creation, synthetic local audio produce, consumer metadata creation, and remote track consume
+- `SfuClientAdapter.createTransport(...)` can accept `iceTransportPolicy`, allowing the smoke harness to force relay-only TURN review
+- authenticated backend health and direct send/receive transport metadata creation passed locally
+- full browser direct remote-track observation remains review-only in the current environment
+- TURN smoke is blocked locally because local TURN env/coturn availability is not configured
+- `local-sfu-browser-turn-smoke-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_097_LOCAL_SFU_BROWSER_TURN_SMOKE_RERUN.md`
+- authenticated browser `/media/sfu-smoke` Direct run passed in Chromium
+- direct smoke observed producer and consumer creation plus consumed remote track state `live`
+- TURN relay smoke remains blocked because local `LOCAL_TURN_*` env is absent, `turnserver` / `coturn` is unavailable, and `127.0.0.1:3478` is not reachable
 
 Remaining:
-- run `local-sfu-direct-turn-smoke`
+- configure local coturn env/runtime and run authenticated `/media/sfu-smoke` TURN relay smoke
 - run `mvp-private-small-room-replacement`
 - run `final-media-mvp-parity-load-smoke`
 
 Next likely work:
-- start `local-sfu-direct-turn-smoke`
+- run `local-coturn-turn-relay-unblock` before any private/small-room replacement switch
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
