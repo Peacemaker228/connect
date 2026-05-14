@@ -123,8 +123,8 @@ Fallback requirements:
 Production media rollout is separate and later.
 
 Out of scope for this implementation plan:
-- production mediasoup/coturn deployment
-- production firewall/Nginx/systemd/Docker config
+- production media service rollout
+- production network/Nginx/systemd/Docker config
 - production TURN secrets
 - production monitoring/alerting rollout
 - production LiveKit removal

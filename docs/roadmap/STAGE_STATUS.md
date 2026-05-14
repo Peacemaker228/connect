@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `backend-mediasoup-transport-prototype`.
+The next Stage 8 segment should be `browser-sfu-adapter`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `backend-mediasoup-transport-prototype`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `browser-sfu-adapter`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / local TURN credentials ready`
+Status: `in progress / backend mediasoup transport prototype ready`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -395,15 +395,19 @@ Done:
 - `TurnCredentialService` can issue short-lived local TURN REST credentials from server-side local env
 - authenticated `GET /api/media/prototype/turn/credentials` returns `urls`, `username`, `credential`, `ttlSeconds`, and expiry metadata when local env is configured
 - TURN credential issuance is disabled in production runtime and when local TURN env is absent
+- `backend-mediasoup-transport-prototype` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_093_BACKEND_MEDIASOUP_TRANSPORT_PROTOTYPE.md`
+- `MediasoupPrototypeService` can create local send/receive WebRTC transport metadata from the existing worker/router
+- authenticated `POST /api/media/prototype/mediasoup/transports` returns `transportId`, ICE parameters, ICE candidates, DTLS parameters, and optional local TURN credential metadata
+- authenticated `POST /api/media/prototype/mediasoup/transports/:transportId/connect` provides the connect skeleton for future browser DTLS parameters
+- mediasoup transport prototype creation and connect remain disabled in production runtime
 
 Remaining:
-- run `backend-mediasoup-transport-prototype`
 - run `browser-sfu-adapter`
 - run `mvp-private-small-room-replacement`
 - run `final-media-mvp-parity-load-smoke`
 
 Next likely work:
-- start `backend-mediasoup-transport-prototype`
+- start `browser-sfu-adapter`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

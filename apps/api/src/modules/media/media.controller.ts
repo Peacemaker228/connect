@@ -5,15 +5,19 @@ import {
   ForbiddenException,
   Get,
   Inject,
+  Param,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
+import type { types as mediasoupTypes } from 'mediasoup';
 
 import { CurrentProfileId } from '../auth/decorators/current-profile-id.decorator';
 import { RequireAuthGuard } from '../auth/guards/require-auth.guard';
 import {
   LocalMediasoupPrototypeHealth,
+  LocalMediasoupTransportConnectResult,
+  LocalMediasoupTransportMetadata,
   MediasoupPrototypeService,
 } from './mediasoup-prototype.service';
 import { MediaAccessService } from './media-access.service';
@@ -77,6 +81,21 @@ type MediaCommandAcknowledgement = {
   requestId: string;
   accepted: boolean;
   error?: MediaError;
+};
+
+type LocalMediasoupTransportDirection = 'send' | 'recv';
+
+type CreateMediasoupTransportBody = {
+  direction?: LocalMediasoupTransportDirection;
+  includeTurnCredentials?: boolean;
+};
+
+type ConnectMediasoupTransportBody = {
+  dtlsParameters?: mediasoupTypes.DtlsParameters;
+};
+
+type CreateMediasoupTransportResponse = LocalMediasoupTransportMetadata & {
+  turnCredentials?: LocalTurnCredentialResponse;
 };
 
 @Controller('media')
@@ -241,6 +260,38 @@ export class MediaController {
   @UseGuards(RequireAuthGuard)
   getMediasoupPrototypeHealth(): Promise<LocalMediasoupPrototypeHealth> {
     return this.mediasoupPrototypeService.getHealth();
+  }
+
+  @Post('prototype/mediasoup/transports')
+  @UseGuards(RequireAuthGuard)
+  async createMediasoupPrototypeTransport(
+    @CurrentProfileId() profileId: string | undefined,
+    @Body() body: CreateMediasoupTransportBody | undefined,
+  ): Promise<CreateMediasoupTransportResponse> {
+    const transport = await this.mediasoupPrototypeService.createWebRtcTransport(
+      body?.direction === 'recv' ? 'recv' : 'send',
+    );
+
+    if (!body?.includeTurnCredentials) {
+      return transport;
+    }
+
+    return {
+      ...transport,
+      turnCredentials: this.turnCredentialService.issueLocalCredentials(profileId),
+    };
+  }
+
+  @Post('prototype/mediasoup/transports/:transportId/connect')
+  @UseGuards(RequireAuthGuard)
+  connectMediasoupPrototypeTransport(
+    @Param('transportId') transportId: string | undefined,
+    @Body() body: ConnectMediasoupTransportBody | undefined,
+  ): Promise<LocalMediasoupTransportConnectResult> {
+    return this.mediasoupPrototypeService.connectWebRtcTransport({
+      transportId,
+      dtlsParameters: body?.dtlsParameters,
+    });
   }
 
   @Get('prototype/turn/credentials')
