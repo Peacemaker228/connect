@@ -94,7 +94,7 @@ Review:
 
 Block:
 - no UI should switch to the new SDK media command surface until backend control-plane endpoints/gateway exist.
-- no LiveKit removal should happen before parity smoke passes.
+- no removing LiveKit should happen before parity smoke passes.
 
 Overall:
 - `pass-with-review`

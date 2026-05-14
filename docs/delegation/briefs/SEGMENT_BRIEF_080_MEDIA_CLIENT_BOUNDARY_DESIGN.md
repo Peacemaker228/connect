@@ -442,7 +442,7 @@ Out of scope:
 - runtime implementation
 - `packages/app-core` code changes
 - `packages/sdk` code changes
-- LiveKit removal
+- removing LiveKit
 - microphone/media bug fix
 - mediasoup/coturn dependency or infra changes
 - env/production/deploy changes

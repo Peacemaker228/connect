@@ -447,7 +447,7 @@ Pass:
 Out of scope:
 - runtime implementation
 - `packages/app-core` code changes
-- LiveKit removal
+- removing LiveKit
 - microphone/media bug fix
 - mediasoup/coturn dependency or infra changes
 - production/deploy/runbook changes

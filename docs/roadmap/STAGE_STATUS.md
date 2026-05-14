@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `browser-sfu-adapter`.
+The next Stage 8 segment should be `mediasoup-produce-consume-prototype`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `browser-sfu-adapter`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `mediasoup-produce-consume-prototype`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / backend mediasoup transport prototype ready`
+Status: `in progress / browser SFU adapter boundary ready`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -400,14 +400,21 @@ Done:
 - authenticated `POST /api/media/prototype/mediasoup/transports` returns `transportId`, ICE parameters, ICE candidates, DTLS parameters, and optional local TURN credential metadata
 - authenticated `POST /api/media/prototype/mediasoup/transports/:transportId/connect` provides the connect skeleton for future browser DTLS parameters
 - mediasoup transport prototype creation and connect remain disabled in production runtime
+- `browser-sfu-adapter` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_094_BROWSER_SFU_ADAPTER.md`
+- `mediasoup-client@3.20.0` is installed as the browser SFU client dependency
+- mediasoup prototype health now exposes router RTP capabilities for browser `Device` loading
+- SDK prototype actions now exist for mediasoup prototype health, transport creation, and transport connect
+- `SfuClientAdapter` can load a mediasoup browser `Device`, create send/receive transports from backend metadata, wire DTLS connect through the backend skeleton, and pass local TURN credential metadata into `iceServers`
+- `LiveKitClientAdapter` remains the default rendered media provider, and no current route is switched to SFU by default
+- end-to-end media replacement is still not complete because producer/consumer server endpoints and client publish/consume/render wiring are not implemented
 
 Remaining:
-- run `browser-sfu-adapter`
+- run `mediasoup-produce-consume-prototype`
 - run `mvp-private-small-room-replacement`
 - run `final-media-mvp-parity-load-smoke`
 
 Next likely work:
-- start `browser-sfu-adapter`
+- start `mediasoup-produce-consume-prototype`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
