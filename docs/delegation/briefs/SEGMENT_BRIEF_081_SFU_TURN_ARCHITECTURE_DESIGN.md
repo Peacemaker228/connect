@@ -46,7 +46,7 @@ Relevant mediasoup constraints:
 - workers/routers can be used for CPU/core isolation and later expansion, but multi-router/distributed SFU behavior is not needed for the first MVP
 
 Relevant coturn constraints:
-- WebRTC TURN relay should use authenticated access, not anonymous open relay
+- WebRTC TURN relay should use authenticated access, not anonymous relay mode
 - coturn supports long-term credentials and TURN REST API style time-limited credentials
 - relay port ranges can be constrained with `min-port` / `max-port`
 - NAT/public-IP deployment needs explicit external address handling when applicable
@@ -126,7 +126,7 @@ Path:
 - client -> public VPS IP coturn listener -> coturn relay port range -> mediasoup RTC port/range
 
 Rules:
-- TURN must not be configured as anonymous open relay
+- TURN must not be configured for anonymous relay access
 - TURN credentials should be short-lived or backend-issued
 - relay traffic has bandwidth cost and should be observable as a distinct path
 - coturn relay port range and mediasoup RTC range must be planned so firewall rules are explicit
@@ -152,7 +152,7 @@ Suggested local planning placeholders:
 
 Local constraints:
 - no production secrets in local TURN credentials
-- no open relay even in local shared networks
+- no anonymous relay mode even in local shared networks
 - disposable state only
 - no Docker/systemd/firewall files until a scoped implementation segment
 
@@ -213,7 +213,7 @@ Firewall needs:
 ## Security Decisions
 
 Required:
-- no anonymous TURN/open relay
+- no anonymous TURN relay
 - backend-issued or short-lived TURN credentials
 - TURN shared secret stored only server-side when implementation begins
 - do not log TURN passwords, provider tokens, or media access secrets
@@ -231,7 +231,7 @@ Preferred direction:
 Explicit non-goals:
 - static public TURN credentials in client bundles
 - shared hard-coded TURN usernames/passwords
-- open relay for convenience
+- anonymous relay mode for convenience
 - production media secrets in docs or repo
 
 ## Scaling Path
@@ -326,7 +326,7 @@ Block:
 - production operator review for public IP, firewall, process owner, TLS/WSS boundary, and secret handling
 
 Guardrail:
-- no `mediasoup`, `mediasoup-client`, `coturn`, Docker, systemd, Nginx, firewall, or env changes should land before a separate scoped implementation segment.
+- no media runtime dependencies, Docker, systemd, Nginx, firewall, or env changes should land before a separate scoped implementation segment.
 
 ## Acceptance Criteria
 
@@ -335,7 +335,7 @@ Pass:
 - signaling/control traffic, WebRTC media traffic, and TURN relay traffic are separated
 - local dev assumptions are documented without adding infra
 - single-server VPS production MVP topology is documented
-- security decisions reject open relay and prefer short-lived/backend-issued TURN credentials
+- security decisions reject anonymous relay mode and prefer short-lived/backend-issued TURN credentials
 - scaling starts single-node and defers Redis/distributed SFU until needed
 - observability needs cover ICE, reconnect, transport, bitrate/packet loss, room, and participant lifecycle
 - open decisions and implementation blockers are explicit

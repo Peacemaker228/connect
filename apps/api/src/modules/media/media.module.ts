@@ -8,6 +8,7 @@ import { MediaParticipantSessionService } from './media-participant-session.serv
 import { MediaPermissionService } from './media-permission.service';
 import { MEDIA_PROVIDER_ADAPTER } from './media-provider.adapter';
 import { MediaRoomService } from './media-room.service';
+import { TurnCredentialService } from './turn-credential.service';
 
 @Module({
   controllers: [MediaController],
@@ -18,6 +19,7 @@ import { MediaRoomService } from './media-room.service';
     MediaParticipantSessionService,
     MediaPermissionService,
     MediasoupPrototypeService,
+    TurnCredentialService,
     {
       provide: MEDIA_PROVIDER_ADAPTER,
       useExisting: LiveKitMediaProviderAdapter,

@@ -59,7 +59,7 @@ Changed:
 Dependency:
 - added server-side `mediasoup@3`.
 - added Bun `trustedDependencies` entry for `mediasoup` so the required worker postinstall can run.
-- did not add `mediasoup-client`.
+- did not add a browser SFU client package.
 - did not add coturn.
 
 Backend prototype:
@@ -87,7 +87,7 @@ Pass:
 - one-off local worker/router smoke succeeded.
 - mediasoup-specific code is isolated in `MediasoupPrototypeService`.
 - current LiveKit path is unchanged.
-- no coturn, `mediasoup-client`, UI switch, or production infra was added.
+- no coturn, browser SFU client package, UI switch, or production infra was added.
 
 Review:
 - authenticated HTTP call to the new debug endpoint was not executed.
@@ -111,5 +111,5 @@ Verification performed:
 - `bun.cmd run typecheck:api` passed after prototype code fixes.
 - `bun.cmd x tsc --noEmit -p tsconfig.json` passed.
 - `bun.cmd x next lint` passed with the existing warning in `src/lib/shared/features/emoji-picker-custom.tsx`.
-- `rg -n "coturn|mediasoup-client" apps packages src package.json bun.lock` returned no matches.
+- `rg -n "coturn|browser SFU client package" apps packages src package.json bun.lock` returned no matches.
 - `git diff --check` passed.

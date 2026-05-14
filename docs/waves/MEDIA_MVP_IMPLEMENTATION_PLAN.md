@@ -285,7 +285,7 @@ Segment 091 result:
 - `MediasoupPrototypeService` isolates worker/router startup and health reporting behind backend media module ownership
 - authenticated `GET /api/media/prototype/mediasoup/health` can lazily start and report the local prototype
 - the prototype is disabled in production runtime via `NODE_ENV === 'production'`
-- LiveKit remains the active fallback/provider path; no UI switch, coturn, `mediasoup-client`, env, infra, Docker, PM2, Nginx, firewall, production deploy docs, or microphone fix was added
+- LiveKit remains the active fallback/provider path; no UI switch, coturn, browser SFU client package, env, infra, Docker, PM2, Nginx, firewall, production deploy docs, or microphone fix was added
 - next segment: `local-coturn-turn-credential`
 
 ### 9. `local-coturn-turn-credential`
@@ -299,7 +299,7 @@ Depends on:
 
 Expected output:
 - local TURN credential issuance design/implementation
-- no open relay
+- no unauthenticated TURN relay
 - no production secret or deploy changes
 - local relay smoke path
 
@@ -307,12 +307,44 @@ Acceptance:
 - direct and TURN-relayed local ICE paths can be tested
 - credentials are short-lived/backend-issued or explicitly local-only
 
-### 10. `mediasoup-client-adapter`
+Segment 092 result:
+- status: `complete`
+- `TurnCredentialService` issues local-only TURN REST credentials using server-side `LOCAL_TURN_URLS`, `LOCAL_TURN_STATIC_AUTH_SECRET`, and `LOCAL_TURN_TTL_SECONDS`
+- credentials use `expiresAtUnixSeconds:profileId` as username and `base64(hmac-sha1(secret, username))` as credential
+- authenticated `GET /api/media/prototype/turn/credentials` returns `urls`, `username`, `credential`, `ttlSeconds`, `expiresAt`, and `expiresAtUnixSeconds`
+- production runtime and missing local TURN env return disabled status instead of issuing credentials
+- local env placeholders are documented in `infra/coturn/local-turn.env.example`
+- current LiveKit path, UI runtime, production infra, production env, Docker, PM2, Nginx, firewall, and microphone behavior are unchanged
+- next segment: `backend-mediasoup-transport-prototype`
+
+### 10. `backend-mediasoup-transport-prototype`
+
+Goal:
+- add backend mediasoup WebRTC transport prototype endpoints behind the existing control-plane
+
+Depends on:
+- `local-mediasoup-dependency-prototype`
+- `local-coturn-turn-credential`
+- `backend-media-control-plane-implementation`
+
+Expected output:
+- create send/receive WebRTC transport prototype commands
+- connect transport prototype command
+- produce/consume skeleton metadata for local private/small-room testing
+- TURN credential metadata can be included in provider access where useful
+- no browser runtime switch and no production infra changes
+
+Acceptance:
+- backend can create mediasoup transport metadata needed by a future browser adapter
+- current LiveKit fallback remains available
+
+### 11. `browser-sfu-adapter`
 
 Goal:
 - add the client provider adapter for the non-LiveKit path
 
 Depends on:
+- `backend-mediasoup-transport-prototype`
 - `local-mediasoup-dependency-prototype`
 - `local-coturn-turn-credential`
 - `client-media-controller-boundary`
@@ -327,13 +359,13 @@ Acceptance:
 - private/local small-room media can connect through project-owned adapter
 - LiveKit fallback remains available
 
-### 11. `mvp-private-small-room-replacement`
+### 12. `mvp-private-small-room-replacement`
 
 Goal:
 - switch a controlled private/small-room flow to the new media path behind fallback gates
 
 Depends on:
-- `mediasoup-client-adapter`
+- `browser-sfu-adapter`
 - `backend-media-control-plane-implementation`
 - local direct and TURN smoke passing
 
@@ -348,7 +380,7 @@ Acceptance:
 - small-room path works under MVP constraints
 - fallback to current LiveKit remains available during review
 
-### 12. `final-media-mvp-parity-load-smoke`
+### 13. `final-media-mvp-parity-load-smoke`
 
 Goal:
 - decide whether MVP replacement is ready to move beyond local/controlled rollout
@@ -383,9 +415,10 @@ Critical path:
 6. client controller boundary
 7. local mediasoup prototype
 8. local TURN credential path
-9. mediasoup client adapter
-10. controlled replacement
-11. final parity/load smoke
+9. backend mediasoup transport prototype
+10. browser SFU adapter
+11. controlled replacement
+12. final parity/load smoke
 
 Dependency rules:
 - app-core contracts come before SDK/backend/client implementation
@@ -456,7 +489,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `local-coturn-turn-credential`
+- `backend-mediasoup-transport-prototype`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -477,5 +510,5 @@ Reason:
 - LiveKit containment is planned
 - MVP implementation order, fallback, and acceptance are now documented
 
-Next active work should move to local TURN credential support:
-- `local-coturn-turn-credential`
+Next active work should move to the backend mediasoup transport prototype:
+- `backend-mediasoup-transport-prototype`

@@ -306,7 +306,7 @@ Topology decisions:
 - TLS/HTTPS/WSS stays at the app reverse-proxy boundary; media UDP/TCP traffic is not proxied through Nginx
 
 Security/networking decisions:
-- no anonymous TURN/open relay
+- no anonymous TURN relay
 - prefer short-lived/backend-issued TURN credentials
 - keep TURN secrets server-side and out of repo/docs
 - restrict firewall exposure to selected mediasoup RTC and coturn listener/relay ranges
@@ -399,9 +399,10 @@ Implementation order:
 7. `client-media-controller-boundary`
 8. `local-mediasoup-dependency-prototype`
 9. `local-coturn-turn-credential`
-10. `mediasoup-client-adapter`
-11. `mvp-private-small-room-replacement`
-12. `final-media-mvp-parity-load-smoke`
+10. `backend-mediasoup-transport-prototype`
+11. `browser-sfu-adapter`
+12. `mvp-private-small-room-replacement`
+13. `final-media-mvp-parity-load-smoke`
 
 Guardrails:
 - implementation must happen in small PRs, not one rewrite
@@ -416,7 +417,7 @@ Next recommended segment:
 
 Forbidden in this wave:
 
-- adding `mediasoup`, `mediasoup-client`, `coturn`, or related runtime dependencies
+- adding media runtime dependencies before their scoped implementation segments
 - editing `MediaRoom`
 - deleting LiveKit
 - changing media token behavior

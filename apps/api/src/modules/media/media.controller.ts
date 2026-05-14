@@ -24,6 +24,10 @@ import {
   MediaProviderAdapter,
 } from './media-provider.adapter';
 import { MediaRoomService } from './media-room.service';
+import {
+  LocalTurnCredentialResponse,
+  TurnCredentialService,
+} from './turn-credential.service';
 import type {
   CloseRoomCommandPayload,
   JoinRoomCommandPayload,
@@ -85,6 +89,7 @@ export class MediaController {
     private readonly mediaParticipantSessionService: MediaParticipantSessionService,
     private readonly mediaPermissionService: MediaPermissionService,
     private readonly mediasoupPrototypeService: MediasoupPrototypeService,
+    private readonly turnCredentialService: TurnCredentialService,
   ) {}
 
   @Get('livekit-token')
@@ -236,5 +241,13 @@ export class MediaController {
   @UseGuards(RequireAuthGuard)
   getMediasoupPrototypeHealth(): Promise<LocalMediasoupPrototypeHealth> {
     return this.mediasoupPrototypeService.getHealth();
+  }
+
+  @Get('prototype/turn/credentials')
+  @UseGuards(RequireAuthGuard)
+  getLocalTurnCredentials(
+    @CurrentProfileId() profileId: string | undefined,
+  ): LocalTurnCredentialResponse {
+    return this.turnCredentialService.issueLocalCredentials(profileId);
   }
 }
