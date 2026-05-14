@@ -81,6 +81,66 @@ export type MediaReconnectCommandResponse = MediaCommandAcknowledgement & {
   state?: MediaStateSnapshot
 }
 
+export type MediasoupPrototypeStatus = 'disabled' | 'ready' | 'failed'
+
+export type MediasoupPrototypeTransportDirection = 'send' | 'recv'
+
+export type LocalTurnCredentialResponse = {
+  status: MediasoupPrototypeStatus
+  enabled: boolean
+  urls?: string[]
+  username?: string
+  credential?: string
+  ttlSeconds?: number
+  expiresAt?: string
+  expiresAtUnixSeconds?: number
+  reason?: string
+}
+
+export type MediasoupPrototypeHealthResponse = {
+  status: MediasoupPrototypeStatus
+  enabled: boolean
+  version: string
+  workerBin: string
+  workerPid?: number
+  workerClosed?: boolean
+  routerId?: string
+  routerClosed?: boolean
+  routerCodecCount?: number
+  routerRtpCapabilities?: Record<string, unknown>
+  reason?: string
+}
+
+export type CreateMediasoupPrototypeTransportRequest = {
+  direction?: MediasoupPrototypeTransportDirection
+  includeTurnCredentials?: boolean
+}
+
+export type MediasoupPrototypeTransportResponse = {
+  status: MediasoupPrototypeStatus
+  enabled: boolean
+  direction?: MediasoupPrototypeTransportDirection
+  transportId?: string
+  iceParameters?: Record<string, unknown>
+  iceCandidates?: Array<Record<string, unknown>>
+  dtlsParameters?: Record<string, unknown>
+  sctpParameters?: Record<string, unknown>
+  turnCredentials?: LocalTurnCredentialResponse
+  reason?: string
+}
+
+export type ConnectMediasoupPrototypeTransportRequest = {
+  dtlsParameters?: Record<string, unknown>
+}
+
+export type MediasoupPrototypeTransportConnectResponse = {
+  status: MediasoupPrototypeStatus
+  enabled: boolean
+  transportId?: string
+  dtlsState?: string
+  reason?: string
+}
+
 export type MediaSignalingCommandName =
   | 'updateDesiredMediaState'
   | 'publishTrack'
@@ -147,6 +207,8 @@ const MEDIA_CONTROL_PATHS = {
   leaveRoom: '/api/media/rooms/leave',
   closeRoom: '/api/media/rooms/close',
   signalingCommand: '/api/media/commands',
+  mediasoupPrototypeHealth: '/api/media/prototype/mediasoup/health',
+  mediasoupPrototypeTransports: '/api/media/prototype/mediasoup/transports',
 } as const
 
 const MEDIA_ERROR_CODES = [
@@ -329,6 +391,16 @@ const postMediaCommand = async <TResponse, TPayload>(path: string, payload: TPay
   }
 }
 
+const getMediaCommand = async <TResponse>(path: string) => {
+  try {
+    const response = await privateApiInstance.get<TResponse>(path)
+
+    return response.data
+  } catch (error) {
+    throw toMediaActionError(error)
+  }
+}
+
 const postMediaSignalingCommand = async <TCommandName extends MediaSignalingCommandName>(
   command: TCommandName,
   payload: MediaSignalingCommandPayloadMap[TCommandName],
@@ -382,3 +454,21 @@ export const beginReconnect = async (payload: BeginReconnectCommandPayload) =>
 
 export const resumeSession = async (payload: ResumeSessionCommandPayload) =>
   postMediaSignalingCommand('resumeSession', payload)
+
+export const getMediasoupPrototypeHealth = async () =>
+  getMediaCommand<MediasoupPrototypeHealthResponse>(MEDIA_CONTROL_PATHS.mediasoupPrototypeHealth)
+
+export const createMediasoupPrototypeTransport = async (payload: CreateMediasoupPrototypeTransportRequest) =>
+  postMediaCommand<MediasoupPrototypeTransportResponse, CreateMediasoupPrototypeTransportRequest>(
+    MEDIA_CONTROL_PATHS.mediasoupPrototypeTransports,
+    payload,
+  )
+
+export const connectMediasoupPrototypeTransport = async (
+  transportId: string,
+  payload: ConnectMediasoupPrototypeTransportRequest,
+) =>
+  postMediaCommand<MediasoupPrototypeTransportConnectResponse, ConnectMediasoupPrototypeTransportRequest>(
+    `${MEDIA_CONTROL_PATHS.mediasoupPrototypeTransports}/${transportId}/connect`,
+    payload,
+  )

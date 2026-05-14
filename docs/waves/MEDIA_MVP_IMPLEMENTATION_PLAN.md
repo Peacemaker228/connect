@@ -120,7 +120,7 @@ Expected output:
 - backend `MediaProviderAdapter` interface
 - `LiveKitMediaProviderAdapter`
 - current `/api/media/livekit-token` delegates token construction to adapter while preserving response compatibility
-- no LiveKit removal
+- no removing LiveKit
 
 Acceptance:
 - current token endpoint behavior preserved
@@ -190,7 +190,7 @@ Segment 088 result:
 - static route/token/adapter parity checks passed for channel `AUDIO`, channel `VIDEO`, private video mode, leave redirects, preferred-device fallback code, device error toast code, and LiveKit `VideoConference` controls
 - `getLiveKitToken` still calls `/api/media/livekit-token`, and backend media still returns `{ token }` through `LiveKitMediaProviderAdapter`
 - manual authenticated browser/device/LiveKit session checks were not executed in this docs/report-only segment
-- no runtime fixes, SDK/API/UI behavior changes, dependency changes, env/infra changes, or LiveKit removal were made
+- no runtime fixes, SDK/API/UI behavior changes, dependency changes, env/infra changes, or removing LiveKit were made
 - next segment: `backend-media-control-plane-implementation`
 
 ### 6. `backend-media-control-plane-implementation`
@@ -254,7 +254,7 @@ Segment 090 result:
 - `useMediaRoomController` can call backend `joinRoom` and `leaveRoom` while keeping `getLiveKitToken` as the active LiveKit fallback token source
 - `MediaRoom` now consumes the client media entry/controller boundary before rendering the unchanged `LiveKitClientAdapter`
 - channel `AUDIO`, channel `VIDEO`, and private video route entry behavior remains mapped to the same audio/video intent and leave redirect behavior
-- no LiveKit removal, backend/API mutation, media dependency, env, infra, route behavior, or microphone fix was made
+- no removing LiveKit, backend/API mutation, media dependency, env, infra, route behavior, or microphone fix was made
 - next segment: `local-mediasoup-dependency-prototype`
 
 ### 8. `local-mediasoup-dependency-prototype`
@@ -270,7 +270,7 @@ Expected output:
 - scoped dependency introduction if approved in that segment
 - local-only mediasoup worker/router prototype
 - no production infra/env changes
-- no LiveKit removal
+- no removing LiveKit
 
 Acceptance:
 - local prototype can create a room/router/transport path behind adapter boundary
@@ -370,6 +370,18 @@ Acceptance:
 - private/local small-room media can connect through project-owned adapter
 - LiveKit fallback remains available
 
+Segment 094 result:
+- status: `complete / replacement not switched`
+- `mediasoup-client@3.20.0` is installed as the browser SFU client dependency
+- backend prototype health now includes router RTP capabilities for browser `Device` loading
+- SDK prototype calls exist for mediasoup health, WebRTC transport creation, and transport connect
+- `SfuClientAdapter` exists next to `LiveKitClientAdapter`
+- the adapter can load a browser mediasoup `Device`, create send/receive transports from backend metadata, wire transport `connect` to backend DTLS connect, and pass local TURN credentials into `iceServers`
+- current `MediaRoom` still renders `LiveKitClientAdapter` by default
+- no current channel/private route is switched to the SFU path
+- end-to-end media replacement is not complete in this segment; backend producer/consumer endpoints and client publish/consume/render wiring are still missing
+- next segment: `mediasoup-produce-consume-prototype`
+
 ### 12. `mvp-private-small-room-replacement`
 
 Goal:
@@ -428,8 +440,9 @@ Critical path:
 8. local TURN credential path
 9. backend mediasoup transport prototype
 10. browser SFU adapter
-11. controlled replacement
-12. final parity/load smoke
+11. mediasoup produce/consume prototype
+12. controlled replacement
+13. final parity/load smoke
 
 Dependency rules:
 - app-core contracts come before SDK/backend/client implementation
@@ -500,7 +513,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `browser-sfu-adapter`
+- `mediasoup-produce-consume-prototype`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -521,5 +534,5 @@ Reason:
 - LiveKit containment is planned
 - MVP implementation order, fallback, and acceptance are now documented
 
-Next active work should move to the browser SFU adapter:
-- `browser-sfu-adapter`
+Next active work should move to the mediasoup produce/consume prototype:
+- `mediasoup-produce-consume-prototype`

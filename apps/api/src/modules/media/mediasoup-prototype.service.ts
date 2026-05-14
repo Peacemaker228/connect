@@ -15,6 +15,7 @@ export type LocalMediasoupPrototypeHealth = {
   routerId?: string;
   routerClosed?: boolean;
   routerCodecCount?: number;
+  routerRtpCapabilities?: mediasoupTypes.RtpCapabilities;
   reason?: string;
 };
 
@@ -280,6 +281,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
       routerId: this.router?.id,
       routerClosed: this.router?.closed,
       routerCodecCount: this.router?.rtpCapabilities?.codecs?.length,
+      routerRtpCapabilities: this.router?.rtpCapabilities,
       reason: status === 'failed' ? this.lastFailure ?? undefined : undefined,
     };
   }

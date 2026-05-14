@@ -8,7 +8,7 @@ Segment:
 
 ## Goal
 
-Add local-only TURN credential support for future relay-path testing without production rollout, UI runtime switching, LiveKit removal, or production TURN service rollout/config changes.
+Add local-only TURN credential support for future relay-path testing without production rollout, UI runtime switching, removing LiveKit, or production TURN service rollout/config changes.
 
 ## Required Reading / Checks
 

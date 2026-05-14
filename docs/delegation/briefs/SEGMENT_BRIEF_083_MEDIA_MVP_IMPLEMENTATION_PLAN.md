@@ -127,7 +127,7 @@ Out of scope for this implementation plan:
 - production network/Nginx/systemd/Docker config
 - production TURN secrets
 - production monitoring/alerting rollout
-- production LiveKit removal
+- production removal of LiveKit
 - Stage 6 production database cutover
 
 ## Blockers Before First Code Segment

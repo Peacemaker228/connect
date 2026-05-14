@@ -8,7 +8,7 @@ Segment:
 
 ## Goal
 
-Add local-only backend mediasoup WebRTC transport prototype metadata before the browser adapter, without UI runtime switching, LiveKit removal, production infra/env changes, coturn service rollout, or microphone/media fixes.
+Add local-only backend mediasoup WebRTC transport prototype metadata before the browser adapter, without UI runtime switching, removing LiveKit, production infra/env changes, coturn service rollout, or microphone/media fixes.
 
 ## Required Reading / Checks
 

@@ -69,7 +69,7 @@ Controller/hook:
 Compatibility:
 - `LiveKitClientAdapter` remains the active provider UI.
 - current route leave redirects are unchanged.
-- no media stack dependencies, infra, env, backend API, or LiveKit removal changes were made.
+- no media stack dependencies, infra, env, backend API, or removing LiveKit changes were made.
 
 ## Acceptance Result
 
