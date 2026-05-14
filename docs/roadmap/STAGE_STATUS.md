@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `mediasoup-produce-consume-prototype`.
+The next Stage 8 segment should be `local-sfu-direct-turn-smoke`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `mediasoup-produce-consume-prototype`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `local-sfu-direct-turn-smoke`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / browser SFU adapter boundary ready`
+Status: `in progress / mediasoup produce-consume prototype ready`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -407,14 +407,22 @@ Done:
 - `SfuClientAdapter` can load a mediasoup browser `Device`, create send/receive transports from backend metadata, wire DTLS connect through the backend skeleton, and pass local TURN credential metadata into `iceServers`
 - `LiveKitClientAdapter` remains the default rendered media provider, and no current route is switched to SFU by default
 - end-to-end media replacement is still not complete because producer/consumer server endpoints and client publish/consume/render wiring are not implemented
+- `mediasoup-produce-consume-prototype` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_095_MEDIASOUP_PRODUCE_CONSUME_PROTOTYPE.md`
+- `MediasoupPrototypeService` now has local in-memory producer and consumer registries
+- authenticated prototype endpoints exist for creating producers from RTP parameters and creating consumer metadata from compatible receive transports
+- SDK prototype calls exist for produce and consume
+- `SfuClientAdapter.produce(track)` can publish a browser track through an existing send transport
+- `SfuClientAdapter.createConsumerMetadata(...)` and `SfuClientAdapter.consume(metadata)` can request and consume backend consumer metadata through an existing receive transport
+- prototype consumers default to unpaused because no consumer resume command exists yet
+- current `MediaRoom` still renders `LiveKitClientAdapter` by default, and no current route is switched to SFU
 
 Remaining:
-- run `mediasoup-produce-consume-prototype`
+- run `local-sfu-direct-turn-smoke`
 - run `mvp-private-small-room-replacement`
 - run `final-media-mvp-parity-load-smoke`
 
 Next likely work:
-- start `mediasoup-produce-consume-prototype`
+- start `local-sfu-direct-turn-smoke`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

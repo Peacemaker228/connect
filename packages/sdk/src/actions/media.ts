@@ -141,6 +141,46 @@ export type MediasoupPrototypeTransportConnectResponse = {
   reason?: string
 }
 
+export type MediasoupPrototypeMediaKind = 'audio' | 'video'
+
+export type ProduceMediasoupPrototypeRequest = {
+  transportId?: string
+  kind?: MediasoupPrototypeMediaKind
+  rtpParameters?: Record<string, unknown>
+  paused?: boolean
+}
+
+export type MediasoupPrototypeProducerResponse = {
+  status: MediasoupPrototypeStatus
+  enabled: boolean
+  transportId?: string
+  producerId?: string
+  kind?: MediasoupPrototypeMediaKind
+  paused?: boolean
+  reason?: string
+}
+
+export type ConsumeMediasoupPrototypeRequest = {
+  transportId?: string
+  producerId?: string
+  rtpCapabilities?: Record<string, unknown>
+  paused?: boolean
+}
+
+export type MediasoupPrototypeConsumerResponse = {
+  status: MediasoupPrototypeStatus
+  enabled: boolean
+  transportId?: string
+  consumerId?: string
+  producerId?: string
+  kind?: MediasoupPrototypeMediaKind
+  rtpParameters?: Record<string, unknown>
+  type?: string
+  paused?: boolean
+  producerPaused?: boolean
+  reason?: string
+}
+
 export type MediaSignalingCommandName =
   | 'updateDesiredMediaState'
   | 'publishTrack'
@@ -209,6 +249,8 @@ const MEDIA_CONTROL_PATHS = {
   signalingCommand: '/api/media/commands',
   mediasoupPrototypeHealth: '/api/media/prototype/mediasoup/health',
   mediasoupPrototypeTransports: '/api/media/prototype/mediasoup/transports',
+  mediasoupPrototypeProducers: '/api/media/prototype/mediasoup/producers',
+  mediasoupPrototypeConsumers: '/api/media/prototype/mediasoup/consumers',
 } as const
 
 const MEDIA_ERROR_CODES = [
@@ -470,5 +512,17 @@ export const connectMediasoupPrototypeTransport = async (
 ) =>
   postMediaCommand<MediasoupPrototypeTransportConnectResponse, ConnectMediasoupPrototypeTransportRequest>(
     `${MEDIA_CONTROL_PATHS.mediasoupPrototypeTransports}/${transportId}/connect`,
+    payload,
+  )
+
+export const produceMediasoupPrototypeTrack = async (payload: ProduceMediasoupPrototypeRequest) =>
+  postMediaCommand<MediasoupPrototypeProducerResponse, ProduceMediasoupPrototypeRequest>(
+    MEDIA_CONTROL_PATHS.mediasoupPrototypeProducers,
+    payload,
+  )
+
+export const consumeMediasoupPrototypeTrack = async (payload: ConsumeMediasoupPrototypeRequest) =>
+  postMediaCommand<MediasoupPrototypeConsumerResponse, ConsumeMediasoupPrototypeRequest>(
+    MEDIA_CONTROL_PATHS.mediasoupPrototypeConsumers,
     payload,
   )

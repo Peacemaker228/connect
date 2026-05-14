@@ -401,8 +401,10 @@ Implementation order:
 9. `local-coturn-turn-credential`
 10. `backend-mediasoup-transport-prototype`
 11. `browser-sfu-adapter`
-12. `mvp-private-small-room-replacement`
-13. `final-media-mvp-parity-load-smoke`
+12. `mediasoup-produce-consume-prototype`
+13. `local-sfu-direct-turn-smoke`
+14. `mvp-private-small-room-replacement`
+15. `final-media-mvp-parity-load-smoke`
 
 Guardrails:
 - implementation must happen in small PRs, not one rewrite

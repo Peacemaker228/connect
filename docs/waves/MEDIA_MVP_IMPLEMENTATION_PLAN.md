@@ -382,12 +382,75 @@ Segment 094 result:
 - end-to-end media replacement is not complete in this segment; backend producer/consumer endpoints and client publish/consume/render wiring are still missing
 - next segment: `mediasoup-produce-consume-prototype`
 
+### 11A. `mediasoup-produce-consume-prototype`
+
+Goal:
+- add narrow publish/consume prototype behavior on top of existing local mediasoup transports
+
+Depends on:
+- `browser-sfu-adapter`
+- `backend-mediasoup-transport-prototype`
+
+Expected output:
+- backend prototype producer endpoint
+- backend prototype consumer endpoint
+- in-memory producer/consumer registry
+- SDK producer/consumer calls
+- `SfuClientAdapter.produce(track)`
+- `SfuClientAdapter.consume(metadata)`
+- no default route switch
+
+Acceptance:
+- backend can create producer metadata from client RTP parameters
+- backend can create consumer metadata for a compatible receive transport
+- browser adapter can call publish and consume methods without being the default provider
+- current LiveKit path remains unchanged
+
+Segment 095 result:
+- status: `complete / replacement not switched`
+- `MediasoupPrototypeService` now owns local in-memory producer and consumer registries
+- authenticated `POST /api/media/prototype/mediasoup/producers` accepts RTP parameters and creates a mediasoup producer on a send transport
+- authenticated `POST /api/media/prototype/mediasoup/consumers` checks RTP compatibility and creates consumer metadata on a receive transport
+- SDK actions exist for prototype produce and consume
+- `SfuClientAdapter.produce(track)` publishes a browser track through an existing send transport
+- `SfuClientAdapter.createConsumerMetadata(...)` requests backend consumer metadata from a receive transport and device RTP capabilities
+- `SfuClientAdapter.consume(metadata)` creates a mediasoup-client consumer and returns the remote track
+- prototype consumers default to unpaused because no consumer resume command exists yet
+- current `MediaRoom` still renders `LiveKitClientAdapter` by default
+- no current channel/private route is switched to SFU
+- next segment: `local-sfu-direct-turn-smoke`
+
+### 11B. `local-sfu-direct-turn-smoke`
+
+Goal:
+- verify the local SFU prototype can move media before any private/small-room replacement switch
+
+Depends on:
+- `mediasoup-produce-consume-prototype`
+- local direct WebRTC path available
+- local TURN env available for relay-path review where possible
+
+Expected output:
+- controlled local smoke harness or manual smoke path that exercises `SfuClientAdapter`
+- direct-path publish/consume result
+- TURN credential/relay-path result or explicit blocked/review status if local coturn is not running
+- documented findings and blockers before replacement
+- no default route switch
+
+Acceptance:
+- authenticated local client can create send/recv transports
+- local track can be produced through the send transport
+- compatible consumer metadata can be created and consumed through the receive transport
+- remote track/media flow is observed locally, or a concrete blocker is documented before replacement
+- current LiveKit path remains unchanged
+
 ### 12. `mvp-private-small-room-replacement`
 
 Goal:
 - switch a controlled private/small-room flow to the new media path behind fallback gates
 
 Depends on:
+- `local-sfu-direct-turn-smoke`
 - `browser-sfu-adapter`
 - `backend-media-control-plane-implementation`
 - local direct and TURN smoke passing
@@ -441,8 +504,9 @@ Critical path:
 9. backend mediasoup transport prototype
 10. browser SFU adapter
 11. mediasoup produce/consume prototype
-12. controlled replacement
-13. final parity/load smoke
+12. local SFU direct/TURN smoke
+13. controlled replacement
+14. final parity/load smoke
 
 Dependency rules:
 - app-core contracts come before SDK/backend/client implementation
@@ -513,7 +577,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `mediasoup-produce-consume-prototype`
+- `local-sfu-direct-turn-smoke`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -534,5 +598,5 @@ Reason:
 - LiveKit containment is planned
 - MVP implementation order, fallback, and acceptance are now documented
 
-Next active work should move to the mediasoup produce/consume prototype:
-- `mediasoup-produce-consume-prototype`
+Next active work should validate the local SFU path before controlled replacement:
+- `local-sfu-direct-turn-smoke`
