@@ -467,6 +467,21 @@ Segment 097 result:
 - no production media infra/env/nginx/firewall/deploy changes were made
 - next segment should unblock local coturn/TURN env and rerun relay smoke before replacement
 
+Segment 098 result:
+- status: `direct pass / TURN pass / replacement unblocked`
+- local-only Docker coturn runtime was added in `infra/coturn/docker-compose.local.yml`
+- local env example now documents optional local Docker coturn relay range and external IP knobs without real secrets
+- TURN relay smoke used backend-issued REST credentials with shell-only shared secret and `iceTransportPolicy: "relay"`
+- API was run locally with `LOCAL_MEDIASOUP_LISTEN_IP=0.0.0.0` and a host IPv4 `LOCAL_MEDIASOUP_ANNOUNCED_ADDRESS` so coturn could reach the host mediasoup candidates
+- authenticated browser `/media/sfu-smoke` TURN run passed in Chromium
+- TURN smoke created producer `3950e702-a289-4024-9d0b-d5d5073fd10b` and consumer `354245a9-ff37-4f55-a8c5-a5cf41763942`
+- TURN smoke observed consumed remote track state `live`
+- coturn logs showed authenticated `ALLOCATE` and `CREATE_PERMISSION` success for the host mediasoup announced-address peer
+- current `MediaRoom` still renders `LiveKitClientAdapter` by default
+- no current channel/private route is switched to SFU
+- no production media infra/env/nginx/firewall/deploy changes were made
+- next segment can start controlled `mvp-private-small-room-replacement`
+
 ### 12. `mvp-private-small-room-replacement`
 
 Goal:
@@ -600,7 +615,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `local-coturn-turn-relay-unblock`
+- `mvp-private-small-room-replacement`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -621,6 +636,5 @@ Reason:
 - LiveKit containment is planned
 - MVP implementation order, fallback, and acceptance are now documented
 
-Next active work should finish validating the local TURN relay path before controlled replacement:
-- provide local coturn runtime/env
-- rerun authenticated `/media/sfu-smoke` TURN mode with relay policy
+Next active work can start controlled replacement:
+- `mvp-private-small-room-replacement`

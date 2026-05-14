@@ -1,0 +1,25 @@
+services:
+  connect-coturn-local:
+    image: coturn/coturn:latest
+    container_name: connect-coturn-local
+    restart: "no"
+    command:
+      - --log-file=stdout
+      - --listening-port=3478
+      - --realm=connect-local
+      - --server-name=connect-local-coturn
+      - --fingerprint
+      - --use-auth-secret
+      - --static-auth-secret=${LOCAL_TURN_STATIC_AUTH_SECRET:-replace-with-random-local-secret}
+      - --external-ip=${LOCAL_TURN_EXTERNAL_IP:-127.0.0.1}
+      - --min-port=${LOCAL_TURN_RELAY_MIN_PORT:-49160}
+      - --max-port=${LOCAL_TURN_RELAY_MAX_PORT:-49170}
+      - --no-tls
+      - --no-dtls
+      - --no-cli
+      - --no-software-attribute
+      - --verbose
+    ports:
+      - "127.0.0.1:3478:3478/tcp"
+      - "127.0.0.1:3478:3478/udp"
+      - "127.0.0.1:${LOCAL_TURN_RELAY_MIN_PORT:-49160}-${LOCAL_TURN_RELAY_MAX_PORT:-49170}:${LOCAL_TURN_RELAY_MIN_PORT:-49160}-${LOCAL_TURN_RELAY_MAX_PORT:-49170}/udp"
