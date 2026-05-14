@@ -456,6 +456,17 @@ Segment 096 result:
 - no current channel/private route is switched to SFU
 - next segment should rerun browser direct/TURN smoke with an authenticated browser and local coturn env before replacement
 
+Segment 097 result:
+- status: `direct pass / TURN blocked / replacement blocked`
+- authenticated browser `/media/sfu-smoke` Direct run passed in Chromium
+- direct smoke created producer `b5127fad-9844-47c5-b050-7efebc1a92bf` and consumer `95fd4e9d-d2a6-4c2d-9f8e-9dad1753153f`
+- direct smoke observed consumed remote track state `live`
+- TURN relay smoke remains blocked because local `LOCAL_TURN_*` env is absent, `turnserver` / `coturn` is not available in `PATH`, and `127.0.0.1:3478` is not reachable
+- current `MediaRoom` still renders `LiveKitClientAdapter` by default
+- no current channel/private route is switched to SFU
+- no production media infra/env/nginx/firewall/deploy changes were made
+- next segment should unblock local coturn/TURN env and rerun relay smoke before replacement
+
 ### 12. `mvp-private-small-room-replacement`
 
 Goal:
@@ -589,7 +600,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `local-sfu-browser-turn-smoke-rerun`
+- `local-coturn-turn-relay-unblock`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -610,6 +621,6 @@ Reason:
 - LiveKit containment is planned
 - MVP implementation order, fallback, and acceptance are now documented
 
-Next active work should finish validating the local SFU path before controlled replacement:
-- run authenticated `/media/sfu-smoke` direct mode and record remote track observation
-- configure local coturn env, then run authenticated `/media/sfu-smoke` TURN mode with relay policy
+Next active work should finish validating the local TURN relay path before controlled replacement:
+- provide local coturn runtime/env
+- rerun authenticated `/media/sfu-smoke` TURN mode with relay policy

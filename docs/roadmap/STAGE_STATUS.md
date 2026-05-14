@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `local-sfu-direct-turn-smoke`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `local-coturn-turn-relay-unblock`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / local SFU smoke harness ready, browser/TURN smoke not passed`
+Status: `in progress / direct browser SFU smoke passed, TURN relay blocked`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -422,15 +422,18 @@ Done:
 - authenticated backend health and direct send/receive transport metadata creation passed locally
 - full browser direct remote-track observation remains review-only in the current environment
 - TURN smoke is blocked locally because local TURN env/coturn availability is not configured
+- `local-sfu-browser-turn-smoke-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_097_LOCAL_SFU_BROWSER_TURN_SMOKE_RERUN.md`
+- authenticated browser `/media/sfu-smoke` Direct run passed in Chromium
+- direct smoke observed producer and consumer creation plus consumed remote track state `live`
+- TURN relay smoke remains blocked because local `LOCAL_TURN_*` env is absent, `turnserver` / `coturn` is unavailable, and `127.0.0.1:3478` is not reachable
 
 Remaining:
-- run authenticated `/media/sfu-smoke` direct browser smoke and record remote track observation
-- configure local coturn env and run authenticated `/media/sfu-smoke` TURN relay smoke
+- configure local coturn env/runtime and run authenticated `/media/sfu-smoke` TURN relay smoke
 - run `mvp-private-small-room-replacement`
 - run `final-media-mvp-parity-load-smoke`
 
 Next likely work:
-- run `local-sfu-browser-turn-smoke-rerun` before any private/small-room replacement switch
+- run `local-coturn-turn-relay-unblock` before any private/small-room replacement switch
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
