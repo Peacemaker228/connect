@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `local-coturn-turn-relay-unblock`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `mvp-private-small-room-replacement`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / direct browser SFU smoke passed, TURN relay blocked`
+Status: `in progress / local SFU direct and TURN smoke passed`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -426,14 +426,18 @@ Done:
 - authenticated browser `/media/sfu-smoke` Direct run passed in Chromium
 - direct smoke observed producer and consumer creation plus consumed remote track state `live`
 - TURN relay smoke remains blocked because local `LOCAL_TURN_*` env is absent, `turnserver` / `coturn` is unavailable, and `127.0.0.1:3478` is not reachable
+- `local-coturn-turn-relay-unblock` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_098_LOCAL_COTURN_TURN_RELAY_UNBLOCK.md`
+- local-only Docker coturn runtime exists under `infra/coturn/docker-compose.local.yml`
+- authenticated browser `/media/sfu-smoke` TURN relay run passed in Chromium using backend-issued REST credentials and relay policy
+- TURN relay smoke observed producer and consumer creation plus consumed remote track state `live`
+- coturn logs showed authenticated allocation and permission success against the host mediasoup announced-address peer
 
 Remaining:
-- configure local coturn env/runtime and run authenticated `/media/sfu-smoke` TURN relay smoke
 - run `mvp-private-small-room-replacement`
 - run `final-media-mvp-parity-load-smoke`
 
 Next likely work:
-- run `local-coturn-turn-relay-unblock` before any private/small-room replacement switch
+- run `mvp-private-small-room-replacement`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
