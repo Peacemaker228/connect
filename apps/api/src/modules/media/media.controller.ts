@@ -15,6 +15,8 @@ import type { types as mediasoupTypes } from 'mediasoup';
 import { CurrentProfileId } from '../auth/decorators/current-profile-id.decorator';
 import { RequireAuthGuard } from '../auth/guards/require-auth.guard';
 import {
+  LocalMediasoupConsumerMetadata,
+  LocalMediasoupProducerMetadata,
   LocalMediasoupPrototypeHealth,
   LocalMediasoupTransportConnectResult,
   LocalMediasoupTransportMetadata,
@@ -96,6 +98,20 @@ type ConnectMediasoupTransportBody = {
 
 type CreateMediasoupTransportResponse = LocalMediasoupTransportMetadata & {
   turnCredentials?: LocalTurnCredentialResponse;
+};
+
+type ProduceMediasoupPrototypeBody = {
+  transportId?: string;
+  kind?: mediasoupTypes.MediaKind;
+  rtpParameters?: mediasoupTypes.RtpParameters;
+  paused?: boolean;
+};
+
+type ConsumeMediasoupPrototypeBody = {
+  transportId?: string;
+  producerId?: string;
+  rtpCapabilities?: mediasoupTypes.RtpCapabilities;
+  paused?: boolean;
 };
 
 @Controller('media')
@@ -291,6 +307,32 @@ export class MediaController {
     return this.mediasoupPrototypeService.connectWebRtcTransport({
       transportId,
       dtlsParameters: body?.dtlsParameters,
+    });
+  }
+
+  @Post('prototype/mediasoup/producers')
+  @UseGuards(RequireAuthGuard)
+  produceMediasoupPrototypeTrack(
+    @Body() body: ProduceMediasoupPrototypeBody | undefined,
+  ): Promise<LocalMediasoupProducerMetadata> {
+    return this.mediasoupPrototypeService.produce({
+      transportId: body?.transportId,
+      kind: body?.kind,
+      rtpParameters: body?.rtpParameters,
+      paused: body?.paused,
+    });
+  }
+
+  @Post('prototype/mediasoup/consumers')
+  @UseGuards(RequireAuthGuard)
+  consumeMediasoupPrototypeTrack(
+    @Body() body: ConsumeMediasoupPrototypeBody | undefined,
+  ): Promise<LocalMediasoupConsumerMetadata> {
+    return this.mediasoupPrototypeService.consume({
+      transportId: body?.transportId,
+      producerId: body?.producerId,
+      rtpCapabilities: body?.rtpCapabilities,
+      paused: body?.paused,
     });
   }
 
