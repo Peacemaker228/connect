@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AuthModule } from '../auth/auth.module';
 import { LiveKitMediaProviderAdapter } from './livekit-media-provider.adapter';
 import { MediasoupPrototypeService } from './mediasoup-prototype.service';
 import { MediaAccessService } from './media-access.service';
@@ -11,6 +12,7 @@ import { MediaRoomService } from './media-room.service';
 import { TurnCredentialService } from './turn-credential.service';
 
 @Module({
+  imports: [AuthModule],
   controllers: [MediaController],
   providers: [
     LiveKitMediaProviderAdapter,

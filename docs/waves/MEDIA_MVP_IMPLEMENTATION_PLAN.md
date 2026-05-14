@@ -444,6 +444,18 @@ Acceptance:
 - remote track/media flow is observed locally, or a concrete blocker is documented before replacement
 - current LiveKit path remains unchanged
 
+Segment 096 result:
+- status: `review / replacement blocked`
+- authenticated backend mediasoup health passed locally after fixing `MediaModule` to import `AuthModule` for `RequireAuthGuard` dependency resolution
+- authenticated backend direct send/receive WebRTC transport metadata creation passed locally
+- a dev-only authenticated `/media/sfu-smoke` route now exercises `SfuClientAdapter` through health, send/recv transport creation, local synthetic audio produce, consumer metadata creation, and remote track consume
+- `SfuClientAdapter.createTransport(...)` now accepts optional `iceTransportPolicy`, allowing the smoke harness to force `relay` for TURN review
+- full browser direct produce/consume remote-track observation was not executed in this environment and remains review-only
+- TURN smoke is blocked locally because `LOCAL_TURN_STATIC_AUTH_SECRET` is not configured and no local coturn availability was confirmed
+- current `MediaRoom` still renders `LiveKitClientAdapter` by default
+- no current channel/private route is switched to SFU
+- next segment should rerun browser direct/TURN smoke with an authenticated browser and local coturn env before replacement
+
 ### 12. `mvp-private-small-room-replacement`
 
 Goal:
@@ -577,7 +589,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `local-sfu-direct-turn-smoke`
+- `local-sfu-browser-turn-smoke-rerun`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -598,5 +610,6 @@ Reason:
 - LiveKit containment is planned
 - MVP implementation order, fallback, and acceptance are now documented
 
-Next active work should validate the local SFU path before controlled replacement:
-- `local-sfu-direct-turn-smoke`
+Next active work should finish validating the local SFU path before controlled replacement:
+- run authenticated `/media/sfu-smoke` direct mode and record remote track observation
+- configure local coturn env, then run authenticated `/media/sfu-smoke` TURN mode with relay policy

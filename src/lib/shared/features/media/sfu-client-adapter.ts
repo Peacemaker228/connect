@@ -27,6 +27,7 @@ export type SfuClientTransportBundle = {
 export type CreateSfuClientTransportInput = {
   direction: MediasoupPrototypeTransportDirection
   includeTurnCredentials?: boolean
+  iceTransportPolicy?: RTCIceTransportPolicy
 }
 
 export type ProduceSfuClientTrackInput = {
@@ -66,13 +67,14 @@ export class SfuClientAdapter {
   async createTransport({
     direction,
     includeTurnCredentials = true,
+    iceTransportPolicy,
   }: CreateSfuClientTransportInput): Promise<SfuClientTransportBundle> {
     const device = await this.getLoadedDevice()
     const backendTransport = await createMediasoupPrototypeTransport({
       direction,
       includeTurnCredentials,
     })
-    const transportOptions = this.toTransportOptions(backendTransport, direction)
+    const transportOptions = this.toTransportOptions(backendTransport, direction, iceTransportPolicy)
     const transport =
       direction === 'recv' ? device.createRecvTransport(transportOptions) : device.createSendTransport(transportOptions)
 
@@ -242,6 +244,7 @@ export class SfuClientAdapter {
   private toTransportOptions(
     backendTransport: MediasoupPrototypeTransportResponse,
     direction: MediasoupPrototypeTransportDirection,
+    iceTransportPolicy?: RTCIceTransportPolicy,
   ): mediasoupClientTypes.TransportOptions<SfuClientTransportAppData> {
     if (
       !backendTransport.enabled ||
@@ -261,6 +264,7 @@ export class SfuClientAdapter {
       dtlsParameters: backendTransport.dtlsParameters as mediasoupClientTypes.DtlsParameters,
       sctpParameters: backendTransport.sctpParameters as mediasoupClientTypes.SctpParameters | undefined,
       iceServers: this.toIceServers(backendTransport),
+      iceTransportPolicy,
       appData: {
         provider: 'mediasoup-prototype',
         direction,
