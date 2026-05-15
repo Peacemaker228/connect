@@ -351,7 +351,7 @@ Next likely work:
 
 ### Stage 8. Media MVP
 
-Status: `in progress / private SFU signaling lifecycle review`
+Status: `in progress / gated channel audio SFU pilot pass-review`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -497,15 +497,34 @@ Done:
 - TURN physical/audio-only status remains `review`, because this segment did not include a human listening check over TURN with real microphone capture
 - no-camera audio-only fallback remains `pass / preserved`
 - ordinary private calls and channel audio/video routes remain LiveKit, with no broad replacement started
+- `private-sfu-screen-share-mvp-decision` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_110_PRIVATE_SFU_SCREEN_SHARE_MVP_DECISION.md`
+- SFU screen-share decision is `defer-for-MVP`; gated private SFU remains audio/video only for the current MVP readiness decision
+- ordinary private calls and channel audio/video routes remain LiveKit, preserving current LiveKit `VideoConference` screen-share behavior outside the explicit non-production SFU gate
+- future SFU screen-share implementation is split into a later narrow segment covering display capture, source-aware producer metadata, single active share policy, remote rendering, cleanup, and direct/TURN smoke
+- `small-room-channel-sfu-readiness-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_111_SMALL_ROOM_CHANNEL_SFU_READINESS_PLAN.md`
+- readiness decision is `ready-to-implement-gated-channel`, limited to a controlled non-production explicit channel SFU pilot
+- first implementation should be channel `AUDIO` only; channel `VIDEO` follows after remote video layout/rendering and video smoke expectations are defined
+- proposed channel gate is explicit query only, such as `?mediaProvider=sfu&sfuChannel=true` or `?sfu=true&sfuChannel=true`; default channel `AUDIO`/`VIDEO` remain LiveKit
+- smoke/load matrix is defined for direct/TURN, two- and three-participant channel audio, leave/rejoin cleanup, restart recovery, offline/restore, no-camera fallback, and later channel video layout/load
+- risks remain process-local mediasoup/signaling state, multi-user rendering, persistent-room stale sessions, permissions, deferred screen-share, deferred physical camera QA, and review-only physical TURN signoff
+- `gated-channel-audio-sfu-pilot` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_112_GATED_CHANNEL_AUDIO_SFU_PILOT.md`
+- channel `AUDIO` SFU now opens only with the non-production explicit channel gate `?mediaProvider=sfu&sfuChannel=true` or `?sfu=true&sfuChannel=true`
+- direct two-user channel `AUDIO` browser smoke passed with both authenticated users connected, one remote producer observed per participant, audio-only requested media, restart recovery, and channel leave redirect preserved
+- ordinary channel `AUDIO` without the gate remains LiveKit, channel `VIDEO` remains LiveKit even with `sfuChannel=true`, and ordinary private `?video=true` remains LiveKit
+- guarded private SFU direct smoke passed again as a regression check
+- channel `AUDIO` TURN and three-participant smoke remain deferred to the next narrow segment
 
 Remaining:
-- run physical camera QA on a machine with camera hardware
+- run three-participant channel `AUDIO` smoke before any channel default switch
+- run channel `AUDIO` TURN relay smoke or document a precise blocker
+- run channel leave/rejoin cleanup and offline/restore or restart recovery matrix
+- define channel `VIDEO` remote layout/rendering before any video SFU pilot claim
+- run physical camera QA on a machine with camera hardware if it remains a release confidence requirement
 - optionally run human-operated TURN audio signoff with real microphone capture if required for release confidence
-- resolve or explicitly defer SFU screen-share lifecycle
-- broader small-room/channel load readiness remains unstarted
+- implement SFU screen-share later only if MVP parity or a later default-switch decision requires it
 
 Next likely work:
-- run `private-sfu-screen-share-mvp-decision`
+- run `gated-channel-audio-sfu-3user-turn-rejoin-smoke`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
