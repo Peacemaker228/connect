@@ -466,13 +466,20 @@ Done:
 - device controls/capture are `pass / review`: automated fake-device path passes, physical hardware/permission UX remains manual review
 - reconnect/restart is `pass / review`: user-triggered restart passes, network interruption reconnect/resume remains review
 - ordinary private calls and channel audio/video routes remain LiveKit, with no broad replacement started
+- `private-sfu-manual-device-reconnect-qa` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_105_PRIVATE_SFU_MANUAL_DEVICE_RECONNECT_QA.md`
+- operator manual synthetic private SFU smoke passed: two authenticated users joined the gated private SFU path without `sfuCapture=real`, both reached `connected`, both had producer/consumer ids, and both observed `Remote producers: 1`
+- manual real-capture QA is `blocked / missing physical camera`; `sfuCapture=real` failed with `Requested device not found` on the operator machine
+- permission/device UX is `review / camera-missing fallback needed`; the current real-capture path fails the whole call when camera capture is unavailable instead of degrading to audio-only where possible
+- network interruption reconnect/resume remains `review / not manually executed`; Segment 104 only proved user-triggered restart recovery
+- manual TURN relay with physical devices remains `review / not manually executed`; automated local coturn relay smoke remains pass from Segment 104
+- ordinary private calls and channel audio/video routes remain LiveKit, with no broad replacement started
 
 Remaining:
-- run manual physical-device and network interruption QA before any small-room/channel route switch
+- add graceful real-capture fallback for missing camera hardware, then rerun physical-device and network interruption QA before any small-room/channel route switch
 - resolve or explicitly defer SFU screen-share lifecycle
 
 Next likely work:
-- run `private-sfu-manual-device-reconnect-qa`
+- run `private-sfu-real-capture-device-fallback`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
