@@ -24,6 +24,8 @@ type SfuPrivateCallAdapterProps = {
   iceTransportPolicy?: RTCIceTransportPolicy
   captureMode?: 'synthetic' | 'real'
   simulateMissingCamera?: boolean
+  roomLabel?: string
+  restartAriaLabel?: string
   onLeave: () => void
 }
 
@@ -88,6 +90,8 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   iceTransportPolicy,
   captureMode = 'synthetic',
   simulateMissingCamera = false,
+  roomLabel = 'SFU private call',
+  restartAriaLabel = 'Restart SFU private call',
   onLeave,
 }) => {
   const adapterRef = useRef<SfuClientAdapter | null>(null)
@@ -105,7 +109,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   const consumedProducerKeyByIdRef = useRef(new Map<string, string>())
   const startRunIdRef = useRef(0)
   const [status, setStatus] = useState<SfuPrivateCallStatus>('idle')
-  const [detail, setDetail] = useState('Waiting for SFU private-call gate')
+  const [detail, setDetail] = useState('Waiting for scoped SFU gate')
   const [producerIds, setProducerIds] = useState<string[]>([])
   const [consumerIds, setConsumerIds] = useState<string[]>([])
   const [remoteProducerIds, setRemoteProducerIds] = useState<string[]>([])
@@ -484,12 +488,12 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     [consumeRemoteProducer, sessionScope],
   )
 
-  const startSfuPrivatePath = useCallback(async () => {
+  const startSfuPath = useCallback(async () => {
     const runId = startRunIdRef.current + 1
     startRunIdRef.current = runId
     cleanup()
     setStatus('starting')
-    setDetail('Starting scoped SFU private-call path')
+    setDetail('Starting scoped SFU media path')
     setProducerIds([])
     setConsumerIds([])
     setRemoteProducerIds([])
@@ -559,7 +563,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       }
 
       setStatus('failed')
-      setDetail(error instanceof Error ? error.message : 'Unknown SFU private-call failure')
+      setDetail(error instanceof Error ? error.message : 'Unknown SFU media failure')
     }
   }, [
     assertScopedTransport,
@@ -573,8 +577,8 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   ])
 
   useEffect(() => {
-    void startSfuPrivatePath()
-  }, [startSfuPrivatePath])
+    void startSfuPath()
+  }, [startSfuPath])
 
   const toggleLocalAudio = useCallback(() => {
     const nextEnabled = !localAudioEnabled
@@ -604,7 +608,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
         <div className="min-w-0">
           <div className="text-sm font-medium" data-testid="private-sfu-provider">
-            SFU private call
+            {roomLabel}
           </div>
           <div className="truncate text-xs text-zinc-400">
             {controlPlaneJoin.room.roomId}
@@ -637,8 +641,8 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
             type="button"
             size="icon"
             variant="outline"
-            aria-label="Restart SFU private call"
-            onClick={() => void startSfuPrivatePath()}
+            aria-label={restartAriaLabel}
+            onClick={() => void startSfuPath()}
           >
             <RotateCcw className="h-4 w-4" />
           </Button>

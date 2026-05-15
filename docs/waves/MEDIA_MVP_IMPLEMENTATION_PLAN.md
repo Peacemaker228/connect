@@ -679,6 +679,17 @@ Segment 111 result:
 - risks are documented: process-local state, multi-user scaling/rendering, persistent-room stale sessions, permissions, deferred screen-share, deferred physical camera QA, and review-only physical TURN signoff
 - recommended next implementation segment is `gated-channel-audio-sfu-pilot`
 
+Segment 112 result:
+- status: `channel audio direct pass / two-user pilot / broad replacement hold`
+- channel `AUDIO` SFU is now available only behind a non-production explicit channel gate: `?mediaProvider=sfu&sfuChannel=true` or `?sfu=true&sfuChannel=true`
+- ordinary channel `AUDIO` without the gate remains LiveKit, channel `VIDEO` remains LiveKit even with `sfuChannel=true`, and ordinary private `?video=true` remains LiveKit
+- the existing SFU lifecycle adapter is reused with channel-safe labels and forced audio-only props for channel `AUDIO`
+- guarded browser smoke exists at `tests/browser/channel-audio-sfu-smoke.spec.ts` and repo script `bun run test:browser:channel-audio-sfu`
+- direct two-user channel `AUDIO` browser smoke passed with both users connected, `Remote producers: 1` on both clients, `Requested media: audio on, video off`, restart recovery, no stale producer inflation, and leave redirect to the general text channel
+- private SFU direct smoke passed again as a regression check
+- channel `AUDIO` TURN relay and three-participant smoke are deferred to the next narrow segment before any broader channel replacement claim
+- recommended next segment is `gated-channel-audio-sfu-3user-turn-rejoin-smoke`
+
 ## Dependency Summary
 
 Critical path:
@@ -766,7 +777,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `gated-channel-audio-sfu-pilot`
+- `gated-channel-audio-sfu-3user-turn-rejoin-smoke`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -788,4 +799,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `gated-channel-audio-sfu-pilot`
+- `gated-channel-audio-sfu-3user-turn-rejoin-smoke`

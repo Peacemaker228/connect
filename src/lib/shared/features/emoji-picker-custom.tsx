@@ -26,7 +26,7 @@ export const EmojiPickerCustom: FC<IEmojiPickerCustomProps> = ({ onChangeAction 
         <Picker
           data={data}
           theme={resolvedTheme}
-          onEmojiSelect={(e: any) => {
+          onEmojiSelect={(e: { native: string }) => {
             onChangeAction(e.native)
           }}
         />

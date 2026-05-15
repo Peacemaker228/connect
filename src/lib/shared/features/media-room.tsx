@@ -40,14 +40,20 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
     mediaEntry,
     displayName: profile?.name ? name : null,
   })
-  const isPrivateSfuGateRequested =
-    mediaEntry.scope.kind === 'conversation' &&
-    (searchParams?.get('mediaProvider') === 'sfu' || searchParams?.get('sfu') === 'true')
-  const isPrivateSfuGateOpen = isPrivateSfuGateRequested && process.env.NODE_ENV !== 'production'
-  const privateSfuIceTransportPolicy =
+  const isSfuProviderRequested = searchParams?.get('mediaProvider') === 'sfu' || searchParams?.get('sfu') === 'true'
+  const isPrivateSfuGateRequested = mediaEntry.scope.kind === 'conversation' && isSfuProviderRequested
+  const isChannelAudioSfuGateRequested =
+    mediaEntry.scope.kind === 'channel' &&
+    audio &&
+    !video &&
+    searchParams?.get('sfuChannel') === 'true' &&
+    isSfuProviderRequested
+  const isSfuGateRequested = isPrivateSfuGateRequested || isChannelAudioSfuGateRequested
+  const isSfuGateOpen = isSfuGateRequested && process.env.NODE_ENV !== 'production'
+  const sfuIceTransportPolicy =
     searchParams?.get('sfuTransport') === 'turn' || searchParams?.get('sfuIce') === 'relay' ? 'relay' : undefined
-  const privateSfuCaptureMode = searchParams?.get('sfuCapture') === 'real' ? 'real' : 'synthetic'
-  const privateSfuSimulateMissingCamera = searchParams?.get('sfuSimulateMissingCamera') === 'true'
+  const sfuCaptureMode = searchParams?.get('sfuCapture') === 'real' ? 'real' : 'synthetic'
+  const sfuSimulateMissingCamera = searchParams?.get('sfuSimulateMissingCamera') === 'true'
 
   const handleLeave = useCallback(() => {
     void leaveControlPlane()
@@ -59,21 +65,25 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
     )
   }, [generalChannelId, leaveControlPlane, leaveRedirectHref, router, serverId])
 
-  if (isPrivateSfuGateOpen && controlPlaneJoin?.participantSession) {
+  if (isSfuGateOpen && controlPlaneJoin?.participantSession) {
+    const isChannelAudioSfu = isChannelAudioSfuGateRequested
+
     return (
       <SfuPrivateCallAdapter
         controlPlaneJoin={controlPlaneJoin}
-        audio={audio}
-        video={video}
-        iceTransportPolicy={privateSfuIceTransportPolicy}
-        captureMode={privateSfuCaptureMode}
-        simulateMissingCamera={privateSfuSimulateMissingCamera}
+        audio={isChannelAudioSfu ? true : audio}
+        video={isChannelAudioSfu ? false : video}
+        iceTransportPolicy={sfuIceTransportPolicy}
+        captureMode={sfuCaptureMode}
+        simulateMissingCamera={sfuSimulateMissingCamera}
+        roomLabel={isChannelAudioSfu ? 'SFU channel audio' : undefined}
+        restartAriaLabel={isChannelAudioSfu ? 'Restart SFU channel audio' : undefined}
         onLeave={handleLeave}
       />
     )
   }
 
-  if (liveKitToken === '' || (isPrivateSfuGateRequested && controlPlaneStatus === 'joining')) {
+  if (liveKitToken === '' || (isSfuGateRequested && controlPlaneStatus === 'joining')) {
     return (
       <div className={'flex flex-col flex-1 justify-center items-center'}>
         <Loader2 className="h-7 w-7 text-zinc-500 animate-spin my-4" />
