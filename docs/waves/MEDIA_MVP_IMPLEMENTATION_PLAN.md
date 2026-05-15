@@ -668,6 +668,17 @@ Segment 110 result:
 - remaining blockers before small-room/channel replacement are physical camera QA on camera-equipped hardware, optional human-operated TURN audio signoff if required, and broader small-room/channel load/readiness
 - recommended next segment is `small-room-channel-sfu-readiness-plan`
 
+Segment 111 result:
+- status: `ready-to-implement-gated-channel / audio-first / broad replacement hold`
+- readiness decision is `ready-to-implement-gated-channel`, limited to a controlled non-production explicit channel SFU pilot
+- first implementation should be channel `AUDIO` only; channel `VIDEO` should follow after remote video layout/rendering and video smoke expectations are defined
+- proposed gate is channel-route only, non-production only, and explicit query only, such as `?mediaProvider=sfu&sfuChannel=true` or `?sfu=true&sfuChannel=true`
+- ordinary channel `AUDIO`, ordinary channel `VIDEO`, and ordinary private `?video=true` remain LiveKit by default
+- prerequisites are documented for extracting/reusing SFU room lifecycle without private-route assumptions, enforcing audio-only behavior for `AUDIO` channels, adding multi-user channel smoke setup, and preserving LiveKit fallback assertions
+- smoke/load matrix is defined for direct/TURN, two- and three-participant channel audio, leave/rejoin cleanup, restart recovery, offline/restore, no-camera fallback, and later channel video layout/load
+- risks are documented: process-local state, multi-user scaling/rendering, persistent-room stale sessions, permissions, deferred screen-share, deferred physical camera QA, and review-only physical TURN signoff
+- recommended next implementation segment is `gated-channel-audio-sfu-pilot`
+
 ## Dependency Summary
 
 Critical path:
@@ -755,7 +766,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `small-room-channel-sfu-readiness-plan`
+- `gated-channel-audio-sfu-pilot`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -777,4 +788,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `small-room-channel-sfu-readiness-plan`
+- `gated-channel-audio-sfu-pilot`

@@ -501,15 +501,22 @@ Done:
 - SFU screen-share decision is `defer-for-MVP`; gated private SFU remains audio/video only for the current MVP readiness decision
 - ordinary private calls and channel audio/video routes remain LiveKit, preserving current LiveKit `VideoConference` screen-share behavior outside the explicit non-production SFU gate
 - future SFU screen-share implementation is split into a later narrow segment covering display capture, source-aware producer metadata, single active share policy, remote rendering, cleanup, and direct/TURN smoke
+- `small-room-channel-sfu-readiness-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_111_SMALL_ROOM_CHANNEL_SFU_READINESS_PLAN.md`
+- readiness decision is `ready-to-implement-gated-channel`, limited to a controlled non-production explicit channel SFU pilot
+- first implementation should be channel `AUDIO` only; channel `VIDEO` follows after remote video layout/rendering and video smoke expectations are defined
+- proposed channel gate is explicit query only, such as `?mediaProvider=sfu&sfuChannel=true` or `?sfu=true&sfuChannel=true`; default channel `AUDIO`/`VIDEO` remain LiveKit
+- smoke/load matrix is defined for direct/TURN, two- and three-participant channel audio, leave/rejoin cleanup, restart recovery, offline/restore, no-camera fallback, and later channel video layout/load
+- risks remain process-local mediasoup/signaling state, multi-user rendering, persistent-room stale sessions, permissions, deferred screen-share, deferred physical camera QA, and review-only physical TURN signoff
 
 Remaining:
-- run physical camera QA on a machine with camera hardware
+- implement and smoke a gated channel `AUDIO` SFU pilot before any channel default switch
+- define channel `VIDEO` remote layout/rendering before any video SFU pilot claim
+- run physical camera QA on a machine with camera hardware if it remains a release confidence requirement
 - optionally run human-operated TURN audio signoff with real microphone capture if required for release confidence
-- broader small-room/channel load readiness remains unstarted
 - implement SFU screen-share later only if MVP parity or a later default-switch decision requires it
 
 Next likely work:
-- run `small-room-channel-sfu-readiness-plan`
+- run `gated-channel-audio-sfu-pilot`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
