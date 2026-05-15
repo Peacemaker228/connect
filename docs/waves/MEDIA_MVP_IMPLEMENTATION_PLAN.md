@@ -612,6 +612,18 @@ Segment 105 result:
 - ordinary private `?video=true` and channel `AUDIO`/`VIDEO` remain LiveKit; no broad replacement started
 - recommended next segment is `private-sfu-real-capture-device-fallback`, so no-camera machines can continue audio-only physical-device QA without failing the whole call
 
+Segment 106 result:
+- status: `no-camera fallback pass-simulated / synthetic pass / LiveKit preserved`
+- gated private SFU `sfuCapture=real` still attempts requested audio+video first, but now retries audio-only when video capture fails because the camera is missing and `audio=true`
+- the SFU UI now reports `Camera not found; continuing audio-only` and disables the camera control when no video track exists
+- if audio-only fallback also fails, the failure reason explicitly says camera was not found and audio-only fallback failed
+- browser smoke added `PRIVATE_SFU_SMOKE_CAPTURE=real-missing-camera` to simulate missing camera under the non-production private SFU gate
+- direct synthetic private SFU smoke passed, confirming the default synthetic path did not regress
+- direct real audio+video fake-device smoke passed, confirming the full real-capture path remains compatible
+- direct simulated no-camera fallback smoke passed with both participants connected, one remote producer per participant, capture notice visible, microphone toggle working, and camera control disabled
+- ordinary private `?video=true` and channel `AUDIO`/`VIDEO` remain LiveKit; no broad replacement started
+- recommended next segment is an operator rerun on the physical no-camera machine that exposed the original blocker
+
 ## Dependency Summary
 
 Critical path:
@@ -699,7 +711,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `private-sfu-real-capture-device-fallback`
+- `private-sfu-operator-no-camera-fallback-rerun`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -721,4 +733,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `private-sfu-real-capture-device-fallback`
+- `private-sfu-operator-no-camera-fallback-rerun`

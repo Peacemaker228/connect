@@ -35,7 +35,12 @@ const apiOrigin = new URL(apiBaseUrl)
 const webOrigin = new URL(webBaseUrl)
 const transportQuery =
   process.env.PRIVATE_SFU_SMOKE_TRANSPORT === 'turn' ? '&sfuTransport=turn' : ''
-const captureQuery = process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real' ? '&sfuCapture=real' : ''
+const captureQuery =
+  process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real-missing-camera'
+    ? '&sfuCapture=real&sfuSimulateMissingCamera=true'
+    : process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real'
+      ? '&sfuCapture=real'
+      : ''
 const expectedRemoteProducerCount =
   process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real' ? 'Remote producers: 2' : 'Remote producers: 1'
 
@@ -123,6 +128,16 @@ test.describe('private SFU two-user browser smoke', () => {
         await expect(userOnePage.getByRole('button', { name: 'Unmute microphone' })).toBeEnabled()
         await userOnePage.getByRole('button', { name: 'Stop camera' }).click()
         await expect(userOnePage.getByRole('button', { name: 'Start camera' })).toBeEnabled()
+      }
+
+      if (process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real-missing-camera') {
+        await expect(userOnePage.getByTestId('private-sfu-capture-mode')).toHaveText('Capture mode: real')
+        await expect(userOnePage.getByTestId('private-sfu-capture-notice')).toHaveText(
+          'Camera not found; continuing audio-only',
+        )
+        await userOnePage.getByRole('button', { name: 'Mute microphone' }).click()
+        await expect(userOnePage.getByRole('button', { name: 'Unmute microphone' })).toBeEnabled()
+        await expect(userOnePage.getByRole('button', { name: 'Start camera' })).toBeDisabled()
       }
 
       const defaultPrivatePage = await userOne.newPage()

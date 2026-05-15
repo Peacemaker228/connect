@@ -473,13 +473,19 @@ Done:
 - network interruption reconnect/resume remains `review / not manually executed`; Segment 104 only proved user-triggered restart recovery
 - manual TURN relay with physical devices remains `review / not manually executed`; automated local coturn relay smoke remains pass from Segment 104
 - ordinary private calls and channel audio/video routes remain LiveKit, with no broad replacement started
+- `private-sfu-real-capture-device-fallback` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_106_PRIVATE_SFU_REAL_CAPTURE_DEVICE_FALLBACK.md`
+- gated private SFU real capture now retries audio-only when requested audio+video capture fails because the camera is missing
+- no-camera fallback UI reports `Camera not found; continuing audio-only` and disables the camera control when no video track exists
+- direct synthetic private SFU smoke, direct real audio+video fake-device smoke, and direct simulated no-camera fallback smoke passed locally
+- ordinary private calls and channel audio/video routes remain LiveKit, with no broad replacement started
 
 Remaining:
-- add graceful real-capture fallback for missing camera hardware, then rerun physical-device and network interruption QA before any small-room/channel route switch
+- rerun physical no-camera `sfuCapture=real` QA on the operator machine to confirm the audio-only fallback against real hardware absence
+- run physical-device and network interruption QA before any small-room/channel route switch
 - resolve or explicitly defer SFU screen-share lifecycle
 
 Next likely work:
-- run `private-sfu-real-capture-device-fallback`
+- run `private-sfu-operator-no-camera-fallback-rerun`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
