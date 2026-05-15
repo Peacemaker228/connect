@@ -120,6 +120,32 @@ export class MediaParticipantSessionService {
     };
   }
 
+  assertJoinedSessionAccess({
+    profileId,
+    roomId,
+    participantSessionId,
+  }: {
+    profileId: string | undefined;
+    roomId: string | undefined;
+    participantSessionId: string | undefined;
+  }): MediaParticipantSession {
+    const storedSession = this.getSession(participantSessionId);
+
+    if (roomId && storedSession.participantSession.roomId !== roomId) {
+      throw new NotFoundException('Participant session not found');
+    }
+
+    if (storedSession.participantSession.identity.profileId !== profileId) {
+      throw new ForbiddenException('Participant session access denied');
+    }
+
+    if (storedSession.participantSession.lifecycle !== 'joined') {
+      throw new ForbiddenException('Participant session is not joined');
+    }
+
+    return storedSession.participantSession;
+  }
+
   private getSession(participantSessionId: string | undefined): StoredParticipantSession {
     if (!participantSessionId) {
       throw new NotFoundException('Participant session not found');

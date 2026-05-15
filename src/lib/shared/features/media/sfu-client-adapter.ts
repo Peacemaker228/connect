@@ -5,17 +5,26 @@ import {
   consumeMediasoupPrototypeTrack,
   connectMediasoupPrototypeTransport,
   createMediasoupPrototypeTransport,
+  discoverMediasoupPrototypeProducers,
   getMediasoupPrototypeHealth,
   produceMediasoupPrototypeTrack,
   type MediasoupPrototypeConsumerResponse,
+  type MediasoupPrototypeProducerDiscoveryResponse,
   type MediasoupPrototypeProducerResponse,
   type MediasoupPrototypeTransportDirection,
   type MediasoupPrototypeTransportResponse,
 } from '@sdk/actions/media'
 
+export type SfuClientSessionScope = {
+  roomId: string
+  participantSessionId: string
+}
+
 type SfuClientTransportAppData = {
   provider: 'mediasoup-prototype'
   direction: MediasoupPrototypeTransportDirection
+  roomId?: string
+  participantSessionId?: string
 }
 
 export type SfuClientTransportBundle = {
@@ -28,10 +37,12 @@ export type CreateSfuClientTransportInput = {
   direction: MediasoupPrototypeTransportDirection
   includeTurnCredentials?: boolean
   iceTransportPolicy?: RTCIceTransportPolicy
+  sessionScope?: SfuClientSessionScope
 }
 
 export type ProduceSfuClientTrackInput = {
   transportId?: string
+  sessionScope?: SfuClientSessionScope
   appData?: mediasoupClientTypes.AppData
   stopTracks?: boolean
 }
@@ -43,6 +54,7 @@ export type SfuClientProducerBundle = {
 
 export type CreateSfuClientConsumerMetadataInput = {
   transportId?: string
+  sessionScope?: SfuClientSessionScope
   producerId: string
   paused?: boolean
 }
@@ -68,18 +80,23 @@ export class SfuClientAdapter {
     direction,
     includeTurnCredentials = true,
     iceTransportPolicy,
+    sessionScope,
   }: CreateSfuClientTransportInput): Promise<SfuClientTransportBundle> {
     const device = await this.getLoadedDevice()
     const backendTransport = await createMediasoupPrototypeTransport({
       direction,
       includeTurnCredentials,
+      roomId: sessionScope?.roomId,
+      participantSessionId: sessionScope?.participantSessionId,
     })
-    const transportOptions = this.toTransportOptions(backendTransport, direction, iceTransportPolicy)
+    const transportOptions = this.toTransportOptions(backendTransport, direction, iceTransportPolicy, sessionScope)
     const transport =
       direction === 'recv' ? device.createRecvTransport(transportOptions) : device.createSendTransport(transportOptions)
 
     transport.on('connect', ({ dtlsParameters }, callback, errback) => {
       void connectMediasoupPrototypeTransport(transport.id, {
+        roomId: transport.appData.roomId,
+        participantSessionId: transport.appData.participantSessionId,
         dtlsParameters: dtlsParameters as Record<string, unknown>,
       })
         .then((result) => {
@@ -118,6 +135,8 @@ export class SfuClientAdapter {
       appData: {
         provider: 'mediasoup-prototype',
         trackKind: track.kind,
+        roomId: input.sessionScope?.roomId,
+        participantSessionId: input.sessionScope?.participantSessionId,
         ...input.appData,
       },
       stopTracks: input.stopTracks,
@@ -144,6 +163,7 @@ export class SfuClientAdapter {
 
   async createConsumerMetadata({
     transportId,
+    sessionScope,
     producerId,
     paused = false,
   }: CreateSfuClientConsumerMetadataInput): Promise<MediasoupPrototypeConsumerResponse> {
@@ -152,10 +172,16 @@ export class SfuClientAdapter {
 
     return consumeMediasoupPrototypeTrack({
       transportId: transport.id,
+      roomId: sessionScope?.roomId ?? transport.appData.roomId,
+      participantSessionId: sessionScope?.participantSessionId ?? transport.appData.participantSessionId,
       producerId,
       rtpCapabilities: device.rtpCapabilities as Record<string, unknown>,
       paused,
     })
+  }
+
+  async discoverProducers(sessionScope: SfuClientSessionScope): Promise<MediasoupPrototypeProducerDiscoveryResponse> {
+    return discoverMediasoupPrototypeProducers(sessionScope)
   }
 
   async consume(
@@ -245,6 +271,7 @@ export class SfuClientAdapter {
     backendTransport: MediasoupPrototypeTransportResponse,
     direction: MediasoupPrototypeTransportDirection,
     iceTransportPolicy?: RTCIceTransportPolicy,
+    sessionScope?: SfuClientSessionScope,
   ): mediasoupClientTypes.TransportOptions<SfuClientTransportAppData> {
     if (
       !backendTransport.enabled ||
@@ -268,14 +295,20 @@ export class SfuClientAdapter {
       appData: {
         provider: 'mediasoup-prototype',
         direction,
+        roomId: sessionScope?.roomId,
+        participantSessionId: sessionScope?.participantSessionId,
       },
     }
   }
 
   private bindProduceEvent(transport: mediasoupClientTypes.Transport<SfuClientTransportAppData>) {
-    transport.on('produce', ({ kind, rtpParameters }, callback, errback) => {
+    transport.on('produce', ({ kind, rtpParameters, appData }, callback, errback) => {
+      const scopedAppData = appData as { roomId?: string; participantSessionId?: string } | undefined
+
       void produceMediasoupPrototypeTrack({
         transportId: transport.id,
+        roomId: scopedAppData?.roomId ?? transport.appData.roomId,
+        participantSessionId: scopedAppData?.participantSessionId ?? transport.appData.participantSessionId,
         kind,
         rtpParameters: rtpParameters as Record<string, unknown>,
       })

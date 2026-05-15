@@ -16,8 +16,10 @@ import { CurrentProfileId } from '../auth/decorators/current-profile-id.decorato
 import { RequireAuthGuard } from '../auth/guards/require-auth.guard';
 import {
   LocalMediasoupConsumerMetadata,
+  LocalMediasoupProducerDiscoveryResult,
   LocalMediasoupProducerMetadata,
   LocalMediasoupPrototypeHealth,
+  LocalMediasoupSessionScope,
   LocalMediasoupTransportConnectResult,
   LocalMediasoupTransportMetadata,
   MediasoupPrototypeService,
@@ -90,10 +92,14 @@ type LocalMediasoupTransportDirection = 'send' | 'recv';
 type CreateMediasoupTransportBody = {
   direction?: LocalMediasoupTransportDirection;
   includeTurnCredentials?: boolean;
+  roomId?: string;
+  participantSessionId?: string;
 };
 
 type ConnectMediasoupTransportBody = {
   dtlsParameters?: mediasoupTypes.DtlsParameters;
+  roomId?: string;
+  participantSessionId?: string;
 };
 
 type CreateMediasoupTransportResponse = LocalMediasoupTransportMetadata & {
@@ -102,6 +108,8 @@ type CreateMediasoupTransportResponse = LocalMediasoupTransportMetadata & {
 
 type ProduceMediasoupPrototypeBody = {
   transportId?: string;
+  roomId?: string;
+  participantSessionId?: string;
   kind?: mediasoupTypes.MediaKind;
   rtpParameters?: mediasoupTypes.RtpParameters;
   paused?: boolean;
@@ -109,9 +117,16 @@ type ProduceMediasoupPrototypeBody = {
 
 type ConsumeMediasoupPrototypeBody = {
   transportId?: string;
+  roomId?: string;
+  participantSessionId?: string;
   producerId?: string;
   rtpCapabilities?: mediasoupTypes.RtpCapabilities;
   paused?: boolean;
+};
+
+type DiscoverMediasoupPrototypeProducersBody = {
+  roomId?: string;
+  participantSessionId?: string;
 };
 
 @Controller('media')
@@ -284,9 +299,11 @@ export class MediaController {
     @CurrentProfileId() profileId: string | undefined,
     @Body() body: CreateMediasoupTransportBody | undefined,
   ): Promise<CreateMediasoupTransportResponse> {
-    const transport = await this.mediasoupPrototypeService.createWebRtcTransport(
-      body?.direction === 'recv' ? 'recv' : 'send',
-    );
+    const scope = this.resolvePrototypeSessionScope(profileId, body);
+    const transport = await this.mediasoupPrototypeService.createWebRtcTransport({
+      direction: body?.direction === 'recv' ? 'recv' : 'send',
+      scope,
+    });
 
     if (!body?.includeTurnCredentials) {
       return transport;
@@ -301,11 +318,15 @@ export class MediaController {
   @Post('prototype/mediasoup/transports/:transportId/connect')
   @UseGuards(RequireAuthGuard)
   connectMediasoupPrototypeTransport(
+    @CurrentProfileId() profileId: string | undefined,
     @Param('transportId') transportId: string | undefined,
     @Body() body: ConnectMediasoupTransportBody | undefined,
   ): Promise<LocalMediasoupTransportConnectResult> {
+    const scope = this.resolvePrototypeSessionScope(profileId, body);
+
     return this.mediasoupPrototypeService.connectWebRtcTransport({
       transportId,
+      scope,
       dtlsParameters: body?.dtlsParameters,
     });
   }
@@ -313,23 +334,42 @@ export class MediaController {
   @Post('prototype/mediasoup/producers')
   @UseGuards(RequireAuthGuard)
   produceMediasoupPrototypeTrack(
+    @CurrentProfileId() profileId: string | undefined,
     @Body() body: ProduceMediasoupPrototypeBody | undefined,
   ): Promise<LocalMediasoupProducerMetadata> {
+    const scope = this.resolvePrototypeSessionScope(profileId, body);
+
     return this.mediasoupPrototypeService.produce({
       transportId: body?.transportId,
+      scope,
       kind: body?.kind,
       rtpParameters: body?.rtpParameters,
       paused: body?.paused,
     });
   }
 
+  @Post('prototype/mediasoup/producers/discover')
+  @UseGuards(RequireAuthGuard)
+  discoverMediasoupPrototypeProducers(
+    @CurrentProfileId() profileId: string | undefined,
+    @Body() body: DiscoverMediasoupPrototypeProducersBody | undefined,
+  ): LocalMediasoupProducerDiscoveryResult {
+    const scope = this.resolvePrototypeSessionScope(profileId, body);
+
+    return this.mediasoupPrototypeService.listProducers(scope);
+  }
+
   @Post('prototype/mediasoup/consumers')
   @UseGuards(RequireAuthGuard)
   consumeMediasoupPrototypeTrack(
+    @CurrentProfileId() profileId: string | undefined,
     @Body() body: ConsumeMediasoupPrototypeBody | undefined,
   ): Promise<LocalMediasoupConsumerMetadata> {
+    const scope = this.resolvePrototypeSessionScope(profileId, body);
+
     return this.mediasoupPrototypeService.consume({
       transportId: body?.transportId,
+      scope,
       producerId: body?.producerId,
       rtpCapabilities: body?.rtpCapabilities,
       paused: body?.paused,
@@ -342,5 +382,34 @@ export class MediaController {
     @CurrentProfileId() profileId: string | undefined,
   ): LocalTurnCredentialResponse {
     return this.turnCredentialService.issueLocalCredentials(profileId);
+  }
+
+  private resolvePrototypeSessionScope(
+    profileId: string | undefined,
+    body:
+      | {
+          roomId?: string;
+          participantSessionId?: string;
+        }
+      | undefined,
+  ): LocalMediasoupSessionScope | undefined {
+    if (!body?.roomId && !body?.participantSessionId) {
+      return undefined;
+    }
+
+    if (!body.roomId || !body.participantSessionId) {
+      throw new BadRequestException('roomId and participantSessionId are required together');
+    }
+
+    const participantSession = this.mediaParticipantSessionService.assertJoinedSessionAccess({
+      profileId,
+      roomId: body.roomId,
+      participantSessionId: body.participantSessionId,
+    });
+
+    return {
+      roomId: participantSession.roomId,
+      participantSessionId: participantSession.participantSessionId,
+    };
   }
 }

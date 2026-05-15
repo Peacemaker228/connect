@@ -351,7 +351,7 @@ Next likely work:
 
 ### Stage 8. Media MVP
 
-Status: `in progress / local SFU direct and TURN smoke passed`
+Status: `in progress / gated private SFU loopback in review`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -431,13 +431,18 @@ Done:
 - authenticated browser `/media/sfu-smoke` TURN relay run passed in Chromium using backend-issued REST credentials and relay policy
 - TURN relay smoke observed producer and consumer creation plus consumed remote track state `live`
 - coturn logs showed authenticated allocation and permission success against the host mediasoup announced-address peer
+- `mvp-private-small-room-replacement` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_099_MVP_PRIVATE_SMALL_ROOM_REPLACEMENT.md`
+- private conversation SFU path is now explicit-gated by `?video=true&mediaProvider=sfu` or `?video=true&sfu=true`, limited to `conversation` entries, and disabled in production runtime
+- normal private calls without the SFU query and all channel audio/video routes remain on `LiveKitClientAdapter`
+- mediasoup prototype transport create/connect, producers, consumers, and producer discovery can now bind to backend-resolved `roomId` and `participantSessionId`
+- authenticated private-route SFU smoke reached `review` with scoped local produce/consume loopback and leave redirect preserved
 
 Remaining:
-- run `mvp-private-small-room-replacement`
+- run full two-user private SFU smoke after remote producer discovery/signaling exists
 - run `final-media-mvp-parity-load-smoke`
 
 Next likely work:
-- run `mvp-private-small-room-replacement`
+- run `private-sfu-remote-producer-discovery-and-two-user-smoke`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

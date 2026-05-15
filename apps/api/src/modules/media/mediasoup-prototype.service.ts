@@ -5,6 +5,11 @@ import type { types as mediasoupTypes } from 'mediasoup';
 type LocalMediasoupPrototypeStatus = 'disabled' | 'ready' | 'failed';
 type LocalMediasoupTransportDirection = 'send' | 'recv';
 
+export type LocalMediasoupSessionScope = {
+  roomId: string;
+  participantSessionId: string;
+};
+
 export type LocalMediasoupPrototypeHealth = {
   status: LocalMediasoupPrototypeStatus;
   enabled: boolean;
@@ -43,6 +48,8 @@ export type LocalMediasoupProducerMetadata = {
   status: LocalMediasoupPrototypeStatus;
   enabled: boolean;
   transportId?: string;
+  roomId?: string;
+  participantSessionId?: string;
   producerId?: string;
   kind?: mediasoupTypes.MediaKind;
   paused?: boolean;
@@ -53,6 +60,8 @@ export type LocalMediasoupConsumerMetadata = {
   status: LocalMediasoupPrototypeStatus;
   enabled: boolean;
   transportId?: string;
+  roomId?: string;
+  participantSessionId?: string;
   consumerId?: string;
   producerId?: string;
   kind?: mediasoupTypes.MediaKind;
@@ -60,6 +69,23 @@ export type LocalMediasoupConsumerMetadata = {
   type?: mediasoupTypes.ConsumerType;
   paused?: boolean;
   producerPaused?: boolean;
+  reason?: string;
+};
+
+export type LocalMediasoupProducerDiscoveryMetadata = {
+  producerId: string;
+  roomId: string;
+  participantSessionId: string;
+  kind: mediasoupTypes.MediaKind;
+  paused: boolean;
+};
+
+export type LocalMediasoupProducerDiscoveryResult = {
+  status: LocalMediasoupPrototypeStatus;
+  enabled: boolean;
+  roomId?: string;
+  participantSessionId?: string;
+  producers: LocalMediasoupProducerDiscoveryMetadata[];
   reason?: string;
 };
 
@@ -86,8 +112,11 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
   private router: mediasoupTypes.Router | null = null;
   private readonly transports = new Map<string, mediasoupTypes.WebRtcTransport>();
   private readonly transportDirections = new Map<string, LocalMediasoupTransportDirection>();
+  private readonly transportScopes = new Map<string, LocalMediasoupSessionScope>();
   private readonly producers = new Map<string, mediasoupTypes.Producer>();
+  private readonly producerScopes = new Map<string, LocalMediasoupSessionScope>();
   private readonly consumers = new Map<string, mediasoupTypes.Consumer>();
+  private readonly consumerScopes = new Map<string, LocalMediasoupSessionScope>();
   private lastFailure: string | null = null;
 
   async getHealth(): Promise<LocalMediasoupPrototypeHealth> {
@@ -121,9 +150,13 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     this.worker = null;
   }
 
-  async createWebRtcTransport(
-    direction: LocalMediasoupTransportDirection,
-  ): Promise<LocalMediasoupTransportMetadata> {
+  async createWebRtcTransport({
+    direction,
+    scope,
+  }: {
+    direction: LocalMediasoupTransportDirection;
+    scope?: LocalMediasoupSessionScope;
+  }): Promise<LocalMediasoupTransportMetadata> {
     if (process.env.NODE_ENV === 'production') {
       return {
         status: 'disabled',
@@ -154,15 +187,22 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         appData: {
           prototype: 'local-mediasoup',
           direction,
+          roomId: scope?.roomId,
+          participantSessionId: scope?.participantSessionId,
         },
       });
 
       this.transports.set(transport.id, transport);
       this.transportDirections.set(transport.id, direction);
 
+      if (scope) {
+        this.transportScopes.set(transport.id, scope);
+      }
+
       transport.observer.on('close', () => {
         this.transports.delete(transport.id);
         this.transportDirections.delete(transport.id);
+        this.transportScopes.delete(transport.id);
       });
 
       return {
@@ -187,9 +227,11 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
 
   async connectWebRtcTransport({
     transportId,
+    scope,
     dtlsParameters,
   }: {
     transportId: string | undefined;
+    scope?: LocalMediasoupSessionScope;
     dtlsParameters: mediasoupTypes.DtlsParameters | undefined;
   }): Promise<LocalMediasoupTransportConnectResult> {
     if (process.env.NODE_ENV === 'production') {
@@ -215,6 +257,17 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         enabled: false,
         transportId,
         reason: 'dtlsParameters are required',
+      };
+    }
+
+    const scopeCheck = this.validateTransportScope(transportId, scope);
+
+    if (!scopeCheck.enabled) {
+      return {
+        status: 'failed',
+        enabled: false,
+        transportId,
+        reason: scopeCheck.reason,
       };
     }
 
@@ -251,11 +304,13 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
 
   async produce({
     transportId,
+    scope,
     kind,
     rtpParameters,
     paused,
   }: {
     transportId: string | undefined;
+    scope?: LocalMediasoupSessionScope;
     kind: mediasoupTypes.MediaKind | undefined;
     rtpParameters: mediasoupTypes.RtpParameters | undefined;
     paused?: boolean;
@@ -265,6 +320,8 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         status: 'disabled',
         enabled: false,
         transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
         reason: 'Local mediasoup produce prototype is disabled in production runtime',
       };
     }
@@ -276,7 +333,22 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         status: 'failed',
         enabled: false,
         transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
         reason: transport.reason,
+      };
+    }
+
+    const scopeCheck = this.validateTransportScope(transportId, scope);
+
+    if (!scopeCheck.enabled) {
+      return {
+        status: 'failed',
+        enabled: false,
+        transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        reason: scopeCheck.reason,
       };
     }
 
@@ -285,6 +357,8 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         status: 'failed',
         enabled: false,
         transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
         reason: 'kind must be audio or video',
       };
     }
@@ -294,6 +368,8 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         status: 'failed',
         enabled: false,
         transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
         kind,
         reason: 'rtpParameters are required',
       };
@@ -307,19 +383,28 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         appData: {
           prototype: 'local-mediasoup',
           transportId,
+          roomId: scope?.roomId,
+          participantSessionId: scope?.participantSessionId,
         },
       });
 
       this.producers.set(producer.id, producer);
 
+      if (scope) {
+        this.producerScopes.set(producer.id, scope);
+      }
+
       producer.observer.on('close', () => {
         this.producers.delete(producer.id);
+        this.producerScopes.delete(producer.id);
       });
 
       return {
         status: 'ready',
         enabled: true,
         transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
         producerId: producer.id,
         kind: producer.kind,
         paused: producer.paused,
@@ -329,6 +414,8 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         status: 'failed',
         enabled: false,
         transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
         kind,
         reason: error instanceof Error ? error.message : 'Unknown mediasoup produce failure',
       };
@@ -337,11 +424,13 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
 
   async consume({
     transportId,
+    scope,
     producerId,
     rtpCapabilities,
     paused = false,
   }: {
     transportId: string | undefined;
+    scope?: LocalMediasoupSessionScope;
     producerId: string | undefined;
     rtpCapabilities: mediasoupTypes.RtpCapabilities | undefined;
     paused?: boolean;
@@ -351,6 +440,8 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         status: 'disabled',
         enabled: false,
         transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
         producerId,
         reason: 'Local mediasoup consume prototype is disabled in production runtime',
       };
@@ -363,8 +454,24 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         status: 'failed',
         enabled: false,
         transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
         producerId,
         reason: transport.reason,
+      };
+    }
+
+    const scopeCheck = this.validateTransportScope(transportId, scope);
+
+    if (!scopeCheck.enabled) {
+      return {
+        status: 'failed',
+        enabled: false,
+        transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        producerId,
+        reason: scopeCheck.reason,
       };
     }
 
@@ -373,8 +480,24 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         status: 'failed',
         enabled: false,
         transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
         producerId,
         reason: 'producerId was not found',
+      };
+    }
+
+    const producerScopeCheck = this.validateProducerScope(producerId, scope);
+
+    if (!producerScopeCheck.enabled) {
+      return {
+        status: 'failed',
+        enabled: false,
+        transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        producerId,
+        reason: producerScopeCheck.reason,
       };
     }
 
@@ -383,6 +506,8 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         status: 'failed',
         enabled: false,
         transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
         producerId,
         reason: 'rtpCapabilities are required',
       };
@@ -393,6 +518,8 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         status: 'failed',
         enabled: false,
         transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
         producerId,
         reason: 'Consumer RTP capabilities are not compatible with producer',
       };
@@ -406,19 +533,28 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         appData: {
           prototype: 'local-mediasoup',
           transportId,
+          roomId: scope?.roomId,
+          participantSessionId: scope?.participantSessionId,
         },
       });
 
       this.consumers.set(consumer.id, consumer);
 
+      if (scope) {
+        this.consumerScopes.set(consumer.id, scope);
+      }
+
       consumer.observer.on('close', () => {
         this.consumers.delete(consumer.id);
+        this.consumerScopes.delete(consumer.id);
       });
 
       return {
         status: 'ready',
         enabled: true,
         transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
         consumerId: consumer.id,
         producerId,
         kind: consumer.kind,
@@ -432,10 +568,60 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         status: 'failed',
         enabled: false,
         transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
         producerId,
         reason: error instanceof Error ? error.message : 'Unknown mediasoup consume failure',
       };
     }
+  }
+
+  listProducers(scope: LocalMediasoupSessionScope | undefined): LocalMediasoupProducerDiscoveryResult {
+    if (process.env.NODE_ENV === 'production') {
+      return {
+        status: 'disabled',
+        enabled: false,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        producers: [],
+        reason: 'Local mediasoup producer discovery prototype is disabled in production runtime',
+      };
+    }
+
+    if (!scope) {
+      return {
+        status: 'failed',
+        enabled: false,
+        producers: [],
+        reason: 'roomId and participantSessionId are required for scoped producer discovery',
+      };
+    }
+
+    const producers: LocalMediasoupProducerDiscoveryMetadata[] = [];
+
+    for (const [producerId, producer] of this.producers.entries()) {
+      const producerScope = this.producerScopes.get(producerId);
+
+      if (!producerScope || producer.closed || producerScope.roomId !== scope.roomId) {
+        continue;
+      }
+
+      producers.push({
+        producerId,
+        roomId: producerScope.roomId,
+        participantSessionId: producerScope.participantSessionId,
+        kind: producer.kind,
+        paused: producer.paused,
+      });
+    }
+
+    return {
+      status: 'ready',
+      enabled: true,
+      roomId: scope.roomId,
+      participantSessionId: scope.participantSessionId,
+      producers,
+    };
   }
 
   private async ensurePrototypeRouter() {
@@ -528,9 +714,90 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     };
   }
 
+  private validateTransportScope(
+    transportId: string | undefined,
+    scope: LocalMediasoupSessionScope | undefined,
+  ): {
+    enabled: boolean;
+    reason?: string;
+  } {
+    if (!transportId) {
+      return {
+        enabled: false,
+        reason: 'transportId is required',
+      };
+    }
+
+    const transportScope = this.transportScopes.get(transportId);
+
+    if (!transportScope && !scope) {
+      return {
+        enabled: true,
+      };
+    }
+
+    if (!transportScope || !scope) {
+      return {
+        enabled: false,
+        reason: 'roomId and participantSessionId are required for scoped mediasoup transport access',
+      };
+    }
+
+    if (
+      transportScope.roomId !== scope.roomId ||
+      transportScope.participantSessionId !== scope.participantSessionId
+    ) {
+      return {
+        enabled: false,
+        reason: 'Scoped mediasoup transport access denied',
+      };
+    }
+
+    return {
+      enabled: true,
+    };
+  }
+
+  private validateProducerScope(
+    producerId: string,
+    scope: LocalMediasoupSessionScope | undefined,
+  ): {
+    enabled: boolean;
+    reason?: string;
+  } {
+    const producerScope = this.producerScopes.get(producerId);
+
+    if (!producerScope && !scope) {
+      return {
+        enabled: true,
+      };
+    }
+
+    if (!producerScope || !scope) {
+      return {
+        enabled: false,
+        reason: 'roomId and participantSessionId are required for scoped mediasoup producer access',
+      };
+    }
+
+    if (producerScope.roomId !== scope.roomId) {
+      return {
+        enabled: false,
+        reason: 'Scoped mediasoup producer access denied',
+      };
+    }
+
+    return {
+      enabled: true,
+    };
+  }
+
   private clearPrototypeState() {
+    this.consumerScopes.clear();
     this.consumers.clear();
+    this.producerScopes.clear();
     this.producers.clear();
+    this.transportScopes.clear();
     this.transportDirections.clear();
     this.transports.clear();
   }
