@@ -351,7 +351,7 @@ Next likely work:
 
 ### Stage 8. Media MVP
 
-Status: `in progress / gated channel audio SFU 3-user TURN pass-review`
+Status: `in progress / gated channel audio SFU 5-user load pass-review`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -518,17 +518,20 @@ Done:
 - three-user direct channel `AUDIO` smoke passed with all users connected, two remote producers per participant, restart recovery, leave/rejoin cleanup, and no stale producer inflation
 - three-user TURN relay channel `AUDIO` smoke passed through local Docker coturn and backend-issued local TURN credentials
 - ordinary channel `AUDIO` without the gate remains LiveKit, channel `VIDEO` remains LiveKit, and private SFU direct smoke passed again as a regression check
+- `gated-channel-audio-sfu-5user-load-offline-smoke` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_114_GATED_CHANNEL_AUDIO_SFU_5USER_LOAD_OFFLINE_SMOKE.md`
+- five-user direct channel `AUDIO` smoke passed with all participants connected and four remote producers per participant
+- explicit offline/restore passed in the five-user channel `AUDIO` smoke
+- restart recovery and leave/rejoin cleanup passed again without stale producer inflation
+- ordinary channel `AUDIO` without the gate remains LiveKit, channel `VIDEO` remains LiveKit, and private SFU direct smoke passed again as a regression check
 
 Remaining:
-- run five-participant channel `AUDIO` load baseline before any channel default switch
-- optionally run explicit channel offline/restore; restart recovery already passed in the three-user matrix
 - define channel `VIDEO` remote layout/rendering before any video SFU pilot claim
 - run physical camera QA on a machine with camera hardware if it remains a release confidence requirement
 - optionally run human-operated TURN audio signoff with real microphone capture if required for release confidence
 - implement SFU screen-share later only if MVP parity or a later default-switch decision requires it
 
 Next likely work:
-- run `gated-channel-audio-sfu-5user-load-offline-smoke`
+- run `channel-video-sfu-layout-readiness-plan`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

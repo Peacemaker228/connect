@@ -700,6 +700,15 @@ Segment 113 result:
 - explicit channel offline/restore was not run in this segment because restart recovery passed and the smoke now has an optional offline env flag for a later run
 - recommended next segment is `gated-channel-audio-sfu-5user-load-offline-smoke`
 
+Segment 114 result:
+- status: `channel audio 5-user direct pass / offline-restore pass / broad replacement hold`
+- five-user direct channel `AUDIO` smoke passed through the existing non-production explicit gate with all participants connected and `Remote producers: 4` per participant
+- explicit offline/restore smoke passed with all participants returning to `connected` and `Remote producers: 4`
+- restart recovery and leave/rejoin cleanup passed in the same five-user run, with no stale producer inflation observed
+- ordinary channel `AUDIO` without the gate remains LiveKit, channel `VIDEO` remains LiveKit even with `sfuChannel=true`, and private SFU direct smoke passed again as a regression check
+- five-user TURN was not run because it is optional in this segment; Segment 113 three-user TURN channel `AUDIO` remains the current relay proof
+- recommended next segment is `channel-video-sfu-layout-readiness-plan`
+
 ## Dependency Summary
 
 Critical path:
@@ -787,7 +796,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `gated-channel-audio-sfu-5user-load-offline-smoke`
+- `channel-video-sfu-layout-readiness-plan`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -809,4 +818,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `gated-channel-audio-sfu-5user-load-offline-smoke`
+- `channel-video-sfu-layout-readiness-plan`
