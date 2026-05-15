@@ -47,6 +47,9 @@ const apiOrigin = new URL(apiBaseUrl)
 const webOrigin = new URL(webBaseUrl)
 const transportQuery =
   process.env.CHANNEL_AUDIO_SFU_SMOKE_TRANSPORT === 'turn' ? '&sfuTransport=turn' : ''
+const participantCount = parsePositiveInteger(process.env.CHANNEL_AUDIO_SFU_SMOKE_USERS, 3)
+const shouldRunLeaveRejoin = process.env.CHANNEL_AUDIO_SFU_SMOKE_LEAVE_REJOIN !== '0'
+const shouldRunOfflineRestore = process.env.CHANNEL_AUDIO_SFU_SMOKE_OFFLINE_RESTORE === '1'
 
 test.describe('channel AUDIO SFU browser smoke', () => {
   test.skip(!isSmokeEnabled, 'Set CHANNEL_AUDIO_SFU_BROWSER_SMOKE=1 with local API/web to run this smoke.')
@@ -64,89 +67,103 @@ test.describe('channel AUDIO SFU browser smoke', () => {
     ).toBe(webOrigin.hostname)
   })
 
-  test('connects two authenticated channel AUDIO SFU participants behind explicit gate', async ({ browser }) => {
-    test.setTimeout(90_000)
+  test('connects authenticated channel AUDIO SFU participants behind explicit gate', async ({ browser }) => {
+    test.setTimeout(120_000)
 
-    const userOne = await browser.newContext()
-    const userTwo = await browser.newContext()
+    expect(participantCount, 'CHANNEL_AUDIO_SFU_SMOKE_USERS must be at least 2').toBeGreaterThanOrEqual(2)
+
+    const contexts = await Promise.all(
+      Array.from({ length: participantCount }, () => browser.newContext()),
+    )
+    const [ownerContext, ...memberContexts] = contexts
 
     try {
-      await registerUser(userOne, 'one')
-      await registerUser(userTwo, 'two')
-      const createdServer = await postJson<ServerResponse>(userOne, '/api/servers', {
+      await Promise.all(contexts.map((context, index) => registerUser(context, String(index + 1))))
+      const createdServer = await postJson<ServerResponse>(ownerContext, '/api/servers', {
         name: `channel-audio-sfu-smoke-${Date.now()}`,
         imageUrl: null,
       })
 
-      await postJson(userTwo, '/api/invites/join', {
-        inviteCode: createdServer.inviteCode,
-      })
+      await Promise.all(
+        memberContexts.map((context) =>
+          postJson(context, '/api/invites/join', {
+            inviteCode: createdServer.inviteCode,
+          }),
+        ),
+      )
 
       const audioChannelName = `audio-sfu-${Date.now()}`
       const videoChannelName = `video-livekit-${Date.now()}`
-      await postJson(userOne, `/api/channels?serverId=${createdServer.id}`, {
+      await postJson(ownerContext, `/api/channels?serverId=${createdServer.id}`, {
         name: audioChannelName,
         type: 'AUDIO',
       })
-      await postJson(userOne, `/api/channels?serverId=${createdServer.id}`, {
+      await postJson(ownerContext, `/api/channels?serverId=${createdServer.id}`, {
         name: videoChannelName,
         type: 'VIDEO',
       })
 
-      const serverWithChannels = await getJson<ServerResponse>(userOne, `/api/servers/${createdServer.id}`)
+      const serverWithChannels = await getJson<ServerResponse>(ownerContext, `/api/servers/${createdServer.id}`)
       const audioChannel = findChannel(serverWithChannels, audioChannelName, 'AUDIO')
       const videoChannel = findChannel(serverWithChannels, videoChannelName, 'VIDEO')
       const generalChannel = findChannel(serverWithChannels, 'general', 'TEXT')
 
-      const userOnePage = await userOne.newPage()
-      const userTwoPage = await userTwo.newPage()
+      const pages = await Promise.all(contexts.map((context) => context.newPage()))
       const sfuQuery = `?mediaProvider=sfu&sfuChannel=true${transportQuery}`
+      const expectedRemoteProducerText = getRemoteProducerText(participantCount - 1)
 
-      await Promise.all([
-        userOnePage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${audioChannel.id}${sfuQuery}`),
-        userTwoPage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${audioChannel.id}${sfuQuery}`),
-      ])
-
-      await expect(userOnePage.getByTestId('private-sfu-provider')).toHaveText('SFU channel audio')
-      await expect(userTwoPage.getByTestId('private-sfu-provider')).toHaveText('SFU channel audio')
-      await expect(userOnePage.getByTestId('private-sfu-status')).toHaveText('connected', {
-        timeout: 45_000,
-      })
-      await expect(userTwoPage.getByTestId('private-sfu-status')).toHaveText('connected', {
-        timeout: 45_000,
-      })
-      await expect(userOnePage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
-        'Remote producers: 1',
-      )
-      await expect(userTwoPage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
-        'Remote producers: 1',
-      )
-      await expect(userOnePage.getByText('Requested media: audio on, video off')).toBeVisible()
-
-      await userOnePage.getByRole('button', { name: 'Restart SFU channel audio' }).click()
-      await expect(userOnePage.getByTestId('private-sfu-status')).toHaveText('connected', {
-        timeout: 45_000,
-      })
-      await expect(userTwoPage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
-        'Remote producers: 1',
-        {
-          timeout: 45_000,
-        },
+      await Promise.all(
+        pages.map((page) =>
+          page.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${audioChannel.id}${sfuQuery}`),
+        ),
       )
 
-      const defaultAudioPage = await userOne.newPage()
+      await expectAllProviders(pages, 'SFU channel audio')
+      await expectAllStatuses(pages, 'connected')
+      await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
+      await expect(pages[0].getByText('Requested media: audio on, video off')).toBeVisible()
+
+      await pages[0].getByRole('button', { name: 'Restart SFU channel audio' }).click()
+      await expectAllStatuses(pages, 'connected')
+      await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
+
+      if (shouldRunOfflineRestore) {
+        await contexts[1].setOffline(true)
+        await pages[1].waitForTimeout(6_000)
+        await contexts[1].setOffline(false)
+        await expectAllStatuses(pages, 'connected')
+        await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
+      }
+
+      if (shouldRunLeaveRejoin) {
+        const rejoiningPage = pages[participantCount - 1]
+
+        await rejoiningPage.getByRole('button', { name: 'Leave call' }).click()
+        await expect(rejoiningPage).toHaveURL(
+          new RegExp(`/servers/${createdServer.id}/channels/${generalChannel.id}$`),
+        )
+        await expectAllRemoteProducerCounts(
+          pages.slice(0, participantCount - 1),
+          getRemoteProducerText(participantCount - 2),
+        )
+
+        await rejoiningPage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${audioChannel.id}${sfuQuery}`)
+        await expectAllStatuses(pages, 'connected')
+        await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
+      }
+
+      const defaultAudioPage = await ownerContext.newPage()
       await defaultAudioPage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${audioChannel.id}`)
       await expect(defaultAudioPage.getByTestId('private-sfu-provider')).toHaveCount(0)
 
-      const gatedVideoPage = await userOne.newPage()
+      const gatedVideoPage = await ownerContext.newPage()
       await gatedVideoPage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}${sfuQuery}`)
       await expect(gatedVideoPage.getByTestId('private-sfu-provider')).toHaveCount(0)
 
-      await userOnePage.getByRole('button', { name: 'Leave call' }).click()
-      await expect(userOnePage).toHaveURL(new RegExp(`/servers/${createdServer.id}/channels/${generalChannel.id}$`))
+      await pages[0].getByRole('button', { name: 'Leave call' }).click()
+      await expect(pages[0]).toHaveURL(new RegExp(`/servers/${createdServer.id}/channels/${generalChannel.id}$`))
     } finally {
-      await userOne.close()
-      await userTwo.close()
+      await Promise.all(contexts.map((context) => context.close()))
     }
   })
 })
@@ -199,6 +216,50 @@ const findChannel = (server: ServerResponse, name: string, type: ServerChannel['
   }
 
   return channel
+}
+
+const expectAllProviders = async (pages: Awaited<ReturnType<BrowserContext['newPage']>>[], label: string) => {
+  await Promise.all(pages.map((page) => expect(page.getByTestId('private-sfu-provider')).toHaveText(label)))
+}
+
+const expectAllStatuses = async (
+  pages: Awaited<ReturnType<BrowserContext['newPage']>>[],
+  status: string,
+) => {
+  await Promise.all(
+    pages.map((page) =>
+      expect(page.getByTestId('private-sfu-status')).toHaveText(status, {
+        timeout: 45_000,
+      }),
+    ),
+  )
+}
+
+const expectAllRemoteProducerCounts = async (
+  pages: Awaited<ReturnType<BrowserContext['newPage']>>[],
+  text: string,
+) => {
+  await Promise.all(
+    pages.map((page) =>
+      expect(page.getByTestId('private-sfu-remote-producer-count')).toHaveText(text, {
+        timeout: 45_000,
+      }),
+    ),
+  )
+}
+
+function getRemoteProducerText(count: number) {
+  return `Remote producers: ${count}`
+}
+
+function parsePositiveInteger(value: string | undefined, fallback: number) {
+  if (!value) {
+    return fallback
+  }
+
+  const parsed = Number(value)
+
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback
 }
 
 function normalizeBaseUrl(value: string) {

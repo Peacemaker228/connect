@@ -690,6 +690,16 @@ Segment 112 result:
 - channel `AUDIO` TURN relay and three-participant smoke are deferred to the next narrow segment before any broader channel replacement claim
 - recommended next segment is `gated-channel-audio-sfu-3user-turn-rejoin-smoke`
 
+Segment 113 result:
+- status: `channel audio 3-user direct pass / TURN pass / broad replacement hold`
+- guarded channel `AUDIO` smoke now defaults to three authenticated participants and supports `CHANNEL_AUDIO_SFU_SMOKE_USERS`, `CHANNEL_AUDIO_SFU_SMOKE_LEAVE_REJOIN`, `CHANNEL_AUDIO_SFU_SMOKE_OFFLINE_RESTORE`, and `CHANNEL_AUDIO_SFU_SMOKE_TRANSPORT=turn`
+- three-user direct channel `AUDIO` smoke passed with all users connected, `Remote producers: 2` per participant, audio-only requested media, restart recovery, leave/rejoin cleanup, and no stale producer inflation
+- three-user TURN relay channel `AUDIO` smoke passed through local Docker coturn with backend-issued local TURN credentials and relay policy
+- coturn logs showed authenticated sessions, relay usage, allocation cleanup, and mediasoup peer cleanup for `10.8.1.13`
+- ordinary channel `AUDIO` without the gate remains LiveKit, channel `VIDEO` remains LiveKit even with `sfuChannel=true`, and private SFU direct smoke passed again as a regression check
+- explicit channel offline/restore was not run in this segment because restart recovery passed and the smoke now has an optional offline env flag for a later run
+- recommended next segment is `gated-channel-audio-sfu-5user-load-offline-smoke`
+
 ## Dependency Summary
 
 Critical path:
@@ -777,7 +787,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `gated-channel-audio-sfu-3user-turn-rejoin-smoke`
+- `gated-channel-audio-sfu-5user-load-offline-smoke`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -799,4 +809,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `gated-channel-audio-sfu-3user-turn-rejoin-smoke`
+- `gated-channel-audio-sfu-5user-load-offline-smoke`
