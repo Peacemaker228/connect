@@ -28,6 +28,13 @@ export class MediaParticipantSessionService {
     desiredState?: MediaStatePatch;
   }): StoredParticipantSession {
     const now = new Date().toISOString();
+
+    this.leaveJoinedSessionsForIdentity({
+      roomId,
+      identity,
+      now,
+    });
+
     const participantSessionId = randomUUID();
     const participantSession: MediaParticipantSession = {
       participantSessionId,
@@ -144,6 +151,74 @@ export class MediaParticipantSessionService {
     }
 
     return storedSession.participantSession;
+  }
+
+  isJoinedSession({
+    roomId,
+    participantSessionId,
+  }: {
+    roomId: string | undefined;
+    participantSessionId: string | undefined;
+  }): boolean {
+    const storedSession = participantSessionId
+      ? this.sessions.get(participantSessionId)
+      : undefined;
+
+    return (
+      Boolean(storedSession) &&
+      storedSession?.participantSession.roomId === roomId &&
+      storedSession?.participantSession.lifecycle === 'joined'
+    );
+  }
+
+  private leaveJoinedSessionsForIdentity({
+    roomId,
+    identity,
+    now,
+  }: {
+    roomId: string;
+    identity: MediaParticipantIdentity;
+    now: string;
+  }) {
+    const identityKey = this.getIdentityKey(identity);
+
+    for (const [participantSessionId, storedSession] of this.sessions.entries()) {
+      if (
+        storedSession.participantSession.roomId !== roomId ||
+        storedSession.participantSession.lifecycle !== 'joined' ||
+        this.getIdentityKey(storedSession.participantSession.identity) !== identityKey
+      ) {
+        continue;
+      }
+
+      this.sessions.set(participantSessionId, {
+        participantSession: {
+          ...storedSession.participantSession,
+          lifecycle: 'left',
+          lastSeenAt: now,
+        },
+        state: {
+          ...storedSession.state,
+          state: {
+            desired: {
+              audio: false,
+              video: false,
+              screenShare: false,
+            },
+            published: {
+              audio: false,
+              video: false,
+              screenShare: false,
+            },
+          },
+          updatedAt: now,
+        },
+      });
+    }
+  }
+
+  private getIdentityKey(identity: MediaParticipantIdentity) {
+    return identity.memberId ?? identity.profileId;
   }
 
   private getSession(participantSessionId: string | undefined): StoredParticipantSession {

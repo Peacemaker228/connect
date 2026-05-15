@@ -3,6 +3,7 @@ import { createWorker, version as mediasoupVersion, workerBin } from 'mediasoup'
 import type { types as mediasoupTypes } from 'mediasoup';
 
 import { MediaSignalingService } from './media-signaling.service';
+import { MediaParticipantSessionService } from './media-participant-session.service';
 
 type LocalMediasoupPrototypeStatus = 'disabled' | 'ready' | 'failed';
 type LocalMediasoupTransportDirection = 'send' | 'recv';
@@ -111,7 +112,10 @@ const LOCAL_PROTOTYPE_MEDIA_CODECS: mediasoupTypes.RouterRtpCodecCapability[] = 
 
 @Injectable()
 export class MediasoupPrototypeService implements OnModuleDestroy {
-  constructor(private readonly mediaSignalingService: MediaSignalingService) {}
+  constructor(
+    private readonly mediaSignalingService: MediaSignalingService,
+    private readonly mediaParticipantSessionService: MediaParticipantSessionService,
+  ) {}
 
   private worker: mediasoupTypes.Worker | null = null;
   private router: mediasoupTypes.Router | null = null;
@@ -771,6 +775,17 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         continue;
       }
 
+      if (
+        !this.mediaParticipantSessionService.isJoinedSession({
+          roomId: producerScope.roomId,
+          participantSessionId: producerScope.participantSessionId,
+        })
+      ) {
+        producer.close();
+        this.removeProducerState(producerId);
+        continue;
+      }
+
       const createdAt = this.producerCreatedAt.get(producerId);
       const discoveryMetadata: LocalMediasoupProducerDiscoveryMetadata = {
         producerId,
@@ -1084,6 +1099,40 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     this.transportScopes.clear();
     this.transportDirections.clear();
     this.transports.clear();
+  }
+
+  closeSession(scope: LocalMediasoupSessionScope) {
+    for (const [consumerId, consumerScope] of this.consumerScopes.entries()) {
+      if (
+        consumerScope.roomId === scope.roomId &&
+        consumerScope.participantSessionId === scope.participantSessionId
+      ) {
+        this.consumers.get(consumerId)?.close();
+        this.removeConsumerState(consumerId);
+      }
+    }
+
+    for (const [producerId, producerScope] of this.producerScopes.entries()) {
+      if (
+        producerScope.roomId === scope.roomId &&
+        producerScope.participantSessionId === scope.participantSessionId
+      ) {
+        this.producers.get(producerId)?.close();
+        this.removeProducerState(producerId);
+      }
+    }
+
+    for (const [transportId, transportScope] of this.transportScopes.entries()) {
+      if (
+        transportScope.roomId === scope.roomId &&
+        transportScope.participantSessionId === scope.participantSessionId
+      ) {
+        this.transports.get(transportId)?.close();
+        this.transports.delete(transportId);
+        this.transportDirections.delete(transportId);
+        this.transportScopes.delete(transportId);
+      }
+    }
   }
 
   private createHealthSnapshot(status: LocalMediasoupPrototypeStatus): LocalMediasoupPrototypeHealth {

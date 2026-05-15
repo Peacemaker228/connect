@@ -478,14 +478,23 @@ Done:
 - no-camera fallback UI reports `Camera not found; continuing audio-only` and disables the camera control when no video track exists
 - direct synthetic private SFU smoke, direct real audio+video fake-device smoke, and direct simulated no-camera fallback smoke passed locally
 - ordinary private calls and channel audio/video routes remain LiveKit, with no broad replacement started
+- `private-sfu-operator-no-camera-fallback-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_107_PRIVATE_SFU_OPERATOR_NO_CAMERA_FALLBACK_RERUN.md`
+- physical no-camera fallback rerun is `pass / operator confirmed`: two authenticated private SFU clients using `?video=true&mediaProvider=sfu&sfuCapture=real` reached audio-only real-capture behavior on the no-camera machine and real voice audio was heard in both directions
+- the earlier one-sided hum was explained by one client still using synthetic capture; physical mic QA requires both clients to use `sfuCapture=real`
+- Segment 106 remains the automated baseline for simulated missing-camera controls, including microphone toggle behavior and disabled camera control
+- operator-observed inflated `Remote producers` counts and random stale audio were traced to stale SFU producers from older sessions in the same conversation room
+- media join now supersedes older joined sessions for the same room identity, producer discovery cleans non-joined session producers, and leave closes scoped mediasoup resources
+- stale producer lifecycle verification passed with two consecutive private SFU browser smokes plus a simulated no-camera fallback smoke on the same API process
+- ordinary private calls and channel audio/video routes remain LiveKit, with no broad replacement started
 
 Remaining:
-- rerun physical no-camera `sfuCapture=real` QA on the operator machine to confirm the audio-only fallback against real hardware absence
 - run physical-device and network interruption QA before any small-room/channel route switch
+- run physical camera QA on a machine with camera hardware
+- optionally rerun physical-device TURN relay signoff if required for release confidence
 - resolve or explicitly defer SFU screen-share lifecycle
 
 Next likely work:
-- run `private-sfu-operator-no-camera-fallback-rerun`
+- run `private-sfu-network-interruption-reconnect-qa`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

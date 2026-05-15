@@ -624,6 +624,18 @@ Segment 106 result:
 - ordinary private `?video=true` and channel `AUDIO`/`VIDEO` remain LiveKit; no broad replacement started
 - recommended next segment is an operator rerun on the physical no-camera machine that exposed the original blocker
 
+Segment 107 result:
+- status: `operator no-camera audio-only fallback pass / stale producer lifecycle fixed / broad replacement hold`
+- physical no-camera fallback is now marked pass based on operator evidence: two authenticated private SFU clients were rerun with `?video=true&mediaProvider=sfu&sfuCapture=real`, reached the real-capture audio-only path, and real voice audio was heard in both directions
+- the earlier one-sided hum was explained by one client still using synthetic capture; synthetic capture intentionally produces generated test audio and is not a valid physical mic QA mode
+- Segment 106 remains the automated proof for synthetic, fake-device real audio+video, simulated missing-camera audio-only fallback, microphone toggle, and disabled camera control behavior
+- operator-observed inflated `Remote producers` counts and random stale audio were traced to stale SFU producers from older sessions in the same conversation room
+- media join now marks older joined sessions for the same room identity as `left`, producer discovery cleans producers for non-joined sessions, and media leave closes scoped mediasoup resources
+- two consecutive private SFU browser smoke runs plus a subsequent simulated no-camera fallback run passed on the same API process without inflated producer counts
+- ordinary private `?video=true` and channel `AUDIO`/`VIDEO` remain LiveKit; no broad replacement started
+- remaining blockers before small-room/channel replacement are real network interruption reconnect/resume QA, physical camera QA on a machine with camera hardware, optional physical TURN relay signoff, and SFU screen-share implementation or explicit MVP deferral
+- recommended next segment is `private-sfu-network-interruption-reconnect-qa`
+
 ## Dependency Summary
 
 Critical path:
@@ -711,7 +723,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `private-sfu-operator-no-camera-fallback-rerun`
+- `private-sfu-network-interruption-reconnect-qa`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -733,4 +745,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `private-sfu-operator-no-camera-fallback-rerun`
+- `private-sfu-network-interruption-reconnect-qa`

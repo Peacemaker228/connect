@@ -255,6 +255,11 @@ export class MediaController {
     });
     const room = this.mediaRoomService.getRoom(participantSession.roomId);
 
+    this.mediasoupPrototypeService.closeSession({
+      roomId: participantSession.roomId,
+      participantSessionId: participantSession.participantSessionId,
+    });
+
     return {
       room,
       participantSession,
