@@ -8,9 +8,13 @@ import {
   Param,
   Post,
   Query,
+  Sse,
   UseGuards,
+  type MessageEvent,
 } from '@nestjs/common';
 import type { types as mediasoupTypes } from 'mediasoup';
+import { merge, of, type Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 import { CurrentProfileId } from '../auth/decorators/current-profile-id.decorator';
 import { RequireAuthGuard } from '../auth/guards/require-auth.guard';
@@ -32,6 +36,7 @@ import {
   MediaProviderAdapter,
 } from './media-provider.adapter';
 import { MediaRoomService } from './media-room.service';
+import { MediaSignalingService } from './media-signaling.service';
 import {
   LocalTurnCredentialResponse,
   TurnCredentialService,
@@ -134,6 +139,11 @@ type CloseMediasoupPrototypeProducerBody = {
   participantSessionId?: string;
 };
 
+type CloseMediasoupPrototypeConsumerBody = {
+  roomId?: string;
+  participantSessionId?: string;
+};
+
 @Controller('media')
 export class MediaController {
   constructor(
@@ -144,6 +154,7 @@ export class MediaController {
     private readonly mediaParticipantSessionService: MediaParticipantSessionService,
     private readonly mediaPermissionService: MediaPermissionService,
     private readonly mediasoupPrototypeService: MediasoupPrototypeService,
+    private readonly mediaSignalingService: MediaSignalingService,
     private readonly turnCredentialService: TurnCredentialService,
   ) {}
 
@@ -364,6 +375,39 @@ export class MediaController {
     return this.mediasoupPrototypeService.listProducers(scope);
   }
 
+  @Sse('prototype/mediasoup/events')
+  @UseGuards(RequireAuthGuard)
+  subscribeMediasoupPrototypeEvents(
+    @CurrentProfileId() profileId: string | undefined,
+    @Query('roomId') roomId: string | undefined,
+    @Query('participantSessionId') participantSessionId: string | undefined,
+  ): Observable<MessageEvent> {
+    const scope = this.resolvePrototypeSessionScope(profileId, {
+      roomId,
+      participantSessionId,
+    });
+
+    if (!scope) {
+      throw new BadRequestException('roomId and participantSessionId are required for media events');
+    }
+
+    const discovery = this.mediasoupPrototypeService.listProducers(scope);
+
+    if (!discovery.enabled || discovery.status !== 'ready') {
+      throw new BadRequestException(discovery.reason ?? 'Scoped producer snapshot failed');
+    }
+
+    return merge(
+      of({
+        data: this.mediaSignalingService.createProducerSnapshot({
+          roomId: scope.roomId,
+          producers: discovery.producers,
+        }),
+      }),
+      this.mediaSignalingService.eventsForRoom(scope.roomId).pipe(map((event) => ({ data: event }))),
+    );
+  }
+
   @Post('prototype/mediasoup/producers/:producerId/close')
   @UseGuards(RequireAuthGuard)
   closeMediasoupPrototypeProducer(
@@ -375,6 +419,21 @@ export class MediaController {
 
     return this.mediasoupPrototypeService.closeProducer({
       producerId,
+      scope,
+    });
+  }
+
+  @Post('prototype/mediasoup/consumers/:consumerId/close')
+  @UseGuards(RequireAuthGuard)
+  closeMediasoupPrototypeConsumer(
+    @CurrentProfileId() profileId: string | undefined,
+    @Param('consumerId') consumerId: string | undefined,
+    @Body() body: CloseMediasoupPrototypeConsumerBody | undefined,
+  ): LocalMediasoupConsumerMetadata {
+    const scope = this.resolvePrototypeSessionScope(profileId, body);
+
+    return this.mediasoupPrototypeService.closeConsumer({
+      consumerId,
       scope,
     });
   }

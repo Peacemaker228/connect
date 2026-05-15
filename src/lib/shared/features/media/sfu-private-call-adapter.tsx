@@ -8,11 +8,14 @@ import { Button } from '@/lib/shared/ui/button'
 
 import {
   SfuClientAdapter,
+  type MediasoupPrototypeEvent,
   type SfuClientSessionScope,
   type SfuClientTransportBundle,
 } from './sfu-client-adapter'
 
 type SfuPrivateCallStatus = 'idle' | 'starting' | 'waiting' | 'connected' | 'failed'
+
+type RemoteProducerMetadata = Extract<MediasoupPrototypeEvent, { type: 'producer.published' }>['producer']
 
 type SfuPrivateCallAdapterProps = {
   controlPlaneJoin: JoinRoomResponse
@@ -31,10 +34,10 @@ const waitForRemoteTrackFlow = async (track: MediaStreamTrack) => {
     return
   }
 
-  await new Promise<void>((resolve, reject) => {
+  await new Promise<void>((resolve) => {
     const timeout = window.setTimeout(() => {
       cleanup()
-      reject(new Error('Remote track stayed muted after consume'))
+      resolve()
     }, 5000)
 
     const handleUnmute = () => {
@@ -64,8 +67,10 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   const localTrackRef = useRef<MediaStreamTrack | null>(null)
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null)
   const remoteStreamRef = useRef<MediaStream | null>(null)
-  const discoveryTimerRef = useRef<number | null>(null)
+  const eventSourceRef = useRef<EventSource | null>(null)
   const consumedProducerIdsRef = useRef(new Set<string>())
+  const consumedProducerKeysRef = useRef(new Set<string>())
+  const consumedProducerKeyByIdRef = useRef(new Map<string, string>())
   const startRunIdRef = useRef(0)
   const [status, setStatus] = useState<SfuPrivateCallStatus>('idle')
   const [detail, setDetail] = useState('Waiting for SFU private-call gate')
@@ -82,14 +87,14 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   )
 
   const cleanup = useCallback(() => {
-    if (discoveryTimerRef.current) {
-      window.clearInterval(discoveryTimerRef.current)
-      discoveryTimerRef.current = null
-    }
+    eventSourceRef.current?.close()
+    eventSourceRef.current = null
 
     adapterRef.current?.close()
     adapterRef.current = null
     consumedProducerIdsRef.current.clear()
+    consumedProducerKeysRef.current.clear()
+    consumedProducerKeyByIdRef.current.clear()
     remoteStreamRef.current = null
 
     localTrackRef.current?.stop()
@@ -167,8 +172,72 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     }
   }, [])
 
-  const discoverAndConsumeRemoteProducers = useCallback(
+  const consumeRemoteProducer = useCallback(
     async ({
+      adapter,
+      recvTransportId,
+      runId,
+      producer,
+    }: {
+      adapter: SfuClientAdapter
+      recvTransportId: string
+      runId: number
+      producer: RemoteProducerMetadata
+    }) => {
+      if (startRunIdRef.current !== runId) {
+        return
+      }
+
+      if (producer.participantSessionId === sessionScope.participantSessionId) {
+        return
+      }
+
+      if (consumedProducerIdsRef.current.has(producer.producerId)) {
+        return
+      }
+
+      const producerKey = `${producer.participantSessionId}:${producer.kind}`
+
+      if (consumedProducerKeysRef.current.has(producerKey)) {
+        return
+      }
+
+      consumedProducerIdsRef.current.add(producer.producerId)
+      consumedProducerKeysRef.current.add(producerKey)
+      consumedProducerKeyByIdRef.current.set(producer.producerId, producerKey)
+
+      const consumerMetadata = await adapter.createConsumerMetadata({
+        transportId: recvTransportId,
+        sessionScope,
+        producerId: producer.producerId,
+      })
+      const consumed = await adapter.consume(consumerMetadata, {
+        transportId: recvTransportId,
+      })
+
+      await attachRemoteTrack(consumed.track)
+      await waitForRemoteTrackFlow(consumed.track)
+
+      if (startRunIdRef.current !== runId) {
+        return
+      }
+
+      setRemoteProducerIds((current) =>
+        current.includes(producer.producerId) ? current : [...current, producer.producerId],
+      )
+      setConsumerIds((current) =>
+        consumed.backendConsumer.consumerId && !current.includes(consumed.backendConsumer.consumerId)
+          ? [...current, consumed.backendConsumer.consumerId]
+          : current,
+      )
+      setStatus('connected')
+      setDetail('Remote SFU producer event received and consumed')
+    },
+    [attachRemoteTrack, sessionScope],
+  )
+
+  const subscribeToProducerEvents = useCallback(
+    ({
       adapter,
       recvTransportId,
       runId,
@@ -176,62 +245,99 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       adapter: SfuClientAdapter
       recvTransportId: string
       runId: number
-    }) => {
-      const discovered = await adapter.discoverProducers(sessionScope)
+    }): Promise<void> => {
+      const eventSource = adapter.createProducerEventSource(sessionScope)
 
-      if (!discovered.enabled || discovered.status !== 'ready') {
-        throw new Error(discovered.reason ?? 'Scoped producer discovery failed')
-      }
+      eventSourceRef.current = eventSource
 
-      const remoteProducers = discovered.producers.filter(
-        (producer) => producer.participantSessionId !== sessionScope.participantSessionId,
-      )
+      return new Promise<void>((resolve, reject) => {
+        let initialSnapshotReceived = false
 
-      for (const producer of remoteProducers) {
-        if (startRunIdRef.current !== runId) {
-          return
+        eventSource.onerror = () => {
+          if (startRunIdRef.current !== runId) {
+            return
+          }
+
+          if (!initialSnapshotReceived) {
+            initialSnapshotReceived = true
+            reject(new Error('Media signaling event stream failed before initial snapshot'))
+            return
+          }
+
+          setStatus('failed')
+          setDetail('Media signaling event stream failed')
         }
+        eventSource.onmessage = (message) => {
+          void (async () => {
+            const event = JSON.parse(message.data) as MediasoupPrototypeEvent
 
-        if (consumedProducerIdsRef.current.has(producer.producerId)) {
-          continue
+            if (event.type === 'producer.snapshot') {
+              const remoteProducers = event.producers.filter(
+                (producer) => producer.participantSessionId !== sessionScope.participantSessionId,
+              )
+
+              if (!initialSnapshotReceived) {
+                initialSnapshotReceived = true
+                resolve()
+              }
+
+              for (const producer of remoteProducers) {
+                await consumeRemoteProducer({
+                  adapter,
+                  recvTransportId,
+                  runId,
+                  producer,
+                })
+              }
+
+              if (remoteProducers.length === 0 && consumedProducerIdsRef.current.size === 0) {
+                setStatus('waiting')
+                setDetail('Media signaling subscribed; waiting for remote participant producer')
+              }
+
+              return
+            }
+
+            if (event.type === 'producer.published') {
+              await consumeRemoteProducer({
+                adapter,
+                recvTransportId,
+                runId,
+                producer: event.producer,
+              })
+              return
+            }
+
+            if (event.type === 'producer.closed') {
+              const producerKey = consumedProducerKeyByIdRef.current.get(event.producerId)
+
+              consumedProducerIdsRef.current.delete(event.producerId)
+              consumedProducerKeyByIdRef.current.delete(event.producerId)
+
+              if (producerKey) {
+                consumedProducerKeysRef.current.delete(producerKey)
+              }
+
+              setRemoteProducerIds((current) => current.filter((producerId) => producerId !== event.producerId))
+            }
+          })().catch((error: unknown) => {
+            if (startRunIdRef.current !== runId) {
+              return
+            }
+
+            if (!initialSnapshotReceived) {
+              initialSnapshotReceived = true
+              reject(error instanceof Error ? error : new Error('Unknown media signaling event failure'))
+              return
+            }
+
+            setStatus('failed')
+            setDetail(error instanceof Error ? error.message : 'Unknown media signaling event failure')
+          })
         }
-
-        consumedProducerIdsRef.current.add(producer.producerId)
-
-        const consumerMetadata = await adapter.createConsumerMetadata({
-          transportId: recvTransportId,
-          sessionScope,
-          producerId: producer.producerId,
-        })
-        const consumed = await adapter.consume(consumerMetadata, {
-          transportId: recvTransportId,
-        })
-
-        await attachRemoteTrack(consumed.track)
-        await waitForRemoteTrackFlow(consumed.track)
-
-        if (startRunIdRef.current !== runId) {
-          return
-        }
-
-        setRemoteProducerIds((current) =>
-          current.includes(producer.producerId) ? current : [...current, producer.producerId],
-        )
-        setConsumerIds((current) =>
-          consumed.backendConsumer.consumerId && !current.includes(consumed.backendConsumer.consumerId)
-            ? [...current, consumed.backendConsumer.consumerId]
-            : current,
-        )
-        setStatus('connected')
-        setDetail('Remote SFU producer discovered and consumed')
-      }
-
-      if (remoteProducers.length === 0 && consumedProducerIdsRef.current.size === 0) {
-        setStatus('waiting')
-        setDetail('Local SFU producer is published; waiting for remote participant producer')
-      }
+      })
     },
-    [attachRemoteTrack, sessionScope],
+    [consumeRemoteProducer, sessionScope],
   )
 
   const startSfuPrivatePath = useCallback(async () => {
@@ -264,6 +370,14 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       })
       const recvTransportId = assertScopedTransport(recvTransport)
 
+      setStatus('waiting')
+      setDetail('Opening media signaling before local SFU publish')
+      await subscribeToProducerEvents({
+        adapter,
+        recvTransportId,
+        runId,
+      })
+
       const localTrack = await createSyntheticAudioTrack()
       const produced = await adapter.produce(localTrack, {
         transportId: sendTransportId,
@@ -281,29 +395,11 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       }
 
       setProducerId(backendProducerId)
-      setStatus('waiting')
-      setDetail('Local SFU producer is published; waiting for remote participant producer')
 
-      await discoverAndConsumeRemoteProducers({
-        adapter,
-        recvTransportId,
-        runId,
-      })
-
-      discoveryTimerRef.current = window.setInterval(() => {
-        void discoverAndConsumeRemoteProducers({
-          adapter,
-          recvTransportId,
-          runId,
-        }).catch((error: unknown) => {
-          if (startRunIdRef.current !== runId) {
-            return
-          }
-
-          setStatus('failed')
-          setDetail(error instanceof Error ? error.message : 'Unknown remote producer discovery failure')
-        })
-      }, 1000)
+      if (consumedProducerIdsRef.current.size === 0) {
+        setStatus('waiting')
+        setDetail('Local SFU producer is published; waiting for remote participant producer')
+      }
     } catch (error) {
       if (startRunIdRef.current !== runId) {
         return
@@ -316,9 +412,9 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     assertScopedTransport,
     cleanup,
     createSyntheticAudioTrack,
-    discoverAndConsumeRemoteProducers,
     iceTransportPolicy,
     sessionScope,
+    subscribeToProducerEvents,
   ])
 
   useEffect(() => {

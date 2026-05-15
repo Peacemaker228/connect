@@ -528,6 +528,18 @@ Segment 100 result:
 - private TURN relay smoke passed locally with `sfuTransport=turn`, relay-only ICE policy, backend-issued TURN credentials, and coturn authenticated `ALLOCATE` / `CREATE_PERMISSION`
 - discovery remains polling-based and process-local; next segment should move lifecycle toward project-owned media signaling/events and controls before small-room/channel replacement
 
+Segment 101 result:
+- status: `signaling lifecycle review / smoke env stabilization required`
+- private SFU producer discovery in `SfuPrivateCallAdapter` no longer uses polling; it subscribes to authenticated project-owned SSE events under `GET /api/media/prototype/mediasoup/events`
+- the event path emits scoped producer snapshots plus producer published/closed and consumer closed lifecycle events
+- backend producer close now emits lifecycle events, and explicit consumer close exists at `POST /api/media/prototype/mediasoup/consumers/:consumerId/close`
+- `SfuClientAdapter.close()` now requests backend consumer cleanup before producer cleanup, then closes local mediasoup-client resources
+- the client waits for the initial event snapshot before local publish to avoid missing remote producer events, and dedupes dev-remount producer events by `participantSessionId + kind`
+- ordinary private calls and channel audio/video routes remain LiveKit; the SFU gate remains conversation-only and non-production
+- reusable guarded Playwright browser smoke now exists at `tests/browser/private-sfu-two-user-smoke.spec.ts`
+- direct and TURN browser smoke are `review`, not final pass, because the local dev run exposed host/API URL cookie mismatch and route-guard instability after the lifecycle changes
+- next segment should stabilize the local browser smoke environment and rerun direct + TURN before small-room/channel replacement
+
 ### 13. `final-media-mvp-parity-load-smoke`
 
 Goal:
@@ -639,7 +651,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `private-sfu-signaling-lifecycle-and-controls`
+- `private-sfu-browser-smoke-env-stabilization`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -661,4 +673,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `private-sfu-signaling-lifecycle-and-controls`
+- `private-sfu-browser-smoke-env-stabilization`
