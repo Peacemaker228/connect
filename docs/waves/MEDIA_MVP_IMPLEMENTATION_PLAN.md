@@ -601,6 +601,17 @@ Segment 104 result:
 - reconnect/restart is `pass / review`: user-triggered restart passes, network interruption reconnect/resume remains review
 - recommended next segment is manual physical-device and network interruption QA before channel/small-room work
 
+Segment 105 result:
+- status: `manual synthetic pass / real capture blocked by missing camera / broad replacement hold`
+- operator manual synthetic private SFU smoke passed: two authenticated users joined the gated private SFU path without `sfuCapture=real`, both reached `connected`, both had producer/consumer ids, and both observed `Remote producers: 1`
+- manual real-capture QA was not marked pass because `sfuCapture=real` failed with `Requested device not found` on the operator machine, which has no physical camera available
+- Segment 104 automated baseline remains the current proof: direct synthetic SFU pass, direct Chromium fake-device real-capture pass, and TURN synthetic SFU pass
+- permission/device UX is `review / camera-missing fallback needed`; the current real-capture path fails the whole call when camera capture is unavailable instead of degrading to audio-only where possible
+- network interruption reconnect/resume is `review / not manually executed`; user-triggered restart recovery is already covered, but real network loss/restore still needs a human-operated QA run
+- TURN manual QA with physical devices is `review / not manually executed`; automated local coturn relay smoke remains pass from Segment 104
+- ordinary private `?video=true` and channel `AUDIO`/`VIDEO` remain LiveKit; no broad replacement started
+- recommended next segment is `private-sfu-real-capture-device-fallback`, so no-camera machines can continue audio-only physical-device QA without failing the whole call
+
 ## Dependency Summary
 
 Critical path:
@@ -688,7 +699,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `private-sfu-manual-device-reconnect-qa`
+- `private-sfu-real-capture-device-fallback`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -710,4 +721,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `private-sfu-manual-device-reconnect-qa`
+- `private-sfu-real-capture-device-fallback`
