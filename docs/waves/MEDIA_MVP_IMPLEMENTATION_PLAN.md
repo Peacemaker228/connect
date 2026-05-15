@@ -517,6 +517,17 @@ Segment 099 result:
 - small-room/channel replacement has not started
 - next segment should add remote producer discovery/signaling and run a full two-user private SFU smoke before any small-room/channel switch
 
+Segment 100 result:
+- status: `private two-user pass / private TURN pass / replacement still gated`
+- `SfuPrivateCallAdapter` now publishes a scoped local producer and runs remote producer discovery for other participant sessions in the same private room
+- the private SFU adapter excludes self producers before consuming, while the standalone `/media/sfu-smoke` harness remains unchanged
+- backend producer close support and latest-per-participant discovery were added so dev remounts do not leave stale producers visible to subscribers
+- authenticated two-user private browser smoke passed with both participants reaching `connected` and each observing one remote producer
+- normal private `?video=true` still did not render SFU, and channel audio/video routes remain LiveKit
+- private leave redirect stayed `/servers/:serverId/conversations/:memberId`
+- private TURN relay smoke passed locally with `sfuTransport=turn`, relay-only ICE policy, backend-issued TURN credentials, and coturn authenticated `ALLOCATE` / `CREATE_PERMISSION`
+- discovery remains polling-based and process-local; next segment should move lifecycle toward project-owned media signaling/events and controls before small-room/channel replacement
+
 ### 13. `final-media-mvp-parity-load-smoke`
 
 Goal:
@@ -628,7 +639,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `private-sfu-remote-producer-discovery-and-two-user-smoke`
+- `private-sfu-signaling-lifecycle-and-controls`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -650,4 +661,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `private-sfu-remote-producer-discovery-and-two-user-smoke`
+- `private-sfu-signaling-lifecycle-and-controls`

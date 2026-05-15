@@ -173,12 +173,18 @@ export type DiscoverMediasoupPrototypeProducersRequest = {
   participantSessionId?: string
 }
 
+export type CloseMediasoupPrototypeProducerRequest = {
+  roomId?: string
+  participantSessionId?: string
+}
+
 export type MediasoupPrototypeProducerDiscoveryMetadata = {
   producerId: string
   roomId: string
   participantSessionId: string
   kind: MediasoupPrototypeMediaKind
   paused: boolean
+  createdAt?: string
 }
 
 export type MediasoupPrototypeProducerDiscoveryResponse = {
@@ -563,6 +569,15 @@ export const discoverMediasoupPrototypeProducers = async (
     MediasoupPrototypeProducerDiscoveryResponse,
     DiscoverMediasoupPrototypeProducersRequest
   >(MEDIA_CONTROL_PATHS.mediasoupPrototypeProducerDiscovery, payload)
+
+export const closeMediasoupPrototypeProducer = async (
+  producerId: string,
+  payload: CloseMediasoupPrototypeProducerRequest,
+) =>
+  postMediaCommand<MediasoupPrototypeProducerResponse, CloseMediasoupPrototypeProducerRequest>(
+    `${MEDIA_CONTROL_PATHS.mediasoupPrototypeProducers}/${producerId}/close`,
+    payload,
+  )
 
 export const consumeMediasoupPrototypeTrack = async (payload: ConsumeMediasoupPrototypeRequest) =>
   postMediaCommand<MediasoupPrototypeConsumerResponse, ConsumeMediasoupPrototypeRequest>(
