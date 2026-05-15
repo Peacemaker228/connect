@@ -35,6 +35,9 @@ const apiOrigin = new URL(apiBaseUrl)
 const webOrigin = new URL(webBaseUrl)
 const transportQuery =
   process.env.PRIVATE_SFU_SMOKE_TRANSPORT === 'turn' ? '&sfuTransport=turn' : ''
+const captureQuery = process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real' ? '&sfuCapture=real' : ''
+const expectedRemoteProducerCount =
+  process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real' ? 'Remote producers: 2' : 'Remote producers: 1'
 
 test.describe('private SFU two-user browser smoke', () => {
   test.skip(!isSmokeEnabled, 'Set PRIVATE_SFU_BROWSER_SMOKE=1 with local API/web to run this smoke.')
@@ -83,7 +86,7 @@ test.describe('private SFU two-user browser smoke', () => {
 
       const userOnePage = await userOne.newPage()
       const userTwoPage = await userTwo.newPage()
-      const sfuQuery = `?video=true&mediaProvider=sfu${transportQuery}`
+      const sfuQuery = `?video=true&mediaProvider=sfu${transportQuery}${captureQuery}`
 
       await Promise.all([
         userOnePage.goto(`${webBaseUrl}/servers/${createdServer.id}/conversations/${userTwoMember.id}${sfuQuery}`),
@@ -97,11 +100,30 @@ test.describe('private SFU two-user browser smoke', () => {
         timeout: 45_000,
       })
       await expect(userOnePage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
-        'Remote producers: 1',
+        expectedRemoteProducerCount,
       )
       await expect(userTwoPage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
-        'Remote producers: 1',
+        expectedRemoteProducerCount,
       )
+
+      await userOnePage.getByRole('button', { name: 'Restart SFU private call' }).click()
+      await expect(userOnePage.getByTestId('private-sfu-status')).toHaveText('connected', {
+        timeout: 45_000,
+      })
+      await expect(userTwoPage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
+        expectedRemoteProducerCount,
+        {
+          timeout: 45_000,
+        },
+      )
+
+      if (process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real') {
+        await expect(userOnePage.getByTestId('private-sfu-capture-mode')).toHaveText('Capture mode: real')
+        await userOnePage.getByRole('button', { name: 'Mute microphone' }).click()
+        await expect(userOnePage.getByRole('button', { name: 'Unmute microphone' })).toBeEnabled()
+        await userOnePage.getByRole('button', { name: 'Stop camera' }).click()
+        await expect(userOnePage.getByRole('button', { name: 'Start camera' })).toBeEnabled()
+      }
 
       const defaultPrivatePage = await userOne.newPage()
 

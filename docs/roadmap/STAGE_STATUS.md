@@ -458,12 +458,21 @@ Done:
 - private SFU leave redirect remained `/servers/:serverId/conversations/:memberId`
 - screen-share is deferred for SFU, reconnect remains review, and real device controls/capture parity remain deferred
 - broader small-room/channel replacement is on hold pending a narrower parity-hardening segment
+- `private-sfu-device-controls-reconnect-parity` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_104_PRIVATE_SFU_DEVICE_CONTROLS_RECONNECT_PARITY.md`
+- gated private SFU now supports explicit `sfuCapture=real` for non-production conversation routes while synthetic capture remains the repeatable smoke default
+- basic private SFU microphone and camera controls now toggle captured local track enablement
+- private SFU browser smoke now covers restart recovery
+- direct synthetic private SFU smoke, direct real-capture fake-device smoke, and TURN synthetic private SFU smoke passed locally
+- device controls/capture are `pass / review`: automated fake-device path passes, physical hardware/permission UX remains manual review
+- reconnect/restart is `pass / review`: user-triggered restart passes, network interruption reconnect/resume remains review
+- ordinary private calls and channel audio/video routes remain LiveKit, with no broad replacement started
 
 Remaining:
-- close private SFU device controls, real capture, reconnect, and screen-share parity decisions before any small-room/channel route switch
+- run manual physical-device and network interruption QA before any small-room/channel route switch
+- resolve or explicitly defer SFU screen-share lifecycle
 
 Next likely work:
-- run `private-sfu-device-controls-reconnect-parity`
+- run `private-sfu-manual-device-reconnect-qa`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

@@ -587,6 +587,20 @@ Segment 103 result:
 - small-room/channel load readiness is `review / hold broad replacement`; current proof is two-user private SFU local smoke only, with process-local prototype signaling/registry state
 - final recommendation is `split next segment`: close private SFU device-controls/reconnect parity before any channel/small-room route replacement
 
+Segment 104 result:
+- status: `private SFU controls pass-review / restart pass-review / broad replacement still hold`
+- explicit gated private SFU now supports `sfuCapture=real` for non-production conversation routes while synthetic audio remains the default repeatable smoke path
+- real capture mode uses browser `getUserMedia` for requested audio/video and publishes all captured tracks through the scoped SFU path
+- gated private SFU now has basic microphone mute/unmute and camera stop/start controls that toggle local track `enabled`
+- browser smoke now verifies private SFU restart recovery and optional real-capture controls
+- direct synthetic private SFU smoke passed with restart recovery and one remote producer per participant
+- direct real-capture private SFU smoke passed in Chromium fake-device mode with two remote producers per participant and mic/camera control toggles
+- TURN synthetic private SFU smoke passed with relay mode and restart recovery
+- ordinary private `?video=true` and channel `AUDIO`/`VIDEO` remain LiveKit; no broad replacement started
+- device controls/capture are `pass / review`: automated fake-device path passes, physical device quality/permission UX remains manual review
+- reconnect/restart is `pass / review`: user-triggered restart passes, network interruption reconnect/resume remains review
+- recommended next segment is manual physical-device and network interruption QA before channel/small-room work
+
 ## Dependency Summary
 
 Critical path:
@@ -674,7 +688,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `private-sfu-device-controls-reconnect-parity`
+- `private-sfu-manual-device-reconnect-qa`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -696,4 +710,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `private-sfu-device-controls-reconnect-parity`
+- `private-sfu-manual-device-reconnect-qa`

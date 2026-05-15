@@ -46,6 +46,7 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
   const isPrivateSfuGateOpen = isPrivateSfuGateRequested && process.env.NODE_ENV !== 'production'
   const privateSfuIceTransportPolicy =
     searchParams?.get('sfuTransport') === 'turn' || searchParams?.get('sfuIce') === 'relay' ? 'relay' : undefined
+  const privateSfuCaptureMode = searchParams?.get('sfuCapture') === 'real' ? 'real' : 'synthetic'
 
   const handleLeave = useCallback(() => {
     void leaveControlPlane()
@@ -64,6 +65,7 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
         audio={audio}
         video={video}
         iceTransportPolicy={privateSfuIceTransportPolicy}
+        captureMode={privateSfuCaptureMode}
         onLeave={handleLeave}
       />
     )
