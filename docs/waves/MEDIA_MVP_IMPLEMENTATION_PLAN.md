@@ -504,6 +504,19 @@ Acceptance:
 - small-room path works under MVP constraints
 - fallback to current LiveKit remains available during review
 
+Segment 099 result:
+- status: `review / gated private SFU loopback only`
+- private conversation SFU path is now explicit-gated by `?video=true&mediaProvider=sfu` or `?video=true&sfu=true`
+- the SFU gate is limited to `conversation` media entries and disabled in production runtime
+- private calls without the explicit SFU query and all channel audio/video routes remain on `LiveKitClientAdapter`
+- mediasoup prototype transport create/connect, producers, consumers, and producer discovery can now be bound to backend-resolved `roomId` and `participantSessionId`
+- authenticated scoped producer discovery exists at `POST /api/media/prototype/mediasoup/producers/discover`
+- `SfuPrivateCallAdapter` uses the existing control-plane join result, creates scoped send/recv transports, produces a local synthetic audio track, discovers the scoped producer, consumes it locally, and preserves the existing leave redirect
+- authenticated private-route SFU smoke reached `review` with scoped local produce/consume loopback and leave redirect preserved
+- full two-user private SFU smoke remains blocked because remote producer announcement/subscription lifecycle is not implemented yet
+- small-room/channel replacement has not started
+- next segment should add remote producer discovery/signaling and run a full two-user private SFU smoke before any small-room/channel switch
+
 ### 13. `final-media-mvp-parity-load-smoke`
 
 Goal:
@@ -615,7 +628,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `mvp-private-small-room-replacement`
+- `private-sfu-remote-producer-discovery-and-two-user-smoke`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -636,5 +649,5 @@ Reason:
 - LiveKit containment is planned
 - MVP implementation order, fallback, and acceptance are now documented
 
-Next active work can start controlled replacement:
-- `mvp-private-small-room-replacement`
+Next active work can continue controlled replacement:
+- `private-sfu-remote-producer-discovery-and-two-user-smoke`

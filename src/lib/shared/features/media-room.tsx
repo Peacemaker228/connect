@@ -8,10 +8,11 @@ import { useGetProfile } from '@sdk/queries/profile'
 import { useGetServer } from '@sdk/queries/server'
 import { ChannelType } from '@app-core/contracts'
 import { EGeneral } from '@/types'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 import { LiveKitClientAdapter } from './media/livekit-client-adapter'
 import type { MediaRoomEntry } from './media/media-room-entry'
+import { SfuPrivateCallAdapter } from './media/sfu-private-call-adapter'
 import { useMediaRoomController } from './media/use-media-room-controller'
 
 interface IMediaRoomProps {
@@ -24,6 +25,7 @@ interface IMediaRoomProps {
 
 export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leaveRedirectHref, serverId }) => {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { profile } = useGetProfile()
   const { data: server } = useGetServer(serverId)
   const generalChannelId = server?.channels.find(
@@ -34,10 +36,14 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
     lastName: null,
     username: profile?.name ?? null,
   })
-  const { liveKitToken, leaveControlPlane } = useMediaRoomController({
+  const { liveKitToken, controlPlaneJoin, controlPlaneStatus, leaveControlPlane } = useMediaRoomController({
     mediaEntry,
     displayName: profile?.name ? name : null,
   })
+  const isPrivateSfuGateRequested =
+    mediaEntry.scope.kind === 'conversation' &&
+    (searchParams?.get('mediaProvider') === 'sfu' || searchParams?.get('sfu') === 'true')
+  const isPrivateSfuGateOpen = isPrivateSfuGateRequested && process.env.NODE_ENV !== 'production'
 
   const handleLeave = useCallback(() => {
     void leaveControlPlane()
@@ -49,7 +55,18 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
     )
   }, [generalChannelId, leaveControlPlane, leaveRedirectHref, router, serverId])
 
-  if (liveKitToken === '') {
+  if (isPrivateSfuGateOpen && controlPlaneJoin?.participantSession) {
+    return (
+      <SfuPrivateCallAdapter
+        controlPlaneJoin={controlPlaneJoin}
+        audio={audio}
+        video={video}
+        onLeave={handleLeave}
+      />
+    )
+  }
+
+  if (liveKitToken === '' || (isPrivateSfuGateRequested && controlPlaneStatus === 'joining')) {
     return (
       <div className={'flex flex-col flex-1 justify-center items-center'}>
         <Loader2 className="h-7 w-7 text-zinc-500 animate-spin my-4" />

@@ -114,6 +114,8 @@ export type MediasoupPrototypeHealthResponse = {
 export type CreateMediasoupPrototypeTransportRequest = {
   direction?: MediasoupPrototypeTransportDirection
   includeTurnCredentials?: boolean
+  roomId?: string
+  participantSessionId?: string
 }
 
 export type MediasoupPrototypeTransportResponse = {
@@ -131,6 +133,8 @@ export type MediasoupPrototypeTransportResponse = {
 
 export type ConnectMediasoupPrototypeTransportRequest = {
   dtlsParameters?: Record<string, unknown>
+  roomId?: string
+  participantSessionId?: string
 }
 
 export type MediasoupPrototypeTransportConnectResponse = {
@@ -145,6 +149,8 @@ export type MediasoupPrototypeMediaKind = 'audio' | 'video'
 
 export type ProduceMediasoupPrototypeRequest = {
   transportId?: string
+  roomId?: string
+  participantSessionId?: string
   kind?: MediasoupPrototypeMediaKind
   rtpParameters?: Record<string, unknown>
   paused?: boolean
@@ -154,14 +160,40 @@ export type MediasoupPrototypeProducerResponse = {
   status: MediasoupPrototypeStatus
   enabled: boolean
   transportId?: string
+  roomId?: string
+  participantSessionId?: string
   producerId?: string
   kind?: MediasoupPrototypeMediaKind
   paused?: boolean
   reason?: string
 }
 
+export type DiscoverMediasoupPrototypeProducersRequest = {
+  roomId?: string
+  participantSessionId?: string
+}
+
+export type MediasoupPrototypeProducerDiscoveryMetadata = {
+  producerId: string
+  roomId: string
+  participantSessionId: string
+  kind: MediasoupPrototypeMediaKind
+  paused: boolean
+}
+
+export type MediasoupPrototypeProducerDiscoveryResponse = {
+  status: MediasoupPrototypeStatus
+  enabled: boolean
+  roomId?: string
+  participantSessionId?: string
+  producers: MediasoupPrototypeProducerDiscoveryMetadata[]
+  reason?: string
+}
+
 export type ConsumeMediasoupPrototypeRequest = {
   transportId?: string
+  roomId?: string
+  participantSessionId?: string
   producerId?: string
   rtpCapabilities?: Record<string, unknown>
   paused?: boolean
@@ -171,6 +203,8 @@ export type MediasoupPrototypeConsumerResponse = {
   status: MediasoupPrototypeStatus
   enabled: boolean
   transportId?: string
+  roomId?: string
+  participantSessionId?: string
   consumerId?: string
   producerId?: string
   kind?: MediasoupPrototypeMediaKind
@@ -250,6 +284,7 @@ const MEDIA_CONTROL_PATHS = {
   mediasoupPrototypeHealth: '/api/media/prototype/mediasoup/health',
   mediasoupPrototypeTransports: '/api/media/prototype/mediasoup/transports',
   mediasoupPrototypeProducers: '/api/media/prototype/mediasoup/producers',
+  mediasoupPrototypeProducerDiscovery: '/api/media/prototype/mediasoup/producers/discover',
   mediasoupPrototypeConsumers: '/api/media/prototype/mediasoup/consumers',
 } as const
 
@@ -520,6 +555,14 @@ export const produceMediasoupPrototypeTrack = async (payload: ProduceMediasoupPr
     MEDIA_CONTROL_PATHS.mediasoupPrototypeProducers,
     payload,
   )
+
+export const discoverMediasoupPrototypeProducers = async (
+  payload: DiscoverMediasoupPrototypeProducersRequest,
+) =>
+  postMediaCommand<
+    MediasoupPrototypeProducerDiscoveryResponse,
+    DiscoverMediasoupPrototypeProducersRequest
+  >(MEDIA_CONTROL_PATHS.mediasoupPrototypeProducerDiscovery, payload)
 
 export const consumeMediasoupPrototypeTrack = async (payload: ConsumeMediasoupPrototypeRequest) =>
   postMediaCommand<MediasoupPrototypeConsumerResponse, ConsumeMediasoupPrototypeRequest>(
