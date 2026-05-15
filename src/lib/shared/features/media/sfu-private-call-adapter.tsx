@@ -1,7 +1,7 @@
 'use client'
 
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { PhoneOff, RotateCcw } from 'lucide-react'
+import { Mic, MicOff, PhoneOff, RotateCcw, Video, VideoOff } from 'lucide-react'
 import type { JoinRoomResponse } from '@sdk/actions/media'
 
 import { Button } from '@/lib/shared/ui/button'
@@ -22,6 +22,7 @@ type SfuPrivateCallAdapterProps = {
   audio: boolean
   video: boolean
   iceTransportPolicy?: RTCIceTransportPolicy
+  captureMode?: 'synthetic' | 'real'
   onLeave: () => void
 }
 
@@ -59,14 +60,18 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   audio,
   video,
   iceTransportPolicy,
+  captureMode = 'synthetic',
   onLeave,
 }) => {
   const adapterRef = useRef<SfuClientAdapter | null>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
   const oscillatorRef = useRef<OscillatorNode | null>(null)
-  const localTrackRef = useRef<MediaStreamTrack | null>(null)
+  const localTracksRef = useRef<MediaStreamTrack[]>([])
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null)
+  const localVideoRef = useRef<HTMLVideoElement | null>(null)
+  const remoteVideoRef = useRef<HTMLVideoElement | null>(null)
   const remoteStreamRef = useRef<MediaStream | null>(null)
+  const remoteVideoStreamRef = useRef<MediaStream | null>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
   const consumedProducerIdsRef = useRef(new Set<string>())
   const consumedProducerKeysRef = useRef(new Set<string>())
@@ -74,9 +79,11 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   const startRunIdRef = useRef(0)
   const [status, setStatus] = useState<SfuPrivateCallStatus>('idle')
   const [detail, setDetail] = useState('Waiting for SFU private-call gate')
-  const [producerId, setProducerId] = useState<string | null>(null)
+  const [producerIds, setProducerIds] = useState<string[]>([])
   const [consumerIds, setConsumerIds] = useState<string[]>([])
   const [remoteProducerIds, setRemoteProducerIds] = useState<string[]>([])
+  const [localAudioEnabled, setLocalAudioEnabled] = useState(audio)
+  const [localVideoEnabled, setLocalVideoEnabled] = useState(video)
 
   const sessionScope: SfuClientSessionScope = useMemo(
     () => ({
@@ -96,9 +103,13 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     consumedProducerKeysRef.current.clear()
     consumedProducerKeyByIdRef.current.clear()
     remoteStreamRef.current = null
+    remoteVideoStreamRef.current = null
 
-    localTrackRef.current?.stop()
-    localTrackRef.current = null
+    for (const track of localTracksRef.current) {
+      track.stop()
+    }
+
+    localTracksRef.current = []
 
     try {
       oscillatorRef.current?.stop()
@@ -113,6 +124,16 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     if (remoteAudioRef.current) {
       remoteAudioRef.current.pause()
       remoteAudioRef.current.srcObject = null
+    }
+
+    if (localVideoRef.current) {
+      localVideoRef.current.pause()
+      localVideoRef.current.srcObject = null
+    }
+
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.pause()
+      remoteVideoRef.current.srcObject = null
     }
   }, [])
 
@@ -144,10 +165,53 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
 
     audioContextRef.current = audioContext
     oscillatorRef.current = oscillator
-    localTrackRef.current = track
+    localTracksRef.current = [track]
+    setLocalAudioEnabled(true)
+    setLocalVideoEnabled(false)
 
-    return track
+    return [track]
   }, [])
+
+  const createRealDeviceTracks = useCallback(async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error('Browser media device capture is not available')
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: audio
+        ? {
+            echoCancellation: true,
+            noiseSuppression: true,
+          }
+        : false,
+      video,
+    })
+    const tracks = stream.getTracks()
+    const videoTrack = stream.getVideoTracks()[0]
+
+    if (tracks.length === 0) {
+      throw new Error('No local media tracks were captured')
+    }
+
+    localTracksRef.current = tracks
+    setLocalAudioEnabled(stream.getAudioTracks().some((track) => track.enabled))
+    setLocalVideoEnabled(stream.getVideoTracks().some((track) => track.enabled))
+
+    if (localVideoRef.current && videoTrack) {
+      localVideoRef.current.srcObject = new MediaStream([videoTrack])
+      await localVideoRef.current.play().catch(() => undefined)
+    }
+
+    return tracks
+  }, [audio, video])
+
+  const createLocalTracks = useCallback(async () => {
+    if (captureMode === 'real') {
+      return createRealDeviceTracks()
+    }
+
+    return createSyntheticAudioTrack()
+  }, [captureMode, createRealDeviceTracks, createSyntheticAudioTrack])
 
   const assertScopedTransport = useCallback(
     (transport: SfuClientTransportBundle) => {
@@ -161,6 +225,20 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   )
 
   const attachRemoteTrack = useCallback(async (track: MediaStreamTrack) => {
+    if (track.kind === 'video') {
+      const remoteVideoStream = remoteVideoStreamRef.current ?? new MediaStream()
+
+      remoteVideoStreamRef.current = remoteVideoStream
+      remoteVideoStream.addTrack(track)
+
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = remoteVideoStream
+        await remoteVideoRef.current.play().catch(() => undefined)
+      }
+
+      return
+    }
+
     const remoteStream = remoteStreamRef.current ?? new MediaStream()
 
     remoteStreamRef.current = remoteStream
@@ -346,9 +424,11 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     cleanup()
     setStatus('starting')
     setDetail('Starting scoped SFU private-call path')
-    setProducerId(null)
+    setProducerIds([])
     setConsumerIds([])
     setRemoteProducerIds([])
+    setLocalAudioEnabled(audio)
+    setLocalVideoEnabled(video)
 
     const adapter = new SfuClientAdapter()
     adapterRef.current = adapter
@@ -378,23 +458,29 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         runId,
       })
 
-      const localTrack = await createSyntheticAudioTrack()
-      const produced = await adapter.produce(localTrack, {
-        transportId: sendTransportId,
-        sessionScope,
-        stopTracks: false,
-      })
-      const backendProducerId = produced.backendProducer.producerId
+      const localTracks = await createLocalTracks()
+      const produced = await Promise.all(
+        localTracks.map((track) =>
+          adapter.produce(track, {
+            transportId: sendTransportId,
+            sessionScope,
+            stopTracks: false,
+          }),
+        ),
+      )
+      const backendProducerIds = produced
+        .map((item) => item.backendProducer.producerId)
+        .filter((producerId): producerId is string => Boolean(producerId))
 
-      if (!backendProducerId) {
-        throw new Error('Backend producer id is missing')
+      if (backendProducerIds.length !== localTracks.length) {
+        throw new Error('Backend producer metadata is missing')
       }
 
       if (startRunIdRef.current !== runId) {
         return
       }
 
-      setProducerId(backendProducerId)
+      setProducerIds(backendProducerIds)
 
       if (consumedProducerIdsRef.current.size === 0) {
         setStatus('waiting')
@@ -410,16 +496,41 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     }
   }, [
     assertScopedTransport,
+    audio,
     cleanup,
-    createSyntheticAudioTrack,
+    createLocalTracks,
     iceTransportPolicy,
     sessionScope,
     subscribeToProducerEvents,
+    video,
   ])
 
   useEffect(() => {
     void startSfuPrivatePath()
   }, [startSfuPrivatePath])
+
+  const toggleLocalAudio = useCallback(() => {
+    const nextEnabled = !localAudioEnabled
+
+    for (const track of localTracksRef.current.filter((track) => track.kind === 'audio')) {
+      track.enabled = nextEnabled
+    }
+
+    setLocalAudioEnabled(nextEnabled)
+  }, [localAudioEnabled])
+
+  const toggleLocalVideo = useCallback(() => {
+    const nextEnabled = !localVideoEnabled
+
+    for (const track of localTracksRef.current.filter((track) => track.kind === 'video')) {
+      track.enabled = nextEnabled
+    }
+
+    setLocalVideoEnabled(nextEnabled)
+  }, [localVideoEnabled])
+
+  const hasLocalAudioTrack = localTracksRef.current.some((track) => track.kind === 'audio')
+  const hasLocalVideoTrack = localTracksRef.current.some((track) => track.kind === 'video')
 
   return (
     <div className="flex h-full flex-col bg-zinc-950 text-zinc-50">
@@ -433,6 +544,28 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            aria-label={localAudioEnabled ? 'Mute microphone' : 'Unmute microphone'}
+            disabled={!hasLocalAudioTrack}
+            data-testid="private-sfu-audio-toggle"
+            onClick={toggleLocalAudio}
+          >
+            {localAudioEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+          </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            aria-label={localVideoEnabled ? 'Stop camera' : 'Start camera'}
+            disabled={!hasLocalVideoTrack}
+            data-testid="private-sfu-video-toggle"
+            onClick={toggleLocalVideo}
+          >
+            {localVideoEnabled ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
+          </Button>
           <Button
             type="button"
             size="icon"
@@ -464,7 +597,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
           </div>
           <div className="border border-zinc-800 p-3">
             <dt className="mb-1 text-zinc-500">Producer</dt>
-            <dd className="truncate text-zinc-100">{producerId ?? '-'}</dd>
+            <dd className="truncate text-zinc-100">{producerIds[0] ?? '-'}</dd>
           </div>
           <div className="border border-zinc-800 p-3">
             <dt className="mb-1 text-zinc-500">Consumer</dt>
@@ -474,8 +607,28 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         <div className="text-xs text-zinc-500" data-testid="private-sfu-remote-producer-count">
           Remote producers: {remoteProducerIds.length}
         </div>
+        <div className="text-xs text-zinc-500" data-testid="private-sfu-capture-mode">
+          Capture mode: {captureMode}
+        </div>
         <div className="text-xs text-zinc-500">
           Requested media: audio {audio ? 'on' : 'off'}, video {video ? 'on' : 'off'}
+        </div>
+        <div className="grid w-full max-w-xl grid-cols-1 gap-3 sm:grid-cols-2">
+          <video
+            ref={localVideoRef}
+            muted
+            playsInline
+            className="hidden aspect-video w-full bg-black object-cover data-[active=true]:block"
+            data-active={hasLocalVideoTrack}
+            data-testid="private-sfu-local-video"
+          />
+          <video
+            ref={remoteVideoRef}
+            playsInline
+            className="hidden aspect-video w-full bg-black object-cover data-[active=true]:block"
+            data-active={remoteProducerIds.length > 1}
+            data-testid="private-sfu-remote-video"
+          />
         </div>
         <audio ref={remoteAudioRef} controls className="h-10 w-full max-w-xl" />
       </div>
