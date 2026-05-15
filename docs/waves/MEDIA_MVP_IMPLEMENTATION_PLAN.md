@@ -648,6 +648,17 @@ Segment 108 result:
 - remaining blockers before small-room/channel replacement are physical camera QA on camera-equipped hardware, optional physical TURN relay signoff, SFU screen-share implementation or explicit MVP deferral, and broader small-room/channel load readiness
 - recommended next segment is `private-sfu-physical-camera-turn-qa`
 
+Segment 109 result:
+- status: `physical camera deferred / local TURN audio-only smoke pass-review / broad replacement hold`
+- physical camera QA is explicitly deferred because the local Windows device checks did not find active camera hardware; physical camera pass is not marked without a real camera
+- no-camera audio-only fallback remains pass and was rerun through the guarded private SFU smoke
+- local-only Docker coturn was started from `infra/coturn/docker-compose.local.yml`, and API/web were run locally with shell-only TURN env and `LOCAL_MEDIASOUP_ANNOUNCED_ADDRESS=10.8.1.13`
+- gated private SFU TURN relay smoke passed with `PRIVATE_SFU_SMOKE_CAPTURE=real-missing-camera` and `PRIVATE_SFU_SMOKE_TRANSPORT=turn`
+- TURN physical/audio-only status remains `review`, not full physical pass, because this segment did not include a human listening check over TURN with real microphone capture
+- ordinary private `?video=true` and channel `AUDIO`/`VIDEO` remain LiveKit; no broad replacement started
+- remaining blockers before small-room/channel replacement are physical camera QA on camera-equipped hardware, optional human-operated TURN audio signoff if required, SFU screen-share implementation or explicit MVP deferral, and broader small-room/channel load readiness
+- recommended next segment is `private-sfu-screen-share-mvp-decision`
+
 ## Dependency Summary
 
 Critical path:
@@ -735,7 +746,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `private-sfu-physical-camera-turn-qa`
+- `private-sfu-screen-share-mvp-decision`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -757,4 +768,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `private-sfu-physical-camera-turn-qa`
+- `private-sfu-screen-share-mvp-decision`

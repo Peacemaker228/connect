@@ -491,15 +491,21 @@ Done:
 - browser offline-restore smoke passed with `PRIVATE_SFU_SMOKE_NETWORK_INTERRUPT=1`, `PRIVATE_SFU_SMOKE_CAPTURE=real`, two authenticated users, stable remote producer count, restored `connected` status, and Restart SFU private call recovery
 - simulated no-camera fallback smoke passed again after the reconnect/status change
 - ordinary private calls and channel audio/video routes remain LiveKit, with no broad replacement started
+- `private-sfu-physical-camera-turn-qa` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_109_PRIVATE_SFU_PHYSICAL_CAMERA_TURN_QA.md`
+- physical camera QA is `deferred / no camera hardware available`; local Windows device checks did not find an active camera, so physical camera pass is not marked
+- local TURN relay audio-only smoke passed through Docker coturn with `PRIVATE_SFU_SMOKE_CAPTURE=real-missing-camera` and `PRIVATE_SFU_SMOKE_TRANSPORT=turn`
+- TURN physical/audio-only status remains `review`, because this segment did not include a human listening check over TURN with real microphone capture
+- no-camera audio-only fallback remains `pass / preserved`
+- ordinary private calls and channel audio/video routes remain LiveKit, with no broad replacement started
 
 Remaining:
 - run physical camera QA on a machine with camera hardware
-- optionally rerun physical-device TURN relay signoff if required for release confidence
+- optionally run human-operated TURN audio signoff with real microphone capture if required for release confidence
 - resolve or explicitly defer SFU screen-share lifecycle
 - broader small-room/channel load readiness remains unstarted
 
 Next likely work:
-- run `private-sfu-physical-camera-turn-qa`
+- run `private-sfu-screen-share-mvp-decision`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
