@@ -24,8 +24,9 @@ import type {
   UnpublishTrackCommandPayload,
   UpdateDesiredMediaStateCommandPayload,
 } from '@app-core/contracts'
+import { resolveBackendApiUrl } from '@app-core/api/backend-api-url'
 
-import { privateApiInstance } from '../api/http-client'
+import { getBackendApiBaseUrl, privateApiInstance } from '../api/http-client'
 
 export type LiveKitTokenRequest = {
   room: string
@@ -178,6 +179,11 @@ export type CloseMediasoupPrototypeProducerRequest = {
   participantSessionId?: string
 }
 
+export type CloseMediasoupPrototypeConsumerRequest = {
+  roomId?: string
+  participantSessionId?: string
+}
+
 export type MediasoupPrototypeProducerDiscoveryMetadata = {
   producerId: string
   roomId: string
@@ -195,6 +201,48 @@ export type MediasoupPrototypeProducerDiscoveryResponse = {
   producers: MediasoupPrototypeProducerDiscoveryMetadata[]
   reason?: string
 }
+
+export type SubscribeMediasoupPrototypeEventsRequest = {
+  roomId: string
+  participantSessionId: string
+}
+
+export type MediasoupPrototypeProducerSnapshotEvent = {
+  type: 'producer.snapshot'
+  roomId: string
+  producers: MediasoupPrototypeProducerDiscoveryMetadata[]
+  occurredAt: string
+}
+
+export type MediasoupPrototypeProducerPublishedEvent = {
+  type: 'producer.published'
+  roomId: string
+  producer: MediasoupPrototypeProducerDiscoveryMetadata
+  occurredAt: string
+}
+
+export type MediasoupPrototypeProducerClosedEvent = {
+  type: 'producer.closed'
+  roomId: string
+  participantSessionId: string
+  producerId: string
+  occurredAt: string
+}
+
+export type MediasoupPrototypeConsumerClosedEvent = {
+  type: 'consumer.closed'
+  roomId: string
+  participantSessionId: string
+  consumerId: string
+  producerId?: string
+  occurredAt: string
+}
+
+export type MediasoupPrototypeEvent =
+  | MediasoupPrototypeProducerSnapshotEvent
+  | MediasoupPrototypeProducerPublishedEvent
+  | MediasoupPrototypeProducerClosedEvent
+  | MediasoupPrototypeConsumerClosedEvent
 
 export type ConsumeMediasoupPrototypeRequest = {
   transportId?: string
@@ -291,6 +339,7 @@ const MEDIA_CONTROL_PATHS = {
   mediasoupPrototypeTransports: '/api/media/prototype/mediasoup/transports',
   mediasoupPrototypeProducers: '/api/media/prototype/mediasoup/producers',
   mediasoupPrototypeProducerDiscovery: '/api/media/prototype/mediasoup/producers/discover',
+  mediasoupPrototypeEvents: '/api/media/prototype/mediasoup/events',
   mediasoupPrototypeConsumers: '/api/media/prototype/mediasoup/consumers',
 } as const
 
@@ -584,3 +633,27 @@ export const consumeMediasoupPrototypeTrack = async (payload: ConsumeMediasoupPr
     MEDIA_CONTROL_PATHS.mediasoupPrototypeConsumers,
     payload,
   )
+
+export const closeMediasoupPrototypeConsumer = async (
+  consumerId: string,
+  payload: CloseMediasoupPrototypeConsumerRequest,
+) =>
+  postMediaCommand<MediasoupPrototypeConsumerResponse, CloseMediasoupPrototypeConsumerRequest>(
+    `${MEDIA_CONTROL_PATHS.mediasoupPrototypeConsumers}/${consumerId}/close`,
+    payload,
+  )
+
+export const createMediasoupPrototypeEventSource = ({
+  roomId,
+  participantSessionId,
+}: SubscribeMediasoupPrototypeEventsRequest) => {
+  const params = new URLSearchParams({
+    roomId,
+    participantSessionId,
+  })
+  const path = `${MEDIA_CONTROL_PATHS.mediasoupPrototypeEvents}?${params.toString()}`
+  const baseUrl = getBackendApiBaseUrl()
+  const url = baseUrl ? resolveBackendApiUrl(path, baseUrl) : path
+
+  return new EventSource(url, { withCredentials: true })
+}

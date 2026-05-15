@@ -2,6 +2,8 @@ import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { createWorker, version as mediasoupVersion, workerBin } from 'mediasoup';
 import type { types as mediasoupTypes } from 'mediasoup';
 
+import { MediaSignalingService } from './media-signaling.service';
+
 type LocalMediasoupPrototypeStatus = 'disabled' | 'ready' | 'failed';
 type LocalMediasoupTransportDirection = 'send' | 'recv';
 
@@ -109,6 +111,8 @@ const LOCAL_PROTOTYPE_MEDIA_CODECS: mediasoupTypes.RouterRtpCodecCapability[] = 
 
 @Injectable()
 export class MediasoupPrototypeService implements OnModuleDestroy {
+  constructor(private readonly mediaSignalingService: MediaSignalingService) {}
+
   private worker: mediasoupTypes.Worker | null = null;
   private router: mediasoupTypes.Router | null = null;
   private readonly transports = new Map<string, mediasoupTypes.WebRtcTransport>();
@@ -119,6 +123,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
   private readonly producerCreatedAt = new Map<string, string>();
   private readonly consumers = new Map<string, mediasoupTypes.Consumer>();
   private readonly consumerScopes = new Map<string, LocalMediasoupSessionScope>();
+  private readonly consumerProducerIds = new Map<string, string>();
   private lastFailure: string | null = null;
 
   async getHealth(): Promise<LocalMediasoupPrototypeHealth> {
@@ -391,17 +396,28 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
       });
 
       this.producers.set(producer.id, producer);
-      this.producerCreatedAt.set(producer.id, new Date().toISOString());
+      const createdAt = new Date().toISOString();
+
+      this.producerCreatedAt.set(producer.id, createdAt);
 
       if (scope) {
         this.producerScopes.set(producer.id, scope);
       }
 
       producer.observer.on('close', () => {
-        this.producers.delete(producer.id);
-        this.producerScopes.delete(producer.id);
-        this.producerCreatedAt.delete(producer.id);
+        this.removeProducerState(producer.id);
       });
+
+      if (scope) {
+        this.mediaSignalingService.publishProducerPublished({
+          producerId: producer.id,
+          roomId: scope.roomId,
+          participantSessionId: scope.participantSessionId,
+          kind: producer.kind,
+          paused: producer.paused,
+          createdAt,
+        });
+      }
 
       return {
         status: 'ready',
@@ -543,14 +559,14 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
       });
 
       this.consumers.set(consumer.id, consumer);
+      this.consumerProducerIds.set(consumer.id, producerId);
 
       if (scope) {
         this.consumerScopes.set(consumer.id, scope);
       }
 
       consumer.observer.on('close', () => {
-        this.consumers.delete(consumer.id);
-        this.consumerScopes.delete(consumer.id);
+        this.removeConsumerState(consumer.id);
       });
 
       return {
@@ -636,9 +652,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     const producerScope = this.producerScopes.get(producerId);
 
     producer.close();
-    this.producers.delete(producerId);
-    this.producerScopes.delete(producerId);
-    this.producerCreatedAt.delete(producerId);
+    this.removeProducerState(producerId);
 
     return {
       status: 'ready',
@@ -648,6 +662,82 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
       participantSessionId: producerScope?.participantSessionId ?? scope?.participantSessionId,
       kind: producer.kind,
       paused: producer.paused,
+    };
+  }
+
+  closeConsumer({
+    consumerId,
+    scope,
+  }: {
+    consumerId: string | undefined;
+    scope?: LocalMediasoupSessionScope;
+  }): LocalMediasoupConsumerMetadata {
+    if (process.env.NODE_ENV === 'production') {
+      return {
+        status: 'disabled',
+        enabled: false,
+        consumerId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        reason: 'Local mediasoup consumer close prototype is disabled in production runtime',
+      };
+    }
+
+    if (!consumerId) {
+      return {
+        status: 'failed',
+        enabled: false,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        reason: 'consumerId is required',
+      };
+    }
+
+    const consumer = this.consumers.get(consumerId);
+    const producerId = this.consumerProducerIds.get(consumerId);
+
+    if (!consumer || consumer.closed) {
+      return {
+        status: 'ready',
+        enabled: true,
+        consumerId,
+        producerId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+      };
+    }
+
+    const scopeCheck = this.validateConsumerOwnerScope(consumerId, scope);
+
+    if (!scopeCheck.enabled) {
+      return {
+        status: 'failed',
+        enabled: false,
+        consumerId,
+        producerId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        reason: scopeCheck.reason,
+      };
+    }
+
+    const consumerScope = this.consumerScopes.get(consumerId);
+
+    consumer.close();
+    this.removeConsumerState(consumerId);
+
+    return {
+      status: 'ready',
+      enabled: true,
+      consumerId,
+      producerId,
+      roomId: consumerScope?.roomId ?? scope?.roomId,
+      participantSessionId: consumerScope?.participantSessionId ?? scope?.participantSessionId,
+      kind: consumer.kind,
+      rtpParameters: consumer.rtpParameters,
+      type: consumer.type,
+      paused: consumer.paused,
+      producerPaused: consumer.producerPaused,
     };
   }
 
@@ -912,7 +1002,80 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     };
   }
 
+  private validateConsumerOwnerScope(
+    consumerId: string,
+    scope: LocalMediasoupSessionScope | undefined,
+  ): {
+    enabled: boolean;
+    reason?: string;
+  } {
+    const consumerScope = this.consumerScopes.get(consumerId);
+
+    if (!consumerScope && !scope) {
+      return {
+        enabled: true,
+      };
+    }
+
+    if (!consumerScope || !scope) {
+      return {
+        enabled: false,
+        reason: 'roomId and participantSessionId are required for scoped mediasoup consumer close',
+      };
+    }
+
+    if (
+      consumerScope.roomId !== scope.roomId ||
+      consumerScope.participantSessionId !== scope.participantSessionId
+    ) {
+      return {
+        enabled: false,
+        reason: 'Scoped mediasoup consumer close denied',
+      };
+    }
+
+    return {
+      enabled: true,
+    };
+  }
+
+  private removeProducerState(producerId: string) {
+    const producer = this.producers.get(producerId);
+    const producerScope = this.producerScopes.get(producerId);
+
+    this.producers.delete(producerId);
+    this.producerScopes.delete(producerId);
+    this.producerCreatedAt.delete(producerId);
+
+    if (producerScope && producer) {
+      this.mediaSignalingService.publishProducerClosed({
+        roomId: producerScope.roomId,
+        participantSessionId: producerScope.participantSessionId,
+        producerId,
+      });
+    }
+  }
+
+  private removeConsumerState(consumerId: string) {
+    const consumerScope = this.consumerScopes.get(consumerId);
+    const producerId = this.consumerProducerIds.get(consumerId);
+
+    this.consumers.delete(consumerId);
+    this.consumerScopes.delete(consumerId);
+    this.consumerProducerIds.delete(consumerId);
+
+    if (consumerScope) {
+      this.mediaSignalingService.publishConsumerClosed({
+        roomId: consumerScope.roomId,
+        participantSessionId: consumerScope.participantSessionId,
+        consumerId,
+        producerId,
+      });
+    }
+  }
+
   private clearPrototypeState() {
+    this.consumerProducerIds.clear();
     this.consumerScopes.clear();
     this.consumers.clear();
     this.producerCreatedAt.clear();

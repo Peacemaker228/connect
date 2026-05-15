@@ -9,6 +9,7 @@ import { MediaParticipantSessionService } from './media-participant-session.serv
 import { MediaPermissionService } from './media-permission.service';
 import { MEDIA_PROVIDER_ADAPTER } from './media-provider.adapter';
 import { MediaRoomService } from './media-room.service';
+import { MediaSignalingService } from './media-signaling.service';
 import { TurnCredentialService } from './turn-credential.service';
 
 @Module({
@@ -20,6 +21,7 @@ import { TurnCredentialService } from './turn-credential.service';
     MediaRoomService,
     MediaParticipantSessionService,
     MediaPermissionService,
+    MediaSignalingService,
     MediasoupPrototypeService,
     TurnCredentialService,
     {

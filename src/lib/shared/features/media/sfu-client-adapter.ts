@@ -2,14 +2,17 @@
 
 import { Device, type types as mediasoupClientTypes } from 'mediasoup-client'
 import {
+  closeMediasoupPrototypeConsumer,
   closeMediasoupPrototypeProducer,
   consumeMediasoupPrototypeTrack,
   connectMediasoupPrototypeTransport,
+  createMediasoupPrototypeEventSource,
   createMediasoupPrototypeTransport,
   discoverMediasoupPrototypeProducers,
   getMediasoupPrototypeHealth,
   produceMediasoupPrototypeTrack,
   type MediasoupPrototypeConsumerResponse,
+  type MediasoupPrototypeEvent,
   type MediasoupPrototypeProducerDiscoveryResponse,
   type MediasoupPrototypeProducerResponse,
   type MediasoupPrototypeTransportDirection,
@@ -75,6 +78,7 @@ export class SfuClientAdapter {
   private readonly transports = new Map<string, mediasoupClientTypes.Transport<SfuClientTransportAppData>>()
   private readonly backendProducers = new Map<string, MediasoupPrototypeProducerResponse>()
   private readonly producers = new Map<string, mediasoupClientTypes.Producer<mediasoupClientTypes.AppData>>()
+  private readonly backendConsumers = new Map<string, MediasoupPrototypeConsumerResponse>()
   private readonly consumers = new Map<string, mediasoupClientTypes.Consumer<mediasoupClientTypes.AppData>>()
 
   async createTransport({
@@ -185,6 +189,10 @@ export class SfuClientAdapter {
     return discoverMediasoupPrototypeProducers(sessionScope)
   }
 
+  createProducerEventSource(sessionScope: SfuClientSessionScope): EventSource {
+    return createMediasoupPrototypeEventSource(sessionScope)
+  }
+
   async consume(
     metadata: MediasoupPrototypeConsumerResponse,
     input: ConsumeSfuClientMetadataInput = {},
@@ -214,9 +222,11 @@ export class SfuClientAdapter {
     })
 
     this.consumers.set(consumer.id, consumer)
+    this.backendConsumers.set(consumer.id, metadata)
 
     consumer.observer.on('close', () => {
       this.consumers.delete(consumer.id)
+      this.backendConsumers.delete(consumer.id)
     })
 
     return {
@@ -227,6 +237,17 @@ export class SfuClientAdapter {
   }
 
   close() {
+    for (const backendConsumer of this.backendConsumers.values()) {
+      if (!backendConsumer.consumerId) {
+        continue
+      }
+
+      void closeMediasoupPrototypeConsumer(backendConsumer.consumerId, {
+        roomId: backendConsumer.roomId,
+        participantSessionId: backendConsumer.participantSessionId,
+      }).catch(() => undefined)
+    }
+
     for (const backendProducer of this.backendProducers.values()) {
       if (!backendProducer.producerId) {
         continue
@@ -251,6 +272,7 @@ export class SfuClientAdapter {
     }
 
     this.consumers.clear()
+    this.backendConsumers.clear()
     this.producers.clear()
     this.backendProducers.clear()
     this.transports.clear()
@@ -375,3 +397,5 @@ export class SfuClientAdapter {
     ]
   }
 }
+
+export type { MediasoupPrototypeEvent }

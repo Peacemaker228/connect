@@ -351,7 +351,7 @@ Next likely work:
 
 ### Stage 8. Media MVP
 
-Status: `in progress / gated private two-user SFU direct and TURN passed`
+Status: `in progress / private SFU signaling lifecycle review`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -441,13 +441,19 @@ Done:
 - backend producer close and latest-per-participant discovery prevent stale dev-remount producers from being subscribed
 - authenticated two-user private browser smoke passed with both participants reaching `connected` and each observing one remote producer
 - private TURN relay smoke passed locally through `sfuTransport=turn`, relay-only ICE policy, backend-issued TURN credentials, and coturn authenticated allocation/permission
+- `private-sfu-signaling-lifecycle-and-controls` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_101_PRIVATE_SFU_SIGNALING_LIFECYCLE_CONTROLS.md`
+- private SFU producer discovery in the gated adapter now uses authenticated project-owned SSE events instead of polling
+- backend media prototype lifecycle events now cover producer snapshot, producer published, producer closed, and consumer closed
+- explicit producer and consumer cleanup paths exist, and `SfuClientAdapter.close()` requests backend consumer cleanup before producer cleanup
+- ordinary private calls and channel audio/video routes remain LiveKit, with SFU still explicit-gated to non-production conversation routes
+- guarded Playwright browser smoke exists for repeatable two-user private SFU direct/TURN runs, but the latest local rerun remains review because host/API URL cookie mismatch and route-guard instability need a stabilized smoke env
 
 Remaining:
-- replace polling private SFU discovery with project-owned media signaling/events and controls
+- stabilize local browser smoke env and rerun post-dedupe direct + TURN private SFU smoke
 - run `final-media-mvp-parity-load-smoke`
 
 Next likely work:
-- run `private-sfu-signaling-lifecycle-and-controls`
+- run `private-sfu-browser-smoke-env-stabilization`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
