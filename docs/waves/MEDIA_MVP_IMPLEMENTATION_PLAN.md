@@ -574,6 +574,19 @@ Acceptance:
 - screen-share path is either working or explicitly deferred with preserved LiveKit fallback
 - no LiveKit regression until replacement is accepted
 
+Segment 103 result:
+- status: `private direct pass / private TURN pass / broader replacement hold`
+- final parity smoke confirms ordinary private `?video=true` still falls back to `LiveKitClientAdapter` unless an explicit non-production conversation SFU gate is present
+- channel `AUDIO` and `VIDEO` routes remain LiveKit by static boundary because SFU gate requires `mediaEntry.scope.kind === 'conversation'`
+- backend provider binding remains `LiveKitMediaProviderAdapter`, and control-plane join still emits `providerAccess.metadata.provider = 'livekit-bridge'`
+- direct private SFU browser smoke passed with two authenticated participants connected, one remote producer observed per participant, ordinary private LiveKit fallback assertion, and private leave redirect preserved
+- TURN relay private SFU browser smoke passed with local Docker coturn and relay-only query mode
+- screen-share is `deferred` for SFU because the private SFU path does not implement screen-share producer/consumer lifecycle yet; LiveKit fallback still owns the existing screen-share controls
+- reconnect is `review` because SFU cleanup/restart exists, but explicit reconnect/resume smoke is not yet implemented
+- device controls and real microphone/camera capture parity are `deferred`; private SFU smoke still uses synthetic audio
+- small-room/channel load readiness is `review / hold broad replacement`; current proof is two-user private SFU local smoke only, with process-local prototype signaling/registry state
+- final recommendation is `split next segment`: close private SFU device-controls/reconnect parity before any channel/small-room route replacement
+
 ## Dependency Summary
 
 Critical path:
@@ -661,7 +674,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `final-media-mvp-parity-load-smoke`
+- `private-sfu-device-controls-reconnect-parity`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -683,4 +696,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `final-media-mvp-parity-load-smoke`
+- `private-sfu-device-controls-reconnect-parity`
