@@ -540,6 +540,16 @@ Segment 101 result:
 - direct and TURN browser smoke are `review`, not final pass, because the local dev run exposed host/API URL cookie mismatch and route-guard instability after the lifecycle changes
 - next segment should stabilize the local browser smoke environment and rerun direct + TURN before small-room/channel replacement
 
+Segment 102 result:
+- status: `private direct pass / private TURN pass / smoke env stabilized`
+- `tests/browser/private-sfu-two-user-smoke.spec.ts` now defaults to a single `localhost` smoke profile and fails early if API and web hostnames diverge, preventing auth-cookie route-guard mismatch between `localhost` and `127.0.0.1`
+- the smoke supports `PRIVATE_SFU_SMOKE_HOST`, `PRIVATE_SFU_SMOKE_API_PORT`, `PRIVATE_SFU_SMOKE_WEB_PORT`, and explicit API/web URL overrides, with `/api` base URL normalization
+- `bun run test:browser:private-sfu` is now the repo-owned entrypoint for the guarded private SFU two-user browser smoke; normal `bun run test:browser` remains safe-skip without `PRIVATE_SFU_BROWSER_SMOKE=1`
+- direct two-user private SFU browser smoke passed with both participants connected, one remote producer observed per participant, LiveKit default preserved for ordinary private `?video=true`, and private leave redirect preserved
+- TURN relay private SFU browser smoke passed with local Docker coturn, relay-only query mode, backend-issued TURN credentials, both participants connected, one remote producer observed per participant, and LiveKit default preserved
+- ordinary private calls and channel audio/video routes remain LiveKit; small-room/channel replacement has not started
+- next segment should run final media MVP parity/load smoke before deciding whether broader replacement work can start
+
 ### 13. `final-media-mvp-parity-load-smoke`
 
 Goal:
@@ -651,7 +661,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `private-sfu-browser-smoke-env-stabilization`
+- `final-media-mvp-parity-load-smoke`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -673,4 +683,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `private-sfu-browser-smoke-env-stabilization`
+- `final-media-mvp-parity-load-smoke`

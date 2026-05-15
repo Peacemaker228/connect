@@ -21,13 +21,36 @@ type ServerResponse = {
 }
 
 const isSmokeEnabled = process.env.PRIVATE_SFU_BROWSER_SMOKE === '1'
-const apiBaseUrl = process.env.PRIVATE_SFU_SMOKE_API_URL ?? 'http://127.0.0.1:4000'
-const webBaseUrl = process.env.PRIVATE_SFU_SMOKE_WEB_URL ?? 'http://127.0.0.1:3000'
+const smokeScheme = process.env.PRIVATE_SFU_SMOKE_SCHEME ?? 'http'
+const smokeHost = process.env.PRIVATE_SFU_SMOKE_HOST ?? 'localhost'
+const smokeApiPort = process.env.PRIVATE_SFU_SMOKE_API_PORT ?? '4000'
+const smokeWebPort = process.env.PRIVATE_SFU_SMOKE_WEB_PORT ?? '3000'
+const apiBaseUrl = normalizeBaseUrl(
+  process.env.PRIVATE_SFU_SMOKE_API_URL ?? `${smokeScheme}://${smokeHost}:${smokeApiPort}`,
+)
+const webBaseUrl = normalizeBaseUrl(
+  process.env.PRIVATE_SFU_SMOKE_WEB_URL ?? `${smokeScheme}://${smokeHost}:${smokeWebPort}`,
+)
+const apiOrigin = new URL(apiBaseUrl)
+const webOrigin = new URL(webBaseUrl)
 const transportQuery =
   process.env.PRIVATE_SFU_SMOKE_TRANSPORT === 'turn' ? '&sfuTransport=turn' : ''
 
 test.describe('private SFU two-user browser smoke', () => {
   test.skip(!isSmokeEnabled, 'Set PRIVATE_SFU_BROWSER_SMOKE=1 with local API/web to run this smoke.')
+
+  test.beforeAll(() => {
+    expect(
+      apiOrigin.hostname,
+      [
+        'PRIVATE_SFU_SMOKE_API_URL and PRIVATE_SFU_SMOKE_WEB_URL must use the same hostname',
+        'so backend auth cookies set by the API request context are visible to the Next route guard.',
+        `API: ${apiBaseUrl}`,
+        `WEB: ${webBaseUrl}`,
+        'Use PRIVATE_SFU_SMOKE_HOST=localhost or PRIVATE_SFU_SMOKE_HOST=127.0.0.1 for the whole smoke profile.',
+      ].join(' '),
+    ).toBe(webOrigin.hostname)
+  })
 
   test('connects two authenticated private SFU participants through media signaling', async ({ browser }) => {
     test.setTimeout(90_000)
@@ -117,7 +140,7 @@ const registerUser = async (context: BrowserContext, label: string) => {
 }
 
 const getJson = async <TResponse>(context: BrowserContext, path: string) => {
-  const response = await context.request.get(`${apiBaseUrl}${path}`)
+  const response = await context.request.get(toApiUrl(path))
 
   expect(response.ok(), `${path} should return success`).toBe(true)
 
@@ -129,7 +152,7 @@ const postJson = async <TResponse = unknown>(
   path: string,
   data: unknown,
 ) => {
-  const response = await context.request.post(`${apiBaseUrl}${path}`, {
+  const response = await context.request.post(toApiUrl(path), {
     data,
   })
 
@@ -146,4 +169,18 @@ const findMember = (server: ServerResponse, profileId: string) => {
   }
 
   return member
+}
+
+function normalizeBaseUrl(value: string) {
+  return value.trim().replace(/\/+$/, '')
+}
+
+function toApiUrl(path: string) {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+
+  if (apiBaseUrl.endsWith('/api') && normalizedPath.startsWith('/api/')) {
+    return `${apiBaseUrl}${normalizedPath.slice('/api'.length)}`
+  }
+
+  return `${apiBaseUrl}${normalizedPath}`
 }

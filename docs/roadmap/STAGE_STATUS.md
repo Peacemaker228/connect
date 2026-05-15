@@ -447,13 +447,17 @@ Done:
 - explicit producer and consumer cleanup paths exist, and `SfuClientAdapter.close()` requests backend consumer cleanup before producer cleanup
 - ordinary private calls and channel audio/video routes remain LiveKit, with SFU still explicit-gated to non-production conversation routes
 - guarded Playwright browser smoke exists for repeatable two-user private SFU direct/TURN runs, but the latest local rerun remains review because host/API URL cookie mismatch and route-guard instability need a stabilized smoke env
+- `private-sfu-browser-smoke-env-stabilization` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_102_PRIVATE_SFU_BROWSER_SMOKE_ENV_STABILIZATION.md`
+- private SFU browser smoke now has a stable single-host local profile so API auth cookies and Next route guards do not diverge between `localhost` and `127.0.0.1`
+- direct two-user private SFU browser smoke passed through the SSE lifecycle with both participants connected and one remote producer observed per participant
+- TURN relay private SFU browser smoke passed locally through Docker coturn and relay-only query mode
+- ordinary private calls and channel audio/video routes remain LiveKit, with SFU still explicit-gated to non-production conversation routes
 
 Remaining:
-- stabilize local browser smoke env and rerun post-dedupe direct + TURN private SFU smoke
 - run `final-media-mvp-parity-load-smoke`
 
 Next likely work:
-- run `private-sfu-browser-smoke-env-stabilization`
+- run `final-media-mvp-parity-load-smoke`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
