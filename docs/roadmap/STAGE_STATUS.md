@@ -473,13 +473,33 @@ Done:
 - network interruption reconnect/resume remains `review / not manually executed`; Segment 104 only proved user-triggered restart recovery
 - manual TURN relay with physical devices remains `review / not manually executed`; automated local coturn relay smoke remains pass from Segment 104
 - ordinary private calls and channel audio/video routes remain LiveKit, with no broad replacement started
+- `private-sfu-real-capture-device-fallback` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_106_PRIVATE_SFU_REAL_CAPTURE_DEVICE_FALLBACK.md`
+- gated private SFU real capture now retries audio-only when requested audio+video capture fails because the camera is missing
+- no-camera fallback UI reports `Camera not found; continuing audio-only` and disables the camera control when no video track exists
+- direct synthetic private SFU smoke, direct real audio+video fake-device smoke, and direct simulated no-camera fallback smoke passed locally
+- ordinary private calls and channel audio/video routes remain LiveKit, with no broad replacement started
+- `private-sfu-operator-no-camera-fallback-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_107_PRIVATE_SFU_OPERATOR_NO_CAMERA_FALLBACK_RERUN.md`
+- physical no-camera fallback rerun is `pass / operator confirmed`: two authenticated private SFU clients using `?video=true&mediaProvider=sfu&sfuCapture=real` reached audio-only real-capture behavior on the no-camera machine and real voice audio was heard in both directions
+- the earlier one-sided hum was explained by one client still using synthetic capture; physical mic QA requires both clients to use `sfuCapture=real`
+- Segment 106 remains the automated baseline for simulated missing-camera controls, including microphone toggle behavior and disabled camera control
+- operator-observed inflated `Remote producers` counts and random stale audio were traced to stale SFU producers from older sessions in the same conversation room
+- media join now supersedes older joined sessions for the same room identity, producer discovery cleans non-joined session producers, and leave closes scoped mediasoup resources
+- stale producer lifecycle verification passed with two consecutive private SFU browser smokes plus a simulated no-camera fallback smoke on the same API process
+- ordinary private calls and channel audio/video routes remain LiveKit, with no broad replacement started
+- `private-sfu-network-interruption-reconnect-qa` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_108_PRIVATE_SFU_NETWORK_INTERRUPTION_RECONNECT_QA.md`
+- gated private SFU now reports transient post-snapshot media signaling interruption as `reconnecting` instead of terminal `failed`
+- browser offline-restore smoke passed with `PRIVATE_SFU_SMOKE_NETWORK_INTERRUPT=1`, `PRIVATE_SFU_SMOKE_CAPTURE=real`, two authenticated users, stable remote producer count, restored `connected` status, and Restart SFU private call recovery
+- simulated no-camera fallback smoke passed again after the reconnect/status change
+- ordinary private calls and channel audio/video routes remain LiveKit, with no broad replacement started
 
 Remaining:
-- add graceful real-capture fallback for missing camera hardware, then rerun physical-device and network interruption QA before any small-room/channel route switch
+- run physical camera QA on a machine with camera hardware
+- optionally rerun physical-device TURN relay signoff if required for release confidence
 - resolve or explicitly defer SFU screen-share lifecycle
+- broader small-room/channel load readiness remains unstarted
 
 Next likely work:
-- run `private-sfu-real-capture-device-fallback`
+- run `private-sfu-physical-camera-turn-qa`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

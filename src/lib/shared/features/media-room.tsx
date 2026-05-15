@@ -47,6 +47,7 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
   const privateSfuIceTransportPolicy =
     searchParams?.get('sfuTransport') === 'turn' || searchParams?.get('sfuIce') === 'relay' ? 'relay' : undefined
   const privateSfuCaptureMode = searchParams?.get('sfuCapture') === 'real' ? 'real' : 'synthetic'
+  const privateSfuSimulateMissingCamera = searchParams?.get('sfuSimulateMissingCamera') === 'true'
 
   const handleLeave = useCallback(() => {
     void leaveControlPlane()
@@ -66,6 +67,7 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
         video={video}
         iceTransportPolicy={privateSfuIceTransportPolicy}
         captureMode={privateSfuCaptureMode}
+        simulateMissingCamera={privateSfuSimulateMissingCamera}
         onLeave={handleLeave}
       />
     )

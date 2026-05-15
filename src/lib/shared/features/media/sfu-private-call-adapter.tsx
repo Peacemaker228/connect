@@ -13,7 +13,7 @@ import {
   type SfuClientTransportBundle,
 } from './sfu-client-adapter'
 
-type SfuPrivateCallStatus = 'idle' | 'starting' | 'waiting' | 'connected' | 'failed'
+type SfuPrivateCallStatus = 'idle' | 'starting' | 'waiting' | 'connected' | 'reconnecting' | 'failed'
 
 type RemoteProducerMetadata = Extract<MediasoupPrototypeEvent, { type: 'producer.published' }>['producer']
 
@@ -23,7 +23,33 @@ type SfuPrivateCallAdapterProps = {
   video: boolean
   iceTransportPolicy?: RTCIceTransportPolicy
   captureMode?: 'synthetic' | 'real'
+  simulateMissingCamera?: boolean
   onLeave: () => void
+}
+
+const MISSING_CAMERA_NOTICE = 'Camera not found; continuing audio-only'
+
+const getMediaErrorMessage = (error: unknown) => {
+  return error instanceof Error ? error.message : 'Unknown media capture failure'
+}
+
+const isMissingVideoCaptureError = (error: unknown) => {
+  if (!(error instanceof Error)) {
+    return false
+  }
+
+  const name = error.name.toLowerCase()
+  const message = error.message.toLowerCase()
+
+  return (
+    name === 'notfounderror' ||
+    name === 'devicesnotfounderror' ||
+    name === 'overconstrainederror' ||
+    message.includes('not found') ||
+    message.includes('requested device not found') ||
+    message.includes('no camera') ||
+    message.includes('no video')
+  )
 }
 
 const waitForRemoteTrackFlow = async (track: MediaStreamTrack) => {
@@ -61,6 +87,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   video,
   iceTransportPolicy,
   captureMode = 'synthetic',
+  simulateMissingCamera = false,
   onLeave,
 }) => {
   const adapterRef = useRef<SfuClientAdapter | null>(null)
@@ -84,6 +111,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   const [remoteProducerIds, setRemoteProducerIds] = useState<string[]>([])
   const [localAudioEnabled, setLocalAudioEnabled] = useState(audio)
   const [localVideoEnabled, setLocalVideoEnabled] = useState(video)
+  const [captureNotice, setCaptureNotice] = useState<string | null>(null)
 
   const sessionScope: SfuClientSessionScope = useMemo(
     () => ({
@@ -177,15 +205,47 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       throw new Error('Browser media device capture is not available')
     }
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: audio
-        ? {
-            echoCancellation: true,
-            noiseSuppression: true,
-          }
-        : false,
-      video,
-    })
+    const audioConstraints = audio
+      ? {
+          echoCancellation: true,
+          noiseSuppression: true,
+        }
+      : false
+    let stream: MediaStream
+    let continuedAudioOnly = false
+
+    try {
+      if (simulateMissingCamera && video) {
+        throw new DOMException('Requested device not found', 'NotFoundError')
+      }
+
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: audioConstraints,
+        video,
+      })
+    } catch (error) {
+      if (!video || !audio || !isMissingVideoCaptureError(error)) {
+        throw new Error(`Local media capture failed: ${getMediaErrorMessage(error)}`)
+      }
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: audioConstraints,
+          video: false,
+        })
+        continuedAudioOnly = true
+      } catch (audioOnlyError) {
+        throw new Error(
+          `Camera was not found and audio-only fallback failed: ${getMediaErrorMessage(audioOnlyError)}`,
+        )
+      }
+    }
+
+    if (continuedAudioOnly) {
+      setCaptureNotice(MISSING_CAMERA_NOTICE)
+      setDetail(MISSING_CAMERA_NOTICE)
+    }
+
     const tracks = stream.getTracks()
     const videoTrack = stream.getVideoTracks()[0]
 
@@ -203,7 +263,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     }
 
     return tracks
-  }, [audio, video])
+  }, [audio, simulateMissingCamera, video])
 
   const createLocalTracks = useCallback(async () => {
     if (captureMode === 'real') {
@@ -342,8 +402,8 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
             return
           }
 
-          setStatus('failed')
-          setDetail('Media signaling event stream failed')
+          setStatus('reconnecting')
+          setDetail('Media signaling event stream interrupted; waiting for browser reconnect or manual restart')
         }
         eventSource.onmessage = (message) => {
           void (async () => {
@@ -371,6 +431,12 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
               if (remoteProducers.length === 0 && consumedProducerIdsRef.current.size === 0) {
                 setStatus('waiting')
                 setDetail('Media signaling subscribed; waiting for remote participant producer')
+                return
+              }
+
+              if (remoteProducers.length > 0 && consumedProducerIdsRef.current.size > 0) {
+                setStatus('connected')
+                setDetail('Media signaling snapshot received; remote producer is consumed')
               }
 
               return
@@ -429,6 +495,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     setRemoteProducerIds([])
     setLocalAudioEnabled(audio)
     setLocalVideoEnabled(video)
+    setCaptureNotice(null)
 
     const adapter = new SfuClientAdapter()
     adapterRef.current = adapter
@@ -610,6 +677,11 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         <div className="text-xs text-zinc-500" data-testid="private-sfu-capture-mode">
           Capture mode: {captureMode}
         </div>
+        {captureNotice ? (
+          <div className="text-xs text-amber-300" data-testid="private-sfu-capture-notice">
+            {captureNotice}
+          </div>
+        ) : null}
         <div className="text-xs text-zinc-500">
           Requested media: audio {audio ? 'on' : 'off'}, video {video ? 'on' : 'off'}
         </div>

@@ -612,6 +612,42 @@ Segment 105 result:
 - ordinary private `?video=true` and channel `AUDIO`/`VIDEO` remain LiveKit; no broad replacement started
 - recommended next segment is `private-sfu-real-capture-device-fallback`, so no-camera machines can continue audio-only physical-device QA without failing the whole call
 
+Segment 106 result:
+- status: `no-camera fallback pass-simulated / synthetic pass / LiveKit preserved`
+- gated private SFU `sfuCapture=real` still attempts requested audio+video first, but now retries audio-only when video capture fails because the camera is missing and `audio=true`
+- the SFU UI now reports `Camera not found; continuing audio-only` and disables the camera control when no video track exists
+- if audio-only fallback also fails, the failure reason explicitly says camera was not found and audio-only fallback failed
+- browser smoke added `PRIVATE_SFU_SMOKE_CAPTURE=real-missing-camera` to simulate missing camera under the non-production private SFU gate
+- direct synthetic private SFU smoke passed, confirming the default synthetic path did not regress
+- direct real audio+video fake-device smoke passed, confirming the full real-capture path remains compatible
+- direct simulated no-camera fallback smoke passed with both participants connected, one remote producer per participant, capture notice visible, microphone toggle working, and camera control disabled
+- ordinary private `?video=true` and channel `AUDIO`/`VIDEO` remain LiveKit; no broad replacement started
+- recommended next segment is an operator rerun on the physical no-camera machine that exposed the original blocker
+
+Segment 107 result:
+- status: `operator no-camera audio-only fallback pass / stale producer lifecycle fixed / broad replacement hold`
+- physical no-camera fallback is now marked pass based on operator evidence: two authenticated private SFU clients were rerun with `?video=true&mediaProvider=sfu&sfuCapture=real`, reached the real-capture audio-only path, and real voice audio was heard in both directions
+- the earlier one-sided hum was explained by one client still using synthetic capture; synthetic capture intentionally produces generated test audio and is not a valid physical mic QA mode
+- Segment 106 remains the automated proof for synthetic, fake-device real audio+video, simulated missing-camera audio-only fallback, microphone toggle, and disabled camera control behavior
+- operator-observed inflated `Remote producers` counts and random stale audio were traced to stale SFU producers from older sessions in the same conversation room
+- media join now marks older joined sessions for the same room identity as `left`, producer discovery cleans producers for non-joined sessions, and media leave closes scoped mediasoup resources
+- two consecutive private SFU browser smoke runs plus a subsequent simulated no-camera fallback run passed on the same API process without inflated producer counts
+- ordinary private `?video=true` and channel `AUDIO`/`VIDEO` remain LiveKit; no broad replacement started
+- remaining blockers before small-room/channel replacement are real network interruption reconnect/resume QA, physical camera QA on a machine with camera hardware, optional physical TURN relay signoff, and SFU screen-share implementation or explicit MVP deferral
+- recommended next segment is `private-sfu-network-interruption-reconnect-qa`
+
+Segment 108 result:
+- status: `network interruption pass / restart recovery pass / broad replacement hold`
+- gated private SFU now treats transient media signaling interruption after the initial snapshot as `reconnecting` instead of terminal `failed`
+- when the browser restores the SSE stream and receives a fresh producer snapshot, the private SFU UI returns to `connected` if the remote producer remains consumed
+- the guarded private SFU browser smoke now supports `PRIVATE_SFU_SMOKE_NETWORK_INTERRUPT=1`, forcing one authenticated browser context offline for 6 seconds before restoring it
+- browser offline-restore smoke passed with `PRIVATE_SFU_SMOKE_CAPTURE=real`, two authenticated participants, stable remote producer count, restored `connected` status, and successful Restart SFU private call recovery
+- simulated no-camera fallback smoke passed again after the reconnect/status change, preserving the Segment 107 audio-only fallback result
+- stale producer cleanup remained stable; no inflated remote producer count was observed
+- ordinary private `?video=true` and channel `AUDIO`/`VIDEO` remain LiveKit; no broad replacement started
+- remaining blockers before small-room/channel replacement are physical camera QA on camera-equipped hardware, optional physical TURN relay signoff, SFU screen-share implementation or explicit MVP deferral, and broader small-room/channel load readiness
+- recommended next segment is `private-sfu-physical-camera-turn-qa`
+
 ## Dependency Summary
 
 Critical path:
@@ -699,7 +735,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `private-sfu-real-capture-device-fallback`
+- `private-sfu-physical-camera-turn-qa`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -721,4 +757,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `private-sfu-real-capture-device-fallback`
+- `private-sfu-physical-camera-turn-qa`
