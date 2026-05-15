@@ -2,6 +2,7 @@
 
 import { Device, type types as mediasoupClientTypes } from 'mediasoup-client'
 import {
+  closeMediasoupPrototypeProducer,
   consumeMediasoupPrototypeTrack,
   connectMediasoupPrototypeTransport,
   createMediasoupPrototypeTransport,
@@ -226,6 +227,17 @@ export class SfuClientAdapter {
   }
 
   close() {
+    for (const backendProducer of this.backendProducers.values()) {
+      if (!backendProducer.producerId) {
+        continue
+      }
+
+      void closeMediasoupPrototypeProducer(backendProducer.producerId, {
+        roomId: backendProducer.roomId,
+        participantSessionId: backendProducer.participantSessionId,
+      }).catch(() => undefined)
+    }
+
     for (const consumer of this.consumers.values()) {
       consumer.close()
     }

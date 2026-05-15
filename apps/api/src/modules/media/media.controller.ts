@@ -129,6 +129,11 @@ type DiscoverMediasoupPrototypeProducersBody = {
   participantSessionId?: string;
 };
 
+type CloseMediasoupPrototypeProducerBody = {
+  roomId?: string;
+  participantSessionId?: string;
+};
+
 @Controller('media')
 export class MediaController {
   constructor(
@@ -357,6 +362,21 @@ export class MediaController {
     const scope = this.resolvePrototypeSessionScope(profileId, body);
 
     return this.mediasoupPrototypeService.listProducers(scope);
+  }
+
+  @Post('prototype/mediasoup/producers/:producerId/close')
+  @UseGuards(RequireAuthGuard)
+  closeMediasoupPrototypeProducer(
+    @CurrentProfileId() profileId: string | undefined,
+    @Param('producerId') producerId: string | undefined,
+    @Body() body: CloseMediasoupPrototypeProducerBody | undefined,
+  ): LocalMediasoupProducerMetadata {
+    const scope = this.resolvePrototypeSessionScope(profileId, body);
+
+    return this.mediasoupPrototypeService.closeProducer({
+      producerId,
+      scope,
+    });
   }
 
   @Post('prototype/mediasoup/consumers')

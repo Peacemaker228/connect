@@ -28,6 +28,8 @@
     "check:desktop:config": "node electron/validate-production-config.mjs",
     "build:desktop": "bun run prepare:desktop:build-info && bun run clean:desktop && electron-builder --publish never",
     "release:desktop": "bun run check:desktop:config && bun run build:desktop",
+    "test:browser": "playwright test --pass-with-no-tests",
+    "test:browser:install": "playwright install chromium",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
@@ -98,6 +100,7 @@
     "zustand": "^5.0.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
