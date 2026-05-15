@@ -452,12 +452,18 @@ Done:
 - direct two-user private SFU browser smoke passed through the SSE lifecycle with both participants connected and one remote producer observed per participant
 - TURN relay private SFU browser smoke passed locally through Docker coturn and relay-only query mode
 - ordinary private calls and channel audio/video routes remain LiveKit, with SFU still explicit-gated to non-production conversation routes
+- `final-media-mvp-parity-load-smoke` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_103_FINAL_MEDIA_MVP_PARITY_LOAD_SMOKE.md`
+- final parity smoke confirms ordinary private `?video=true` remains LiveKit and channel `AUDIO`/`VIDEO` remain LiveKit
+- gated private SFU direct and TURN browser smoke both passed again from the stabilized local profile
+- private SFU leave redirect remained `/servers/:serverId/conversations/:memberId`
+- screen-share is deferred for SFU, reconnect remains review, and real device controls/capture parity remain deferred
+- broader small-room/channel replacement is on hold pending a narrower parity-hardening segment
 
 Remaining:
-- run `final-media-mvp-parity-load-smoke`
+- close private SFU device controls, real capture, reconnect, and screen-share parity decisions before any small-room/channel route switch
 
 Next likely work:
-- run `final-media-mvp-parity-load-smoke`
+- run `private-sfu-device-controls-reconnect-parity`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
