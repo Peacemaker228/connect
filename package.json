@@ -29,6 +29,7 @@
     "build:desktop": "bun run prepare:desktop:build-info && bun run clean:desktop && electron-builder --publish never",
     "release:desktop": "bun run check:desktop:config && bun run build:desktop",
     "test:browser": "playwright test --pass-with-no-tests",
+    "test:browser:private-sfu": "playwright test tests/browser/private-sfu-two-user-smoke.spec.ts --project=chromium",
     "test:browser:install": "playwright install chromium",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
