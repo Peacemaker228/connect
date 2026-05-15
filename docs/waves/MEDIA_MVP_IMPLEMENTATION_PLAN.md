@@ -659,6 +659,15 @@ Segment 109 result:
 - remaining blockers before small-room/channel replacement are physical camera QA on camera-equipped hardware, optional human-operated TURN audio signoff if required, SFU screen-share implementation or explicit MVP deferral, and broader small-room/channel load readiness
 - recommended next segment is `private-sfu-screen-share-mvp-decision`
 
+Segment 110 result:
+- status: `screen-share deferred-for-MVP / LiveKit fallback preserved / broad replacement hold`
+- decision is `defer-for-MVP`: gated private SFU remains audio/video only for the current MVP readiness decision
+- LiveKit remains the default/fallback for ordinary private `?video=true` and channel `AUDIO`/`VIDEO`, preserving the current `VideoConference` screen-share behavior outside the explicit non-production SFU gate
+- current SFU private adapter has microphone, camera, restart, and leave controls, but no `getDisplayMedia` capture, screen producer source metadata, screen render target, or screen-share lifecycle cleanup
+- future SFU screen-share implementation should be a separate narrow segment covering `getDisplayMedia`, source-aware producer metadata, single active share policy, remote screen rendering, stop/ended cleanup, restart/leave cleanup, and direct/TURN smoke
+- remaining blockers before small-room/channel replacement are physical camera QA on camera-equipped hardware, optional human-operated TURN audio signoff if required, and broader small-room/channel load/readiness
+- recommended next segment is `small-room-channel-sfu-readiness-plan`
+
 ## Dependency Summary
 
 Critical path:
@@ -746,7 +755,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `private-sfu-screen-share-mvp-decision`
+- `small-room-channel-sfu-readiness-plan`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -768,4 +777,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `private-sfu-screen-share-mvp-decision`
+- `small-room-channel-sfu-readiness-plan`

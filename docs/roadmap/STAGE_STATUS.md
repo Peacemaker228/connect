@@ -497,15 +497,19 @@ Done:
 - TURN physical/audio-only status remains `review`, because this segment did not include a human listening check over TURN with real microphone capture
 - no-camera audio-only fallback remains `pass / preserved`
 - ordinary private calls and channel audio/video routes remain LiveKit, with no broad replacement started
+- `private-sfu-screen-share-mvp-decision` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_110_PRIVATE_SFU_SCREEN_SHARE_MVP_DECISION.md`
+- SFU screen-share decision is `defer-for-MVP`; gated private SFU remains audio/video only for the current MVP readiness decision
+- ordinary private calls and channel audio/video routes remain LiveKit, preserving current LiveKit `VideoConference` screen-share behavior outside the explicit non-production SFU gate
+- future SFU screen-share implementation is split into a later narrow segment covering display capture, source-aware producer metadata, single active share policy, remote rendering, cleanup, and direct/TURN smoke
 
 Remaining:
 - run physical camera QA on a machine with camera hardware
 - optionally run human-operated TURN audio signoff with real microphone capture if required for release confidence
-- resolve or explicitly defer SFU screen-share lifecycle
 - broader small-room/channel load readiness remains unstarted
+- implement SFU screen-share later only if MVP parity or a later default-switch decision requires it
 
 Next likely work:
-- run `private-sfu-screen-share-mvp-decision`
+- run `small-room-channel-sfu-readiness-plan`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
