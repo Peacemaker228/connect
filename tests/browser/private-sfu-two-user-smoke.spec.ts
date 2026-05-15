@@ -43,6 +43,7 @@ const captureQuery =
       : ''
 const expectedRemoteProducerCount =
   process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real' ? 'Remote producers: 2' : 'Remote producers: 1'
+const shouldRunNetworkInterruptionSmoke = process.env.PRIVATE_SFU_SMOKE_NETWORK_INTERRUPT === '1'
 
 test.describe('private SFU two-user browser smoke', () => {
   test.skip(!isSmokeEnabled, 'Set PRIVATE_SFU_BROWSER_SMOKE=1 with local API/web to run this smoke.')
@@ -110,6 +111,22 @@ test.describe('private SFU two-user browser smoke', () => {
       await expect(userTwoPage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
         expectedRemoteProducerCount,
       )
+
+      if (shouldRunNetworkInterruptionSmoke) {
+        await userOne.setOffline(true)
+        await userOnePage.waitForTimeout(6_000)
+        await userOne.setOffline(false)
+
+        await expect(userOnePage.getByTestId('private-sfu-status')).toHaveText('connected', {
+          timeout: 45_000,
+        })
+        await expect(userOnePage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
+          expectedRemoteProducerCount,
+          {
+            timeout: 45_000,
+          },
+        )
+      }
 
       await userOnePage.getByRole('button', { name: 'Restart SFU private call' }).click()
       await expect(userOnePage.getByTestId('private-sfu-status')).toHaveText('connected', {

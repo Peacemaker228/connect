@@ -486,15 +486,20 @@ Done:
 - media join now supersedes older joined sessions for the same room identity, producer discovery cleans non-joined session producers, and leave closes scoped mediasoup resources
 - stale producer lifecycle verification passed with two consecutive private SFU browser smokes plus a simulated no-camera fallback smoke on the same API process
 - ordinary private calls and channel audio/video routes remain LiveKit, with no broad replacement started
+- `private-sfu-network-interruption-reconnect-qa` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_108_PRIVATE_SFU_NETWORK_INTERRUPTION_RECONNECT_QA.md`
+- gated private SFU now reports transient post-snapshot media signaling interruption as `reconnecting` instead of terminal `failed`
+- browser offline-restore smoke passed with `PRIVATE_SFU_SMOKE_NETWORK_INTERRUPT=1`, `PRIVATE_SFU_SMOKE_CAPTURE=real`, two authenticated users, stable remote producer count, restored `connected` status, and Restart SFU private call recovery
+- simulated no-camera fallback smoke passed again after the reconnect/status change
+- ordinary private calls and channel audio/video routes remain LiveKit, with no broad replacement started
 
 Remaining:
-- run physical-device and network interruption QA before any small-room/channel route switch
 - run physical camera QA on a machine with camera hardware
 - optionally rerun physical-device TURN relay signoff if required for release confidence
 - resolve or explicitly defer SFU screen-share lifecycle
+- broader small-room/channel load readiness remains unstarted
 
 Next likely work:
-- run `private-sfu-network-interruption-reconnect-qa`
+- run `private-sfu-physical-camera-turn-qa`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

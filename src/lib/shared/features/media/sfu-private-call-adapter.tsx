@@ -13,7 +13,7 @@ import {
   type SfuClientTransportBundle,
 } from './sfu-client-adapter'
 
-type SfuPrivateCallStatus = 'idle' | 'starting' | 'waiting' | 'connected' | 'failed'
+type SfuPrivateCallStatus = 'idle' | 'starting' | 'waiting' | 'connected' | 'reconnecting' | 'failed'
 
 type RemoteProducerMetadata = Extract<MediasoupPrototypeEvent, { type: 'producer.published' }>['producer']
 
@@ -402,8 +402,8 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
             return
           }
 
-          setStatus('failed')
-          setDetail('Media signaling event stream failed')
+          setStatus('reconnecting')
+          setDetail('Media signaling event stream interrupted; waiting for browser reconnect or manual restart')
         }
         eventSource.onmessage = (message) => {
           void (async () => {
@@ -431,6 +431,12 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
               if (remoteProducers.length === 0 && consumedProducerIdsRef.current.size === 0) {
                 setStatus('waiting')
                 setDetail('Media signaling subscribed; waiting for remote participant producer')
+                return
+              }
+
+              if (remoteProducers.length > 0 && consumedProducerIdsRef.current.size > 0) {
+                setStatus('connected')
+                setDetail('Media signaling snapshot received; remote producer is consumed')
               }
 
               return

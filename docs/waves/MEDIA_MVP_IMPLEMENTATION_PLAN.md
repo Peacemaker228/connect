@@ -636,6 +636,18 @@ Segment 107 result:
 - remaining blockers before small-room/channel replacement are real network interruption reconnect/resume QA, physical camera QA on a machine with camera hardware, optional physical TURN relay signoff, and SFU screen-share implementation or explicit MVP deferral
 - recommended next segment is `private-sfu-network-interruption-reconnect-qa`
 
+Segment 108 result:
+- status: `network interruption pass / restart recovery pass / broad replacement hold`
+- gated private SFU now treats transient media signaling interruption after the initial snapshot as `reconnecting` instead of terminal `failed`
+- when the browser restores the SSE stream and receives a fresh producer snapshot, the private SFU UI returns to `connected` if the remote producer remains consumed
+- the guarded private SFU browser smoke now supports `PRIVATE_SFU_SMOKE_NETWORK_INTERRUPT=1`, forcing one authenticated browser context offline for 6 seconds before restoring it
+- browser offline-restore smoke passed with `PRIVATE_SFU_SMOKE_CAPTURE=real`, two authenticated participants, stable remote producer count, restored `connected` status, and successful Restart SFU private call recovery
+- simulated no-camera fallback smoke passed again after the reconnect/status change, preserving the Segment 107 audio-only fallback result
+- stale producer cleanup remained stable; no inflated remote producer count was observed
+- ordinary private `?video=true` and channel `AUDIO`/`VIDEO` remain LiveKit; no broad replacement started
+- remaining blockers before small-room/channel replacement are physical camera QA on camera-equipped hardware, optional physical TURN relay signoff, SFU screen-share implementation or explicit MVP deferral, and broader small-room/channel load readiness
+- recommended next segment is `private-sfu-physical-camera-turn-qa`
+
 ## Dependency Summary
 
 Critical path:
@@ -723,7 +735,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `private-sfu-network-interruption-reconnect-qa`
+- `private-sfu-physical-camera-turn-qa`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -745,4 +757,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `private-sfu-network-interruption-reconnect-qa`
+- `private-sfu-physical-camera-turn-qa`
