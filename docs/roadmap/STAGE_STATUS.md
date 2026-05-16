@@ -541,13 +541,15 @@ Done:
 - channel `AUDIO` SFU regression passed, private SFU regression passed, ordinary channel `AUDIO` without the gate remained LiveKit, and ordinary channel `VIDEO` without the full gate remained LiveKit
 - `gated-channel-video-sfu-5user-load-offline-smoke` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_118_GATED_CHANNEL_VIDEO_SFU_5USER_LOAD_OFFLINE_SMOKE.md`
 - guarded channel `VIDEO` smoke now supports explicit `CHANNEL_VIDEO_SFU_SMOKE_OFFLINE_RESTORE=1`
+- Playwright media device mode now supports explicit `PLAYWRIGHT_REAL_MEDIA=1`; default browser tests still use fake media devices for repeatability
 - five-user direct channel `VIDEO` smoke passed with all users connected, `Remote producers: 8` per participant, four remote video tiles per participant, visible local fake-camera previews, restart recovery, leave/rejoin cleanup, and no stale tile or producer inflation
 - explicit offline/restore passed in the five-user channel `VIDEO` smoke after one browser context was forced offline for 6 seconds and restored
+- two-user headed physical camera rerun passed with an Android 13 phone exposed as Windows Virtual Camera and `PLAYWRIGHT_REAL_MEDIA=1`
 - five-user TURN was not rerun because it is optional in this segment; Segment 117 three-user TURN channel `VIDEO` remains the current relay proof
 - channel `AUDIO` SFU regression passed, private SFU regression passed, ordinary channel `AUDIO` without the gate remained LiveKit, and ordinary channel `VIDEO` without the full gate remained LiveKit
 
 Remaining:
-- run physical camera QA on a machine with camera hardware if it remains a release confidence requirement
+- keep physical camera QA scoped as two-user headed Windows Virtual Camera pass; five-user load remains fake-device based
 - optionally run human-operated TURN audio signoff with real microphone capture if required for release confidence
 - decide whether the automated fake-device 5-user baseline is enough for the next controlled readiness decision
 - implement SFU screen-share later only if MVP parity or a later default-switch decision requires it

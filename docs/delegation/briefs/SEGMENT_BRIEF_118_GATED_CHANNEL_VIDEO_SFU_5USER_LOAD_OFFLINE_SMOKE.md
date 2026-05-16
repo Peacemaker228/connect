@@ -48,6 +48,9 @@ Local-only API env:
 Direct/offline command:
 - `CHANNEL_VIDEO_SFU_BROWSER_SMOKE=1 CHANNEL_VIDEO_SFU_SMOKE_USERS=5 CHANNEL_VIDEO_SFU_SMOKE_LEAVE_REJOIN=1 CHANNEL_VIDEO_SFU_SMOKE_OFFLINE_RESTORE=1 CHANNEL_VIDEO_SFU_SMOKE_WEB_PORT=3001 CHANNEL_VIDEO_SFU_SMOKE_API_PORT=4000 bun.cmd run test:browser:channel-video-sfu`
 
+Physical camera rerun command:
+- `PLAYWRIGHT_REAL_MEDIA=1 CHANNEL_VIDEO_SFU_BROWSER_SMOKE=1 CHANNEL_VIDEO_SFU_SMOKE_USERS=2 CHANNEL_VIDEO_SFU_SMOKE_LEAVE_REJOIN=1 CHANNEL_VIDEO_SFU_SMOKE_WEB_PORT=3001 CHANNEL_VIDEO_SFU_SMOKE_API_PORT=4000 bun.cmd x playwright test tests/browser/channel-video-sfu-smoke.spec.ts --project=chromium --headed`
+
 Regression commands:
 - `CHANNEL_AUDIO_SFU_BROWSER_SMOKE=1 CHANNEL_AUDIO_SFU_SMOKE_WEB_PORT=3001 CHANNEL_AUDIO_SFU_SMOKE_API_PORT=4000 bun.cmd run test:browser:channel-audio-sfu`
 - `PRIVATE_SFU_BROWSER_SMOKE=1 PRIVATE_SFU_SMOKE_WEB_PORT=3001 PRIVATE_SFU_SMOKE_API_PORT=4000 bun.cmd run test:browser:private-sfu`
@@ -90,6 +93,12 @@ Regression results:
 - channel `AUDIO` SFU regression: `pass`.
 - private SFU regression: `pass`.
 
+Physical camera rerun:
+- `pass / headed real-device smoke`
+- after an Android 13 phone was exposed to Windows as `Windows Virtual Camera Device`, a headed two-user channel `VIDEO` SFU smoke passed with `PLAYWRIGHT_REAL_MEDIA=1`.
+- the first headless real-device attempt failed with `Local media capture failed: Not supported`, so physical camera automation must use headed Chromium or a manual browser for now.
+- default browser smoke remains fake-device based unless `PLAYWRIGHT_REAL_MEDIA=1` is set.
+
 ## Handoff
 
 5-user result:
@@ -112,7 +121,7 @@ LiveKit fallback result:
 - ordinary private `?video=true` remains LiveKit.
 
 Remaining blockers:
-- physical camera QA remains deferred on camera-equipped hardware.
+- physical camera QA is passed for the two-user headed Windows Virtual Camera path; five-user load remains fake-device based.
 - optional human-operated TURN signoff with real microphone/camera remains review-only.
 - process-local mediasoup/signaling state remains a production/multi-process blocker.
 - SFU screen-share remains deferred.
@@ -135,6 +144,7 @@ Commands:
 - `bun.cmd run test:browser:channel-audio-sfu`
 - `bun.cmd run test:browser:channel-video-sfu`
 - guarded five-user direct channel `VIDEO` smoke with `CHANNEL_VIDEO_SFU_BROWSER_SMOKE=1 CHANNEL_VIDEO_SFU_SMOKE_USERS=5 CHANNEL_VIDEO_SFU_SMOKE_LEAVE_REJOIN=1 CHANNEL_VIDEO_SFU_SMOKE_OFFLINE_RESTORE=1`
+- guarded headed physical camera channel `VIDEO` smoke with `PLAYWRIGHT_REAL_MEDIA=1 CHANNEL_VIDEO_SFU_BROWSER_SMOKE=1 CHANNEL_VIDEO_SFU_SMOKE_USERS=2`
 - guarded channel `AUDIO` regression with `CHANNEL_AUDIO_SFU_BROWSER_SMOKE=1`
 - guarded private SFU regression with `PRIVATE_SFU_BROWSER_SMOKE=1`
 
@@ -142,5 +152,6 @@ Results:
 - all verification commands passed.
 - guarded browser scripts skipped safely without their smoke env flags.
 - guarded five-user direct/offline channel `VIDEO` smoke passed.
+- guarded headed physical camera channel `VIDEO` smoke passed.
 - guarded channel `AUDIO` regression passed.
 - guarded private SFU regression passed.
