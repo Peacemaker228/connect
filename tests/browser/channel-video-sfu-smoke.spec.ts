@@ -65,6 +65,8 @@ const apiOrigin = new URL(apiBaseUrl)
 const webOrigin = new URL(webBaseUrl)
 const transportQuery =
   process.env.CHANNEL_VIDEO_SFU_SMOKE_TRANSPORT === 'turn' ? '&sfuTransport=turn' : ''
+const participantCount = parsePositiveInteger(process.env.CHANNEL_VIDEO_SFU_SMOKE_USERS, 2)
+const shouldRunLeaveRejoin = process.env.CHANNEL_VIDEO_SFU_SMOKE_LEAVE_REJOIN !== '0'
 
 test.describe('channel VIDEO SFU browser smoke', () => {
   test.skip(!isSmokeEnabled, 'Set CHANNEL_VIDEO_SFU_BROWSER_SMOKE=1 with local API/web to run this smoke.')
@@ -82,86 +84,119 @@ test.describe('channel VIDEO SFU browser smoke', () => {
     ).toBe(webOrigin.hostname)
   })
 
-  test('connects two authenticated channel VIDEO SFU participants behind full explicit gate', async ({ browser }) => {
+  test('connects authenticated channel VIDEO SFU participants behind full explicit gate', async ({ browser }) => {
     test.setTimeout(120_000)
 
-    const userOne = await browser.newContext()
-    const userTwo = await browser.newContext()
+    expect(participantCount, 'CHANNEL_VIDEO_SFU_SMOKE_USERS must be at least 2').toBeGreaterThanOrEqual(2)
+
+    const contexts = await Promise.all(
+      Array.from({ length: participantCount }, () => browser.newContext()),
+    )
+    const [ownerContext, ...memberContexts] = contexts
 
     try {
-      await Promise.all([registerUser(userOne, 'one'), registerUser(userTwo, 'two')])
-      const createdServer = await postJson<ServerResponse>(userOne, '/api/servers', {
+      await Promise.all(contexts.map((context, index) => registerUser(context, String(index + 1))))
+      const createdServer = await postJson<ServerResponse>(ownerContext, '/api/servers', {
         name: `channel-video-sfu-smoke-${Date.now()}`,
         imageUrl: null,
       })
 
-      await postJson(userTwo, '/api/invites/join', {
-        inviteCode: createdServer.inviteCode,
-      })
+      await Promise.all(
+        memberContexts.map((context) =>
+          postJson(context, '/api/invites/join', {
+            inviteCode: createdServer.inviteCode,
+          }),
+        ),
+      )
 
       const audioChannelName = `audio-livekit-${Date.now()}`
       const videoChannelName = `video-sfu-${Date.now()}`
       const noCameraVideoChannelName = `video-sfu-no-camera-${Date.now()}`
 
-      await postJson(userOne, `/api/channels?serverId=${createdServer.id}`, {
+      await postJson(ownerContext, `/api/channels?serverId=${createdServer.id}`, {
         name: audioChannelName,
         type: 'AUDIO',
       })
-      await postJson(userOne, `/api/channels?serverId=${createdServer.id}`, {
+      await postJson(ownerContext, `/api/channels?serverId=${createdServer.id}`, {
         name: videoChannelName,
         type: 'VIDEO',
       })
-      await postJson(userOne, `/api/channels?serverId=${createdServer.id}`, {
+      await postJson(ownerContext, `/api/channels?serverId=${createdServer.id}`, {
         name: noCameraVideoChannelName,
         type: 'VIDEO',
       })
 
-      const serverWithChannels = await getJson<ServerResponse>(userOne, `/api/servers/${createdServer.id}`)
+      const serverWithChannels = await getJson<ServerResponse>(ownerContext, `/api/servers/${createdServer.id}`)
       const audioChannel = findChannel(serverWithChannels, audioChannelName, 'AUDIO')
       const videoChannel = findChannel(serverWithChannels, videoChannelName, 'VIDEO')
       const noCameraVideoChannel = findChannel(serverWithChannels, noCameraVideoChannelName, 'VIDEO')
       const generalChannel = findChannel(serverWithChannels, 'general', 'TEXT')
 
-      const userOnePage = await userOne.newPage()
-      const userTwoPage = await userTwo.newPage()
+      const pages = await Promise.all(contexts.map((context) => context.newPage()))
       const sfuQuery = `?mediaProvider=sfu&sfuChannel=true&sfuVideo=true&sfuCapture=real${transportQuery}`
+      const expectedRemoteProducerText = getRemoteProducerText((participantCount - 1) * 2)
+      const expectedRemoteVideoTileCount = participantCount - 1
 
-      await Promise.all([
-        userOnePage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}${sfuQuery}`),
-        userTwoPage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}${sfuQuery}`),
-      ])
+      await Promise.all(
+        pages.map((page) =>
+          page.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}${sfuQuery}`),
+        ),
+      )
 
-      await expectAllProviders([userOnePage, userTwoPage], 'SFU channel video')
-      await expectAllStatuses([userOnePage, userTwoPage], 'connected')
-      await expectAllRemoteProducerCounts([userOnePage, userTwoPage], 'Remote producers: 2')
-      await expect(userOnePage.getByText('Requested media: audio on, video on')).toBeVisible()
-      await expect(userOnePage.getByTestId('private-sfu-local-video')).toBeVisible()
-      await expect(userTwoPage.getByTestId('private-sfu-local-video')).toBeVisible()
-      await expect(userOnePage.getByTestId('private-sfu-remote-video-tile')).toHaveCount(1)
-      await expect(userTwoPage.getByTestId('private-sfu-remote-video-tile')).toHaveCount(1)
-      await expect(userOnePage.getByTestId('private-sfu-remote-video')).toBeVisible()
-      await expect(userTwoPage.getByTestId('private-sfu-remote-video')).toBeVisible()
+      await expectAllProviders(pages, 'SFU channel video')
+      await expectAllStatuses(pages, 'connected')
+      await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
+      await expect(pages[0].getByText('Requested media: audio on, video on')).toBeVisible()
+      await expectAllLocalVideosVisible(pages)
+      await expectAllRemoteVideoTileCounts(pages, expectedRemoteVideoTileCount)
+      await expectAllRemoteVideosVisible(pages, expectedRemoteVideoTileCount)
 
-      const defaultVideoPage = await userOne.newPage()
+      await pages[0].getByRole('button', { name: 'Restart SFU channel video' }).click()
+      await expectAllStatuses(pages, 'connected')
+      await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
+      await expectAllRemoteVideoTileCounts(pages, expectedRemoteVideoTileCount)
+      await expectAllRemoteVideosVisible(pages, expectedRemoteVideoTileCount)
+
+      if (shouldRunLeaveRejoin) {
+        const rejoiningPage = pages[participantCount - 1]
+        const remainingPages = pages.slice(0, participantCount - 1)
+
+        await rejoiningPage.getByRole('button', { name: 'Leave call' }).click()
+        await expect(rejoiningPage).toHaveURL(
+          new RegExp(`/servers/${createdServer.id}/channels/${generalChannel.id}$`),
+        )
+        await expectAllRemoteProducerCounts(remainingPages, getRemoteProducerText((participantCount - 2) * 2))
+        await expectAllRemoteVideoTileCounts(remainingPages, participantCount - 2)
+
+        await rejoiningPage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}${sfuQuery}`)
+        await expectAllStatuses(pages, 'connected')
+        await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
+        await expectAllRemoteVideoTileCounts(pages, expectedRemoteVideoTileCount)
+        await expectAllRemoteVideosVisible(pages, expectedRemoteVideoTileCount)
+      }
+
+      await pages[0].getByRole('button', { name: 'Leave call' }).click()
+      await expect(pages[0]).toHaveURL(new RegExp(`/servers/${createdServer.id}/channels/${generalChannel.id}$`))
+      await Promise.all(pages.map((page) => page.close()))
+
+      const defaultVideoPage = await ownerContext.newPage()
       await defaultVideoPage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}`)
       await expect(defaultVideoPage.getByTestId('private-sfu-provider')).toHaveCount(0)
 
-      const partialGateVideoPage = await userOne.newPage()
+      const partialGateVideoPage = await ownerContext.newPage()
       await partialGateVideoPage.goto(
         `${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}?mediaProvider=sfu&sfuChannel=true&sfuVideo=true`,
       )
       await expect(partialGateVideoPage.getByTestId('private-sfu-provider')).toHaveCount(0)
 
-      const defaultAudioPage = await userOne.newPage()
+      const defaultAudioPage = await ownerContext.newPage()
       await defaultAudioPage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${audioChannel.id}`)
       await expect(defaultAudioPage.getByTestId('private-sfu-provider')).toHaveCount(0)
 
-      await userOnePage.getByRole('button', { name: 'Leave call' }).click()
-      await expect(userOnePage).toHaveURL(new RegExp(`/servers/${createdServer.id}/channels/${generalChannel.id}$`))
-      await userTwoPage.getByRole('button', { name: 'Leave call' }).click()
-
-      const noCameraPageOne = await userOne.newPage()
-      const noCameraPageTwo = await userTwo.newPage()
+      const noCameraContexts = contexts.slice(0, 2)
+      const [noCameraPageOne, noCameraPageTwo] = await Promise.all(
+        noCameraContexts.map((context) => context.newPage()),
+      )
       const noCameraSfuQuery = `${sfuQuery}&sfuSimulateMissingCamera=true`
 
       await Promise.all([
@@ -181,8 +216,7 @@ test.describe('channel VIDEO SFU browser smoke', () => {
       )
       await expect(noCameraPageOne.getByRole('button', { name: 'Start camera' })).toBeDisabled()
     } finally {
-      await userOne.close()
-      await userTwo.close()
+      await Promise.all(contexts.map((context) => context.close()))
     }
   })
 })
@@ -254,6 +288,10 @@ const expectAllStatuses = async (
   )
 }
 
+const expectAllLocalVideosVisible = async (pages: Awaited<ReturnType<BrowserContext['newPage']>>[]) => {
+  await Promise.all(pages.map((page) => expect(page.getByTestId('private-sfu-local-video')).toBeVisible()))
+}
+
 const expectAllRemoteProducerCounts = async (
   pages: Awaited<ReturnType<BrowserContext['newPage']>>[],
   text: string,
@@ -265,6 +303,52 @@ const expectAllRemoteProducerCounts = async (
       }),
     ),
   )
+}
+
+const expectAllRemoteVideoTileCounts = async (
+  pages: Awaited<ReturnType<BrowserContext['newPage']>>[],
+  count: number,
+) => {
+  await Promise.all(
+    pages.map((page) =>
+      expect(page.getByTestId('private-sfu-remote-video-tile')).toHaveCount(count, {
+        timeout: 45_000,
+      }),
+    ),
+  )
+}
+
+const expectAllRemoteVideosVisible = async (
+  pages: Awaited<ReturnType<BrowserContext['newPage']>>[],
+  count: number,
+) => {
+  await Promise.all(
+    pages.map(async (page) => {
+      const remoteVideos = page.getByTestId('private-sfu-remote-video')
+
+      await expect(remoteVideos).toHaveCount(count, {
+        timeout: 45_000,
+      })
+
+      await Promise.all(
+        Array.from({ length: count }, (_, index) => expect(remoteVideos.nth(index)).toBeVisible()),
+      )
+    }),
+  )
+}
+
+function getRemoteProducerText(count: number) {
+  return `Remote producers: ${count}`
+}
+
+function parsePositiveInteger(value: string | undefined, fallback: number) {
+  if (!value) {
+    return fallback
+  }
+
+  const parsed = Number(value)
+
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback
 }
 
 function normalizeBaseUrl(value: string) {

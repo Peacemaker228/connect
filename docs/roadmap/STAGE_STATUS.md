@@ -534,16 +534,21 @@ Done:
 - the SFU adapter now has a participant-grid remote video layout for channel `VIDEO`, with remote media keyed by `participantSessionId` and one remote video tile or audio-only placeholder per remote participant
 - two-user channel `VIDEO` direct smoke passed with both users connected, `Remote producers: 2` per participant, visible local previews, one remote video tile per participant, no-camera audio-only fallback preserved, and channel leave redirect preserved
 - channel `AUDIO` SFU regression passed, private SFU regression passed, ordinary channel `AUDIO` without the gate remained LiveKit, and ordinary channel `VIDEO` without the full gate remained LiveKit
+- `gated-channel-video-sfu-3user-turn-rejoin-smoke` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_117_GATED_CHANNEL_VIDEO_SFU_3USER_TURN_REJOIN_SMOKE.md`
+- guarded channel `VIDEO` smoke now supports configurable participant count, restart recovery, leave/rejoin cleanup, and TURN relay mode
+- three-user direct channel `VIDEO` smoke passed with all users connected, `Remote producers: 4` per participant, two remote video tiles per participant, restart recovery, leave/rejoin cleanup, and no stale tile or producer inflation
+- three-user TURN relay channel `VIDEO` smoke passed through local Docker coturn with the same producer count, video tile, restart, and leave/rejoin assertions
+- channel `AUDIO` SFU regression passed, private SFU regression passed, ordinary channel `AUDIO` without the gate remained LiveKit, and ordinary channel `VIDEO` without the full gate remained LiveKit
 
 Remaining:
-- run 3-user channel `VIDEO` direct smoke with restart and leave/rejoin cleanup
-- run TURN channel `VIDEO` smoke after 3-user direct passes
+- run 5-user channel `VIDEO` load baseline
+- run explicit offline/restore channel `VIDEO` smoke
 - run physical camera QA on a machine with camera hardware if it remains a release confidence requirement
 - optionally run human-operated TURN audio signoff with real microphone capture if required for release confidence
 - implement SFU screen-share later only if MVP parity or a later default-switch decision requires it
 
 Next likely work:
-- run `gated-channel-video-sfu-3user-turn-rejoin-smoke`
+- run `gated-channel-video-sfu-5user-load-offline-smoke`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

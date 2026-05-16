@@ -731,6 +731,14 @@ Segment 116 result:
 - channel `AUDIO` SFU regression passed, private SFU regression passed, ordinary channel `AUDIO` without the gate remained LiveKit, and ordinary channel `VIDEO` without the full gate remained LiveKit
 - recommended next segment is `gated-channel-video-sfu-3user-turn-rejoin-smoke`
 
+Segment 117 result:
+- status: `channel video 3-user direct pass / TURN pass / restart leave-rejoin pass`
+- guarded channel `VIDEO` smoke now supports `CHANNEL_VIDEO_SFU_SMOKE_USERS`, leave/rejoin assertions, restart recovery assertions, and `CHANNEL_VIDEO_SFU_SMOKE_TRANSPORT=turn`
+- three-user direct channel `VIDEO` smoke passed with all users connected, `Remote producers: 4` per participant, two remote video tiles per participant, restart recovery, leave/rejoin cleanup, and no stale tile or producer inflation
+- three-user TURN relay channel `VIDEO` smoke passed through local Docker coturn with the same restart, leave/rejoin, producer count, and video tile assertions
+- ordinary channel `VIDEO` without the full gate remains LiveKit, ordinary channel `AUDIO` without the gate remains LiveKit, channel `AUDIO` SFU regression passed, and private SFU regression passed
+- recommended next segment is `gated-channel-video-sfu-5user-load-offline-smoke`
+
 ## Dependency Summary
 
 Critical path:
@@ -818,7 +826,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `gated-channel-video-sfu-3user-turn-rejoin-smoke`
+- `gated-channel-video-sfu-5user-load-offline-smoke`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -840,4 +848,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `gated-channel-video-sfu-3user-turn-rejoin-smoke`
+- `gated-channel-video-sfu-5user-load-offline-smoke`
