@@ -113,6 +113,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   const remoteStreamRef = useRef<MediaStream | null>(null)
   const remoteVideoStreamRef = useRef<MediaStream | null>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
+  const heartbeatTimerRef = useRef<number | null>(null)
   const consumedProducerIdsRef = useRef(new Set<string>())
   const consumedProducerKeysRef = useRef(new Set<string>())
   const consumedProducerKeyByIdRef = useRef(new Map<string, string>())
@@ -138,6 +139,11 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   )
 
   const cleanup = useCallback(() => {
+    if (heartbeatTimerRef.current !== null) {
+      window.clearInterval(heartbeatTimerRef.current)
+      heartbeatTimerRef.current = null
+    }
+
     eventSourceRef.current?.close()
     eventSourceRef.current = null
 
@@ -300,6 +306,17 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     },
     [],
   )
+
+  const startSessionHeartbeat = useCallback((adapter: SfuClientAdapter) => {
+    if (heartbeatTimerRef.current !== null) {
+      window.clearInterval(heartbeatTimerRef.current)
+    }
+
+    void adapter.heartbeatSession(sessionScope).catch(() => undefined)
+    heartbeatTimerRef.current = window.setInterval(() => {
+      void adapterRef.current?.heartbeatSession(sessionScope).catch(() => undefined)
+    }, 5000)
+  }, [sessionScope])
 
   const attachRemoteTrack = useCallback(async (track: MediaStreamTrack, producer: RemoteProducerMetadata) => {
     if (remoteVideoLayout === 'participant-grid') {
@@ -554,6 +571,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
 
     const adapter = new SfuClientAdapter()
     adapterRef.current = adapter
+    startSessionHeartbeat(adapter)
 
     try {
       const sendTransport = await adapter.createTransport({
@@ -623,6 +641,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     createLocalTracks,
     iceTransportPolicy,
     sessionScope,
+    startSessionHeartbeat,
     subscribeToProducerEvents,
     video,
   ])

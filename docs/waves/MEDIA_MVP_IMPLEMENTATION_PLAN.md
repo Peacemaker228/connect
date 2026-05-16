@@ -827,6 +827,21 @@ Segment 125 result:
 - channel `VIDEO`, ordinary private `?video=true`, and production defaults remain LiveKit; LiveKit fallback was not removed or weakened
 - recommended next segment is `channel-audio-sfu-stale-session-cleanup-soak-rerun`
 
+Segment 126 result:
+- status: `audio pilot cleanup soak pass / production blocked`
+- root cause of raw process-local count persistence was identified: browser context close/restart/dev adapter churn was not an awaitable backend cleanup guarantee, transports had no close command, and the backend had no heartbeat/TTL signal for abandoned local SFU sessions
+- added a non-production process-local heartbeat and stale-session sweeper for local mediasoup sessions/resources
+- added local-only cleanup env controls: `LOCAL_MEDIASOUP_STALE_SESSION_TTL_MS` and `LOCAL_MEDIASOUP_STALE_SWEEP_INTERVAL_MS`
+- health/log observability now includes tracked sessions, stale TTL/sweep interval, `lastCleanup`, and `stale-sweep.completed` cleanup counts
+- closing stale producers also closes dependent consumers so raw consumer counts settle with producer cleanup
+- guarded channel `AUDIO` smoke now supports `CHANNEL_AUDIO_SFU_SMOKE_ASSERT_CLEANUP=1` and asserts active transport/producer/consumer/room/session counters settle to zero after browser context close
+- guarded channel `AUDIO` pilot direct soak passed with 5 authenticated users, no per-URL SFU query, expected `Remote producers: 4`, `Transport: direct`, restart, offline/restore, leave/rejoin, context close, and health counters settled to zero
+- guarded channel `AUDIO` pilot TURN soak passed with 3 authenticated users, no per-URL SFU query, expected `Remote producers: 2`, `Transport: turn`, local Docker coturn relay usage, context close, and health counters settled to zero
+- guarded private SFU direct regression passed after the shared SFU heartbeat/lifecycle changes; ordinary private `?video=true` stayed LiveKit/default and private leave redirect remained preserved
+- channel `VIDEO`, ordinary private `?video=true`, and production defaults remain LiveKit; LiveKit fallback was not removed or weakened
+- this is still not production readiness because media state remains process-local and production infra/runbook/monitoring/rollback are out of scope
+- recommended next segment is `channel-audio-sfu-limited-pilot-readiness-decision`
+
 ## Dependency Summary
 
 Critical path:
@@ -914,7 +929,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-audio-sfu-stale-session-cleanup-soak-rerun`
+- `channel-audio-sfu-limited-pilot-readiness-decision`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -936,4 +951,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-audio-sfu-stale-session-cleanup-soak-rerun`
+- `channel-audio-sfu-limited-pilot-readiness-decision`
