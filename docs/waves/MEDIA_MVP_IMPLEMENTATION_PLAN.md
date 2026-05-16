@@ -750,6 +750,15 @@ Segment 118 result:
 - ordinary channel `VIDEO` without the full gate remains LiveKit, ordinary channel `AUDIO` without the gate remains LiveKit, channel `AUDIO` SFU regression passed, and private SFU regression passed
 - recommended next segment is `channel-video-sfu-physical-camera-turn-signoff`
 
+Segment 119 result:
+- status: `channel video physical camera pass / TURN physical pass / broad replacement hold`
+- two-user headed channel `VIDEO` SFU physical camera smoke passed with an Android 13 phone exposed through Phone Link / Windows Virtual Camera and `PLAYWRIGHT_REAL_MEDIA=1`
+- two-user headed channel `VIDEO` SFU physical camera TURN smoke passed with `CHANNEL_VIDEO_SFU_SMOKE_TRANSPORT=turn`; local coturn logs showed authenticated relay allocation, permission, channel bind, relay usage, and cleanup
+- headed private SFU real-camera regression passed with `PRIVATE_SFU_SMOKE_CAPTURE=real`, preserving connected state, real audio+video producer count, controls, and leave redirect
+- ordinary channel `VIDEO` without the full gate remains LiveKit, ordinary channel `AUDIO` without the gate remains LiveKit, and ordinary private `?video=true` remains LiveKit
+- remaining blockers before any default-switch readiness decision are process-local mediasoup/signaling state, deferred SFU screen-share, optional human subjective audio/video quality signoff, and the need for a separate readiness decision
+- recommended next segment is `channel-sfu-default-switch-readiness-decision`
+
 ## Dependency Summary
 
 Critical path:
@@ -837,7 +846,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-video-sfu-physical-camera-turn-signoff`
+- `channel-sfu-default-switch-readiness-decision`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -859,4 +868,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-video-sfu-physical-camera-turn-signoff`
+- `channel-sfu-default-switch-readiness-decision`

@@ -351,7 +351,7 @@ Next likely work:
 
 ### Stage 8. Media MVP
 
-Status: `in progress / gated channel video SFU 5-user load pass-review`
+Status: `in progress / gated channel video SFU physical TURN pass-review`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -547,15 +547,21 @@ Done:
 - two-user headed physical camera rerun passed with an Android 13 phone exposed as Windows Virtual Camera and `PLAYWRIGHT_REAL_MEDIA=1`
 - five-user TURN was not rerun because it is optional in this segment; Segment 117 three-user TURN channel `VIDEO` remains the current relay proof
 - channel `AUDIO` SFU regression passed, private SFU regression passed, ordinary channel `AUDIO` without the gate remained LiveKit, and ordinary channel `VIDEO` without the full gate remained LiveKit
+- `channel-video-sfu-physical-camera-turn-signoff` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_119_CHANNEL_VIDEO_SFU_PHYSICAL_CAMERA_TURN_SIGNOFF.md`
+- two-user headed channel `VIDEO` SFU physical camera smoke passed with an Android 13 phone exposed through Phone Link / Windows Virtual Camera and `PLAYWRIGHT_REAL_MEDIA=1`
+- two-user headed channel `VIDEO` SFU physical camera TURN smoke passed with `CHANNEL_VIDEO_SFU_SMOKE_TRANSPORT=turn`; local coturn logs showed authenticated relay allocation, permission, channel bind, relay usage, and cleanup
+- headed private SFU real-camera regression passed with `PRIVATE_SFU_SMOKE_CAPTURE=real`, preserving connected state, real audio+video producer count, controls, and leave redirect
+- ordinary channel `VIDEO` without the full gate remained LiveKit, ordinary channel `AUDIO` without the gate remained LiveKit, and ordinary private `?video=true` remained LiveKit
 
 Remaining:
 - keep physical camera QA scoped as two-user headed Windows Virtual Camera pass; five-user load remains fake-device based
-- optionally run human-operated TURN audio signoff with real microphone capture if required for release confidence
-- decide whether the automated fake-device 5-user baseline is enough for the next controlled readiness decision
+- decide whether the automated fake-device five-user load plus two-user physical TURN signoff is enough for the next controlled readiness decision
+- optionally run human subjective audio/video quality signoff if required for release confidence
+- process-local mediasoup/signaling state remains a production/multi-process blocker
 - implement SFU screen-share later only if MVP parity or a later default-switch decision requires it
 
 Next likely work:
-- run `channel-video-sfu-physical-camera-turn-signoff`
+- run `channel-sfu-default-switch-readiness-decision`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
