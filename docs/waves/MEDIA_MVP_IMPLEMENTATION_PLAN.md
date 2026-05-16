@@ -759,6 +759,15 @@ Segment 119 result:
 - remaining blockers before any default-switch readiness decision are process-local mediasoup/signaling state, deferred SFU screen-share, optional human subjective audio/video quality signoff, and the need for a separate readiness decision
 - recommended next segment is `channel-sfu-default-switch-readiness-decision`
 
+Segment 120 result:
+- status: `readiness review / non-production default-candidate allowed / production blocked`
+- readiness decision is `review`: proceed only to a controlled non-production channel SFU default-candidate gate, not a broad product-facing or production default switch
+- private SFU, channel `AUDIO` SFU, and channel `VIDEO` SFU have enough local/dev evidence across direct, TURN, offline/restore, restart, leave/rejoin, stale cleanup, physical camera where relevant, and LiveKit fallback preservation to justify the next reversible default-candidate segment
+- product-facing default readiness remains `review` because SFU screen-share is deferred and subjective audio/video quality signoff may still be required before rollout
+- production readiness remains `blocked` because mediasoup/signaling state is process-local and production TURN/SFU infra, firewall, process management, monitoring, runbook, and rollback procedure are intentionally not implemented
+- ordinary channel `VIDEO`, ordinary channel `AUDIO`, and ordinary private `?video=true` remain LiveKit by default
+- recommended next segment is `channel-sfu-nonproduction-default-candidate-gate`
+
 ## Dependency Summary
 
 Critical path:
@@ -846,7 +855,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-sfu-default-switch-readiness-decision`
+- `channel-sfu-nonproduction-default-candidate-gate`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -868,4 +877,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-sfu-default-switch-readiness-decision`
+- `channel-sfu-nonproduction-default-candidate-gate`

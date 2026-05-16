@@ -351,7 +351,7 @@ Next likely work:
 
 ### Stage 8. Media MVP
 
-Status: `in progress / gated channel video SFU physical TURN pass-review`
+Status: `in progress / channel SFU default-candidate readiness review`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -552,16 +552,23 @@ Done:
 - two-user headed channel `VIDEO` SFU physical camera TURN smoke passed with `CHANNEL_VIDEO_SFU_SMOKE_TRANSPORT=turn`; local coturn logs showed authenticated relay allocation, permission, channel bind, relay usage, and cleanup
 - headed private SFU real-camera regression passed with `PRIVATE_SFU_SMOKE_CAPTURE=real`, preserving connected state, real audio+video producer count, controls, and leave redirect
 - ordinary channel `VIDEO` without the full gate remained LiveKit, ordinary channel `AUDIO` without the gate remained LiveKit, and ordinary private `?video=true` remained LiveKit
+- `channel-sfu-default-switch-readiness-decision` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_120_CHANNEL_SFU_DEFAULT_SWITCH_READINESS_DECISION.md`
+- readiness decision is `review`: proceed only to a controlled non-production channel SFU default-candidate gate, not a broad product-facing or production default switch
+- private SFU, channel `AUDIO` SFU, and channel `VIDEO` SFU have enough local/dev evidence across direct, TURN, offline/restore, restart, leave/rejoin, stale cleanup, physical camera where relevant, and LiveKit fallback preservation to justify the next reversible default-candidate segment
+- product-facing default readiness remains `review` because SFU screen-share is deferred and subjective audio/video quality signoff may still be required before rollout
+- production readiness remains `blocked` because mediasoup/signaling state is process-local and production TURN/SFU infra, firewall, process management, monitoring, runbook, and rollback procedure are intentionally not implemented
+- ordinary channel `VIDEO`, ordinary channel `AUDIO`, and ordinary private `?video=true` remain LiveKit by default
 
 Remaining:
+- implement only a controlled non-production default-candidate gate if continuing channel SFU work
 - keep physical camera QA scoped as two-user headed Windows Virtual Camera pass; five-user load remains fake-device based
-- decide whether the automated fake-device five-user load plus two-user physical TURN signoff is enough for the next controlled readiness decision
 - optionally run human subjective audio/video quality signoff if required for release confidence
 - process-local mediasoup/signaling state remains a production/multi-process blocker
 - implement SFU screen-share later only if MVP parity or a later default-switch decision requires it
+- production media infra/runbook remains separate and required before production default switch
 
 Next likely work:
-- run `channel-sfu-default-switch-readiness-decision`
+- run `channel-sfu-nonproduction-default-candidate-gate`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
