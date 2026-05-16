@@ -791,6 +791,16 @@ Segment 122 result:
 - production/product default remains on hold; remaining blockers are process-local mediasoup/signaling state, deferred SFU screen-share, production media infra/runbook, and a separate product-default readiness decision
 - recommended next segment is `channel-sfu-product-default-readiness-decision`
 
+Segment 123 result:
+- status: `audio pilot ready / video default hold / private default hold / production blocked`
+- docs-only product-default readiness decision is complete
+- channel `AUDIO` product default readiness is `pass for a limited non-production product-default pilot` because direct/TURN, 5-user load, offline/restore, restart, leave/rejoin, real-capture mode, stale cleanup, and LiveKit rollback are covered
+- channel `VIDEO` product default readiness is `review/hold` because SFU screen-share is deferred and default channel `VIDEO` still relies on LiveKit for screen-share parity
+- private default readiness is `review/hold`; private SFU remains stable for gated local/dev use, but ordinary private `?video=true` stays LiveKit until a separate private default decision accounts for parity and screen-share
+- production readiness is `blocked` by process-local mediasoup/signaling state and missing production TURN/SFU infra, runbook, monitoring, firewall/process management, and rollback procedure
+- next logical runtime segment is a constrained channel `AUDIO` non-production product-default pilot, while broader video/private default work should wait on screen-share parity or explicit no-screen-share pilot scope
+- recommended next segment is `channel-audio-sfu-limited-nonproduction-default-pilot`
+
 ## Dependency Summary
 
 Critical path:
@@ -878,7 +888,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-sfu-product-default-readiness-decision`
+- `channel-audio-sfu-limited-nonproduction-default-pilot`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -900,4 +910,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-sfu-product-default-readiness-decision`
+- `channel-audio-sfu-limited-nonproduction-default-pilot`
