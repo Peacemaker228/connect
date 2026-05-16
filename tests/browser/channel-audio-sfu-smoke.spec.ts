@@ -127,6 +127,7 @@ test.describe('channel AUDIO SFU browser smoke', () => {
       await expectAllProviders(pages, 'SFU channel audio')
       await expectAllStatuses(pages, 'connected')
       await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
+      await expectAllTransportModes(pages, smokeTransport === 'turn' ? 'Transport: turn' : 'Transport: direct')
 
       if (shouldUseImplicitSfuGate) {
         await Promise.all(
@@ -258,6 +259,10 @@ const expectAllRemoteProducerCounts = async (pages: Awaited<ReturnType<BrowserCo
       }),
     ),
   )
+}
+
+const expectAllTransportModes = async (pages: Awaited<ReturnType<BrowserContext['newPage']>>[], text: string) => {
+  await Promise.all(pages.map((page) => expect(page.getByTestId('private-sfu-transport-mode')).toHaveText(text)))
 }
 
 function getRemoteProducerText(count: number) {

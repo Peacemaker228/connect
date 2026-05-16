@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `channel-audio-sfu-limited-pilot-soak-observability`.
+The next Stage 8 segment should be `channel-audio-sfu-stale-session-cleanup-soak-rerun`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `channel-audio-sfu-limited-pilot-soak-observability`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `channel-audio-sfu-stale-session-cleanup-soak-rerun`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / channel audio SFU limited pilot pass`
+Status: `in progress / channel audio SFU pilot soak review`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -582,9 +582,15 @@ Done:
 - guarded channel `AUDIO` pilot TURN smoke passed with 3 users through local Docker coturn and backend-issued TURN credentials
 - private SFU regression passed with the audio pilot env enabled; ordinary private `?video=true` remains LiveKit by default
 - channel `VIDEO` remains LiveKit by default unless the existing full explicit/candidate channel `VIDEO` SFU gate is used
+- `channel-audio-sfu-limited-pilot-soak-observability` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_125_CHANNEL_AUDIO_SFU_LIMITED_PILOT_SOAK_OBSERVABILITY.md`
+- channel `AUDIO` pilot observability now has authenticated health counters for active mediasoup transports/producers/consumers/rooms
+- channel `AUDIO` pilot observability now has non-production structured lifecycle logs for transport, producer, consumer, and session close events with active counts
+- the SFU client status UI now shows `Transport: direct` or `Transport: turn`, and guarded channel `AUDIO` smoke asserts that value
+- channel `AUDIO` pilot direct and TURN smokes passed again after the observability changes
+- long-soak readiness remains `review` because raw process-local mediasoup counts can persist across dev smoke rooms/restarts/browser-context cleanup even though per-room user-facing producer discovery does not inflate remote producer counts
 
 Remaining:
-- continue only with constrained non-production channel `AUDIO` pilot soak/observability if runtime default work continues
+- add bounded stale-session cleanup/TTL/heartbeat and rerun soak before treating the limited channel `AUDIO` pilot as long-soak clean
 - keep physical camera QA scoped as two-user headed Windows Virtual Camera pass; five-user load remains fake-device based
 - optionally run human subjective audio/video quality signoff if required for release confidence
 - process-local mediasoup/signaling state remains a production/multi-process blocker
@@ -592,7 +598,7 @@ Remaining:
 - production media infra/runbook remains separate and required before production default switch
 
 Next likely work:
-- run `channel-audio-sfu-limited-pilot-soak-observability`
+- run `channel-audio-sfu-stale-session-cleanup-soak-rerun`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

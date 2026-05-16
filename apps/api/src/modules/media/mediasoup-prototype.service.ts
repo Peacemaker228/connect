@@ -1,4 +1,4 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { createWorker, version as mediasoupVersion, workerBin } from 'mediasoup';
 import type { types as mediasoupTypes } from 'mediasoup';
 
@@ -24,6 +24,10 @@ export type LocalMediasoupPrototypeHealth = {
   routerClosed?: boolean;
   routerCodecCount?: number;
   routerRtpCapabilities?: mediasoupTypes.RtpCapabilities;
+  activeTransportCount?: number;
+  activeProducerCount?: number;
+  activeConsumerCount?: number;
+  activeRoomCount?: number;
   reason?: string;
 };
 
@@ -112,6 +116,8 @@ const LOCAL_PROTOTYPE_MEDIA_CODECS: mediasoupTypes.RouterRtpCodecCapability[] = 
 
 @Injectable()
 export class MediasoupPrototypeService implements OnModuleDestroy {
+  private readonly logger = new Logger(MediasoupPrototypeService.name);
+
   constructor(
     private readonly mediaSignalingService: MediaSignalingService,
     private readonly mediaParticipantSessionService: MediaParticipantSessionService,
@@ -216,6 +222,13 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         this.transportScopes.delete(transport.id);
       });
 
+      this.logLifecycle('transport.created', {
+        direction,
+        transportId: transport.id,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+      });
+
       return {
         status: 'ready',
         enabled: true,
@@ -227,6 +240,13 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         sctpParameters: transport.sctpParameters,
       };
     } catch (error) {
+      this.logLifecycle('transport.failed', {
+        direction,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        reason: error instanceof Error ? error.message : 'Unknown mediasoup transport failure',
+      });
+
       return {
         status: 'failed',
         enabled: false,
@@ -296,6 +316,13 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     try {
       await transport.connect({ dtlsParameters });
 
+      this.logLifecycle('transport.connected', {
+        transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        dtlsState: transport.dtlsState,
+      });
+
       return {
         status: 'ready',
         enabled: true,
@@ -303,6 +330,14 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         dtlsState: transport.dtlsState,
       };
     } catch (error) {
+      this.logLifecycle('transport.connect.failed', {
+        transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        dtlsState: transport.dtlsState,
+        reason: error instanceof Error ? error.message : 'Unknown mediasoup transport connect failure',
+      });
+
       return {
         status: 'failed',
         enabled: false,
@@ -423,6 +458,14 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         });
       }
 
+      this.logLifecycle('producer.published', {
+        transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        producerId: producer.id,
+        kind: producer.kind,
+      });
+
       return {
         status: 'ready',
         enabled: true,
@@ -434,6 +477,14 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         paused: producer.paused,
       };
     } catch (error) {
+      this.logLifecycle('producer.failed', {
+        transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        kind,
+        reason: error instanceof Error ? error.message : 'Unknown mediasoup produce failure',
+      });
+
       return {
         status: 'failed',
         enabled: false,
@@ -573,6 +624,15 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         this.removeConsumerState(consumer.id);
       });
 
+      this.logLifecycle('consumer.created', {
+        transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        consumerId: consumer.id,
+        producerId,
+        kind: consumer.kind,
+      });
+
       return {
         status: 'ready',
         enabled: true,
@@ -588,6 +648,14 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         producerPaused: consumer.producerPaused,
       };
     } catch (error) {
+      this.logLifecycle('consumer.failed', {
+        transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        producerId,
+        reason: error instanceof Error ? error.message : 'Unknown mediasoup consume failure',
+      });
+
       return {
         status: 'failed',
         enabled: false,
@@ -1068,6 +1136,12 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         participantSessionId: producerScope.participantSessionId,
         producerId,
       });
+      this.logLifecycle('producer.closed', {
+        roomId: producerScope.roomId,
+        participantSessionId: producerScope.participantSessionId,
+        producerId,
+        kind: producer.kind,
+      });
     }
   }
 
@@ -1081,6 +1155,12 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
 
     if (consumerScope) {
       this.mediaSignalingService.publishConsumerClosed({
+        roomId: consumerScope.roomId,
+        participantSessionId: consumerScope.participantSessionId,
+        consumerId,
+        producerId,
+      });
+      this.logLifecycle('consumer.closed', {
         roomId: consumerScope.roomId,
         participantSessionId: consumerScope.participantSessionId,
         consumerId,
@@ -1133,9 +1213,16 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         this.transportScopes.delete(transportId);
       }
     }
+
+    this.logLifecycle('session.closed', {
+      roomId: scope.roomId,
+      participantSessionId: scope.participantSessionId,
+    });
   }
 
   private createHealthSnapshot(status: LocalMediasoupPrototypeStatus): LocalMediasoupPrototypeHealth {
+    const counts = this.createLifecycleCounts();
+
     return {
       status,
       enabled: status !== 'disabled',
@@ -1147,7 +1234,48 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
       routerClosed: this.router?.closed,
       routerCodecCount: this.router?.rtpCapabilities?.codecs?.length,
       routerRtpCapabilities: this.router?.rtpCapabilities,
+      activeTransportCount: counts.activeTransportCount,
+      activeProducerCount: counts.activeProducerCount,
+      activeConsumerCount: counts.activeConsumerCount,
+      activeRoomCount: counts.activeRoomCount,
       reason: status === 'failed' ? this.lastFailure ?? undefined : undefined,
     };
+  }
+
+  private createLifecycleCounts() {
+    const activeRoomIds = new Set<string>();
+
+    for (const scope of this.transportScopes.values()) {
+      activeRoomIds.add(scope.roomId);
+    }
+
+    for (const scope of this.producerScopes.values()) {
+      activeRoomIds.add(scope.roomId);
+    }
+
+    for (const scope of this.consumerScopes.values()) {
+      activeRoomIds.add(scope.roomId);
+    }
+
+    return {
+      activeTransportCount: this.transports.size,
+      activeProducerCount: this.producers.size,
+      activeConsumerCount: this.consumers.size,
+      activeRoomCount: activeRoomIds.size,
+    };
+  }
+
+  private logLifecycle(event: string, metadata: Record<string, unknown>) {
+    if (process.env.NODE_ENV === 'production') {
+      return;
+    }
+
+    this.logger.log(
+      JSON.stringify({
+        event,
+        ...metadata,
+        ...this.createLifecycleCounts(),
+      }),
+    );
   }
 }

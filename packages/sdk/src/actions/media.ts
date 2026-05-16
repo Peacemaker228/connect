@@ -109,6 +109,10 @@ export type MediasoupPrototypeHealthResponse = {
   routerClosed?: boolean
   routerCodecCount?: number
   routerRtpCapabilities?: Record<string, unknown>
+  activeTransportCount?: number
+  activeProducerCount?: number
+  activeConsumerCount?: number
+  activeRoomCount?: number
   reason?: string
 }
 

@@ -653,6 +653,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
 
   const hasLocalAudioTrack = localTracksRef.current.some((track) => track.kind === 'audio')
   const hasLocalVideoTrack = localTracksRef.current.some((track) => track.kind === 'video')
+  const transportMode = iceTransportPolicy === 'relay' ? 'turn' : 'direct'
 
   return (
     <div className="flex h-full flex-col bg-zinc-950 text-zinc-50">
@@ -731,6 +732,9 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         </div>
         <div className="text-xs text-zinc-500" data-testid="private-sfu-capture-mode">
           Capture mode: {captureMode}
+        </div>
+        <div className="text-xs text-zinc-500" data-testid="private-sfu-transport-mode">
+          Transport: {transportMode}
         </div>
         {captureNotice ? (
           <div className="text-xs text-amber-300" data-testid="private-sfu-capture-notice">

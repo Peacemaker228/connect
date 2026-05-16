@@ -815,6 +815,18 @@ Segment 124 result:
 - remaining blockers before broader product/production default are process-local mediasoup/signaling state, deferred SFU screen-share for video/private parity, production media infra/runbook/monitoring/rollback, and optional broader subjective quality signoff
 - recommended next segment is `channel-audio-sfu-limited-pilot-soak-observability`
 
+Segment 125 result:
+- status: `audio pilot direct/TURN pass / observability pass for local review / long-soak readiness review`
+- inventoried current channel `AUDIO` SFU status/log surfaces: client status/detail, room/session ids, producer/consumer ids, remote producer count, capture mode, SSE producer lifecycle events, backend scoped checks, and coturn relay logs
+- added local/dev observability without a broader switch: active mediasoup health counters, non-production structured lifecycle logs, and client-visible `Transport: direct` / `Transport: turn`
+- client-visible transport mode is requested adapter mode, not low-level ICE selected-candidate telemetry
+- guarded channel `AUDIO` pilot direct smoke passed again with 5 authenticated users, no per-URL SFU query, expected `Remote producers: 4`, `Transport: direct`, real capture mode, restart, offline/restore, leave/rejoin, and rollback/default assertions
+- guarded channel `AUDIO` pilot TURN smoke passed again with 3 authenticated users, no per-URL SFU query, expected `Remote producers: 2`, `Transport: turn`, backend-issued TURN credentials, local Docker coturn relay usage, restart, leave/rejoin, and cleanup
+- observability logs appeared for transport create/connect, producer publish/close, consumer create/close, session close, and active counts
+- soak gap remains: raw process-local mediasoup counts can persist across dev smoke rooms/restarts/browser-context cleanup in the same API process; user-facing per-room producer discovery still dedupes and smoke did not show stale remote producer inflation, but long soak should get explicit stale-session cleanup/TTL/heartbeat before broader product default
+- channel `VIDEO`, ordinary private `?video=true`, and production defaults remain LiveKit; LiveKit fallback was not removed or weakened
+- recommended next segment is `channel-audio-sfu-stale-session-cleanup-soak-rerun`
+
 ## Dependency Summary
 
 Critical path:
@@ -902,7 +914,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-audio-sfu-limited-pilot-soak-observability`
+- `channel-audio-sfu-stale-session-cleanup-soak-rerun`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -924,4 +936,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-audio-sfu-limited-pilot-soak-observability`
+- `channel-audio-sfu-stale-session-cleanup-soak-rerun`
