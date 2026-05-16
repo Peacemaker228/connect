@@ -20,10 +20,10 @@ This segment does not perform a production rollout, broad default switch, channe
 Changed:
 - added the operator checklist for controlled channel `AUDIO` SFU pilot review.
 - classified direct/TURN/manual quality review status using the existing Segment 124-127 evidence.
+- recorded operator direct-channel observations and a scoped runtime follow-up fix for mute/route cleanup/speaking visibility.
 - updated Wave 33 and Stage status.
 
 Preserved:
-- no runtime code changed.
 - no production default was enabled.
 - no channel `VIDEO` default switch was made.
 - no private default switch was made.
@@ -31,6 +31,14 @@ Preserved:
 - no screen-share parity claim was made.
 - no production infra/env/nginx/firewall/deploy changes were made.
 - no Stage 6/Postgres production migration changes were made.
+
+Scoped runtime follow-up:
+- after the initial checklist, operator review found unreliable mute behavior and likely continued audio after channel/server navigation.
+- local mute now also pauses/resumes the mediasoup producer instead of only toggling `MediaStreamTrack.enabled`.
+- leave now performs immediate local SFU cleanup before route navigation.
+- SFU adapter instances are keyed by backend room/session to force clean remounts across channel/session changes.
+- closed remote audio producers now remove their audio track from the remote audio stream.
+- local/remote speaking indicators were added for review visibility.
 
 ## Review Environment
 
@@ -96,14 +104,18 @@ Automated/local evidence:
 - LiveKit rollback/default preservation: `pass` from Segment 124 through Segment 127.
 
 Manual/operator product review:
-- status: `blocked / requires operator`
-- reason: no operator manual review result was provided in this segment, so real microphone audio quality, subjective latency, permission UX, and human rollback confidence cannot be honestly marked pass.
+- status: `review`
+- evidence: two clients reached channel `AUDIO` SFU connected state in direct mode with `Remote producers: 1`, `Capture mode: real`, `Transport: direct`, and `Requested media: audio on, video off`.
+- issue: operator reported unreliable mute/unmute behavior and likely continued audio after navigating away from the channel/server before the scoped runtime fix.
+- follow-up: scoped fix added for producer pause/resume, immediate leave cleanup, route/session remounting, remote audio track removal, and speaking indicators.
 
 Direct manual audio quality:
-- status: `requires operator`
+- status: `review`
+- evidence: direct channel `AUDIO` connected with real capture; operator reported audio was present enough to notice mute/navigation issues.
 
 TURN manual audio quality:
-- status: `requires operator`
+- status: `not tested / invalid run`
+- reason: `?sfuTransport=turn` was tried without a running coturn container. Setting `LOCAL_TURN_URLS` and `LOCAL_TURN_STATIC_AUTH_SECRET` without coturn does not constitute a valid TURN relay review.
 
 Rollback manual confidence:
 - status: `requires operator`
@@ -111,12 +123,12 @@ Rollback manual confidence:
 ## Decision
 
 Controlled product review status:
-- `review / requires operator`
+- `review / scoped fix added`
 
 Interpretation:
 - the limited channel `AUDIO` SFU pilot remains technically ready for controlled non-production product review.
 - automated direct/TURN/cleanup/regression evidence is strong enough to start operator review.
-- the product review itself is not complete until an operator performs the checklist and records pass/review/fail for real audio quality and UX.
+- the first operator review found direct connectivity, but mute/navigation cleanup required a scoped runtime fix before the checklist can be rerun for pass/fail.
 
 ## What Remains LiveKit
 
@@ -127,8 +139,9 @@ Interpretation:
 
 ## Remaining Blockers
 
-- operator manual product review is not completed.
-- subjective real microphone audio quality signoff is not completed.
+- operator manual product review must be rerun after the scoped mute/cleanup/speaking-indicator fix.
+- subjective real microphone audio quality signoff remains incomplete.
+- optional TURN manual review remains incomplete because coturn was not running for the attempted TURN URL.
 - process-local mediasoup/signaling state remains a multi-process/production blocker.
 - production TURN/SFU infra, runbook, monitoring, firewall/process management, and rollback procedure remain out of scope.
 - SFU screen-share remains deferred for channel `VIDEO` and private parity.
@@ -142,6 +155,7 @@ Expected shape:
 - capture direct manual audio quality status.
 - capture optional TURN manual audio quality status if local coturn is available.
 - capture rollback confidence.
+- verify mute/unmute reliability, navigation cleanup, and local/remote speaking indicators after the scoped fix.
 - keep production, channel `VIDEO`, private default, and LiveKit fallback unchanged.
 
 ## Verification Performed

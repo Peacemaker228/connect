@@ -603,10 +603,12 @@ Done:
 - `channel-audio-sfu-limited-pilot-controlled-product-review` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_128_CHANNEL_AUDIO_SFU_LIMITED_PILOT_CONTROLLED_PRODUCT_REVIEW.md`
 - controlled channel `AUDIO` SFU pilot operator checklist is ready
 - automated/local evidence remains pass for direct, TURN, cleanup, private regression, and rollback preservation
-- manual/operator product review is `blocked / requires operator` because real microphone audio quality, permission UX, and rollback confidence were not manually recorded in this segment
+- first operator direct review reached connected channel `AUDIO` SFU state with real capture, direct transport, and one remote producer per two-user client
+- operator found mute/unmute and navigation cleanup issues; a scoped SFU adapter fix added producer pause/resume on mute, immediate leave cleanup, keyed room/session remounting, remote audio track removal, and local/remote speaking indicators
+- attempted TURN review is `not tested / invalid run` because coturn was not running
 
 Remaining:
-- run the channel `AUDIO` limited pilot operator checklist before any broader product-facing default work
+- rerun the channel `AUDIO` limited pilot operator checklist after the scoped mute/cleanup/speaking-indicator fix before any broader product-facing default work
 - keep physical camera QA scoped as two-user headed Windows Virtual Camera pass; five-user load remains fake-device based
 - optionally run human subjective audio/video quality signoff if required for release confidence
 - process-local mediasoup/signaling state remains a production/multi-process blocker

@@ -116,6 +116,7 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
 
     return (
       <SfuPrivateCallAdapter
+        key={`${controlPlaneJoin.room.roomId}:${controlPlaneJoin.participantSession.participantSessionId}`}
         controlPlaneJoin={controlPlaneJoin}
         audio={isChannelAudioSfu ? true : audio}
         video={isChannelAudioSfu ? false : video}

@@ -853,12 +853,14 @@ Segment 127 result:
 - recommended next segment is `channel-audio-sfu-limited-pilot-controlled-product-review`
 
 Segment 128 result:
-- status: `controlled product review checklist ready / operator review required`
-- docs/report-only controlled product review checklist is complete for the channel `AUDIO` SFU limited pilot
+- status: `controlled product review review / scoped mute-cleanup fix added`
+- controlled product review checklist is complete for the channel `AUDIO` SFU limited pilot
 - automated/local evidence remains pass for direct channel `AUDIO` pilot, TURN channel `AUDIO` pilot, cleanup counters settling to zero, private SFU regression, and LiveKit rollback/default preservation
-- manual/operator product review is `blocked / requires operator` because no human review result was provided in this segment
-- direct manual audio quality, TURN manual audio quality, permission UX, and rollback confidence must be recorded by an operator before product review can be marked pass
-- channel `VIDEO`, ordinary private `?video=true`, and production remain LiveKit/default; no runtime code or default switch changed
+- first operator direct review reached connected channel `AUDIO` SFU state with real capture, `Transport: direct`, and one remote producer per two-user client
+- operator reported unreliable mute/unmute and likely continued audio after channel/server navigation; a scoped SFU adapter fix was added for producer pause/resume, immediate leave cleanup, keyed room/session remounting, remote audio track removal, and local/remote speaking indicators
+- attempted TURN review is `not tested / invalid run` because coturn was not running; TURN needs a running local coturn container in addition to local TURN env
+- direct manual audio quality, mute/cleanup behavior after the fix, TURN manual audio quality, permission UX, and rollback confidence must be rerun by an operator before product review can be marked pass
+- channel `VIDEO`, ordinary private `?video=true`, and production remain LiveKit/default; no default switch changed
 - recommended next segment is `channel-audio-sfu-limited-pilot-operator-review-rerun`
 
 ## Dependency Summary

@@ -198,6 +198,26 @@ export class SfuClientAdapter {
     return heartbeatMediasoupPrototypeSession(sessionScope)
   }
 
+  setProducerTrackEnabled(kind: MediaStreamTrack['kind'], enabled: boolean) {
+    for (const producer of this.producers.values()) {
+      const appData = producer.appData as { trackKind?: MediaStreamTrack['kind'] }
+
+      if (appData.trackKind !== kind) {
+        continue
+      }
+
+      if (producer.track) {
+        producer.track.enabled = enabled
+      }
+
+      if (enabled) {
+        producer.resume()
+      } else {
+        producer.pause()
+      }
+    }
+  }
+
   async consume(
     metadata: MediasoupPrototypeConsumerResponse,
     input: ConsumeSfuClientMetadataInput = {},

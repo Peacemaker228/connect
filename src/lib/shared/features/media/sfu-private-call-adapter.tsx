@@ -39,6 +39,10 @@ type RemoteParticipantMedia = {
   videoTrack?: MediaStreamTrack
 }
 
+type SpeakingDetectorHandle = {
+  close: () => void
+}
+
 const getMediaErrorMessage = (error: unknown) => {
   return error instanceof Error ? error.message : 'Unknown media capture failure'
 }
@@ -91,6 +95,78 @@ const waitForRemoteTrackFlow = async (track: MediaStreamTrack) => {
   })
 }
 
+const createSpeakingDetector = (
+  stream: MediaStream,
+  onSpeakingChange: (speaking: boolean) => void,
+): SpeakingDetectorHandle | null => {
+  const AudioContextConstructor = window.AudioContext ?? window.webkitAudioContext
+
+  if (!AudioContextConstructor || stream.getAudioTracks().length === 0) {
+    onSpeakingChange(false)
+    return null
+  }
+
+  const audioContext = new AudioContextConstructor()
+  const analyser = audioContext.createAnalyser()
+  const source = audioContext.createMediaStreamSource(stream)
+  const samples = new Uint8Array(analyser.fftSize)
+  let animationFrameId: number | null = null
+  let lastSpeaking = false
+  let closed = false
+
+  analyser.fftSize = 512
+  source.connect(analyser)
+
+  const tick = () => {
+    if (closed) {
+      return
+    }
+
+    analyser.getByteTimeDomainData(samples)
+
+    let total = 0
+
+    for (const sample of samples) {
+      total += Math.abs(sample - 128)
+    }
+
+    const speaking = total / samples.length > 5
+
+    if (speaking !== lastSpeaking) {
+      lastSpeaking = speaking
+      onSpeakingChange(speaking)
+    }
+
+    animationFrameId = window.requestAnimationFrame(tick)
+  }
+
+  if (audioContext.state === 'suspended') {
+    void audioContext.resume().catch(() => undefined)
+  }
+
+  tick()
+
+  return {
+    close: () => {
+      closed = true
+
+      if (animationFrameId !== null) {
+        window.cancelAnimationFrame(animationFrameId)
+      }
+
+      source.disconnect()
+      void audioContext.close().catch(() => undefined)
+      onSpeakingChange(false)
+    },
+  }
+}
+
+declare global {
+  interface Window {
+    webkitAudioContext?: typeof AudioContext
+  }
+}
+
 export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   controlPlaneJoin,
   audio,
@@ -112,8 +188,11 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null)
   const remoteStreamRef = useRef<MediaStream | null>(null)
   const remoteVideoStreamRef = useRef<MediaStream | null>(null)
+  const remoteAudioTrackByProducerIdRef = useRef(new Map<string, MediaStreamTrack>())
   const eventSourceRef = useRef<EventSource | null>(null)
   const heartbeatTimerRef = useRef<number | null>(null)
+  const localSpeakingDetectorRef = useRef<SpeakingDetectorHandle | null>(null)
+  const remoteSpeakingDetectorRef = useRef<SpeakingDetectorHandle | null>(null)
   const consumedProducerIdsRef = useRef(new Set<string>())
   const consumedProducerKeysRef = useRef(new Set<string>())
   const consumedProducerKeyByIdRef = useRef(new Map<string, string>())
@@ -129,6 +208,8 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   const [localAudioEnabled, setLocalAudioEnabled] = useState(audio)
   const [localVideoEnabled, setLocalVideoEnabled] = useState(video)
   const [captureNotice, setCaptureNotice] = useState<string | null>(null)
+  const [isLocalSpeaking, setIsLocalSpeaking] = useState(false)
+  const [isRemoteSpeaking, setIsRemoteSpeaking] = useState(false)
 
   const sessionScope: SfuClientSessionScope = useMemo(
     () => ({
@@ -149,6 +230,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
 
     adapterRef.current?.close()
     adapterRef.current = null
+    remoteAudioTrackByProducerIdRef.current.clear()
     consumedProducerIdsRef.current.clear()
     consumedProducerKeysRef.current.clear()
     consumedProducerKeyByIdRef.current.clear()
@@ -161,6 +243,12 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     }
 
     localTracksRef.current = []
+    localSpeakingDetectorRef.current?.close()
+    localSpeakingDetectorRef.current = null
+    remoteSpeakingDetectorRef.current?.close()
+    remoteSpeakingDetectorRef.current = null
+    setIsLocalSpeaking(false)
+    setIsRemoteSpeaking(false)
 
     try {
       oscillatorRef.current?.stop()
@@ -188,7 +276,52 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     }
   }, [])
 
-  useEffect(() => cleanup, [cleanup])
+  useEffect(() => {
+    return () => {
+      startRunIdRef.current += 1
+      cleanup()
+    }
+  }, [cleanup])
+
+  const setLocalSpeakingState = useCallback((speaking: boolean) => {
+    setIsLocalSpeaking((current) => (current === speaking ? current : speaking))
+  }, [])
+
+  const setRemoteSpeakingState = useCallback((speaking: boolean) => {
+    setIsRemoteSpeaking((current) => (current === speaking ? current : speaking))
+  }, [])
+
+  const startLocalSpeakingDetector = useCallback(
+    (tracks: MediaStreamTrack[]) => {
+      localSpeakingDetectorRef.current?.close()
+      localSpeakingDetectorRef.current = null
+
+      const audioTrack = tracks.find((track) => track.kind === 'audio')
+
+      if (!audioTrack) {
+        setLocalSpeakingState(false)
+        return
+      }
+
+      localSpeakingDetectorRef.current = createSpeakingDetector(new MediaStream([audioTrack]), setLocalSpeakingState)
+    },
+    [setLocalSpeakingState],
+  )
+
+  const startRemoteSpeakingDetector = useCallback(
+    (stream: MediaStream | null) => {
+      remoteSpeakingDetectorRef.current?.close()
+      remoteSpeakingDetectorRef.current = null
+
+      if (!stream || stream.getAudioTracks().length === 0) {
+        setRemoteSpeakingState(false)
+        return
+      }
+
+      remoteSpeakingDetectorRef.current = createSpeakingDetector(stream, setRemoteSpeakingState)
+    },
+    [setRemoteSpeakingState],
+  )
 
   const createSyntheticAudioTrack = useCallback(async () => {
     const audioContext = new AudioContext()
@@ -354,12 +487,14 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
 
     remoteStreamRef.current = remoteStream
     remoteStream.addTrack(track)
+    remoteAudioTrackByProducerIdRef.current.set(producer.producerId, track)
+    startRemoteSpeakingDetector(remoteStream)
 
     if (remoteAudioRef.current) {
       remoteAudioRef.current.srcObject = remoteStream
       await remoteAudioRef.current.play().catch(() => undefined)
     }
-  }, [remoteVideoLayout])
+  }, [remoteVideoLayout, startRemoteSpeakingDetector])
 
   const consumeRemoteProducer = useCallback(
     async ({
@@ -517,6 +652,30 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
               const producer = consumedProducerByIdRef.current.get(event.producerId)
               consumedProducerByIdRef.current.delete(event.producerId)
 
+              if (producer?.kind === 'audio') {
+                const remoteTrack = remoteAudioTrackByProducerIdRef.current.get(event.producerId)
+
+                remoteAudioTrackByProducerIdRef.current.delete(event.producerId)
+
+                if (remoteTrack && remoteStreamRef.current) {
+                  remoteStreamRef.current.removeTrack(remoteTrack)
+                  remoteTrack.stop()
+
+                  if (remoteStreamRef.current.getAudioTracks().length === 0) {
+                    remoteAudioRef.current?.pause()
+
+                    if (remoteAudioRef.current) {
+                      remoteAudioRef.current.srcObject = null
+                    }
+
+                    remoteStreamRef.current = null
+                    startRemoteSpeakingDetector(null)
+                  } else {
+                    startRemoteSpeakingDetector(remoteStreamRef.current)
+                  }
+                }
+              }
+
               if (producer?.kind === 'video' && remoteVideoLayout === 'single') {
                 setHasSingleRemoteVideoTrack(false)
               }
@@ -551,7 +710,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         }
       })
     },
-    [consumeRemoteProducer, remoteVideoLayout, sessionScope],
+    [consumeRemoteProducer, remoteVideoLayout, sessionScope, startRemoteSpeakingDetector],
   )
 
   const startSfuPath = useCallback(async () => {
@@ -599,6 +758,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       })
 
       const localTracks = await createLocalTracks()
+      startLocalSpeakingDetector(localTracks)
       const produced = await Promise.all(
         localTracks.map((track) =>
           adapter.produce(track, {
@@ -642,6 +802,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     iceTransportPolicy,
     sessionScope,
     startSessionHeartbeat,
+    startLocalSpeakingDetector,
     subscribeToProducerEvents,
     video,
   ])
@@ -657,6 +818,8 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       track.enabled = nextEnabled
     }
 
+    adapterRef.current?.setProducerTrackEnabled('audio', nextEnabled)
+    setIsLocalSpeaking(false)
     setLocalAudioEnabled(nextEnabled)
   }, [localAudioEnabled])
 
@@ -667,12 +830,18 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       track.enabled = nextEnabled
     }
 
+    adapterRef.current?.setProducerTrackEnabled('video', nextEnabled)
     setLocalVideoEnabled(nextEnabled)
   }, [localVideoEnabled])
 
   const hasLocalAudioTrack = localTracksRef.current.some((track) => track.kind === 'audio')
   const hasLocalVideoTrack = localTracksRef.current.some((track) => track.kind === 'video')
   const transportMode = iceTransportPolicy === 'relay' ? 'turn' : 'direct'
+  const handleLeaveClick = useCallback(() => {
+    startRunIdRef.current += 1
+    cleanup()
+    onLeave()
+  }, [cleanup, onLeave])
 
   return (
     <div className="flex h-full flex-col bg-zinc-950 text-zinc-50">
@@ -717,7 +886,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
           >
             <RotateCcw className="h-4 w-4" />
           </Button>
-          <Button type="button" size="icon" variant="destructive" aria-label="Leave call" onClick={onLeave}>
+          <Button type="button" size="icon" variant="destructive" aria-label="Leave call" onClick={handleLeaveClick}>
             <PhoneOff className="h-4 w-4" />
           </Button>
         </div>
@@ -762,6 +931,20 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         ) : null}
         <div className="text-xs text-zinc-500">
           Requested media: audio {audio ? 'on' : 'off'}, video {video ? 'on' : 'off'}
+        </div>
+        <div className="flex flex-wrap justify-center gap-2 text-xs">
+          <span
+            className={isLocalSpeaking ? 'text-emerald-300' : 'text-zinc-500'}
+            data-testid="private-sfu-local-speaking"
+          >
+            Local voice: {isLocalSpeaking ? 'speaking' : 'silent'}
+          </span>
+          <span
+            className={isRemoteSpeaking ? 'text-emerald-300' : 'text-zinc-500'}
+            data-testid="private-sfu-remote-speaking"
+          >
+            Remote voice: {isRemoteSpeaking ? 'speaking' : 'silent'}
+          </span>
         </div>
         <div className="grid w-full max-w-4xl grid-cols-1 gap-3 sm:grid-cols-2">
           <video

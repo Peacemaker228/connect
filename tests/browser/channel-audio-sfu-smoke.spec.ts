@@ -156,6 +156,8 @@ test.describe('channel AUDIO SFU browser smoke', () => {
         )
       }
       await expect(pages[0].getByText('Requested media: audio on, video off')).toBeVisible()
+      await expect(pages[0].getByTestId('private-sfu-local-speaking')).toContainText('Local voice:')
+      await expect(pages[0].getByTestId('private-sfu-remote-speaking')).toContainText('Remote voice:')
 
       await pages[0].getByRole('button', { name: 'Restart SFU channel audio' }).click()
       await expectAllStatuses(pages, 'connected')
