@@ -801,6 +801,20 @@ Segment 123 result:
 - next logical runtime segment is a constrained channel `AUDIO` non-production product-default pilot, while broader video/private default work should wait on screen-share parity or explicit no-screen-share pilot scope
 - recommended next segment is `channel-audio-sfu-limited-nonproduction-default-pilot`
 
+Segment 124 result:
+- status: `audio pilot pass / video default preserved / private default preserved / production blocked`
+- added the separate non-production channel `AUDIO` product-default pilot env gate: `NEXT_PUBLIC_MEDIA_CHANNEL_AUDIO_SFU_PRODUCT_DEFAULT_PILOT=1`
+- because the pilot gate is a `NEXT_PUBLIC_*` browser flag, enabling or disabling it requires restarting the local web dev server or rebuilding the web bundle
+- pilot scope is channel `AUDIO` only, `NODE_ENV !== 'production'` only, off by default, and suppressed by explicit LiveKit rollback overrides: `?mediaProvider=livekit`, `?livekit=true`, or `?sfu=false`
+- existing explicit SFU gates and default-candidate gates remain supported
+- guarded channel `AUDIO` pilot direct smoke passed with 5 authenticated users, no per-URL SFU query, real capture mode, expected `Remote producers: 4`, restart, offline/restore, leave/rejoin, and LiveKit rollback
+- guarded channel `AUDIO` pilot TURN smoke passed with 3 authenticated users, no per-URL SFU query, relay policy, backend-issued TURN credentials, local Docker coturn relay usage, restart, leave/rejoin, and cleanup
+- private SFU regression passed with the audio pilot env enabled, and ordinary private `?video=true` remains LiveKit by default
+- channel `VIDEO` without the full video SFU gate remains LiveKit/default; no channel `VIDEO` default switch was added
+- production remains blocked by the existing non-production SFU render guard; no production infra/env/nginx/firewall/deploy changes were made
+- remaining blockers before broader product/production default are process-local mediasoup/signaling state, deferred SFU screen-share for video/private parity, production media infra/runbook/monitoring/rollback, and optional broader subjective quality signoff
+- recommended next segment is `channel-audio-sfu-limited-pilot-soak-observability`
+
 ## Dependency Summary
 
 Critical path:
@@ -888,7 +902,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-audio-sfu-limited-nonproduction-default-pilot`
+- `channel-audio-sfu-limited-pilot-soak-observability`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -910,4 +924,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-audio-sfu-limited-nonproduction-default-pilot`
+- `channel-audio-sfu-limited-pilot-soak-observability`

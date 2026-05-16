@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `local-sfu-direct-turn-smoke`.
+The next Stage 8 segment should be `channel-audio-sfu-limited-pilot-soak-observability`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `mvp-private-small-room-replacement`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `channel-audio-sfu-limited-pilot-soak-observability`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / channel audio SFU limited pilot ready`
+Status: `in progress / channel audio SFU limited pilot pass`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -575,9 +575,16 @@ Done:
 - channel `VIDEO` product default readiness is `review/hold` because SFU screen-share remains deferred
 - private default readiness is `review/hold`; ordinary private `?video=true` remains LiveKit pending a separate parity/default decision
 - production readiness is `blocked` by process-local mediasoup/signaling state and missing production media infra/runbook/monitoring/rollback
+- `channel-audio-sfu-limited-nonproduction-default-pilot` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_124_CHANNEL_AUDIO_SFU_LIMITED_NONPRODUCTION_DEFAULT_PILOT.md`
+- channel `AUDIO` now has a separate non-production product-default pilot gate: `NEXT_PUBLIC_MEDIA_CHANNEL_AUDIO_SFU_PRODUCT_DEFAULT_PILOT=1`
+- the pilot gate is channel `AUDIO` only, off by default, production-blocked, and keeps explicit LiveKit rollback through `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`
+- guarded channel `AUDIO` pilot direct smoke passed with 5 users, no per-URL SFU query, real capture mode, offline/restore, restart, leave/rejoin, and rollback assertion
+- guarded channel `AUDIO` pilot TURN smoke passed with 3 users through local Docker coturn and backend-issued TURN credentials
+- private SFU regression passed with the audio pilot env enabled; ordinary private `?video=true` remains LiveKit by default
+- channel `VIDEO` remains LiveKit by default unless the existing full explicit/candidate channel `VIDEO` SFU gate is used
 
 Remaining:
-- implement only a constrained channel `AUDIO` non-production product-default pilot if continuing runtime default work
+- continue only with constrained non-production channel `AUDIO` pilot soak/observability if runtime default work continues
 - keep physical camera QA scoped as two-user headed Windows Virtual Camera pass; five-user load remains fake-device based
 - optionally run human subjective audio/video quality signoff if required for release confidence
 - process-local mediasoup/signaling state remains a production/multi-process blocker
@@ -585,7 +592,7 @@ Remaining:
 - production media infra/runbook remains separate and required before production default switch
 
 Next likely work:
-- run `channel-audio-sfu-limited-nonproduction-default-pilot`
+- run `channel-audio-sfu-limited-pilot-soak-observability`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

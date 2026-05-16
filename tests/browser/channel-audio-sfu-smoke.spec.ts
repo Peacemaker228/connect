@@ -47,6 +47,8 @@ const apiOrigin = new URL(apiBaseUrl)
 const webOrigin = new URL(webBaseUrl)
 const smokeTransport = process.env.CHANNEL_AUDIO_SFU_SMOKE_TRANSPORT
 const shouldUseCandidateGate = process.env.CHANNEL_AUDIO_SFU_SMOKE_CANDIDATE_GATE === '1'
+const shouldUseProductDefaultPilot = process.env.CHANNEL_AUDIO_SFU_SMOKE_PRODUCT_DEFAULT_PILOT === '1'
+const shouldUseImplicitSfuGate = shouldUseCandidateGate || shouldUseProductDefaultPilot
 const participantCount = parsePositiveInteger(process.env.CHANNEL_AUDIO_SFU_SMOKE_USERS, 3)
 const shouldRunLeaveRejoin = process.env.CHANNEL_AUDIO_SFU_SMOKE_LEAVE_REJOIN !== '0'
 const shouldRunOfflineRestore = process.env.CHANNEL_AUDIO_SFU_SMOKE_OFFLINE_RESTORE === '1'
@@ -67,7 +69,7 @@ test.describe('channel AUDIO SFU browser smoke', () => {
     ).toBe(webOrigin.hostname)
   })
 
-  test('connects authenticated channel AUDIO SFU participants behind explicit or candidate gate', async ({
+  test('connects authenticated channel AUDIO SFU participants behind explicit, candidate, or product-default pilot gate', async ({
     browser,
   }) => {
     test.setTimeout(120_000)
@@ -110,8 +112,8 @@ test.describe('channel AUDIO SFU browser smoke', () => {
 
       const pages = await Promise.all(contexts.map((context) => context.newPage()))
       const sfuQuery = toSearchQuery({
-        mediaProvider: shouldUseCandidateGate ? undefined : 'sfu',
-        sfuChannel: shouldUseCandidateGate ? undefined : 'true',
+        mediaProvider: shouldUseImplicitSfuGate ? undefined : 'sfu',
+        sfuChannel: shouldUseImplicitSfuGate ? undefined : 'true',
         sfuTransport: smokeTransport === 'turn' ? 'turn' : undefined,
       })
       const expectedRemoteProducerText = getRemoteProducerText(participantCount - 1)
@@ -126,7 +128,7 @@ test.describe('channel AUDIO SFU browser smoke', () => {
       await expectAllStatuses(pages, 'connected')
       await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
 
-      if (shouldUseCandidateGate) {
+      if (shouldUseImplicitSfuGate) {
         await Promise.all(
           pages.map((page) => expect(page.getByTestId('private-sfu-capture-mode')).toHaveText('Capture mode: real')),
         )
@@ -163,15 +165,19 @@ test.describe('channel AUDIO SFU browser smoke', () => {
       const defaultAudioPage = await ownerContext.newPage()
       await defaultAudioPage.goto(
         `${webBaseUrl}/servers/${createdServer.id}/channels/${audioChannel.id}${
-          shouldUseCandidateGate ? '?mediaProvider=livekit' : ''
+          shouldUseImplicitSfuGate ? '?mediaProvider=livekit' : ''
         }`,
       )
       await expect(defaultAudioPage.getByTestId('private-sfu-provider')).toHaveCount(0)
 
+      const defaultVideoPage = await ownerContext.newPage()
+      await defaultVideoPage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}`)
+      await expect(defaultVideoPage.getByTestId('private-sfu-provider')).toHaveCount(0)
+
       const gatedVideoPage = await ownerContext.newPage()
       await gatedVideoPage.goto(
         `${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}${
-          shouldUseCandidateGate ? '?mediaProvider=livekit' : sfuQuery
+          shouldUseImplicitSfuGate ? '?mediaProvider=livekit' : sfuQuery
         }`,
       )
       await expect(gatedVideoPage.getByTestId('private-sfu-provider')).toHaveCount(0)
