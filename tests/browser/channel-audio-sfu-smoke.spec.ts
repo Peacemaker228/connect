@@ -45,8 +45,8 @@ const webBaseUrl = normalizeBaseUrl(
 )
 const apiOrigin = new URL(apiBaseUrl)
 const webOrigin = new URL(webBaseUrl)
-const transportQuery =
-  process.env.CHANNEL_AUDIO_SFU_SMOKE_TRANSPORT === 'turn' ? '&sfuTransport=turn' : ''
+const smokeTransport = process.env.CHANNEL_AUDIO_SFU_SMOKE_TRANSPORT
+const shouldUseCandidateGate = process.env.CHANNEL_AUDIO_SFU_SMOKE_CANDIDATE_GATE === '1'
 const participantCount = parsePositiveInteger(process.env.CHANNEL_AUDIO_SFU_SMOKE_USERS, 3)
 const shouldRunLeaveRejoin = process.env.CHANNEL_AUDIO_SFU_SMOKE_LEAVE_REJOIN !== '0'
 const shouldRunOfflineRestore = process.env.CHANNEL_AUDIO_SFU_SMOKE_OFFLINE_RESTORE === '1'
@@ -67,14 +67,14 @@ test.describe('channel AUDIO SFU browser smoke', () => {
     ).toBe(webOrigin.hostname)
   })
 
-  test('connects authenticated channel AUDIO SFU participants behind explicit gate', async ({ browser }) => {
+  test('connects authenticated channel AUDIO SFU participants behind explicit or candidate gate', async ({
+    browser,
+  }) => {
     test.setTimeout(120_000)
 
     expect(participantCount, 'CHANNEL_AUDIO_SFU_SMOKE_USERS must be at least 2').toBeGreaterThanOrEqual(2)
 
-    const contexts = await Promise.all(
-      Array.from({ length: participantCount }, () => browser.newContext()),
-    )
+    const contexts = await Promise.all(Array.from({ length: participantCount }, () => browser.newContext()))
     const [ownerContext, ...memberContexts] = contexts
 
     try {
@@ -109,7 +109,11 @@ test.describe('channel AUDIO SFU browser smoke', () => {
       const generalChannel = findChannel(serverWithChannels, 'general', 'TEXT')
 
       const pages = await Promise.all(contexts.map((context) => context.newPage()))
-      const sfuQuery = `?mediaProvider=sfu&sfuChannel=true${transportQuery}`
+      const sfuQuery = toSearchQuery({
+        mediaProvider: shouldUseCandidateGate ? undefined : 'sfu',
+        sfuChannel: shouldUseCandidateGate ? undefined : 'true',
+        sfuTransport: smokeTransport === 'turn' ? 'turn' : undefined,
+      })
       const expectedRemoteProducerText = getRemoteProducerText(participantCount - 1)
 
       await Promise.all(
@@ -121,6 +125,12 @@ test.describe('channel AUDIO SFU browser smoke', () => {
       await expectAllProviders(pages, 'SFU channel audio')
       await expectAllStatuses(pages, 'connected')
       await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
+
+      if (shouldUseCandidateGate) {
+        await Promise.all(
+          pages.map((page) => expect(page.getByTestId('private-sfu-capture-mode')).toHaveText('Capture mode: real')),
+        )
+      }
       await expect(pages[0].getByText('Requested media: audio on, video off')).toBeVisible()
 
       await pages[0].getByRole('button', { name: 'Restart SFU channel audio' }).click()
@@ -139,9 +149,7 @@ test.describe('channel AUDIO SFU browser smoke', () => {
         const rejoiningPage = pages[participantCount - 1]
 
         await rejoiningPage.getByRole('button', { name: 'Leave call' }).click()
-        await expect(rejoiningPage).toHaveURL(
-          new RegExp(`/servers/${createdServer.id}/channels/${generalChannel.id}$`),
-        )
+        await expect(rejoiningPage).toHaveURL(new RegExp(`/servers/${createdServer.id}/channels/${generalChannel.id}$`))
         await expectAllRemoteProducerCounts(
           pages.slice(0, participantCount - 1),
           getRemoteProducerText(participantCount - 2),
@@ -153,7 +161,11 @@ test.describe('channel AUDIO SFU browser smoke', () => {
       }
 
       const defaultAudioPage = await ownerContext.newPage()
-      await defaultAudioPage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${audioChannel.id}`)
+      await defaultAudioPage.goto(
+        `${webBaseUrl}/servers/${createdServer.id}/channels/${audioChannel.id}${
+          shouldUseCandidateGate ? '?mediaProvider=livekit' : ''
+        }`,
+      )
       await expect(defaultAudioPage.getByTestId('private-sfu-provider')).toHaveCount(0)
 
       const gatedVideoPage = await ownerContext.newPage()
@@ -186,11 +198,7 @@ const registerUser = async (context: BrowserContext, label: string) => {
   }
 }
 
-const postJson = async <TResponse = unknown>(
-  context: BrowserContext,
-  path: string,
-  data: unknown,
-) => {
+const postJson = async <TResponse = unknown>(context: BrowserContext, path: string, data: unknown) => {
   const response = await context.request.post(toApiUrl(path), {
     data,
   })
@@ -222,10 +230,7 @@ const expectAllProviders = async (pages: Awaited<ReturnType<BrowserContext['newP
   await Promise.all(pages.map((page) => expect(page.getByTestId('private-sfu-provider')).toHaveText(label)))
 }
 
-const expectAllStatuses = async (
-  pages: Awaited<ReturnType<BrowserContext['newPage']>>[],
-  status: string,
-) => {
+const expectAllStatuses = async (pages: Awaited<ReturnType<BrowserContext['newPage']>>[], status: string) => {
   await Promise.all(
     pages.map((page) =>
       expect(page.getByTestId('private-sfu-status')).toHaveText(status, {
@@ -235,10 +240,7 @@ const expectAllStatuses = async (
   )
 }
 
-const expectAllRemoteProducerCounts = async (
-  pages: Awaited<ReturnType<BrowserContext['newPage']>>[],
-  text: string,
-) => {
+const expectAllRemoteProducerCounts = async (pages: Awaited<ReturnType<BrowserContext['newPage']>>[], text: string) => {
   await Promise.all(
     pages.map((page) =>
       expect(page.getByTestId('private-sfu-remote-producer-count')).toHaveText(text, {
@@ -264,6 +266,20 @@ function parsePositiveInteger(value: string | undefined, fallback: number) {
 
 function normalizeBaseUrl(value: string) {
   return value.trim().replace(/\/+$/, '')
+}
+
+function toSearchQuery(params: Record<string, string | undefined>) {
+  const searchParams = new URLSearchParams()
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value) {
+      searchParams.set(key, value)
+    }
+  }
+
+  const query = searchParams.toString()
+
+  return query ? `?${query}` : ''
 }
 
 function toApiUrl(path: string) {

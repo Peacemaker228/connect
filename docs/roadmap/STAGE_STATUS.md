@@ -351,7 +351,7 @@ Next likely work:
 
 ### Stage 8. Media MVP
 
-Status: `in progress / channel SFU default-candidate readiness review`
+Status: `in progress / channel SFU non-production candidate gate pass`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -558,9 +558,15 @@ Done:
 - product-facing default readiness remains `review` because SFU screen-share is deferred and subjective audio/video quality signoff may still be required before rollout
 - production readiness remains `blocked` because mediasoup/signaling state is process-local and production TURN/SFU infra, firewall, process management, monitoring, runbook, and rollback procedure are intentionally not implemented
 - ordinary channel `VIDEO`, ordinary channel `AUDIO`, and ordinary private `?video=true` remain LiveKit by default
+- `channel-sfu-nonproduction-default-candidate-gate` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_121_CHANNEL_SFU_NONPRODUCTION_DEFAULT_CANDIDATE_GATE.md`
+- non-production channel SFU default-candidate flags now exist for local/dev review: `NEXT_PUBLIC_MEDIA_CHANNEL_AUDIO_SFU_DEFAULT_CANDIDATE=1` and `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_DEFAULT_CANDIDATE=1`
+- explicit LiveKit rollback overrides are supported with `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`
+- guarded channel `AUDIO` candidate smoke passed with 3 authenticated users, no per-URL SFU query, and real microphone capture mode
+- guarded channel `VIDEO` candidate smoke passed with 2 authenticated users and no per-URL SFU query
+- candidate flags remain off by default, the SFU render path remains production-blocked, and private default remains LiveKit
 
 Remaining:
-- implement only a controlled non-production default-candidate gate if continuing channel SFU work
+- run candidate soak/TURN rerun before any product-facing default decision
 - keep physical camera QA scoped as two-user headed Windows Virtual Camera pass; five-user load remains fake-device based
 - optionally run human subjective audio/video quality signoff if required for release confidence
 - process-local mediasoup/signaling state remains a production/multi-process blocker
@@ -568,7 +574,7 @@ Remaining:
 - production media infra/runbook remains separate and required before production default switch
 
 Next likely work:
-- run `channel-sfu-nonproduction-default-candidate-gate`
+- run `channel-sfu-nonproduction-candidate-soak-and-turn-rerun`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

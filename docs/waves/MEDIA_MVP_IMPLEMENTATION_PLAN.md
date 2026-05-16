@@ -768,6 +768,17 @@ Segment 120 result:
 - ordinary channel `VIDEO`, ordinary channel `AUDIO`, and ordinary private `?video=true` remain LiveKit by default
 - recommended next segment is `channel-sfu-nonproduction-default-candidate-gate`
 
+Segment 121 result:
+- status: `candidate gate pass / production default blocked / product default hold`
+- added reversible non-production channel SFU default-candidate flags: `NEXT_PUBLIC_MEDIA_CHANNEL_AUDIO_SFU_DEFAULT_CANDIDATE=1` and `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_DEFAULT_CANDIDATE=1`
+- added explicit LiveKit rollback overrides: `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`
+- existing explicit query gates remain supported for channel `AUDIO`, channel `VIDEO`, and private SFU
+- guarded channel `AUDIO` candidate smoke passed with 3 authenticated users, no per-URL SFU query, real microphone capture mode, restart, leave/rejoin, expected remote producer counts, and LiveKit rollback assertion
+- guarded channel `VIDEO` candidate smoke passed with 2 authenticated users, no per-URL SFU query, real capture behavior, remote video tiles, restart, leave/rejoin, no-camera fallback assertion, and LiveKit rollback assertion
+- production remains blocked because the SFU render path is still guarded by `NODE_ENV !== 'production'`; candidate flags are off by default
+- remaining blockers before product/production default are process-local mediasoup/signaling state, deferred SFU screen-share, production media infra/runbook, and candidate soak/TURN rerun
+- recommended next segment is `channel-sfu-nonproduction-candidate-soak-and-turn-rerun`
+
 ## Dependency Summary
 
 Critical path:
@@ -855,7 +866,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-sfu-nonproduction-default-candidate-gate`
+- `channel-sfu-nonproduction-candidate-soak-and-turn-rerun`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -877,4 +888,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-sfu-nonproduction-default-candidate-gate`
+- `channel-sfu-nonproduction-candidate-soak-and-turn-rerun`

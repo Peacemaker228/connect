@@ -40,27 +40,54 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
     mediaEntry,
     displayName: profile?.name ? name : null,
   })
-  const isSfuProviderRequested = searchParams?.get('mediaProvider') === 'sfu' || searchParams?.get('sfu') === 'true'
-  const isPrivateSfuGateRequested = mediaEntry.scope.kind === 'conversation' && isSfuProviderRequested
-  const isChannelAudioSfuGateRequested =
-    mediaEntry.scope.kind === 'channel' &&
+  const isNonProductionRuntime = process.env.NODE_ENV !== 'production'
+  const isLiveKitProviderRequested =
+    searchParams?.get('mediaProvider') === 'livekit' ||
+    searchParams?.get('livekit') === 'true' ||
+    searchParams?.get('sfu') === 'false'
+  const isSfuProviderRequested =
+    !isLiveKitProviderRequested && (searchParams?.get('mediaProvider') === 'sfu' || searchParams?.get('sfu') === 'true')
+  const isChannelScope = mediaEntry.scope.kind === 'channel'
+  const isChannelAudioSfuDefaultCandidateRequested =
+    isChannelScope &&
     audio &&
     !video &&
-    searchParams?.get('sfuChannel') === 'true' &&
-    isSfuProviderRequested
-  const sfuIceTransportPolicy =
-    searchParams?.get('sfuTransport') === 'turn' || searchParams?.get('sfuIce') === 'relay' ? 'relay' : undefined
-  const sfuCaptureMode = searchParams?.get('sfuCapture') === 'real' ? 'real' : 'synthetic'
-  const isChannelVideoSfuGateRequested =
-    mediaEntry.scope.kind === 'channel' &&
+    isNonProductionRuntime &&
+    !isLiveKitProviderRequested &&
+    process.env.NEXT_PUBLIC_MEDIA_CHANNEL_AUDIO_SFU_DEFAULT_CANDIDATE === '1'
+  const isChannelVideoSfuDefaultCandidateRequested =
+    isChannelScope &&
     audio &&
     video &&
-    searchParams?.get('sfuChannel') === 'true' &&
-    searchParams?.get('sfuVideo') === 'true' &&
-    sfuCaptureMode === 'real' &&
-    isSfuProviderRequested
-  const isSfuGateRequested = isPrivateSfuGateRequested || isChannelAudioSfuGateRequested || isChannelVideoSfuGateRequested
-  const isSfuGateOpen = isSfuGateRequested && process.env.NODE_ENV !== 'production'
+    isNonProductionRuntime &&
+    !isLiveKitProviderRequested &&
+    process.env.NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_DEFAULT_CANDIDATE === '1'
+  const isPrivateSfuGateRequested = mediaEntry.scope.kind === 'conversation' && isSfuProviderRequested
+  const isChannelAudioSfuGateRequested =
+    isChannelScope &&
+    audio &&
+    !video &&
+    ((searchParams?.get('sfuChannel') === 'true' && isSfuProviderRequested) ||
+      isChannelAudioSfuDefaultCandidateRequested)
+  const sfuIceTransportPolicy =
+    searchParams?.get('sfuTransport') === 'turn' || searchParams?.get('sfuIce') === 'relay' ? 'relay' : undefined
+  const requestedSfuCaptureMode = searchParams?.get('sfuCapture') === 'real' ? 'real' : 'synthetic'
+  const sfuCaptureMode =
+    isChannelAudioSfuDefaultCandidateRequested || isChannelVideoSfuDefaultCandidateRequested
+      ? 'real'
+      : requestedSfuCaptureMode
+  const isChannelVideoSfuGateRequested =
+    isChannelScope &&
+    audio &&
+    video &&
+    ((searchParams?.get('sfuChannel') === 'true' &&
+      searchParams?.get('sfuVideo') === 'true' &&
+      sfuCaptureMode === 'real' &&
+      isSfuProviderRequested) ||
+      isChannelVideoSfuDefaultCandidateRequested)
+  const isSfuGateRequested =
+    isPrivateSfuGateRequested || isChannelAudioSfuGateRequested || isChannelVideoSfuGateRequested
+  const isSfuGateOpen = isSfuGateRequested && isNonProductionRuntime
   const sfuSimulateMissingCamera = searchParams?.get('sfuSimulateMissingCamera') === 'true'
 
   const handleLeave = useCallback(() => {

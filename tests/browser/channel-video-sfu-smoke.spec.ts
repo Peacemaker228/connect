@@ -63,8 +63,8 @@ const webBaseUrl = normalizeBaseUrl(
 )
 const apiOrigin = new URL(apiBaseUrl)
 const webOrigin = new URL(webBaseUrl)
-const transportQuery =
-  process.env.CHANNEL_VIDEO_SFU_SMOKE_TRANSPORT === 'turn' ? '&sfuTransport=turn' : ''
+const smokeTransport = process.env.CHANNEL_VIDEO_SFU_SMOKE_TRANSPORT
+const shouldUseCandidateGate = process.env.CHANNEL_VIDEO_SFU_SMOKE_CANDIDATE_GATE === '1'
 const participantCount = parsePositiveInteger(process.env.CHANNEL_VIDEO_SFU_SMOKE_USERS, 2)
 const shouldRunLeaveRejoin = process.env.CHANNEL_VIDEO_SFU_SMOKE_LEAVE_REJOIN !== '0'
 const shouldRunOfflineRestore = process.env.CHANNEL_VIDEO_SFU_SMOKE_OFFLINE_RESTORE === '1'
@@ -85,14 +85,14 @@ test.describe('channel VIDEO SFU browser smoke', () => {
     ).toBe(webOrigin.hostname)
   })
 
-  test('connects authenticated channel VIDEO SFU participants behind full explicit gate', async ({ browser }) => {
+  test('connects authenticated channel VIDEO SFU participants behind full explicit or candidate gate', async ({
+    browser,
+  }) => {
     test.setTimeout(180_000)
 
     expect(participantCount, 'CHANNEL_VIDEO_SFU_SMOKE_USERS must be at least 2').toBeGreaterThanOrEqual(2)
 
-    const contexts = await Promise.all(
-      Array.from({ length: participantCount }, () => browser.newContext()),
-    )
+    const contexts = await Promise.all(Array.from({ length: participantCount }, () => browser.newContext()))
     const [ownerContext, ...memberContexts] = contexts
 
     try {
@@ -134,7 +134,13 @@ test.describe('channel VIDEO SFU browser smoke', () => {
       const generalChannel = findChannel(serverWithChannels, 'general', 'TEXT')
 
       const pages = await Promise.all(contexts.map((context) => context.newPage()))
-      const sfuQuery = `?mediaProvider=sfu&sfuChannel=true&sfuVideo=true&sfuCapture=real${transportQuery}`
+      const sfuQuery = toSearchQuery({
+        mediaProvider: shouldUseCandidateGate ? undefined : 'sfu',
+        sfuChannel: shouldUseCandidateGate ? undefined : 'true',
+        sfuVideo: shouldUseCandidateGate ? undefined : 'true',
+        sfuCapture: shouldUseCandidateGate ? undefined : 'real',
+        sfuTransport: smokeTransport === 'turn' ? 'turn' : undefined,
+      })
       const expectedRemoteProducerText = getRemoteProducerText((participantCount - 1) * 2)
       const expectedRemoteVideoTileCount = participantCount - 1
 
@@ -173,9 +179,7 @@ test.describe('channel VIDEO SFU browser smoke', () => {
         const remainingPages = pages.slice(0, participantCount - 1)
 
         await rejoiningPage.getByRole('button', { name: 'Leave call' }).click()
-        await expect(rejoiningPage).toHaveURL(
-          new RegExp(`/servers/${createdServer.id}/channels/${generalChannel.id}$`),
-        )
+        await expect(rejoiningPage).toHaveURL(new RegExp(`/servers/${createdServer.id}/channels/${generalChannel.id}$`))
         await expectAllRemoteProducerCounts(remainingPages, getRemoteProducerText((participantCount - 2) * 2))
         await expectAllRemoteVideoTileCounts(remainingPages, participantCount - 2)
 
@@ -191,24 +195,30 @@ test.describe('channel VIDEO SFU browser smoke', () => {
       await Promise.all(pages.map((page) => page.close()))
 
       const defaultVideoPage = await ownerContext.newPage()
-      await defaultVideoPage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}`)
+      await defaultVideoPage.goto(
+        `${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}${
+          shouldUseCandidateGate ? '?mediaProvider=livekit' : ''
+        }`,
+      )
       await expect(defaultVideoPage.getByTestId('private-sfu-provider')).toHaveCount(0)
 
       const partialGateVideoPage = await ownerContext.newPage()
       await partialGateVideoPage.goto(
-        `${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}?mediaProvider=sfu&sfuChannel=true&sfuVideo=true`,
+        shouldUseCandidateGate
+          ? `${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}?mediaProvider=livekit`
+          : `${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}?mediaProvider=sfu&sfuChannel=true&sfuVideo=true`,
       )
       await expect(partialGateVideoPage.getByTestId('private-sfu-provider')).toHaveCount(0)
 
       const defaultAudioPage = await ownerContext.newPage()
-      await defaultAudioPage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${audioChannel.id}`)
+      await defaultAudioPage.goto(
+        `${webBaseUrl}/servers/${createdServer.id}/channels/${audioChannel.id}?mediaProvider=livekit`,
+      )
       await expect(defaultAudioPage.getByTestId('private-sfu-provider')).toHaveCount(0)
 
       const noCameraContexts = contexts.slice(0, 2)
-      const [noCameraPageOne, noCameraPageTwo] = await Promise.all(
-        noCameraContexts.map((context) => context.newPage()),
-      )
-      const noCameraSfuQuery = `${sfuQuery}&sfuSimulateMissingCamera=true`
+      const [noCameraPageOne, noCameraPageTwo] = await Promise.all(noCameraContexts.map((context) => context.newPage()))
+      const noCameraSfuQuery = appendSearchParam(sfuQuery, 'sfuSimulateMissingCamera', 'true')
 
       await Promise.all([
         noCameraPageOne.goto(
@@ -250,11 +260,7 @@ const registerUser = async (context: BrowserContext, label: string) => {
   }
 }
 
-const postJson = async <TResponse = unknown>(
-  context: BrowserContext,
-  path: string,
-  data: unknown,
-) => {
+const postJson = async <TResponse = unknown>(context: BrowserContext, path: string, data: unknown) => {
   const response = await context.request.post(toApiUrl(path), {
     data,
   })
@@ -286,10 +292,7 @@ const expectAllProviders = async (pages: Awaited<ReturnType<BrowserContext['newP
   await Promise.all(pages.map((page) => expect(page.getByTestId('private-sfu-provider')).toHaveText(label)))
 }
 
-const expectAllStatuses = async (
-  pages: Awaited<ReturnType<BrowserContext['newPage']>>[],
-  status: string,
-) => {
+const expectAllStatuses = async (pages: Awaited<ReturnType<BrowserContext['newPage']>>[], status: string) => {
   await Promise.all(
     pages.map((page) =>
       expect(page.getByTestId('private-sfu-status')).toHaveText(status, {
@@ -303,10 +306,7 @@ const expectAllLocalVideosVisible = async (pages: Awaited<ReturnType<BrowserCont
   await Promise.all(pages.map((page) => expect(page.getByTestId('private-sfu-local-video')).toBeVisible()))
 }
 
-const expectAllRemoteProducerCounts = async (
-  pages: Awaited<ReturnType<BrowserContext['newPage']>>[],
-  text: string,
-) => {
+const expectAllRemoteProducerCounts = async (pages: Awaited<ReturnType<BrowserContext['newPage']>>[], text: string) => {
   await Promise.all(
     pages.map((page) =>
       expect(page.getByTestId('private-sfu-remote-producer-count')).toHaveText(text, {
@@ -329,10 +329,7 @@ const expectAllRemoteVideoTileCounts = async (
   )
 }
 
-const expectAllRemoteVideosVisible = async (
-  pages: Awaited<ReturnType<BrowserContext['newPage']>>[],
-  count: number,
-) => {
+const expectAllRemoteVideosVisible = async (pages: Awaited<ReturnType<BrowserContext['newPage']>>[], count: number) => {
   await Promise.all(
     pages.map(async (page) => {
       const remoteVideos = page.getByTestId('private-sfu-remote-video')
@@ -341,9 +338,7 @@ const expectAllRemoteVideosVisible = async (
         timeout: 45_000,
       })
 
-      await Promise.all(
-        Array.from({ length: count }, (_, index) => expect(remoteVideos.nth(index)).toBeVisible()),
-      )
+      await Promise.all(Array.from({ length: count }, (_, index) => expect(remoteVideos.nth(index)).toBeVisible()))
     }),
   )
 }
@@ -364,6 +359,28 @@ function parsePositiveInteger(value: string | undefined, fallback: number) {
 
 function normalizeBaseUrl(value: string) {
   return value.trim().replace(/\/+$/, '')
+}
+
+function toSearchQuery(params: Record<string, string | undefined>) {
+  const searchParams = new URLSearchParams()
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value) {
+      searchParams.set(key, value)
+    }
+  }
+
+  const query = searchParams.toString()
+
+  return query ? `?${query}` : ''
+}
+
+function appendSearchParam(query: string, key: string, value: string) {
+  const searchParams = new URLSearchParams(query.startsWith('?') ? query.slice(1) : query)
+
+  searchParams.set(key, value)
+
+  return `?${searchParams.toString()}`
 }
 
 function toApiUrl(path: string) {
