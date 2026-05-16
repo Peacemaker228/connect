@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `local-sfu-direct-turn-smoke`.
+The next Stage 8 segment should be `channel-audio-sfu-limited-pilot-readiness-decision`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `mvp-private-small-room-replacement`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `channel-audio-sfu-limited-pilot-readiness-decision`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / channel audio SFU limited pilot ready`
+Status: `in progress / channel audio SFU cleanup soak pass`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -575,9 +575,38 @@ Done:
 - channel `VIDEO` product default readiness is `review/hold` because SFU screen-share remains deferred
 - private default readiness is `review/hold`; ordinary private `?video=true` remains LiveKit pending a separate parity/default decision
 - production readiness is `blocked` by process-local mediasoup/signaling state and missing production media infra/runbook/monitoring/rollback
+- `channel-audio-sfu-limited-nonproduction-default-pilot` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_124_CHANNEL_AUDIO_SFU_LIMITED_NONPRODUCTION_DEFAULT_PILOT.md`
+- channel `AUDIO` now has a separate non-production product-default pilot gate: `NEXT_PUBLIC_MEDIA_CHANNEL_AUDIO_SFU_PRODUCT_DEFAULT_PILOT=1`
+- the pilot gate is channel `AUDIO` only, off by default, production-blocked, and keeps explicit LiveKit rollback through `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`
+- guarded channel `AUDIO` pilot direct smoke passed with 5 users, no per-URL SFU query, real capture mode, offline/restore, restart, leave/rejoin, and rollback assertion
+- guarded channel `AUDIO` pilot TURN smoke passed with 3 users through local Docker coturn and backend-issued TURN credentials
+- private SFU regression passed with the audio pilot env enabled; ordinary private `?video=true` remains LiveKit by default
+- channel `VIDEO` remains LiveKit by default unless the existing full explicit/candidate channel `VIDEO` SFU gate is used
+- `channel-audio-sfu-limited-pilot-soak-observability` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_125_CHANNEL_AUDIO_SFU_LIMITED_PILOT_SOAK_OBSERVABILITY.md`
+- channel `AUDIO` pilot observability now has authenticated health counters for active mediasoup transports/producers/consumers/rooms
+- channel `AUDIO` pilot observability now has non-production structured lifecycle logs for transport, producer, consumer, and session close events with active counts
+- the SFU client status UI now shows `Transport: direct` or `Transport: turn`, and guarded channel `AUDIO` smoke asserts that value
+- channel `AUDIO` pilot direct and TURN smokes passed again after the observability changes
+- long-soak readiness remains `review` because raw process-local mediasoup counts can persist across dev smoke rooms/restarts/browser-context cleanup even though per-room user-facing producer discovery does not inflate remote producer counts
+- `channel-audio-sfu-stale-session-cleanup-soak-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_126_CHANNEL_AUDIO_SFU_STALE_SESSION_CLEANUP_SOAK_RERUN.md`
+- channel `AUDIO` SFU now has non-production process-local heartbeat and stale-session cleanup for abandoned local mediasoup sessions/resources
+- local cleanup is controlled by `LOCAL_MEDIASOUP_STALE_SESSION_TTL_MS` and `LOCAL_MEDIASOUP_STALE_SWEEP_INTERVAL_MS`
+- health/logs expose cleanup state through tracked session counts, stale TTL/sweep interval, `lastCleanup`, and `stale-sweep.completed` lifecycle logs
+- guarded channel `AUDIO` smoke now supports context-close cleanup assertions with `CHANNEL_AUDIO_SFU_SMOKE_ASSERT_CLEANUP=1`
+- channel `AUDIO` pilot direct soak passed with 5 users and health counters settled to zero after browser context close
+- channel `AUDIO` pilot TURN soak passed with 3 users and health counters settled to zero after browser context close
+- guarded private SFU direct regression passed after the shared SFU heartbeat/lifecycle changes; ordinary private `?video=true` remains LiveKit/default
+- `channel-audio-sfu-limited-pilot-readiness-decision` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_127_CHANNEL_AUDIO_SFU_LIMITED_PILOT_READINESS_DECISION.md`
+- channel `AUDIO` limited non-production pilot readiness is `pass for controlled product review`
+- channel `VIDEO` default remains `review/hold`, private default remains `review/hold`, and production readiness remains `blocked`
+- bounded local single-process soak is pass for limited pilot review, while multi-process/production readiness remains blocked by process-local mediasoup/signaling state
+- `channel-audio-sfu-limited-pilot-controlled-product-review` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_128_CHANNEL_AUDIO_SFU_LIMITED_PILOT_CONTROLLED_PRODUCT_REVIEW.md`
+- controlled channel `AUDIO` SFU pilot operator checklist is ready
+- automated/local evidence remains pass for direct, TURN, cleanup, private regression, and rollback preservation
+- manual/operator product review is `blocked / requires operator` because real microphone audio quality, permission UX, and rollback confidence were not manually recorded in this segment
 
 Remaining:
-- implement only a constrained channel `AUDIO` non-production product-default pilot if continuing runtime default work
+- run the channel `AUDIO` limited pilot operator checklist before any broader product-facing default work
 - keep physical camera QA scoped as two-user headed Windows Virtual Camera pass; five-user load remains fake-device based
 - optionally run human subjective audio/video quality signoff if required for release confidence
 - process-local mediasoup/signaling state remains a production/multi-process blocker
@@ -585,7 +614,7 @@ Remaining:
 - production media infra/runbook remains separate and required before production default switch
 
 Next likely work:
-- run `channel-audio-sfu-limited-nonproduction-default-pilot`
+- run `channel-audio-sfu-limited-pilot-operator-review-rerun`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

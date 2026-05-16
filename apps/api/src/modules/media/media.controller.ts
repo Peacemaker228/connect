@@ -20,6 +20,7 @@ import { CurrentProfileId } from '../auth/decorators/current-profile-id.decorato
 import { RequireAuthGuard } from '../auth/guards/require-auth.guard';
 import {
   LocalMediasoupConsumerMetadata,
+  LocalMediasoupHeartbeatResult,
   LocalMediasoupProducerDiscoveryResult,
   LocalMediasoupProducerMetadata,
   LocalMediasoupPrototypeHealth,
@@ -140,6 +141,11 @@ type CloseMediasoupPrototypeProducerBody = {
 };
 
 type CloseMediasoupPrototypeConsumerBody = {
+  roomId?: string;
+  participantSessionId?: string;
+};
+
+type HeartbeatMediasoupPrototypeSessionBody = {
   roomId?: string;
   participantSessionId?: string;
 };
@@ -378,6 +384,17 @@ export class MediaController {
     const scope = this.resolvePrototypeSessionScope(profileId, body);
 
     return this.mediasoupPrototypeService.listProducers(scope);
+  }
+
+  @Post('prototype/mediasoup/sessions/heartbeat')
+  @UseGuards(RequireAuthGuard)
+  heartbeatMediasoupPrototypeSession(
+    @CurrentProfileId() profileId: string | undefined,
+    @Body() body: HeartbeatMediasoupPrototypeSessionBody | undefined,
+  ): LocalMediasoupHeartbeatResult {
+    const scope = this.resolvePrototypeSessionScope(profileId, body);
+
+    return this.mediasoupPrototypeService.heartbeatSession(scope);
   }
 
   @Sse('prototype/mediasoup/events')

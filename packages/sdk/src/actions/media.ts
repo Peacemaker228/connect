@@ -109,7 +109,29 @@ export type MediasoupPrototypeHealthResponse = {
   routerClosed?: boolean
   routerCodecCount?: number
   routerRtpCapabilities?: Record<string, unknown>
+  activeTransportCount?: number
+  activeProducerCount?: number
+  activeConsumerCount?: number
+  activeRoomCount?: number
+  trackedSessionCount?: number
+  staleSessionTtlMs?: number
+  staleSessionSweepIntervalMs?: number
+  lastCleanup?: MediasoupPrototypeCleanupResult
   reason?: string
+}
+
+export type MediasoupPrototypeCleanupResult = {
+  cleanedAt: string
+  reason: 'session-close' | 'stale-sweep'
+  staleSessionCount: number
+  closedTransportCount: number
+  closedProducerCount: number
+  closedConsumerCount: number
+  activeTransportCount: number
+  activeProducerCount: number
+  activeConsumerCount: number
+  activeRoomCount: number
+  trackedSessionCount: number
 }
 
 export type CreateMediasoupPrototypeTransportRequest = {
@@ -172,6 +194,22 @@ export type MediasoupPrototypeProducerResponse = {
 export type DiscoverMediasoupPrototypeProducersRequest = {
   roomId?: string
   participantSessionId?: string
+}
+
+export type HeartbeatMediasoupPrototypeSessionRequest = {
+  roomId?: string
+  participantSessionId?: string
+}
+
+export type HeartbeatMediasoupPrototypeSessionResponse = {
+  status: MediasoupPrototypeStatus
+  enabled: boolean
+  roomId?: string
+  participantSessionId?: string
+  lastSeenAt?: string
+  staleSessionTtlMs?: number
+  staleSessionSweepIntervalMs?: number
+  reason?: string
 }
 
 export type CloseMediasoupPrototypeProducerRequest = {
@@ -339,6 +377,7 @@ const MEDIA_CONTROL_PATHS = {
   mediasoupPrototypeTransports: '/api/media/prototype/mediasoup/transports',
   mediasoupPrototypeProducers: '/api/media/prototype/mediasoup/producers',
   mediasoupPrototypeProducerDiscovery: '/api/media/prototype/mediasoup/producers/discover',
+  mediasoupPrototypeSessionHeartbeat: '/api/media/prototype/mediasoup/sessions/heartbeat',
   mediasoupPrototypeEvents: '/api/media/prototype/mediasoup/events',
   mediasoupPrototypeConsumers: '/api/media/prototype/mediasoup/consumers',
 } as const
@@ -618,6 +657,14 @@ export const discoverMediasoupPrototypeProducers = async (
     MediasoupPrototypeProducerDiscoveryResponse,
     DiscoverMediasoupPrototypeProducersRequest
   >(MEDIA_CONTROL_PATHS.mediasoupPrototypeProducerDiscovery, payload)
+
+export const heartbeatMediasoupPrototypeSession = async (
+  payload: HeartbeatMediasoupPrototypeSessionRequest,
+) =>
+  postMediaCommand<
+    HeartbeatMediasoupPrototypeSessionResponse,
+    HeartbeatMediasoupPrototypeSessionRequest
+  >(MEDIA_CONTROL_PATHS.mediasoupPrototypeSessionHeartbeat, payload)
 
 export const closeMediasoupPrototypeProducer = async (
   producerId: string,

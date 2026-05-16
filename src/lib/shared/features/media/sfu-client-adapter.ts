@@ -10,6 +10,7 @@ import {
   createMediasoupPrototypeTransport,
   discoverMediasoupPrototypeProducers,
   getMediasoupPrototypeHealth,
+  heartbeatMediasoupPrototypeSession,
   produceMediasoupPrototypeTrack,
   type MediasoupPrototypeConsumerResponse,
   type MediasoupPrototypeEvent,
@@ -191,6 +192,10 @@ export class SfuClientAdapter {
 
   createProducerEventSource(sessionScope: SfuClientSessionScope): EventSource {
     return createMediasoupPrototypeEventSource(sessionScope)
+  }
+
+  async heartbeatSession(sessionScope: SfuClientSessionScope) {
+    return heartbeatMediasoupPrototypeSession(sessionScope)
   }
 
   async consume(

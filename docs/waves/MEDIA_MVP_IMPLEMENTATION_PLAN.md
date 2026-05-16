@@ -801,6 +801,66 @@ Segment 123 result:
 - next logical runtime segment is a constrained channel `AUDIO` non-production product-default pilot, while broader video/private default work should wait on screen-share parity or explicit no-screen-share pilot scope
 - recommended next segment is `channel-audio-sfu-limited-nonproduction-default-pilot`
 
+Segment 124 result:
+- status: `audio pilot pass / video default preserved / private default preserved / production blocked`
+- added the separate non-production channel `AUDIO` product-default pilot env gate: `NEXT_PUBLIC_MEDIA_CHANNEL_AUDIO_SFU_PRODUCT_DEFAULT_PILOT=1`
+- because the pilot gate is a `NEXT_PUBLIC_*` browser flag, enabling or disabling it requires restarting the local web dev server or rebuilding the web bundle
+- pilot scope is channel `AUDIO` only, `NODE_ENV !== 'production'` only, off by default, and suppressed by explicit LiveKit rollback overrides: `?mediaProvider=livekit`, `?livekit=true`, or `?sfu=false`
+- existing explicit SFU gates and default-candidate gates remain supported
+- guarded channel `AUDIO` pilot direct smoke passed with 5 authenticated users, no per-URL SFU query, real capture mode, expected `Remote producers: 4`, restart, offline/restore, leave/rejoin, and LiveKit rollback
+- guarded channel `AUDIO` pilot TURN smoke passed with 3 authenticated users, no per-URL SFU query, relay policy, backend-issued TURN credentials, local Docker coturn relay usage, restart, leave/rejoin, and cleanup
+- private SFU regression passed with the audio pilot env enabled, and ordinary private `?video=true` remains LiveKit by default
+- channel `VIDEO` without the full video SFU gate remains LiveKit/default; no channel `VIDEO` default switch was added
+- production remains blocked by the existing non-production SFU render guard; no production infra/env/nginx/firewall/deploy changes were made
+- remaining blockers before broader product/production default are process-local mediasoup/signaling state, deferred SFU screen-share for video/private parity, production media infra/runbook/monitoring/rollback, and optional broader subjective quality signoff
+- recommended next segment is `channel-audio-sfu-limited-pilot-soak-observability`
+
+Segment 125 result:
+- status: `audio pilot direct/TURN pass / observability pass for local review / long-soak readiness review`
+- inventoried current channel `AUDIO` SFU status/log surfaces: client status/detail, room/session ids, producer/consumer ids, remote producer count, capture mode, SSE producer lifecycle events, backend scoped checks, and coturn relay logs
+- added local/dev observability without a broader switch: active mediasoup health counters, non-production structured lifecycle logs, and client-visible `Transport: direct` / `Transport: turn`
+- client-visible transport mode is requested adapter mode, not low-level ICE selected-candidate telemetry
+- guarded channel `AUDIO` pilot direct smoke passed again with 5 authenticated users, no per-URL SFU query, expected `Remote producers: 4`, `Transport: direct`, real capture mode, restart, offline/restore, leave/rejoin, and rollback/default assertions
+- guarded channel `AUDIO` pilot TURN smoke passed again with 3 authenticated users, no per-URL SFU query, expected `Remote producers: 2`, `Transport: turn`, backend-issued TURN credentials, local Docker coturn relay usage, restart, leave/rejoin, and cleanup
+- observability logs appeared for transport create/connect, producer publish/close, consumer create/close, session close, and active counts
+- soak gap remains: raw process-local mediasoup counts can persist across dev smoke rooms/restarts/browser-context cleanup in the same API process; user-facing per-room producer discovery still dedupes and smoke did not show stale remote producer inflation, but long soak should get explicit stale-session cleanup/TTL/heartbeat before broader product default
+- channel `VIDEO`, ordinary private `?video=true`, and production defaults remain LiveKit; LiveKit fallback was not removed or weakened
+- recommended next segment is `channel-audio-sfu-stale-session-cleanup-soak-rerun`
+
+Segment 126 result:
+- status: `audio pilot cleanup soak pass / production blocked`
+- root cause of raw process-local count persistence was identified: browser context close/restart/dev adapter churn was not an awaitable backend cleanup guarantee, transports had no close command, and the backend had no heartbeat/TTL signal for abandoned local SFU sessions
+- added a non-production process-local heartbeat and stale-session sweeper for local mediasoup sessions/resources
+- added local-only cleanup env controls: `LOCAL_MEDIASOUP_STALE_SESSION_TTL_MS` and `LOCAL_MEDIASOUP_STALE_SWEEP_INTERVAL_MS`
+- health/log observability now includes tracked sessions, stale TTL/sweep interval, `lastCleanup`, and `stale-sweep.completed` cleanup counts
+- closing stale producers also closes dependent consumers so raw consumer counts settle with producer cleanup
+- guarded channel `AUDIO` smoke now supports `CHANNEL_AUDIO_SFU_SMOKE_ASSERT_CLEANUP=1` and asserts active transport/producer/consumer/room/session counters settle to zero after browser context close
+- guarded channel `AUDIO` pilot direct soak passed with 5 authenticated users, no per-URL SFU query, expected `Remote producers: 4`, `Transport: direct`, restart, offline/restore, leave/rejoin, context close, and health counters settled to zero
+- guarded channel `AUDIO` pilot TURN soak passed with 3 authenticated users, no per-URL SFU query, expected `Remote producers: 2`, `Transport: turn`, local Docker coturn relay usage, context close, and health counters settled to zero
+- guarded private SFU direct regression passed after the shared SFU heartbeat/lifecycle changes; ordinary private `?video=true` stayed LiveKit/default and private leave redirect remained preserved
+- channel `VIDEO`, ordinary private `?video=true`, and production defaults remain LiveKit; LiveKit fallback was not removed or weakened
+- this is still not production readiness because media state remains process-local and production infra/runbook/monitoring/rollback are out of scope
+- recommended next segment is `channel-audio-sfu-limited-pilot-readiness-decision`
+
+Segment 127 result:
+- status: `audio limited pilot ready for controlled product review / production blocked`
+- docs-only readiness decision is complete after Segments 123-126
+- channel `AUDIO` limited non-production pilot is `pass for controlled product review` based on direct 5-user, TURN 3-user, offline/restore, restart, leave/rejoin, observability, stale cleanup, counters settling to zero, LiveKit rollback, and private SFU regression evidence
+- channel `VIDEO` default remains `review/hold` because SFU screen-share remains deferred and this segment did not change video runtime
+- private default remains `review/hold`; ordinary private `?video=true` stays LiveKit pending a separate private default decision
+- bounded local single-process soak is pass for limited pilot review, while multi-process/production readiness remains blocked by process-local mediasoup/signaling state
+- production readiness remains blocked by missing production TURN/SFU infra, runbook, monitoring, firewall/process management, rollback, and operational ownership
+- recommended next segment is `channel-audio-sfu-limited-pilot-controlled-product-review`
+
+Segment 128 result:
+- status: `controlled product review checklist ready / operator review required`
+- docs/report-only controlled product review checklist is complete for the channel `AUDIO` SFU limited pilot
+- automated/local evidence remains pass for direct channel `AUDIO` pilot, TURN channel `AUDIO` pilot, cleanup counters settling to zero, private SFU regression, and LiveKit rollback/default preservation
+- manual/operator product review is `blocked / requires operator` because no human review result was provided in this segment
+- direct manual audio quality, TURN manual audio quality, permission UX, and rollback confidence must be recorded by an operator before product review can be marked pass
+- channel `VIDEO`, ordinary private `?video=true`, and production remain LiveKit/default; no runtime code or default switch changed
+- recommended next segment is `channel-audio-sfu-limited-pilot-operator-review-rerun`
+
 ## Dependency Summary
 
 Critical path:
@@ -888,7 +948,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-audio-sfu-limited-nonproduction-default-pilot`
+- `channel-audio-sfu-limited-pilot-operator-review-rerun`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -910,4 +970,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-audio-sfu-limited-nonproduction-default-pilot`
+- `channel-audio-sfu-limited-pilot-operator-review-rerun`

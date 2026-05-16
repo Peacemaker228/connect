@@ -1,4 +1,4 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { createWorker, version as mediasoupVersion, workerBin } from 'mediasoup';
 import type { types as mediasoupTypes } from 'mediasoup';
 
@@ -24,7 +24,40 @@ export type LocalMediasoupPrototypeHealth = {
   routerClosed?: boolean;
   routerCodecCount?: number;
   routerRtpCapabilities?: mediasoupTypes.RtpCapabilities;
+  activeTransportCount?: number;
+  activeProducerCount?: number;
+  activeConsumerCount?: number;
+  activeRoomCount?: number;
+  trackedSessionCount?: number;
+  staleSessionTtlMs?: number;
+  staleSessionSweepIntervalMs?: number;
+  lastCleanup?: LocalMediasoupCleanupResult;
   reason?: string;
+};
+
+export type LocalMediasoupHeartbeatResult = {
+  status: LocalMediasoupPrototypeStatus;
+  enabled: boolean;
+  roomId?: string;
+  participantSessionId?: string;
+  lastSeenAt?: string;
+  staleSessionTtlMs?: number;
+  staleSessionSweepIntervalMs?: number;
+  reason?: string;
+};
+
+export type LocalMediasoupCleanupResult = {
+  cleanedAt: string;
+  reason: 'session-close' | 'stale-sweep';
+  staleSessionCount: number;
+  closedTransportCount: number;
+  closedProducerCount: number;
+  closedConsumerCount: number;
+  activeTransportCount: number;
+  activeProducerCount: number;
+  activeConsumerCount: number;
+  activeRoomCount: number;
+  trackedSessionCount: number;
 };
 
 export type LocalMediasoupTransportMetadata = {
@@ -112,6 +145,8 @@ const LOCAL_PROTOTYPE_MEDIA_CODECS: mediasoupTypes.RouterRtpCodecCapability[] = 
 
 @Injectable()
 export class MediasoupPrototypeService implements OnModuleDestroy {
+  private readonly logger = new Logger(MediasoupPrototypeService.name);
+
   constructor(
     private readonly mediaSignalingService: MediaSignalingService,
     private readonly mediaParticipantSessionService: MediaParticipantSessionService,
@@ -128,6 +163,9 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
   private readonly consumers = new Map<string, mediasoupTypes.Consumer>();
   private readonly consumerScopes = new Map<string, LocalMediasoupSessionScope>();
   private readonly consumerProducerIds = new Map<string, string>();
+  private readonly sessionLastSeenAt = new Map<string, number>();
+  private staleSessionSweepTimer: ReturnType<typeof setInterval> | null = null;
+  private lastCleanup: LocalMediasoupCleanupResult | undefined;
   private lastFailure: string | null = null;
 
   async getHealth(): Promise<LocalMediasoupPrototypeHealth> {
@@ -143,6 +181,8 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
 
     try {
       await this.ensurePrototypeRouter();
+      this.ensureStaleSessionSweeper();
+      this.sweepStaleSessions('stale-sweep');
       this.lastFailure = null;
 
       return this.createHealthSnapshot('ready');
@@ -154,6 +194,11 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
   }
 
   onModuleDestroy() {
+    if (this.staleSessionSweepTimer) {
+      clearInterval(this.staleSessionSweepTimer);
+      this.staleSessionSweepTimer = null;
+    }
+
     this.router?.close();
     this.worker?.close();
     this.clearPrototypeState();
@@ -168,6 +213,8 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     direction: LocalMediasoupTransportDirection;
     scope?: LocalMediasoupSessionScope;
   }): Promise<LocalMediasoupTransportMetadata> {
+    this.markSessionActive(scope);
+
     if (process.env.NODE_ENV === 'production') {
       return {
         status: 'disabled',
@@ -216,6 +263,13 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         this.transportScopes.delete(transport.id);
       });
 
+      this.logLifecycle('transport.created', {
+        direction,
+        transportId: transport.id,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+      });
+
       return {
         status: 'ready',
         enabled: true,
@@ -227,6 +281,13 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         sctpParameters: transport.sctpParameters,
       };
     } catch (error) {
+      this.logLifecycle('transport.failed', {
+        direction,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        reason: error instanceof Error ? error.message : 'Unknown mediasoup transport failure',
+      });
+
       return {
         status: 'failed',
         enabled: false,
@@ -245,6 +306,8 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     scope?: LocalMediasoupSessionScope;
     dtlsParameters: mediasoupTypes.DtlsParameters | undefined;
   }): Promise<LocalMediasoupTransportConnectResult> {
+    this.markSessionActive(scope);
+
     if (process.env.NODE_ENV === 'production') {
       return {
         status: 'disabled',
@@ -296,6 +359,13 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     try {
       await transport.connect({ dtlsParameters });
 
+      this.logLifecycle('transport.connected', {
+        transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        dtlsState: transport.dtlsState,
+      });
+
       return {
         status: 'ready',
         enabled: true,
@@ -303,6 +373,14 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         dtlsState: transport.dtlsState,
       };
     } catch (error) {
+      this.logLifecycle('transport.connect.failed', {
+        transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        dtlsState: transport.dtlsState,
+        reason: error instanceof Error ? error.message : 'Unknown mediasoup transport connect failure',
+      });
+
       return {
         status: 'failed',
         enabled: false,
@@ -326,6 +404,8 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     rtpParameters: mediasoupTypes.RtpParameters | undefined;
     paused?: boolean;
   }): Promise<LocalMediasoupProducerMetadata> {
+    this.markSessionActive(scope);
+
     if (process.env.NODE_ENV === 'production') {
       return {
         status: 'disabled',
@@ -423,6 +503,14 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         });
       }
 
+      this.logLifecycle('producer.published', {
+        transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        producerId: producer.id,
+        kind: producer.kind,
+      });
+
       return {
         status: 'ready',
         enabled: true,
@@ -434,6 +522,14 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         paused: producer.paused,
       };
     } catch (error) {
+      this.logLifecycle('producer.failed', {
+        transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        kind,
+        reason: error instanceof Error ? error.message : 'Unknown mediasoup produce failure',
+      });
+
       return {
         status: 'failed',
         enabled: false,
@@ -459,6 +555,8 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     rtpCapabilities: mediasoupTypes.RtpCapabilities | undefined;
     paused?: boolean;
   }): Promise<LocalMediasoupConsumerMetadata> {
+    this.markSessionActive(scope);
+
     if (process.env.NODE_ENV === 'production') {
       return {
         status: 'disabled',
@@ -573,6 +671,15 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         this.removeConsumerState(consumer.id);
       });
 
+      this.logLifecycle('consumer.created', {
+        transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        consumerId: consumer.id,
+        producerId,
+        kind: consumer.kind,
+      });
+
       return {
         status: 'ready',
         enabled: true,
@@ -588,6 +695,14 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         producerPaused: consumer.producerPaused,
       };
     } catch (error) {
+      this.logLifecycle('consumer.failed', {
+        transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        producerId,
+        reason: error instanceof Error ? error.message : 'Unknown mediasoup consume failure',
+      });
+
       return {
         status: 'failed',
         enabled: false,
@@ -598,6 +713,38 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         reason: error instanceof Error ? error.message : 'Unknown mediasoup consume failure',
       };
     }
+  }
+
+  heartbeatSession(scope: LocalMediasoupSessionScope | undefined): LocalMediasoupHeartbeatResult {
+    if (process.env.NODE_ENV === 'production') {
+      return {
+        status: 'disabled',
+        enabled: false,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        reason: 'Local mediasoup session heartbeat is disabled in production runtime',
+      };
+    }
+
+    if (!scope) {
+      return {
+        status: 'failed',
+        enabled: false,
+        reason: 'roomId and participantSessionId are required for scoped mediasoup heartbeat',
+      };
+    }
+
+    const lastSeenAt = this.markSessionActive(scope);
+
+    return {
+      status: 'ready',
+      enabled: true,
+      roomId: scope.roomId,
+      participantSessionId: scope.participantSessionId,
+      lastSeenAt: new Date(lastSeenAt).toISOString(),
+      staleSessionTtlMs: this.getStaleSessionTtlMs(),
+      staleSessionSweepIntervalMs: this.getStaleSessionSweepIntervalMs(),
+    };
   }
 
   closeProducer({
@@ -746,6 +893,8 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
   }
 
   listProducers(scope: LocalMediasoupSessionScope | undefined): LocalMediasoupProducerDiscoveryResult {
+    this.markSessionActive(scope);
+
     if (process.env.NODE_ENV === 'production') {
       return {
         status: 'disabled',
@@ -1058,6 +1207,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     const producer = this.producers.get(producerId);
     const producerScope = this.producerScopes.get(producerId);
 
+    this.closeConsumersForProducer(producerId);
     this.producers.delete(producerId);
     this.producerScopes.delete(producerId);
     this.producerCreatedAt.delete(producerId);
@@ -1067,6 +1217,12 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         roomId: producerScope.roomId,
         participantSessionId: producerScope.participantSessionId,
         producerId,
+      });
+      this.logLifecycle('producer.closed', {
+        roomId: producerScope.roomId,
+        participantSessionId: producerScope.participantSessionId,
+        producerId,
+        kind: producer.kind,
       });
     }
   }
@@ -1086,6 +1242,12 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         consumerId,
         producerId,
       });
+      this.logLifecycle('consumer.closed', {
+        roomId: consumerScope.roomId,
+        participantSessionId: consumerScope.participantSessionId,
+        consumerId,
+        producerId,
+      });
     }
   }
 
@@ -1099,9 +1261,14 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     this.transportScopes.clear();
     this.transportDirections.clear();
     this.transports.clear();
+    this.sessionLastSeenAt.clear();
   }
 
-  closeSession(scope: LocalMediasoupSessionScope) {
+  closeSession(scope: LocalMediasoupSessionScope, reason: LocalMediasoupCleanupResult['reason'] = 'session-close') {
+    let closedConsumerCount = 0;
+    let closedProducerCount = 0;
+    let closedTransportCount = 0;
+
     for (const [consumerId, consumerScope] of this.consumerScopes.entries()) {
       if (
         consumerScope.roomId === scope.roomId &&
@@ -1109,6 +1276,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
       ) {
         this.consumers.get(consumerId)?.close();
         this.removeConsumerState(consumerId);
+        closedConsumerCount += 1;
       }
     }
 
@@ -1119,6 +1287,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
       ) {
         this.producers.get(producerId)?.close();
         this.removeProducerState(producerId);
+        closedProducerCount += 1;
       }
     }
 
@@ -1131,11 +1300,40 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         this.transports.delete(transportId);
         this.transportDirections.delete(transportId);
         this.transportScopes.delete(transportId);
+        closedTransportCount += 1;
       }
     }
+
+    this.sessionLastSeenAt.delete(this.toSessionKey(scope));
+
+    this.logLifecycle('session.closed', {
+      roomId: scope.roomId,
+      participantSessionId: scope.participantSessionId,
+      reason,
+      closedTransportCount,
+      closedProducerCount,
+      closedConsumerCount,
+    });
+
+    const counts = this.createLifecycleCounts();
+    const cleanup: LocalMediasoupCleanupResult = {
+      cleanedAt: new Date().toISOString(),
+      reason,
+      staleSessionCount: reason === 'stale-sweep' ? 1 : 0,
+      closedTransportCount,
+      closedProducerCount,
+      closedConsumerCount,
+      ...counts,
+    };
+
+    this.lastCleanup = cleanup;
+
+    return cleanup;
   }
 
   private createHealthSnapshot(status: LocalMediasoupPrototypeStatus): LocalMediasoupPrototypeHealth {
+    const counts = this.createLifecycleCounts();
+
     return {
       status,
       enabled: status !== 'disabled',
@@ -1147,7 +1345,172 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
       routerClosed: this.router?.closed,
       routerCodecCount: this.router?.rtpCapabilities?.codecs?.length,
       routerRtpCapabilities: this.router?.rtpCapabilities,
+      activeTransportCount: counts.activeTransportCount,
+      activeProducerCount: counts.activeProducerCount,
+      activeConsumerCount: counts.activeConsumerCount,
+      activeRoomCount: counts.activeRoomCount,
+      trackedSessionCount: counts.trackedSessionCount,
+      staleSessionTtlMs: this.getStaleSessionTtlMs(),
+      staleSessionSweepIntervalMs: this.getStaleSessionSweepIntervalMs(),
+      lastCleanup: this.lastCleanup,
       reason: status === 'failed' ? this.lastFailure ?? undefined : undefined,
     };
+  }
+
+  private closeConsumersForProducer(producerId: string) {
+    for (const [consumerId, consumerProducerId] of this.consumerProducerIds.entries()) {
+      if (consumerProducerId !== producerId) {
+        continue;
+      }
+
+      this.consumers.get(consumerId)?.close();
+      this.removeConsumerState(consumerId);
+    }
+  }
+
+  private createLifecycleCounts() {
+    const activeRoomIds = new Set<string>();
+
+    for (const scope of this.transportScopes.values()) {
+      activeRoomIds.add(scope.roomId);
+    }
+
+    for (const scope of this.producerScopes.values()) {
+      activeRoomIds.add(scope.roomId);
+    }
+
+    for (const scope of this.consumerScopes.values()) {
+      activeRoomIds.add(scope.roomId);
+    }
+
+    return {
+      activeTransportCount: this.transports.size,
+      activeProducerCount: this.producers.size,
+      activeConsumerCount: this.consumers.size,
+      activeRoomCount: activeRoomIds.size,
+      trackedSessionCount: this.sessionLastSeenAt.size,
+    };
+  }
+
+  private markSessionActive(scope: LocalMediasoupSessionScope | undefined) {
+    if (!scope || process.env.NODE_ENV === 'production') {
+      return Date.now();
+    }
+
+    this.ensureStaleSessionSweeper();
+    const lastSeenAt = Date.now();
+
+    this.sessionLastSeenAt.set(this.toSessionKey(scope), lastSeenAt);
+
+    return lastSeenAt;
+  }
+
+  private ensureStaleSessionSweeper() {
+    if (process.env.NODE_ENV === 'production' || this.staleSessionSweepTimer) {
+      return;
+    }
+
+    const intervalMs = this.getStaleSessionSweepIntervalMs();
+
+    this.staleSessionSweepTimer = setInterval(() => {
+      this.sweepStaleSessions('stale-sweep');
+    }, intervalMs);
+    this.staleSessionSweepTimer.unref?.();
+  }
+
+  private sweepStaleSessions(reason: LocalMediasoupCleanupResult['reason']) {
+    if (process.env.NODE_ENV === 'production') {
+      return;
+    }
+
+    const now = Date.now();
+    const staleSessionTtlMs = this.getStaleSessionTtlMs();
+    let staleSessionCount = 0;
+    let closedTransportCount = 0;
+    let closedProducerCount = 0;
+    let closedConsumerCount = 0;
+
+    for (const [sessionKey, lastSeenAt] of [...this.sessionLastSeenAt.entries()]) {
+      if (now - lastSeenAt < staleSessionTtlMs) {
+        continue;
+      }
+
+      const scope = this.fromSessionKey(sessionKey);
+
+      if (!scope) {
+        this.sessionLastSeenAt.delete(sessionKey);
+        continue;
+      }
+
+      const cleanup = this.closeSession(scope, reason);
+
+      staleSessionCount += 1;
+      closedTransportCount += cleanup.closedTransportCount;
+      closedProducerCount += cleanup.closedProducerCount;
+      closedConsumerCount += cleanup.closedConsumerCount;
+    }
+
+    if (staleSessionCount === 0) {
+      return;
+    }
+
+    const counts = this.createLifecycleCounts();
+    const cleanup: LocalMediasoupCleanupResult = {
+      cleanedAt: new Date().toISOString(),
+      reason,
+      staleSessionCount,
+      closedTransportCount,
+      closedProducerCount,
+      closedConsumerCount,
+      ...counts,
+    };
+
+    this.lastCleanup = cleanup;
+    this.logLifecycle('stale-sweep.completed', cleanup);
+  }
+
+  private getStaleSessionTtlMs() {
+    return this.readPositiveIntegerEnv('LOCAL_MEDIASOUP_STALE_SESSION_TTL_MS', 60_000, 5_000);
+  }
+
+  private getStaleSessionSweepIntervalMs() {
+    return this.readPositiveIntegerEnv('LOCAL_MEDIASOUP_STALE_SWEEP_INTERVAL_MS', 15_000, 1_000);
+  }
+
+  private readPositiveIntegerEnv(name: string, fallback: number, minimum: number) {
+    const parsed = Number(process.env[name]);
+
+    return Number.isInteger(parsed) && parsed >= minimum ? parsed : fallback;
+  }
+
+  private toSessionKey(scope: LocalMediasoupSessionScope) {
+    return `${scope.roomId}\u0000${scope.participantSessionId}`;
+  }
+
+  private fromSessionKey(sessionKey: string): LocalMediasoupSessionScope | null {
+    const [roomId, participantSessionId] = sessionKey.split('\u0000');
+
+    if (!roomId || !participantSessionId) {
+      return null;
+    }
+
+    return {
+      roomId,
+      participantSessionId,
+    };
+  }
+
+  private logLifecycle(event: string, metadata: Record<string, unknown>) {
+    if (process.env.NODE_ENV === 'production') {
+      return;
+    }
+
+    this.logger.log(
+      JSON.stringify({
+        event,
+        ...metadata,
+        ...this.createLifecycleCounts(),
+      }),
+    );
   }
 }
