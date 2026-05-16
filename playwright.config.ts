@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const useRealMediaDevices = process.env.PLAYWRIGHT_REAL_MEDIA === '1'
+
 export default defineConfig({
   testDir: './tests/browser',
   fullyParallel: true,
@@ -22,8 +24,9 @@ export default defineConfig({
         launchOptions: {
           args: [
             '--autoplay-policy=no-user-gesture-required',
-            '--use-fake-device-for-media-stream',
-            '--use-fake-ui-for-media-stream',
+            ...(useRealMediaDevices
+              ? []
+              : ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream']),
           ],
         },
         permissions: ['camera', 'microphone'],

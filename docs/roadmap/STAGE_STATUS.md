@@ -351,7 +351,7 @@ Next likely work:
 
 ### Stage 8. Media MVP
 
-Status: `in progress / gated channel audio SFU 5-user load pass-review`
+Status: `in progress / channel SFU non-production candidate gate pass`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -539,16 +539,42 @@ Done:
 - three-user direct channel `VIDEO` smoke passed with all users connected, `Remote producers: 4` per participant, two remote video tiles per participant, restart recovery, leave/rejoin cleanup, and no stale tile or producer inflation
 - three-user TURN relay channel `VIDEO` smoke passed through local Docker coturn with the same producer count, video tile, restart, and leave/rejoin assertions
 - channel `AUDIO` SFU regression passed, private SFU regression passed, ordinary channel `AUDIO` without the gate remained LiveKit, and ordinary channel `VIDEO` without the full gate remained LiveKit
+- `gated-channel-video-sfu-5user-load-offline-smoke` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_118_GATED_CHANNEL_VIDEO_SFU_5USER_LOAD_OFFLINE_SMOKE.md`
+- guarded channel `VIDEO` smoke now supports explicit `CHANNEL_VIDEO_SFU_SMOKE_OFFLINE_RESTORE=1`
+- Playwright media device mode now supports explicit `PLAYWRIGHT_REAL_MEDIA=1`; default browser tests still use fake media devices for repeatability
+- five-user direct channel `VIDEO` smoke passed with all users connected, `Remote producers: 8` per participant, four remote video tiles per participant, visible local fake-camera previews, restart recovery, leave/rejoin cleanup, and no stale tile or producer inflation
+- explicit offline/restore passed in the five-user channel `VIDEO` smoke after one browser context was forced offline for 6 seconds and restored
+- two-user headed physical camera rerun passed with an Android 13 phone exposed as Windows Virtual Camera and `PLAYWRIGHT_REAL_MEDIA=1`
+- five-user TURN was not rerun because it is optional in this segment; Segment 117 three-user TURN channel `VIDEO` remains the current relay proof
+- channel `AUDIO` SFU regression passed, private SFU regression passed, ordinary channel `AUDIO` without the gate remained LiveKit, and ordinary channel `VIDEO` without the full gate remained LiveKit
+- `channel-video-sfu-physical-camera-turn-signoff` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_119_CHANNEL_VIDEO_SFU_PHYSICAL_CAMERA_TURN_SIGNOFF.md`
+- two-user headed channel `VIDEO` SFU physical camera smoke passed with an Android 13 phone exposed through Phone Link / Windows Virtual Camera and `PLAYWRIGHT_REAL_MEDIA=1`
+- two-user headed channel `VIDEO` SFU physical camera TURN smoke passed with `CHANNEL_VIDEO_SFU_SMOKE_TRANSPORT=turn`; local coturn logs showed authenticated relay allocation, permission, channel bind, relay usage, and cleanup
+- headed private SFU real-camera regression passed with `PRIVATE_SFU_SMOKE_CAPTURE=real`, preserving connected state, real audio+video producer count, controls, and leave redirect
+- ordinary channel `VIDEO` without the full gate remained LiveKit, ordinary channel `AUDIO` without the gate remained LiveKit, and ordinary private `?video=true` remained LiveKit
+- `channel-sfu-default-switch-readiness-decision` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_120_CHANNEL_SFU_DEFAULT_SWITCH_READINESS_DECISION.md`
+- readiness decision is `review`: proceed only to a controlled non-production channel SFU default-candidate gate, not a broad product-facing or production default switch
+- private SFU, channel `AUDIO` SFU, and channel `VIDEO` SFU have enough local/dev evidence across direct, TURN, offline/restore, restart, leave/rejoin, stale cleanup, physical camera where relevant, and LiveKit fallback preservation to justify the next reversible default-candidate segment
+- product-facing default readiness remains `review` because SFU screen-share is deferred and subjective audio/video quality signoff may still be required before rollout
+- production readiness remains `blocked` because mediasoup/signaling state is process-local and production TURN/SFU infra, firewall, process management, monitoring, runbook, and rollback procedure are intentionally not implemented
+- ordinary channel `VIDEO`, ordinary channel `AUDIO`, and ordinary private `?video=true` remain LiveKit by default
+- `channel-sfu-nonproduction-default-candidate-gate` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_121_CHANNEL_SFU_NONPRODUCTION_DEFAULT_CANDIDATE_GATE.md`
+- non-production channel SFU default-candidate flags now exist for local/dev review: `NEXT_PUBLIC_MEDIA_CHANNEL_AUDIO_SFU_DEFAULT_CANDIDATE=1` and `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_DEFAULT_CANDIDATE=1`
+- explicit LiveKit rollback overrides are supported with `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`
+- guarded channel `AUDIO` candidate smoke passed with 3 authenticated users, no per-URL SFU query, and real microphone capture mode
+- guarded channel `VIDEO` candidate smoke passed with 2 authenticated users and no per-URL SFU query
+- candidate flags remain off by default, the SFU render path remains production-blocked, and private default remains LiveKit
 
 Remaining:
-- run 5-user channel `VIDEO` load baseline
-- run explicit offline/restore channel `VIDEO` smoke
-- run physical camera QA on a machine with camera hardware if it remains a release confidence requirement
-- optionally run human-operated TURN audio signoff with real microphone capture if required for release confidence
+- run candidate soak/TURN rerun before any product-facing default decision
+- keep physical camera QA scoped as two-user headed Windows Virtual Camera pass; five-user load remains fake-device based
+- optionally run human subjective audio/video quality signoff if required for release confidence
+- process-local mediasoup/signaling state remains a production/multi-process blocker
 - implement SFU screen-share later only if MVP parity or a later default-switch decision requires it
+- production media infra/runbook remains separate and required before production default switch
 
 Next likely work:
-- run `gated-channel-video-sfu-5user-load-offline-smoke`
+- run `channel-sfu-nonproduction-candidate-soak-and-turn-rerun`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

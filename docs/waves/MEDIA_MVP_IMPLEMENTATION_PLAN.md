@@ -739,6 +739,46 @@ Segment 117 result:
 - ordinary channel `VIDEO` without the full gate remains LiveKit, ordinary channel `AUDIO` without the gate remains LiveKit, channel `AUDIO` SFU regression passed, and private SFU regression passed
 - recommended next segment is `gated-channel-video-sfu-5user-load-offline-smoke`
 
+Segment 118 result:
+- status: `channel video 5-user direct pass / offline-restore pass / broad replacement hold`
+- guarded channel `VIDEO` smoke now supports `CHANNEL_VIDEO_SFU_SMOKE_OFFLINE_RESTORE=1`
+- Playwright media device mode now supports explicit `PLAYWRIGHT_REAL_MEDIA=1`; default browser tests still use fake media devices for repeatability
+- five-user direct channel `VIDEO` smoke passed with all users connected, `Remote producers: 8` per participant, four remote video tiles per participant, visible local fake-camera previews, restart recovery, leave/rejoin cleanup, and no stale tile or producer inflation
+- explicit offline/restore passed in the five-user channel `VIDEO` smoke after one browser context was forced offline for 6 seconds and restored
+- two-user headed physical camera rerun passed with an Android 13 phone exposed as Windows Virtual Camera and `PLAYWRIGHT_REAL_MEDIA=1`
+- five-user TURN was not rerun because it is optional in this segment; Segment 117 three-user TURN channel `VIDEO` remains the current relay proof
+- ordinary channel `VIDEO` without the full gate remains LiveKit, ordinary channel `AUDIO` without the gate remains LiveKit, channel `AUDIO` SFU regression passed, and private SFU regression passed
+- recommended next segment is `channel-video-sfu-physical-camera-turn-signoff`
+
+Segment 119 result:
+- status: `channel video physical camera pass / TURN physical pass / broad replacement hold`
+- two-user headed channel `VIDEO` SFU physical camera smoke passed with an Android 13 phone exposed through Phone Link / Windows Virtual Camera and `PLAYWRIGHT_REAL_MEDIA=1`
+- two-user headed channel `VIDEO` SFU physical camera TURN smoke passed with `CHANNEL_VIDEO_SFU_SMOKE_TRANSPORT=turn`; local coturn logs showed authenticated relay allocation, permission, channel bind, relay usage, and cleanup
+- headed private SFU real-camera regression passed with `PRIVATE_SFU_SMOKE_CAPTURE=real`, preserving connected state, real audio+video producer count, controls, and leave redirect
+- ordinary channel `VIDEO` without the full gate remains LiveKit, ordinary channel `AUDIO` without the gate remains LiveKit, and ordinary private `?video=true` remains LiveKit
+- remaining blockers before any default-switch readiness decision are process-local mediasoup/signaling state, deferred SFU screen-share, optional human subjective audio/video quality signoff, and the need for a separate readiness decision
+- recommended next segment is `channel-sfu-default-switch-readiness-decision`
+
+Segment 120 result:
+- status: `readiness review / non-production default-candidate allowed / production blocked`
+- readiness decision is `review`: proceed only to a controlled non-production channel SFU default-candidate gate, not a broad product-facing or production default switch
+- private SFU, channel `AUDIO` SFU, and channel `VIDEO` SFU have enough local/dev evidence across direct, TURN, offline/restore, restart, leave/rejoin, stale cleanup, physical camera where relevant, and LiveKit fallback preservation to justify the next reversible default-candidate segment
+- product-facing default readiness remains `review` because SFU screen-share is deferred and subjective audio/video quality signoff may still be required before rollout
+- production readiness remains `blocked` because mediasoup/signaling state is process-local and production TURN/SFU infra, firewall, process management, monitoring, runbook, and rollback procedure are intentionally not implemented
+- ordinary channel `VIDEO`, ordinary channel `AUDIO`, and ordinary private `?video=true` remain LiveKit by default
+- recommended next segment is `channel-sfu-nonproduction-default-candidate-gate`
+
+Segment 121 result:
+- status: `candidate gate pass / production default blocked / product default hold`
+- added reversible non-production channel SFU default-candidate flags: `NEXT_PUBLIC_MEDIA_CHANNEL_AUDIO_SFU_DEFAULT_CANDIDATE=1` and `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_DEFAULT_CANDIDATE=1`
+- added explicit LiveKit rollback overrides: `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`
+- existing explicit query gates remain supported for channel `AUDIO`, channel `VIDEO`, and private SFU
+- guarded channel `AUDIO` candidate smoke passed with 3 authenticated users, no per-URL SFU query, real microphone capture mode, restart, leave/rejoin, expected remote producer counts, and LiveKit rollback assertion
+- guarded channel `VIDEO` candidate smoke passed with 2 authenticated users, no per-URL SFU query, real capture behavior, remote video tiles, restart, leave/rejoin, no-camera fallback assertion, and LiveKit rollback assertion
+- production remains blocked because the SFU render path is still guarded by `NODE_ENV !== 'production'`; candidate flags are off by default
+- remaining blockers before product/production default are process-local mediasoup/signaling state, deferred SFU screen-share, production media infra/runbook, and candidate soak/TURN rerun
+- recommended next segment is `channel-sfu-nonproduction-candidate-soak-and-turn-rerun`
+
 ## Dependency Summary
 
 Critical path:
@@ -826,7 +866,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `gated-channel-video-sfu-5user-load-offline-smoke`
+- `channel-sfu-nonproduction-candidate-soak-and-turn-rerun`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -848,4 +888,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `gated-channel-video-sfu-5user-load-offline-smoke`
+- `channel-sfu-nonproduction-candidate-soak-and-turn-rerun`
