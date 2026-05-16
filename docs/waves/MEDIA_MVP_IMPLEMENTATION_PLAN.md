@@ -709,6 +709,17 @@ Segment 114 result:
 - five-user TURN was not run because it is optional in this segment; Segment 113 three-user TURN channel `AUDIO` remains the current relay proof
 - recommended next segment is `channel-video-sfu-layout-readiness-plan`
 
+Segment 115 result:
+- status: `ready-to-implement-gated-channel-video / layout plan only / no runtime switch`
+- channel `VIDEO` SFU readiness decision is `ready-to-implement-gated-channel-video`, limited to a non-production explicit pilot and not a default switch
+- current SFU video capability was inventoried: backend VP8 produce/consume and scoped room/session checks exist, while the current client UI only has a single remote video element and is not ready for multi-participant channel video rendering
+- proposed channel video gate is stricter than channel audio: `?mediaProvider=sfu&sfuChannel=true&sfuVideo=true` or `?sfu=true&sfuChannel=true&sfuVideo=true`, with `sfuCapture=real` for video smoke and optional `sfuTransport=turn`
+- layout requirements are defined for 2, 3, and 5 participants, including participant-keyed remote media, one remote tile per participant, audio-only placeholders, stable grid sizing, restart cleanup, leave/rejoin cleanup, and no stale producer inflation
+- capture/no-camera behavior is defined: try real audio+video first, continue audio-only when the camera is missing and microphone capture succeeds, disable camera control, and keep the call connected where possible
+- direct/TURN smoke matrix is defined for 2-user, 3-user, 5-user, no-camera fallback, leave/rejoin, restart, offline/restore, LiveKit fallback assertions, channel `AUDIO` regression, and private SFU regression
+- risks remain autoplay, multi-video grid work, camera absence, source metadata for future screen-share, deferred SFU screen-share, process-local state, and 5-user video load
+- recommended next segment is `gated-channel-video-sfu-layout-prototype`
+
 ## Dependency Summary
 
 Critical path:
@@ -796,7 +807,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-video-sfu-layout-readiness-plan`
+- `gated-channel-video-sfu-layout-prototype`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -818,4 +829,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-video-sfu-layout-readiness-plan`
+- `gated-channel-video-sfu-layout-prototype`
