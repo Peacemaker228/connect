@@ -842,6 +842,16 @@ Segment 126 result:
 - this is still not production readiness because media state remains process-local and production infra/runbook/monitoring/rollback are out of scope
 - recommended next segment is `channel-audio-sfu-limited-pilot-readiness-decision`
 
+Segment 127 result:
+- status: `audio limited pilot ready for controlled product review / production blocked`
+- docs-only readiness decision is complete after Segments 123-126
+- channel `AUDIO` limited non-production pilot is `pass for controlled product review` based on direct 5-user, TURN 3-user, offline/restore, restart, leave/rejoin, observability, stale cleanup, counters settling to zero, LiveKit rollback, and private SFU regression evidence
+- channel `VIDEO` default remains `review/hold` because SFU screen-share remains deferred and this segment did not change video runtime
+- private default remains `review/hold`; ordinary private `?video=true` stays LiveKit pending a separate private default decision
+- bounded local single-process soak is pass for limited pilot review, while multi-process/production readiness remains blocked by process-local mediasoup/signaling state
+- production readiness remains blocked by missing production TURN/SFU infra, runbook, monitoring, firewall/process management, rollback, and operational ownership
+- recommended next segment is `channel-audio-sfu-limited-pilot-controlled-product-review`
+
 ## Dependency Summary
 
 Critical path:
@@ -929,7 +939,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-audio-sfu-limited-pilot-readiness-decision`
+- `channel-audio-sfu-limited-pilot-controlled-product-review`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -951,4 +961,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-audio-sfu-limited-pilot-readiness-decision`
+- `channel-audio-sfu-limited-pilot-controlled-product-review`
