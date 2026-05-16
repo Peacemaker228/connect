@@ -351,7 +351,7 @@ Next likely work:
 
 ### Stage 8. Media MVP
 
-Status: `in progress / channel SFU non-production candidate gate pass`
+Status: `in progress / channel SFU candidate direct and TURN pass`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -564,9 +564,15 @@ Done:
 - guarded channel `AUDIO` candidate smoke passed with 3 authenticated users, no per-URL SFU query, and real microphone capture mode
 - guarded channel `VIDEO` candidate smoke passed with 2 authenticated users and no per-URL SFU query
 - candidate flags remain off by default, the SFU render path remains production-blocked, and private default remains LiveKit
+- `channel-sfu-nonproduction-candidate-soak-and-turn-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_122_CHANNEL_SFU_NONPRODUCTION_CANDIDATE_SOAK_TURN_RERUN.md`
+- channel `AUDIO` candidate direct passed with 5 users, offline/restore, restart, leave/rejoin, real-capture mode, and rollback assertion
+- channel `AUDIO` candidate TURN passed with 3 users through local Docker coturn and backend-issued TURN credentials
+- channel `VIDEO` candidate direct passed with 3 users, remote video tiles, restart, leave/rejoin, no-camera fallback, and rollback assertion
+- channel `VIDEO` candidate TURN passed with 3 users through local Docker coturn and backend-issued TURN credentials
+- private SFU regression passed while ordinary private `?video=true` remained LiveKit by default
 
 Remaining:
-- run candidate soak/TURN rerun before any product-facing default decision
+- make a separate product-default readiness decision before any product-facing default switch
 - keep physical camera QA scoped as two-user headed Windows Virtual Camera pass; five-user load remains fake-device based
 - optionally run human subjective audio/video quality signoff if required for release confidence
 - process-local mediasoup/signaling state remains a production/multi-process blocker
@@ -574,7 +580,7 @@ Remaining:
 - production media infra/runbook remains separate and required before production default switch
 
 Next likely work:
-- run `channel-sfu-nonproduction-candidate-soak-and-turn-rerun`
+- run `channel-sfu-product-default-readiness-decision`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

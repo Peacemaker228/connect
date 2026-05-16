@@ -779,6 +779,18 @@ Segment 121 result:
 - remaining blockers before product/production default are process-local mediasoup/signaling state, deferred SFU screen-share, production media infra/runbook, and candidate soak/TURN rerun
 - recommended next segment is `channel-sfu-nonproduction-candidate-soak-and-turn-rerun`
 
+Segment 122 result:
+- status: `candidate direct pass / candidate TURN pass / product default decision still required`
+- candidate soak ran with both `NEXT_PUBLIC_MEDIA_CHANNEL_AUDIO_SFU_DEFAULT_CANDIDATE=1` and `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_DEFAULT_CANDIDATE=1`
+- channel `AUDIO` candidate direct passed with 5 users, browser real-capture mode, expected `Remote producers: 4`, restart, offline/restore, leave/rejoin, and LiveKit rollback
+- channel `AUDIO` candidate TURN passed with 3 users, expected `Remote producers: 2`, restart, leave/rejoin, backend-issued TURN credentials, and local coturn relay usage
+- channel `VIDEO` candidate direct passed with 3 users, expected `Remote producers: 4`, two remote video tiles per participant, visible fake-camera media, restart, leave/rejoin, no-camera fallback, and LiveKit rollback
+- channel `VIDEO` candidate TURN passed with 3 users, expected producer/tile counts, restart, leave/rejoin, no-camera fallback, backend-issued TURN credentials, and local coturn relay usage
+- private SFU regression passed and ordinary private `?video=true` remains LiveKit by default
+- a narrow smoke assertion fix now uses explicit `?mediaProvider=livekit` rollback when both channel candidate flags are enabled together
+- production/product default remains on hold; remaining blockers are process-local mediasoup/signaling state, deferred SFU screen-share, production media infra/runbook, and a separate product-default readiness decision
+- recommended next segment is `channel-sfu-product-default-readiness-decision`
+
 ## Dependency Summary
 
 Critical path:
@@ -866,7 +878,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-sfu-nonproduction-candidate-soak-and-turn-rerun`
+- `channel-sfu-product-default-readiness-decision`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -888,4 +900,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-sfu-nonproduction-candidate-soak-and-turn-rerun`
+- `channel-sfu-product-default-readiness-decision`
