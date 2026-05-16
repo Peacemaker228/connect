@@ -739,6 +739,15 @@ Segment 117 result:
 - ordinary channel `VIDEO` without the full gate remains LiveKit, ordinary channel `AUDIO` without the gate remains LiveKit, channel `AUDIO` SFU regression passed, and private SFU regression passed
 - recommended next segment is `gated-channel-video-sfu-5user-load-offline-smoke`
 
+Segment 118 result:
+- status: `channel video 5-user direct pass / offline-restore pass / broad replacement hold`
+- guarded channel `VIDEO` smoke now supports `CHANNEL_VIDEO_SFU_SMOKE_OFFLINE_RESTORE=1`
+- five-user direct channel `VIDEO` smoke passed with all users connected, `Remote producers: 8` per participant, four remote video tiles per participant, visible local fake-camera previews, restart recovery, leave/rejoin cleanup, and no stale tile or producer inflation
+- explicit offline/restore passed in the five-user channel `VIDEO` smoke after one browser context was forced offline for 6 seconds and restored
+- five-user TURN was not rerun because it is optional in this segment; Segment 117 three-user TURN channel `VIDEO` remains the current relay proof
+- ordinary channel `VIDEO` without the full gate remains LiveKit, ordinary channel `AUDIO` without the gate remains LiveKit, channel `AUDIO` SFU regression passed, and private SFU regression passed
+- recommended next segment is `channel-video-sfu-physical-camera-turn-signoff`
+
 ## Dependency Summary
 
 Critical path:
@@ -826,7 +835,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `gated-channel-video-sfu-5user-load-offline-smoke`
+- `channel-video-sfu-physical-camera-turn-signoff`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -848,4 +857,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `gated-channel-video-sfu-5user-load-offline-smoke`
+- `channel-video-sfu-physical-camera-turn-signoff`

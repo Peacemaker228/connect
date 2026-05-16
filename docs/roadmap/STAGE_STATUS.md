@@ -351,7 +351,7 @@ Next likely work:
 
 ### Stage 8. Media MVP
 
-Status: `in progress / gated channel audio SFU 5-user load pass-review`
+Status: `in progress / gated channel video SFU 5-user load pass-review`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -539,16 +539,21 @@ Done:
 - three-user direct channel `VIDEO` smoke passed with all users connected, `Remote producers: 4` per participant, two remote video tiles per participant, restart recovery, leave/rejoin cleanup, and no stale tile or producer inflation
 - three-user TURN relay channel `VIDEO` smoke passed through local Docker coturn with the same producer count, video tile, restart, and leave/rejoin assertions
 - channel `AUDIO` SFU regression passed, private SFU regression passed, ordinary channel `AUDIO` without the gate remained LiveKit, and ordinary channel `VIDEO` without the full gate remained LiveKit
+- `gated-channel-video-sfu-5user-load-offline-smoke` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_118_GATED_CHANNEL_VIDEO_SFU_5USER_LOAD_OFFLINE_SMOKE.md`
+- guarded channel `VIDEO` smoke now supports explicit `CHANNEL_VIDEO_SFU_SMOKE_OFFLINE_RESTORE=1`
+- five-user direct channel `VIDEO` smoke passed with all users connected, `Remote producers: 8` per participant, four remote video tiles per participant, visible local fake-camera previews, restart recovery, leave/rejoin cleanup, and no stale tile or producer inflation
+- explicit offline/restore passed in the five-user channel `VIDEO` smoke after one browser context was forced offline for 6 seconds and restored
+- five-user TURN was not rerun because it is optional in this segment; Segment 117 three-user TURN channel `VIDEO` remains the current relay proof
+- channel `AUDIO` SFU regression passed, private SFU regression passed, ordinary channel `AUDIO` without the gate remained LiveKit, and ordinary channel `VIDEO` without the full gate remained LiveKit
 
 Remaining:
-- run 5-user channel `VIDEO` load baseline
-- run explicit offline/restore channel `VIDEO` smoke
 - run physical camera QA on a machine with camera hardware if it remains a release confidence requirement
 - optionally run human-operated TURN audio signoff with real microphone capture if required for release confidence
+- decide whether the automated fake-device 5-user baseline is enough for the next controlled readiness decision
 - implement SFU screen-share later only if MVP parity or a later default-switch decision requires it
 
 Next likely work:
-- run `gated-channel-video-sfu-5user-load-offline-smoke`
+- run `channel-video-sfu-physical-camera-turn-signoff`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

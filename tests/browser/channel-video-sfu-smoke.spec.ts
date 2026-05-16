@@ -67,6 +67,7 @@ const transportQuery =
   process.env.CHANNEL_VIDEO_SFU_SMOKE_TRANSPORT === 'turn' ? '&sfuTransport=turn' : ''
 const participantCount = parsePositiveInteger(process.env.CHANNEL_VIDEO_SFU_SMOKE_USERS, 2)
 const shouldRunLeaveRejoin = process.env.CHANNEL_VIDEO_SFU_SMOKE_LEAVE_REJOIN !== '0'
+const shouldRunOfflineRestore = process.env.CHANNEL_VIDEO_SFU_SMOKE_OFFLINE_RESTORE === '1'
 
 test.describe('channel VIDEO SFU browser smoke', () => {
   test.skip(!isSmokeEnabled, 'Set CHANNEL_VIDEO_SFU_BROWSER_SMOKE=1 with local API/web to run this smoke.')
@@ -85,7 +86,7 @@ test.describe('channel VIDEO SFU browser smoke', () => {
   })
 
   test('connects authenticated channel VIDEO SFU participants behind full explicit gate', async ({ browser }) => {
-    test.setTimeout(120_000)
+    test.setTimeout(180_000)
 
     expect(participantCount, 'CHANNEL_VIDEO_SFU_SMOKE_USERS must be at least 2').toBeGreaterThanOrEqual(2)
 
@@ -156,6 +157,16 @@ test.describe('channel VIDEO SFU browser smoke', () => {
       await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
       await expectAllRemoteVideoTileCounts(pages, expectedRemoteVideoTileCount)
       await expectAllRemoteVideosVisible(pages, expectedRemoteVideoTileCount)
+
+      if (shouldRunOfflineRestore) {
+        await contexts[1].setOffline(true)
+        await pages[1].waitForTimeout(6_000)
+        await contexts[1].setOffline(false)
+        await expectAllStatuses(pages, 'connected')
+        await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
+        await expectAllRemoteVideoTileCounts(pages, expectedRemoteVideoTileCount)
+        await expectAllRemoteVideosVisible(pages, expectedRemoteVideoTileCount)
+      }
 
       if (shouldRunLeaveRejoin) {
         const rejoiningPage = pages[participantCount - 1]
