@@ -48,11 +48,19 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
     !video &&
     searchParams?.get('sfuChannel') === 'true' &&
     isSfuProviderRequested
-  const isSfuGateRequested = isPrivateSfuGateRequested || isChannelAudioSfuGateRequested
-  const isSfuGateOpen = isSfuGateRequested && process.env.NODE_ENV !== 'production'
   const sfuIceTransportPolicy =
     searchParams?.get('sfuTransport') === 'turn' || searchParams?.get('sfuIce') === 'relay' ? 'relay' : undefined
   const sfuCaptureMode = searchParams?.get('sfuCapture') === 'real' ? 'real' : 'synthetic'
+  const isChannelVideoSfuGateRequested =
+    mediaEntry.scope.kind === 'channel' &&
+    audio &&
+    video &&
+    searchParams?.get('sfuChannel') === 'true' &&
+    searchParams?.get('sfuVideo') === 'true' &&
+    sfuCaptureMode === 'real' &&
+    isSfuProviderRequested
+  const isSfuGateRequested = isPrivateSfuGateRequested || isChannelAudioSfuGateRequested || isChannelVideoSfuGateRequested
+  const isSfuGateOpen = isSfuGateRequested && process.env.NODE_ENV !== 'production'
   const sfuSimulateMissingCamera = searchParams?.get('sfuSimulateMissingCamera') === 'true'
 
   const handleLeave = useCallback(() => {
@@ -67,6 +75,7 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
 
   if (isSfuGateOpen && controlPlaneJoin?.participantSession) {
     const isChannelAudioSfu = isChannelAudioSfuGateRequested
+    const isChannelVideoSfu = isChannelVideoSfuGateRequested
 
     return (
       <SfuPrivateCallAdapter
@@ -76,8 +85,11 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
         iceTransportPolicy={sfuIceTransportPolicy}
         captureMode={sfuCaptureMode}
         simulateMissingCamera={sfuSimulateMissingCamera}
-        roomLabel={isChannelAudioSfu ? 'SFU channel audio' : undefined}
-        restartAriaLabel={isChannelAudioSfu ? 'Restart SFU channel audio' : undefined}
+        roomLabel={isChannelVideoSfu ? 'SFU channel video' : isChannelAudioSfu ? 'SFU channel audio' : undefined}
+        restartAriaLabel={
+          isChannelVideoSfu ? 'Restart SFU channel video' : isChannelAudioSfu ? 'Restart SFU channel audio' : undefined
+        }
+        remoteVideoLayout={isChannelVideoSfu ? 'participant-grid' : 'single'}
         onLeave={handleLeave}
       />
     )

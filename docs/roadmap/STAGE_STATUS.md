@@ -523,15 +523,32 @@ Done:
 - explicit offline/restore passed in the five-user channel `AUDIO` smoke
 - restart recovery and leave/rejoin cleanup passed again without stale producer inflation
 - ordinary channel `AUDIO` without the gate remains LiveKit, channel `VIDEO` remains LiveKit, and private SFU direct smoke passed again as a regression check
+- `channel-video-sfu-layout-readiness-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_115_CHANNEL_VIDEO_SFU_LAYOUT_READINESS_PLAN.md`
+- channel `VIDEO` SFU readiness decision is `ready-to-implement-gated-channel-video`, limited to a non-production explicit pilot and not a default switch
+- proposed channel `VIDEO` gate requires channel scope, non-production runtime, explicit SFU provider, `sfuChannel=true`, and `sfuVideo=true`; ordinary channel `VIDEO` remains LiveKit without that full gate
+- layout requirements are defined for 2, 3, and 5 participants, including participant-keyed remote media, one remote video tile per participant, audio-only placeholders, stable grid sizing, restart recovery, leave/rejoin cleanup, and no stale producer inflation
+- capture/no-camera behavior is defined for channel `VIDEO`: real audio+video first, audio-only continuation when camera is missing and microphone capture succeeds, disabled camera control without a video track, and clear failure if no media can be captured
+- direct/TURN channel `VIDEO` smoke matrix is defined, while LiveKit fallback/default, channel `AUDIO` SFU pilot behavior, and private SFU behavior remain preserved
+- `gated-channel-video-sfu-layout-prototype` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_116_GATED_CHANNEL_VIDEO_SFU_LAYOUT_PROTOTYPE.md`
+- channel `VIDEO` SFU now has a non-production full explicit gate requiring `mediaProvider=sfu` or `sfu=true`, `sfuChannel=true`, `sfuVideo=true`, and `sfuCapture=real`
+- the SFU adapter now has a participant-grid remote video layout for channel `VIDEO`, with remote media keyed by `participantSessionId` and one remote video tile or audio-only placeholder per remote participant
+- two-user channel `VIDEO` direct smoke passed with both users connected, `Remote producers: 2` per participant, visible local previews, one remote video tile per participant, no-camera audio-only fallback preserved, and channel leave redirect preserved
+- channel `AUDIO` SFU regression passed, private SFU regression passed, ordinary channel `AUDIO` without the gate remained LiveKit, and ordinary channel `VIDEO` without the full gate remained LiveKit
+- `gated-channel-video-sfu-3user-turn-rejoin-smoke` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_117_GATED_CHANNEL_VIDEO_SFU_3USER_TURN_REJOIN_SMOKE.md`
+- guarded channel `VIDEO` smoke now supports configurable participant count, restart recovery, leave/rejoin cleanup, and TURN relay mode
+- three-user direct channel `VIDEO` smoke passed with all users connected, `Remote producers: 4` per participant, two remote video tiles per participant, restart recovery, leave/rejoin cleanup, and no stale tile or producer inflation
+- three-user TURN relay channel `VIDEO` smoke passed through local Docker coturn with the same producer count, video tile, restart, and leave/rejoin assertions
+- channel `AUDIO` SFU regression passed, private SFU regression passed, ordinary channel `AUDIO` without the gate remained LiveKit, and ordinary channel `VIDEO` without the full gate remained LiveKit
 
 Remaining:
-- define channel `VIDEO` remote layout/rendering before any video SFU pilot claim
+- run 5-user channel `VIDEO` load baseline
+- run explicit offline/restore channel `VIDEO` smoke
 - run physical camera QA on a machine with camera hardware if it remains a release confidence requirement
 - optionally run human-operated TURN audio signoff with real microphone capture if required for release confidence
 - implement SFU screen-share later only if MVP parity or a later default-switch decision requires it
 
 Next likely work:
-- run `channel-video-sfu-layout-readiness-plan`
+- run `gated-channel-video-sfu-5user-load-offline-smoke`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

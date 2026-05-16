@@ -31,6 +31,7 @@
     "test:browser": "playwright test --pass-with-no-tests",
     "test:browser:private-sfu": "playwright test tests/browser/private-sfu-two-user-smoke.spec.ts --project=chromium",
     "test:browser:channel-audio-sfu": "playwright test tests/browser/channel-audio-sfu-smoke.spec.ts --project=chromium",
+    "test:browser:channel-video-sfu": "playwright test tests/browser/channel-video-sfu-smoke.spec.ts --project=chromium",
     "test:browser:install": "playwright install chromium",
     "lint": "next lint",
     "prisma:generate": "prisma generate",

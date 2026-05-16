@@ -709,6 +709,36 @@ Segment 114 result:
 - five-user TURN was not run because it is optional in this segment; Segment 113 three-user TURN channel `AUDIO` remains the current relay proof
 - recommended next segment is `channel-video-sfu-layout-readiness-plan`
 
+Segment 115 result:
+- status: `ready-to-implement-gated-channel-video / layout plan only / no runtime switch`
+- channel `VIDEO` SFU readiness decision is `ready-to-implement-gated-channel-video`, limited to a non-production explicit pilot and not a default switch
+- current SFU video capability was inventoried: backend VP8 produce/consume and scoped room/session checks exist, while the current client UI only has a single remote video element and is not ready for multi-participant channel video rendering
+- proposed channel video gate is stricter than channel audio: `?mediaProvider=sfu&sfuChannel=true&sfuVideo=true` or `?sfu=true&sfuChannel=true&sfuVideo=true`, with `sfuCapture=real` for video smoke and optional `sfuTransport=turn`
+- layout requirements are defined for 2, 3, and 5 participants, including participant-keyed remote media, one remote tile per participant, audio-only placeholders, stable grid sizing, restart cleanup, leave/rejoin cleanup, and no stale producer inflation
+- capture/no-camera behavior is defined: try real audio+video first, continue audio-only when the camera is missing and microphone capture succeeds, disable camera control, and keep the call connected where possible
+- direct/TURN smoke matrix is defined for 2-user, 3-user, 5-user, no-camera fallback, leave/rejoin, restart, offline/restore, LiveKit fallback assertions, channel `AUDIO` regression, and private SFU regression
+- risks remain autoplay, multi-video grid work, camera absence, source metadata for future screen-share, deferred SFU screen-share, process-local state, and 5-user video load
+- recommended next segment is `gated-channel-video-sfu-layout-prototype`
+
+Segment 116 result:
+- status: `channel video 2-user direct pass / layout prototype pass / broad replacement hold`
+- channel `VIDEO` SFU now opens only behind the full non-production explicit gate `?mediaProvider=sfu&sfuChannel=true&sfuVideo=true&sfuCapture=real` or `?sfu=true&sfuChannel=true&sfuVideo=true&sfuCapture=real`
+- ordinary channel `VIDEO` without the full gate remains LiveKit, including partial SFU query variants without `sfuCapture=real`
+- existing channel `AUDIO` SFU gate and ordinary channel `AUDIO` LiveKit default are preserved
+- the existing SFU adapter now supports a `participant-grid` remote video layout that models remote media by `participantSessionId` and renders one remote video tile or audio-only placeholder per remote participant
+- guarded two-user channel `VIDEO` browser smoke exists at `tests/browser/channel-video-sfu-smoke.spec.ts` with script `bun.cmd run test:browser:channel-video-sfu`
+- two-user channel `VIDEO` direct smoke passed with both users connected, `Remote producers: 2` per participant, visible local previews, one remote video tile per participant, no-camera audio-only fallback preserved, and channel leave redirect preserved
+- channel `AUDIO` SFU regression passed, private SFU regression passed, ordinary channel `AUDIO` without the gate remained LiveKit, and ordinary channel `VIDEO` without the full gate remained LiveKit
+- recommended next segment is `gated-channel-video-sfu-3user-turn-rejoin-smoke`
+
+Segment 117 result:
+- status: `channel video 3-user direct pass / TURN pass / restart leave-rejoin pass`
+- guarded channel `VIDEO` smoke now supports `CHANNEL_VIDEO_SFU_SMOKE_USERS`, leave/rejoin assertions, restart recovery assertions, and `CHANNEL_VIDEO_SFU_SMOKE_TRANSPORT=turn`
+- three-user direct channel `VIDEO` smoke passed with all users connected, `Remote producers: 4` per participant, two remote video tiles per participant, restart recovery, leave/rejoin cleanup, and no stale tile or producer inflation
+- three-user TURN relay channel `VIDEO` smoke passed through local Docker coturn with the same restart, leave/rejoin, producer count, and video tile assertions
+- ordinary channel `VIDEO` without the full gate remains LiveKit, ordinary channel `AUDIO` without the gate remains LiveKit, channel `AUDIO` SFU regression passed, and private SFU regression passed
+- recommended next segment is `gated-channel-video-sfu-5user-load-offline-smoke`
+
 ## Dependency Summary
 
 Critical path:
@@ -796,7 +826,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-video-sfu-layout-readiness-plan`
+- `gated-channel-video-sfu-5user-load-offline-smoke`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -818,4 +848,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-video-sfu-layout-readiness-plan`
+- `gated-channel-video-sfu-5user-load-offline-smoke`
