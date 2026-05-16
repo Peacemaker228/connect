@@ -529,15 +529,21 @@ Done:
 - layout requirements are defined for 2, 3, and 5 participants, including participant-keyed remote media, one remote video tile per participant, audio-only placeholders, stable grid sizing, restart recovery, leave/rejoin cleanup, and no stale producer inflation
 - capture/no-camera behavior is defined for channel `VIDEO`: real audio+video first, audio-only continuation when camera is missing and microphone capture succeeds, disabled camera control without a video track, and clear failure if no media can be captured
 - direct/TURN channel `VIDEO` smoke matrix is defined, while LiveKit fallback/default, channel `AUDIO` SFU pilot behavior, and private SFU behavior remain preserved
+- `gated-channel-video-sfu-layout-prototype` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_116_GATED_CHANNEL_VIDEO_SFU_LAYOUT_PROTOTYPE.md`
+- channel `VIDEO` SFU now has a non-production full explicit gate requiring `mediaProvider=sfu` or `sfu=true`, `sfuChannel=true`, `sfuVideo=true`, and `sfuCapture=real`
+- the SFU adapter now has a participant-grid remote video layout for channel `VIDEO`, with remote media keyed by `participantSessionId` and one remote video tile or audio-only placeholder per remote participant
+- two-user channel `VIDEO` direct smoke passed with both users connected, `Remote producers: 2` per participant, visible local previews, one remote video tile per participant, no-camera audio-only fallback preserved, and channel leave redirect preserved
+- channel `AUDIO` SFU regression passed, private SFU regression passed, ordinary channel `AUDIO` without the gate remained LiveKit, and ordinary channel `VIDEO` without the full gate remained LiveKit
 
 Remaining:
-- implement and validate gated channel `VIDEO` remote layout/rendering before any video SFU pilot pass claim
+- run 3-user channel `VIDEO` direct smoke with restart and leave/rejoin cleanup
+- run TURN channel `VIDEO` smoke after 3-user direct passes
 - run physical camera QA on a machine with camera hardware if it remains a release confidence requirement
 - optionally run human-operated TURN audio signoff with real microphone capture if required for release confidence
 - implement SFU screen-share later only if MVP parity or a later default-switch decision requires it
 
 Next likely work:
-- run `gated-channel-video-sfu-layout-prototype`
+- run `gated-channel-video-sfu-3user-turn-rejoin-smoke`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

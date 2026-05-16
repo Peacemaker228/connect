@@ -720,6 +720,17 @@ Segment 115 result:
 - risks remain autoplay, multi-video grid work, camera absence, source metadata for future screen-share, deferred SFU screen-share, process-local state, and 5-user video load
 - recommended next segment is `gated-channel-video-sfu-layout-prototype`
 
+Segment 116 result:
+- status: `channel video 2-user direct pass / layout prototype pass / broad replacement hold`
+- channel `VIDEO` SFU now opens only behind the full non-production explicit gate `?mediaProvider=sfu&sfuChannel=true&sfuVideo=true&sfuCapture=real` or `?sfu=true&sfuChannel=true&sfuVideo=true&sfuCapture=real`
+- ordinary channel `VIDEO` without the full gate remains LiveKit, including partial SFU query variants without `sfuCapture=real`
+- existing channel `AUDIO` SFU gate and ordinary channel `AUDIO` LiveKit default are preserved
+- the existing SFU adapter now supports a `participant-grid` remote video layout that models remote media by `participantSessionId` and renders one remote video tile or audio-only placeholder per remote participant
+- guarded two-user channel `VIDEO` browser smoke exists at `tests/browser/channel-video-sfu-smoke.spec.ts` with script `bun.cmd run test:browser:channel-video-sfu`
+- two-user channel `VIDEO` direct smoke passed with both users connected, `Remote producers: 2` per participant, visible local previews, one remote video tile per participant, no-camera audio-only fallback preserved, and channel leave redirect preserved
+- channel `AUDIO` SFU regression passed, private SFU regression passed, ordinary channel `AUDIO` without the gate remained LiveKit, and ordinary channel `VIDEO` without the full gate remained LiveKit
+- recommended next segment is `gated-channel-video-sfu-3user-turn-rejoin-smoke`
+
 ## Dependency Summary
 
 Critical path:
@@ -807,7 +818,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `gated-channel-video-sfu-layout-prototype`
+- `gated-channel-video-sfu-3user-turn-rejoin-smoke`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -829,4 +840,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `gated-channel-video-sfu-layout-prototype`
+- `gated-channel-video-sfu-3user-turn-rejoin-smoke`

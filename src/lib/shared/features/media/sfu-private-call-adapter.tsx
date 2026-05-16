@@ -26,10 +26,18 @@ type SfuPrivateCallAdapterProps = {
   simulateMissingCamera?: boolean
   roomLabel?: string
   restartAriaLabel?: string
+  remoteVideoLayout?: 'single' | 'participant-grid'
   onLeave: () => void
 }
 
 const MISSING_CAMERA_NOTICE = 'Camera not found; continuing audio-only'
+
+type RemoteParticipantMedia = {
+  participantSessionId: string
+  audioProducerId?: string
+  videoProducerId?: string
+  videoTrack?: MediaStreamTrack
+}
 
 const getMediaErrorMessage = (error: unknown) => {
   return error instanceof Error ? error.message : 'Unknown media capture failure'
@@ -92,6 +100,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   simulateMissingCamera = false,
   roomLabel = 'SFU private call',
   restartAriaLabel = 'Restart SFU private call',
+  remoteVideoLayout = 'single',
   onLeave,
 }) => {
   const adapterRef = useRef<SfuClientAdapter | null>(null)
@@ -107,12 +116,15 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   const consumedProducerIdsRef = useRef(new Set<string>())
   const consumedProducerKeysRef = useRef(new Set<string>())
   const consumedProducerKeyByIdRef = useRef(new Map<string, string>())
+  const consumedProducerByIdRef = useRef(new Map<string, RemoteProducerMetadata>())
   const startRunIdRef = useRef(0)
   const [status, setStatus] = useState<SfuPrivateCallStatus>('idle')
   const [detail, setDetail] = useState('Waiting for scoped SFU gate')
   const [producerIds, setProducerIds] = useState<string[]>([])
   const [consumerIds, setConsumerIds] = useState<string[]>([])
   const [remoteProducerIds, setRemoteProducerIds] = useState<string[]>([])
+  const [remoteParticipants, setRemoteParticipants] = useState<RemoteParticipantMedia[]>([])
+  const [hasSingleRemoteVideoTrack, setHasSingleRemoteVideoTrack] = useState(false)
   const [localAudioEnabled, setLocalAudioEnabled] = useState(audio)
   const [localVideoEnabled, setLocalVideoEnabled] = useState(video)
   const [captureNotice, setCaptureNotice] = useState<string | null>(null)
@@ -134,6 +146,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     consumedProducerIdsRef.current.clear()
     consumedProducerKeysRef.current.clear()
     consumedProducerKeyByIdRef.current.clear()
+    consumedProducerByIdRef.current.clear()
     remoteStreamRef.current = null
     remoteVideoStreamRef.current = null
 
@@ -288,12 +301,29 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     [],
   )
 
-  const attachRemoteTrack = useCallback(async (track: MediaStreamTrack) => {
+  const attachRemoteTrack = useCallback(async (track: MediaStreamTrack, producer: RemoteProducerMetadata) => {
+    if (remoteVideoLayout === 'participant-grid') {
+      setRemoteParticipants((current) =>
+        upsertRemoteParticipant({
+          current,
+          participantSessionId: producer.participantSessionId,
+          audioProducerId: track.kind === 'audio' ? producer.producerId : undefined,
+          videoProducerId: track.kind === 'video' ? producer.producerId : undefined,
+          videoTrack: track.kind === 'video' ? track : undefined,
+        }),
+      )
+    }
+
     if (track.kind === 'video') {
+      if (remoteVideoLayout === 'participant-grid') {
+        return
+      }
+
       const remoteVideoStream = remoteVideoStreamRef.current ?? new MediaStream()
 
       remoteVideoStreamRef.current = remoteVideoStream
       remoteVideoStream.addTrack(track)
+      setHasSingleRemoteVideoTrack(true)
 
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = remoteVideoStream
@@ -312,7 +342,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       remoteAudioRef.current.srcObject = remoteStream
       await remoteAudioRef.current.play().catch(() => undefined)
     }
-  }, [])
+  }, [remoteVideoLayout])
 
   const consumeRemoteProducer = useCallback(
     async ({
@@ -347,6 +377,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       consumedProducerIdsRef.current.add(producer.producerId)
       consumedProducerKeysRef.current.add(producerKey)
       consumedProducerKeyByIdRef.current.set(producer.producerId, producerKey)
+      consumedProducerByIdRef.current.set(producer.producerId, producer)
 
       const consumerMetadata = await adapter.createConsumerMetadata({
         transportId: recvTransportId,
@@ -357,7 +388,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         transportId: recvTransportId,
       })
 
-      await attachRemoteTrack(consumed.track)
+      await attachRemoteTrack(consumed.track, producer)
       await waitForRemoteTrackFlow(consumed.track)
 
       if (startRunIdRef.current !== runId) {
@@ -466,6 +497,24 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
                 consumedProducerKeysRef.current.delete(producerKey)
               }
 
+              const producer = consumedProducerByIdRef.current.get(event.producerId)
+              consumedProducerByIdRef.current.delete(event.producerId)
+
+              if (producer?.kind === 'video' && remoteVideoLayout === 'single') {
+                setHasSingleRemoteVideoTrack(false)
+              }
+
+              if (producer && remoteVideoLayout === 'participant-grid') {
+                setRemoteParticipants((current) =>
+                  removeRemoteParticipantProducer({
+                    current,
+                    participantSessionId: producer.participantSessionId,
+                    kind: producer.kind,
+                    producerId: producer.producerId,
+                  }),
+                )
+              }
+
               setRemoteProducerIds((current) => current.filter((producerId) => producerId !== event.producerId))
             }
           })().catch((error: unknown) => {
@@ -485,7 +534,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         }
       })
     },
-    [consumeRemoteProducer, sessionScope],
+    [consumeRemoteProducer, remoteVideoLayout, sessionScope],
   )
 
   const startSfuPath = useCallback(async () => {
@@ -497,6 +546,8 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     setProducerIds([])
     setConsumerIds([])
     setRemoteProducerIds([])
+    setRemoteParticipants([])
+    setHasSingleRemoteVideoTrack(false)
     setLocalAudioEnabled(audio)
     setLocalVideoEnabled(video)
     setCaptureNotice(null)
@@ -689,7 +740,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         <div className="text-xs text-zinc-500">
           Requested media: audio {audio ? 'on' : 'off'}, video {video ? 'on' : 'off'}
         </div>
-        <div className="grid w-full max-w-xl grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid w-full max-w-4xl grid-cols-1 gap-3 sm:grid-cols-2">
           <video
             ref={localVideoRef}
             muted
@@ -698,16 +749,126 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
             data-active={hasLocalVideoTrack}
             data-testid="private-sfu-local-video"
           />
-          <video
-            ref={remoteVideoRef}
-            playsInline
-            className="hidden aspect-video w-full bg-black object-cover data-[active=true]:block"
-            data-active={remoteProducerIds.length > 1}
-            data-testid="private-sfu-remote-video"
-          />
+          {remoteVideoLayout === 'participant-grid' ? (
+            remoteParticipants.map((participant) => (
+              <RemoteVideoTile key={participant.participantSessionId} participant={participant} />
+            ))
+          ) : (
+            <video
+              ref={remoteVideoRef}
+              playsInline
+              className="hidden aspect-video w-full bg-black object-cover data-[active=true]:block"
+              data-active={hasSingleRemoteVideoTrack}
+              data-testid="private-sfu-remote-video"
+            />
+          )}
         </div>
         <audio ref={remoteAudioRef} controls className="h-10 w-full max-w-xl" />
       </div>
+    </div>
+  )
+}
+
+const upsertRemoteParticipant = ({
+  current,
+  participantSessionId,
+  audioProducerId,
+  videoProducerId,
+  videoTrack,
+}: {
+  current: RemoteParticipantMedia[]
+  participantSessionId: string
+  audioProducerId?: string
+  videoProducerId?: string
+  videoTrack?: MediaStreamTrack
+}) => {
+  const existing = current.find((participant) => participant.participantSessionId === participantSessionId)
+  const nextParticipant: RemoteParticipantMedia = {
+    participantSessionId,
+    audioProducerId: audioProducerId ?? existing?.audioProducerId,
+    videoProducerId: videoProducerId ?? existing?.videoProducerId,
+    videoTrack: videoTrack ?? existing?.videoTrack,
+  }
+  const next = existing
+    ? current.map((participant) =>
+        participant.participantSessionId === participantSessionId ? nextParticipant : participant,
+      )
+    : [...current, nextParticipant]
+
+  return next.sort((left, right) => left.participantSessionId.localeCompare(right.participantSessionId))
+}
+
+const removeRemoteParticipantProducer = ({
+  current,
+  participantSessionId,
+  kind,
+  producerId,
+}: {
+  current: RemoteParticipantMedia[]
+  participantSessionId: string
+  kind: RemoteProducerMetadata['kind']
+  producerId: string
+}) => {
+  return current
+    .map((participant) => {
+      if (participant.participantSessionId !== participantSessionId) {
+        return participant
+      }
+
+      return {
+        ...participant,
+        audioProducerId:
+          kind === 'audio' && participant.audioProducerId === producerId ? undefined : participant.audioProducerId,
+        videoProducerId:
+          kind === 'video' && participant.videoProducerId === producerId ? undefined : participant.videoProducerId,
+        videoTrack:
+          kind === 'video' && participant.videoProducerId === producerId ? undefined : participant.videoTrack,
+      }
+    })
+    .filter((participant) => participant.audioProducerId || participant.videoProducerId)
+}
+
+const RemoteVideoTile: FC<{ participant: RemoteParticipantMedia }> = ({ participant }) => {
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+
+  useEffect(() => {
+    const videoElement = videoRef.current
+
+    if (!videoElement || !participant.videoTrack) {
+      if (videoElement) {
+        videoElement.pause()
+        videoElement.srcObject = null
+      }
+
+      return
+    }
+
+    videoElement.srcObject = new MediaStream([participant.videoTrack])
+    void videoElement.play().catch(() => undefined)
+
+    return () => {
+      videoElement.pause()
+      videoElement.srcObject = null
+    }
+  }, [participant.videoTrack])
+
+  return (
+    <div
+      className="flex aspect-video w-full items-center justify-center overflow-hidden border border-zinc-800 bg-black"
+      data-testid="private-sfu-remote-video-tile"
+    >
+      {participant.videoTrack ? (
+        <video
+          ref={videoRef}
+          playsInline
+          className="h-full w-full object-cover"
+          data-testid="private-sfu-remote-video"
+        />
+      ) : (
+        <div className="px-3 text-xs text-zinc-500" data-testid="private-sfu-remote-audio-only">
+          Remote participant audio-only
+        </div>
+      )}
     </div>
   )
 }
