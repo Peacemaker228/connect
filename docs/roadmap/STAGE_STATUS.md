@@ -351,7 +351,7 @@ Next likely work:
 
 ### Stage 8. Media MVP
 
-Status: `in progress / channel SFU non-production candidate gate pass`
+Status: `in progress / channel audio SFU limited pilot ready`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -390,7 +390,7 @@ Done:
 - `local-mediasoup-dependency-prototype` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_091_LOCAL_MEDIASOUP_DEPENDENCY_PROTOTYPE.md`
 - server-side `mediasoup@3.19.22` is installed locally, with Bun trusting the mediasoup postinstall needed for the worker binary
 - `MediasoupPrototypeService` can lazily create a local worker/router behind an authenticated debug health endpoint
-- current LiveKit token/provider/client runtime remains unchanged and no coturn, browser SFU client package, UI switch, or production infra was added
+- the current LiveKit token / provider / client runtime remains unchanged, and no coturn, browser SFU client package, UI switch, or production infra was added
 - `local-coturn-turn-credential` is complete in `docs/delegation/briefs/SEGMENT_BRIEF_092_LOCAL_COTURN_TURN_CREDENTIAL.md`
 - `TurnCredentialService` can issue short-lived local TURN REST credentials from server-side local env
 - authenticated `GET /api/media/prototype/turn/credentials` returns `urls`, `username`, `credential`, `ttlSeconds`, and expiry metadata when local env is configured
@@ -564,9 +564,20 @@ Done:
 - guarded channel `AUDIO` candidate smoke passed with 3 authenticated users, no per-URL SFU query, and real microphone capture mode
 - guarded channel `VIDEO` candidate smoke passed with 2 authenticated users and no per-URL SFU query
 - candidate flags remain off by default, the SFU render path remains production-blocked, and private default remains LiveKit
+- `channel-sfu-nonproduction-candidate-soak-and-turn-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_122_CHANNEL_SFU_NONPRODUCTION_CANDIDATE_SOAK_TURN_RERUN.md`
+- channel `AUDIO` candidate direct passed with 5 users, offline/restore, restart, leave/rejoin, real-capture mode, and rollback assertion
+- channel `AUDIO` candidate TURN passed with 3 users through local Docker coturn and backend-issued TURN credentials
+- channel `VIDEO` candidate direct passed with 3 users, remote video tiles, restart, leave/rejoin, no-camera fallback, and rollback assertion
+- channel `VIDEO` candidate TURN passed with 3 users through local Docker coturn and backend-issued TURN credentials
+- private SFU regression passed while ordinary private `?video=true` remained LiveKit by default
+- `channel-sfu-product-default-readiness-decision` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_123_CHANNEL_SFU_PRODUCT_DEFAULT_READINESS_DECISION.md`
+- channel `AUDIO` product default readiness is `pass for a limited non-production product-default pilot`
+- channel `VIDEO` product default readiness is `review/hold` because SFU screen-share remains deferred
+- private default readiness is `review/hold`; ordinary private `?video=true` remains LiveKit pending a separate parity/default decision
+- production readiness is `blocked` by process-local mediasoup/signaling state and missing production media infra/runbook/monitoring/rollback
 
 Remaining:
-- run candidate soak/TURN rerun before any product-facing default decision
+- implement only a constrained channel `AUDIO` non-production product-default pilot if continuing runtime default work
 - keep physical camera QA scoped as two-user headed Windows Virtual Camera pass; five-user load remains fake-device based
 - optionally run human subjective audio/video quality signoff if required for release confidence
 - process-local mediasoup/signaling state remains a production/multi-process blocker
@@ -574,7 +585,7 @@ Remaining:
 - production media infra/runbook remains separate and required before production default switch
 
 Next likely work:
-- run `channel-sfu-nonproduction-candidate-soak-and-turn-rerun`
+- run `channel-audio-sfu-limited-nonproduction-default-pilot`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

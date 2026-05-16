@@ -171,6 +171,11 @@ connect/
 - `LiveKit` как media layer
 - `Prisma + MySQL` как persistence
 
+Current execution note:
+- local development has already switched to `Prisma + Postgres` under `Wave 30 / LOCAL_POSTGRES_DEV_SWITCH`
+- production remains on the controlled `MySQL -> Postgres` path and is intentionally deferred until the final production migration window
+- current active implementation work is media MVP replacement, not production database cutover
+
 Это означает, что главная проблема не в одной конкретной библиотеке, а в отсутствии жёстких архитектурных границ.
 
 ## 8. Decision by Major Direction
@@ -318,6 +323,11 @@ Current storage decision:
 8. Подготовить media architecture
 9. Заменить `LiveKit`
 10. Только потом решать, нужен ли уход с `Next`
+
+Execution update:
+- local Postgres dev switch is complete
+- production Postgres cutover is intentionally deferred to the final production migration window
+- media MVP work may continue before production DB cutover as long as it does not modify production migration/runbook scope
 
 Late-order note:
 - deferred auth-product completeness such as `email verification` and `password reset` should happen near the end of the roadmap

@@ -169,7 +169,11 @@ test.describe('channel AUDIO SFU browser smoke', () => {
       await expect(defaultAudioPage.getByTestId('private-sfu-provider')).toHaveCount(0)
 
       const gatedVideoPage = await ownerContext.newPage()
-      await gatedVideoPage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}${sfuQuery}`)
+      await gatedVideoPage.goto(
+        `${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}${
+          shouldUseCandidateGate ? '?mediaProvider=livekit' : sfuQuery
+        }`,
+      )
       await expect(gatedVideoPage.getByTestId('private-sfu-provider')).toHaveCount(0)
 
       await pages[0].getByRole('button', { name: 'Leave call' }).click()
