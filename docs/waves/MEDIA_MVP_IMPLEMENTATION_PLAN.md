@@ -852,6 +852,15 @@ Segment 127 result:
 - production readiness remains blocked by missing production TURN/SFU infra, runbook, monitoring, firewall/process management, rollback, and operational ownership
 - recommended next segment is `channel-audio-sfu-limited-pilot-controlled-product-review`
 
+Segment 128 result:
+- status: `controlled product review checklist ready / operator review required`
+- docs/report-only controlled product review checklist is complete for the channel `AUDIO` SFU limited pilot
+- automated/local evidence remains pass for direct channel `AUDIO` pilot, TURN channel `AUDIO` pilot, cleanup counters settling to zero, private SFU regression, and LiveKit rollback/default preservation
+- manual/operator product review is `blocked / requires operator` because no human review result was provided in this segment
+- direct manual audio quality, TURN manual audio quality, permission UX, and rollback confidence must be recorded by an operator before product review can be marked pass
+- channel `VIDEO`, ordinary private `?video=true`, and production remain LiveKit/default; no runtime code or default switch changed
+- recommended next segment is `channel-audio-sfu-limited-pilot-operator-review-rerun`
+
 ## Dependency Summary
 
 Critical path:
@@ -939,7 +948,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-audio-sfu-limited-pilot-controlled-product-review`
+- `channel-audio-sfu-limited-pilot-operator-review-rerun`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -961,4 +970,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-audio-sfu-limited-pilot-controlled-product-review`
+- `channel-audio-sfu-limited-pilot-operator-review-rerun`

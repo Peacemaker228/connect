@@ -600,9 +600,13 @@ Done:
 - channel `AUDIO` limited non-production pilot readiness is `pass for controlled product review`
 - channel `VIDEO` default remains `review/hold`, private default remains `review/hold`, and production readiness remains `blocked`
 - bounded local single-process soak is pass for limited pilot review, while multi-process/production readiness remains blocked by process-local mediasoup/signaling state
+- `channel-audio-sfu-limited-pilot-controlled-product-review` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_128_CHANNEL_AUDIO_SFU_LIMITED_PILOT_CONTROLLED_PRODUCT_REVIEW.md`
+- controlled channel `AUDIO` SFU pilot operator checklist is ready
+- automated/local evidence remains pass for direct, TURN, cleanup, private regression, and rollback preservation
+- manual/operator product review is `blocked / requires operator` because real microphone audio quality, permission UX, and rollback confidence were not manually recorded in this segment
 
 Remaining:
-- run controlled channel `AUDIO` non-production product review before any broader product-facing default work
+- run the channel `AUDIO` limited pilot operator checklist before any broader product-facing default work
 - keep physical camera QA scoped as two-user headed Windows Virtual Camera pass; five-user load remains fake-device based
 - optionally run human subjective audio/video quality signoff if required for release confidence
 - process-local mediasoup/signaling state remains a production/multi-process blocker
@@ -610,7 +614,7 @@ Remaining:
 - production media infra/runbook remains separate and required before production default switch
 
 Next likely work:
-- run `channel-audio-sfu-limited-pilot-controlled-product-review`
+- run `channel-audio-sfu-limited-pilot-operator-review-rerun`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
