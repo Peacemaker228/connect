@@ -11,7 +11,9 @@ import {
   discoverMediasoupPrototypeProducers,
   getMediasoupPrototypeHealth,
   heartbeatMediasoupPrototypeSession,
+  pauseMediasoupPrototypeProducer,
   produceMediasoupPrototypeTrack,
+  resumeMediasoupPrototypeProducer,
   type MediasoupPrototypeConsumerResponse,
   type MediasoupPrototypeEvent,
   type MediasoupPrototypeProducerDiscoveryResponse,
@@ -143,6 +145,7 @@ export class SfuClientAdapter {
         trackKind: track.kind,
         roomId: input.sessionScope?.roomId,
         participantSessionId: input.sessionScope?.participantSessionId,
+        paused: !track.enabled,
         ...input.appData,
       },
       stopTracks: input.stopTracks,
@@ -198,7 +201,9 @@ export class SfuClientAdapter {
     return heartbeatMediasoupPrototypeSession(sessionScope)
   }
 
-  setProducerTrackEnabled(kind: MediaStreamTrack['kind'], enabled: boolean) {
+  async setProducerTrackEnabled(kind: MediaStreamTrack['kind'], enabled: boolean) {
+    const producerUpdates: Array<Promise<unknown>> = []
+
     for (const producer of this.producers.values()) {
       const appData = producer.appData as { trackKind?: MediaStreamTrack['kind'] }
 
@@ -215,7 +220,24 @@ export class SfuClientAdapter {
       } else {
         producer.pause()
       }
+
+      const backendProducer = this.backendProducers.get(producer.id)
+
+      if (backendProducer?.roomId && backendProducer.participantSessionId) {
+        const payload = {
+          roomId: backendProducer.roomId,
+          participantSessionId: backendProducer.participantSessionId,
+        }
+
+        producerUpdates.push(
+          enabled
+            ? resumeMediasoupPrototypeProducer(producer.id, payload)
+            : pauseMediasoupPrototypeProducer(producer.id, payload),
+        )
+      }
     }
+
+    await Promise.all(producerUpdates)
   }
 
   async consume(
@@ -362,7 +384,8 @@ export class SfuClientAdapter {
 
   private bindProduceEvent(transport: mediasoupClientTypes.Transport<SfuClientTransportAppData>) {
     transport.on('produce', ({ kind, rtpParameters, appData }, callback, errback) => {
-      const scopedAppData = appData as { roomId?: string; participantSessionId?: string } | undefined
+      const scopedAppData =
+        appData as { roomId?: string; participantSessionId?: string; paused?: boolean } | undefined
 
       void produceMediasoupPrototypeTrack({
         transportId: transport.id,
@@ -370,6 +393,7 @@ export class SfuClientAdapter {
         participantSessionId: scopedAppData?.participantSessionId ?? transport.appData.participantSessionId,
         kind,
         rtpParameters: rtpParameters as Record<string, unknown>,
+        paused: scopedAppData?.paused,
       })
         .then((result) => {
           if (!result.enabled || result.status !== 'ready' || !result.producerId) {

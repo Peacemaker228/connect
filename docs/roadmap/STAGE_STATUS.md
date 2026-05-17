@@ -604,11 +604,15 @@ Done:
 - controlled channel `AUDIO` SFU pilot operator checklist is ready
 - automated/local evidence remains pass for direct, TURN, cleanup, private regression, and rollback preservation
 - first operator direct review reached connected channel `AUDIO` SFU state with real capture, direct transport, and one remote producer per two-user client
-- operator found mute/unmute and navigation cleanup issues; a scoped SFU adapter fix added producer pause/resume on mute, immediate leave cleanup, keyed room/session remounting, remote audio track removal, and local/remote speaking indicators
+- operator found mute/unmute and navigation cleanup issues; scoped fixes added producer pause/resume on mute, immediate leave cleanup, keyed room/session remounting, remote audio track removal, local/remote speaking indicators, and control-plane leave on room change/unmount
+- follow-up operator review confirmed the permanent local speaking `silent` state after unmute was resolved, while navigation cleanup required the broader control-plane lifecycle fix
+- follow-up operator review confirmed route-change cleanup was fixed, while mute still leaked audio before Restart because client-side track state was not enough
+- backend mediasoup producer pause/resume endpoints were added and wired through SDK/SFU client adapter
+- channel `AUDIO` smoke now covers route-change/rejoin without pressing Leave and backend producer paused-state assertions
 - attempted TURN review is `not tested / invalid run` because coturn was not running
 
 Remaining:
-- rerun the channel `AUDIO` limited pilot operator checklist after the scoped mute/cleanup/speaking-indicator fix before any broader product-facing default work
+- rerun the channel `AUDIO` limited pilot operator checklist after the scoped mute/cleanup/navigation/speaking-indicator fix before any broader product-facing default work
 - keep physical camera QA scoped as two-user headed Windows Virtual Camera pass; five-user load remains fake-device based
 - optionally run human subjective audio/video quality signoff if required for release confidence
 - process-local mediasoup/signaling state remains a production/multi-process blocker

@@ -445,6 +445,38 @@ export class MediaController {
     });
   }
 
+  @Post('prototype/mediasoup/producers/:producerId/pause')
+  @UseGuards(RequireAuthGuard)
+  pauseMediasoupPrototypeProducer(
+    @CurrentProfileId() profileId: string | undefined,
+    @Param('producerId') producerId: string | undefined,
+    @Body() body: CloseMediasoupPrototypeProducerBody | undefined,
+  ): LocalMediasoupProducerMetadata {
+    const scope = this.resolvePrototypeSessionScope(profileId, body);
+
+    return this.mediasoupPrototypeService.setProducerPaused({
+      producerId,
+      scope,
+      paused: true,
+    });
+  }
+
+  @Post('prototype/mediasoup/producers/:producerId/resume')
+  @UseGuards(RequireAuthGuard)
+  resumeMediasoupPrototypeProducer(
+    @CurrentProfileId() profileId: string | undefined,
+    @Param('producerId') producerId: string | undefined,
+    @Body() body: CloseMediasoupPrototypeProducerBody | undefined,
+  ): LocalMediasoupProducerMetadata {
+    const scope = this.resolvePrototypeSessionScope(profileId, body);
+
+    return this.mediasoupPrototypeService.setProducerPaused({
+      producerId,
+      scope,
+      paused: false,
+    });
+  }
+
   @Post('prototype/mediasoup/consumers/:consumerId/close')
   @UseGuards(RequireAuthGuard)
   closeMediasoupPrototypeConsumer(

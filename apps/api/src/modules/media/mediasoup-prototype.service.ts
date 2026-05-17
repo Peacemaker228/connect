@@ -816,6 +816,89 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     };
   }
 
+  setProducerPaused({
+    producerId,
+    scope,
+    paused,
+  }: {
+    producerId: string | undefined;
+    scope?: LocalMediasoupSessionScope;
+    paused: boolean;
+  }): LocalMediasoupProducerMetadata {
+    if (process.env.NODE_ENV === 'production') {
+      return {
+        status: 'disabled',
+        enabled: false,
+        producerId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        reason: 'Local mediasoup producer pause/resume prototype is disabled in production runtime',
+      };
+    }
+
+    if (!producerId) {
+      return {
+        status: 'failed',
+        enabled: false,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        reason: 'producerId is required',
+      };
+    }
+
+    const producer = this.producers.get(producerId);
+
+    if (!producer || producer.closed) {
+      return {
+        status: 'ready',
+        enabled: true,
+        producerId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        paused,
+      };
+    }
+
+    const scopeCheck = this.validateProducerOwnerScope(producerId, scope);
+
+    if (!scopeCheck.enabled) {
+      return {
+        status: 'failed',
+        enabled: false,
+        producerId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        reason: scopeCheck.reason,
+      };
+    }
+
+    if (paused) {
+      producer.pause();
+    } else {
+      producer.resume();
+    }
+
+    const producerScope = this.producerScopes.get(producerId);
+
+    this.logLifecycle(paused ? 'producer.paused' : 'producer.resumed', {
+      producerId,
+      roomId: producerScope?.roomId ?? scope?.roomId,
+      participantSessionId: producerScope?.participantSessionId ?? scope?.participantSessionId,
+      kind: producer.kind,
+      paused: producer.paused,
+    });
+
+    return {
+      status: 'ready',
+      enabled: true,
+      producerId,
+      roomId: producerScope?.roomId ?? scope?.roomId,
+      participantSessionId: producerScope?.participantSessionId ?? scope?.participantSessionId,
+      kind: producer.kind,
+      paused: producer.paused,
+    };
+  }
+
   closeConsumer({
     consumerId,
     scope,

@@ -217,6 +217,11 @@ export type CloseMediasoupPrototypeProducerRequest = {
   participantSessionId?: string
 }
 
+export type UpdateMediasoupPrototypeProducerPausedRequest = {
+  roomId?: string
+  participantSessionId?: string
+}
+
 export type CloseMediasoupPrototypeConsumerRequest = {
   roomId?: string
   participantSessionId?: string
@@ -672,6 +677,24 @@ export const closeMediasoupPrototypeProducer = async (
 ) =>
   postMediaCommand<MediasoupPrototypeProducerResponse, CloseMediasoupPrototypeProducerRequest>(
     `${MEDIA_CONTROL_PATHS.mediasoupPrototypeProducers}/${producerId}/close`,
+    payload,
+  )
+
+export const pauseMediasoupPrototypeProducer = async (
+  producerId: string,
+  payload: UpdateMediasoupPrototypeProducerPausedRequest,
+) =>
+  postMediaCommand<MediasoupPrototypeProducerResponse, UpdateMediasoupPrototypeProducerPausedRequest>(
+    `${MEDIA_CONTROL_PATHS.mediasoupPrototypeProducers}/${producerId}/pause`,
+    payload,
+  )
+
+export const resumeMediasoupPrototypeProducer = async (
+  producerId: string,
+  payload: UpdateMediasoupPrototypeProducerPausedRequest,
+) =>
+  postMediaCommand<MediasoupPrototypeProducerResponse, UpdateMediasoupPrototypeProducerPausedRequest>(
+    `${MEDIA_CONTROL_PATHS.mediasoupPrototypeProducers}/${producerId}/resume`,
     payload,
   )
 

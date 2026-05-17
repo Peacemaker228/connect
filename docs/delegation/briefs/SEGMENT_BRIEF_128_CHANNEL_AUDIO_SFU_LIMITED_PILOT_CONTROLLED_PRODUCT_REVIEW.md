@@ -39,6 +39,14 @@ Scoped runtime follow-up:
 - SFU adapter instances are keyed by backend room/session to force clean remounts across channel/session changes.
 - closed remote audio producers now remove their audio track from the remote audio stream.
 - local/remote speaking indicators were added for review visibility.
+- follow-up operator review confirmed the speaking indicator no longer stayed permanently silent after unmute, but audio could still continue after route navigation.
+- root cause was broadened from button-level mute state to control-plane lifecycle ownership: ordinary route change cancelled React state updates but did not leave the previous backend participant session.
+- `useMediaRoomController` now closes the active participant session on room change/unmount, including joins that resolve after cancellation.
+- channel `AUDIO` smoke now includes a route-change/rejoin path that navigates away without pressing Leave and expects remote producer counts to drop before rejoin.
+- subsequent operator review confirmed route-change cleanup was fixed, but mute still leaked audio before using the Restart button.
+- root cause was broadened again from client track state to SFU producer ownership: mute must pause/resume the scoped backend mediasoup producer, not only toggle the browser `MediaStreamTrack` and client-side producer.
+- backend local mediasoup producer pause/resume endpoints were added and wired through the SDK and SFU client adapter.
+- channel `AUDIO` smoke now asserts backend producer `paused` state after mute/unmute through scoped producer discovery.
 
 ## Review Environment
 
@@ -72,8 +80,11 @@ Direct channel `AUDIO` pilot:
 - confirm expected remote producer count is shown for other participants.
 - confirm real microphone audio is heard in the other client.
 - toggle mute/unmute and confirm remote audible state follows.
+- confirm backend producer `paused` changes to `true` on mute and `false` on unmute.
 - click restart and confirm the session returns to `connected`.
 - leave and rejoin, then confirm no stale remote producer inflation.
+- navigate to another channel/server without pressing Leave and confirm the other client stops hearing audio.
+- return to the channel `AUDIO` room and confirm the SFU session reconnects without stale producer inflation.
 - close/reopen browser contexts and confirm health counters settle after cleanup.
 
 Rollback:
@@ -106,8 +117,11 @@ Automated/local evidence:
 Manual/operator product review:
 - status: `review`
 - evidence: two clients reached channel `AUDIO` SFU connected state in direct mode with `Remote producers: 1`, `Capture mode: real`, `Transport: direct`, and `Requested media: audio on, video off`.
-- issue: operator reported unreliable mute/unmute behavior and likely continued audio after navigating away from the channel/server before the scoped runtime fix.
-- follow-up: scoped fix added for producer pause/resume, immediate leave cleanup, route/session remounting, remote audio track removal, and speaking indicators.
+- issue: operator reported unreliable mute/unmute behavior and continued audio after navigating away from the channel/server before the scoped runtime fix.
+- follow-up: first scoped fix added producer pause/resume, immediate leave cleanup, route/session remounting, remote audio track removal, and speaking indicators.
+- follow-up rerun: permanent `Local voice: silent` after unmute was resolved, but navigation cleanup still failed.
+- second scoped fix: control-plane ownership was corrected so route change/unmount closes the backend participant session, and the browser smoke now covers route-change/rejoin without pressing Leave.
+- third scoped fix: mute now calls backend mediasoup producer pause/resume endpoints; browser smoke asserts the scoped producer paused state.
 
 Direct manual audio quality:
 - status: `review`
@@ -140,6 +154,7 @@ Interpretation:
 ## Remaining Blockers
 
 - operator manual product review must be rerun after the scoped mute/cleanup/speaking-indicator fix.
+- operator rerun must specifically cover navigation away without pressing Leave.
 - subjective real microphone audio quality signoff remains incomplete.
 - optional TURN manual review remains incomplete because coturn was not running for the attempted TURN URL.
 - process-local mediasoup/signaling state remains a multi-process/production blocker.

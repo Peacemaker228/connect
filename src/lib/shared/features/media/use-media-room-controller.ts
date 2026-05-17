@@ -1,8 +1,9 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { getLiveKitToken, joinRoom, leaveRoom } from '@sdk/actions/media'
 import type { JoinRoomResponse } from '@sdk/actions/media'
+import type { MediaDisconnectReason } from '@app-core/contracts'
 
 import type { MediaRoomEntry } from './media-room-entry'
 
@@ -26,6 +27,34 @@ export const useMediaRoomController = ({ mediaEntry, displayName }: UseMediaRoom
   const [controlPlaneJoin, setControlPlaneJoin] = useState<JoinRoomResponse | null>(null)
   const [controlPlaneStatus, setControlPlaneStatus] = useState<MediaControlPlaneStatus>('idle')
   const [controlPlaneError, setControlPlaneError] = useState<unknown>(null)
+  const activeParticipantSessionRef = useRef<JoinRoomResponse['participantSession'] | null>(null)
+  const closedParticipantSessionIdsRef = useRef(new Set<string>())
+
+  const closeParticipantSession = useCallback(
+    async (participantSession: JoinRoomResponse['participantSession'], reason: MediaDisconnectReason) => {
+      if (closedParticipantSessionIdsRef.current.has(participantSession.participantSessionId)) {
+        return
+      }
+
+      closedParticipantSessionIdsRef.current.add(participantSession.participantSessionId)
+
+      if (activeParticipantSessionRef.current?.participantSessionId === participantSession.participantSessionId) {
+        activeParticipantSessionRef.current = null
+      }
+
+      try {
+        await leaveRoom({
+          requestId: createMediaRequestId('media.leave'),
+          roomId: participantSession.roomId,
+          participantSessionId: participantSession.participantSessionId,
+          reason,
+        })
+      } catch (error) {
+        console.warn('[media] control-plane leave failed', error)
+      }
+    },
+    [],
+  )
 
   useEffect(() => {
     if (!displayName) {
@@ -33,10 +62,18 @@ export const useMediaRoomController = ({ mediaEntry, displayName }: UseMediaRoom
       setControlPlaneJoin(null)
       setControlPlaneStatus('idle')
       setControlPlaneError(null)
+
+      const participantSession = activeParticipantSessionRef.current
+
+      if (participantSession) {
+        void closeParticipantSession(participantSession, 'intentional-leave')
+      }
+
       return
     }
 
     let cancelled = false
+    let joinedParticipantSession: JoinRoomResponse['participantSession'] | null = null
     setLiveKitToken('')
     setControlPlaneJoin(null)
     setControlPlaneStatus('joining')
@@ -49,6 +86,14 @@ export const useMediaRoomController = ({ mediaEntry, displayName }: UseMediaRoom
       desiredState: mediaEntry.desiredState,
     })
       .then((result) => {
+        joinedParticipantSession = result.participantSession
+        activeParticipantSessionRef.current = result.participantSession
+
+        if (cancelled) {
+          void closeParticipantSession(result.participantSession, 'intentional-leave')
+          return result
+        }
+
         if (!cancelled) {
           setControlPlaneJoin(result)
           setControlPlaneStatus('joined')
@@ -94,27 +139,24 @@ export const useMediaRoomController = ({ mediaEntry, displayName }: UseMediaRoom
 
     return () => {
       cancelled = true
+
+      if (joinedParticipantSession) {
+        void closeParticipantSession(joinedParticipantSession, 'intentional-leave')
+      }
     }
-  }, [displayName, mediaEntry])
+  }, [closeParticipantSession, displayName, mediaEntry])
 
   const leaveControlPlane = useCallback(async () => {
-    const participantSession = controlPlaneJoin?.participantSession
+    const participantSession = activeParticipantSessionRef.current ?? controlPlaneJoin?.participantSession
 
     if (!participantSession) {
       return
     }
 
-    try {
-      await leaveRoom({
-        requestId: createMediaRequestId('media.leave'),
-        roomId: participantSession.roomId,
-        participantSessionId: participantSession.participantSessionId,
-        reason: 'intentional-leave',
-      })
-    } catch (error) {
-      console.warn('[media] control-plane leave failed after LiveKit leave', error)
-    }
-  }, [controlPlaneJoin?.participantSession])
+    setControlPlaneJoin(null)
+    setControlPlaneStatus('idle')
+    await closeParticipantSession(participantSession, 'intentional-leave')
+  }, [closeParticipantSession, controlPlaneJoin?.participantSession])
 
   return {
     liveKitToken,
