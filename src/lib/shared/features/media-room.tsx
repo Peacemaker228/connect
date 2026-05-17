@@ -99,6 +99,15 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
     isPrivateSfuGateRequested || isChannelAudioSfuGateRequested || isChannelVideoSfuGateRequested
   const isSfuGateOpen = isSfuGateRequested && isNonProductionRuntime
   const sfuSimulateMissingCamera = searchParams?.get('sfuSimulateMissingCamera') === 'true'
+  const expectedSfuRoomId =
+    mediaEntry.scope.kind === 'channel'
+      ? `channel:${mediaEntry.scope.serverId}:${mediaEntry.scope.channelId}`
+      : mediaEntry.scope.kind === 'conversation'
+        ? `conversation:${mediaEntry.scope.serverId}:${mediaEntry.scope.conversationId}`
+        : null
+  const isCurrentControlPlaneJoin = controlPlaneJoin?.room.roomId === expectedSfuRoomId
+  const shouldWaitForSfuControlPlane =
+    isSfuGateRequested && (controlPlaneStatus === 'joining' || (controlPlaneStatus === 'joined' && !isCurrentControlPlaneJoin))
 
   const handleLeave = useCallback(() => {
     void leaveControlPlane()
@@ -110,12 +119,13 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
     )
   }, [generalChannelId, leaveControlPlane, leaveRedirectHref, router, serverId])
 
-  if (isSfuGateOpen && controlPlaneJoin?.participantSession) {
+  if (isSfuGateOpen && isCurrentControlPlaneJoin && controlPlaneJoin?.participantSession) {
     const isChannelAudioSfu = isChannelAudioSfuGateRequested
     const isChannelVideoSfu = isChannelVideoSfuGateRequested
 
     return (
       <SfuPrivateCallAdapter
+        key={`${controlPlaneJoin.room.roomId}:${controlPlaneJoin.participantSession.participantSessionId}`}
         controlPlaneJoin={controlPlaneJoin}
         audio={isChannelAudioSfu ? true : audio}
         video={isChannelAudioSfu ? false : video}
@@ -132,7 +142,7 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
     )
   }
 
-  if (liveKitToken === '' || (isSfuGateRequested && controlPlaneStatus === 'joining')) {
+  if (liveKitToken === '' || shouldWaitForSfuControlPlane) {
     return (
       <div className={'flex flex-col flex-1 justify-center items-center'}>
         <Loader2 className="h-7 w-7 text-zinc-500 animate-spin my-4" />

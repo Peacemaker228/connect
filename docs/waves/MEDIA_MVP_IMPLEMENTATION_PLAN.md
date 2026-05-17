@@ -853,13 +853,27 @@ Segment 127 result:
 - recommended next segment is `channel-audio-sfu-limited-pilot-controlled-product-review`
 
 Segment 128 result:
-- status: `controlled product review checklist ready / operator review required`
-- docs/report-only controlled product review checklist is complete for the channel `AUDIO` SFU limited pilot
+- status: `controlled product review review / direct rerun improved after scoped fixes`
+- controlled product review checklist is complete for the channel `AUDIO` SFU limited pilot
 - automated/local evidence remains pass for direct channel `AUDIO` pilot, TURN channel `AUDIO` pilot, cleanup counters settling to zero, private SFU regression, and LiveKit rollback/default preservation
-- manual/operator product review is `blocked / requires operator` because no human review result was provided in this segment
-- direct manual audio quality, TURN manual audio quality, permission UX, and rollback confidence must be recorded by an operator before product review can be marked pass
-- channel `VIDEO`, ordinary private `?video=true`, and production remain LiveKit/default; no runtime code or default switch changed
-- recommended next segment is `channel-audio-sfu-limited-pilot-operator-review-rerun`
+- first operator direct review reached connected channel `AUDIO` SFU state with real capture, `Transport: direct`, and one remote producer per two-user client
+- operator reported unreliable mute/unmute and continued audio after channel/server navigation; scoped fixes were added for producer pause/resume, immediate leave cleanup, keyed room/session remounting, remote audio track removal, local/remote speaking indicators, and control-plane leave on room change/unmount
+- follow-up operator review confirmed the permanent local speaking `silent` state after unmute was resolved, while navigation cleanup required the broader control-plane lifecycle fix
+- follow-up operator review confirmed route-change cleanup was fixed, while mute still leaked audio before Restart because client-side track state was not enough
+- scoped backend mediasoup producer pause/resume endpoints were added and wired through SDK/SFU client adapter so mute owns server-side producer state
+- operator screenshot also showed duplicate `Remote producers: 2` in a two-user channel; SFU startup now cleans stale async run-owned adapters/tracks before they can leave duplicate producers
+- follow-up operator review confirmed muted audio was no longer audible, while remote speaking visibility still needed producer pause/resume signaling
+- page reload/pagehide now sends keepalive control-plane leave so browser refresh cleanup is not dependent on ordinary async React cleanup
+- channel `AUDIO` smoke now includes route-change/rejoin coverage without pressing Leave, page reload/rejoin coverage, expected remote producer count, remote speaking silence after mute, and backend producer paused-state assertions for mute/unmute
+- backend mediasoup `producer.pause()` / `producer.resume()` is awaited before producer paused/resumed signaling is emitted, avoiding stale paused-state events in the channel `AUDIO` pilot
+- latest operator direct rerun confirmed muted audio was no longer audible, route-change cleanup no longer leaked audio, the remaining remote speaking delay was minor/acceptable, and duplicate `Remote producers` was not reproduced
+- pagehide keepalive remains a local/dev refresh cleanup support path, not a production-grade unload guarantee; explicit Leave and route change/unmount cleanup remain the primary controlled cleanup paths
+- attempted TURN review is `not tested / invalid run` because coturn was not running; TURN needs a running local coturn container in addition to local TURN env
+- rollback manual confidence is now `pass / operator confirmed`: `?mediaProvider=livekit` disables the SFU adapter and returns channel `AUDIO` to LiveKit fallback/default while the pilot env is enabled
+- optional TURN can stay deferred for now, but must be closed as `pass` or explicit `review` before any broader/default decision
+- permission UX and broader subjective audio-quality signoff remain review items if required for release confidence
+- channel `VIDEO`, ordinary private `?video=true`, and production remain LiveKit/default; no default switch changed
+- recommended next segment is `sfu-screen-share-parity-prototype`
 
 ## Dependency Summary
 
@@ -948,7 +962,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-audio-sfu-limited-pilot-operator-review-rerun`
+- `sfu-screen-share-parity-prototype`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -961,7 +975,7 @@ Stage 7 planning can close after this segment if this implementation plan is acc
 
 Reason:
 - stack decision is fixed
-- current runtime inventory is documented
+- the current runtime inventory is documented
 - contract shapes are designed
 - backend control-plane is designed
 - client boundary is designed
@@ -970,4 +984,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-audio-sfu-limited-pilot-operator-review-rerun`
+- `sfu-screen-share-parity-prototype`

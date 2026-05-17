@@ -25,6 +25,22 @@ export type LocalMediasoupProducerClosedEvent = {
   occurredAt: string;
 };
 
+export type LocalMediasoupProducerPausedEvent = {
+  type: 'producer.paused';
+  roomId: string;
+  participantSessionId: string;
+  producerId: string;
+  occurredAt: string;
+};
+
+export type LocalMediasoupProducerResumedEvent = {
+  type: 'producer.resumed';
+  roomId: string;
+  participantSessionId: string;
+  producerId: string;
+  occurredAt: string;
+};
+
 export type LocalMediasoupConsumerClosedEvent = {
   type: 'consumer.closed';
   roomId: string;
@@ -38,6 +54,8 @@ export type LocalMediasoupPrototypeEvent =
   | LocalMediasoupProducerSnapshotEvent
   | LocalMediasoupProducerPublishedEvent
   | LocalMediasoupProducerClosedEvent
+  | LocalMediasoupProducerPausedEvent
+  | LocalMediasoupProducerResumedEvent
   | LocalMediasoupConsumerClosedEvent;
 
 @Injectable()
@@ -83,6 +101,26 @@ export class MediaSignalingService {
   }) {
     this.publish({
       type: 'producer.closed',
+      roomId,
+      participantSessionId,
+      producerId,
+      occurredAt: new Date().toISOString(),
+    });
+  }
+
+  publishProducerPausedState({
+    roomId,
+    participantSessionId,
+    producerId,
+    paused,
+  }: {
+    roomId: string;
+    participantSessionId: string;
+    producerId: string;
+    paused: boolean;
+  }) {
+    this.publish({
+      type: paused ? 'producer.paused' : 'producer.resumed',
       roomId,
       participantSessionId,
       producerId,

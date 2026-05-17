@@ -42,6 +42,14 @@ type MediasoupPrototypeHealth = {
   }
 }
 
+type MediasoupPrototypeProducerDiscovery = {
+  producers: Array<{
+    producerId: string
+    participantSessionId: string
+    paused: boolean
+  }>
+}
+
 const isSmokeEnabled = process.env.CHANNEL_AUDIO_SFU_BROWSER_SMOKE === '1'
 const smokeScheme = process.env.CHANNEL_AUDIO_SFU_SMOKE_SCHEME ?? process.env.PRIVATE_SFU_SMOKE_SCHEME ?? 'http'
 const smokeHost = process.env.CHANNEL_AUDIO_SFU_SMOKE_HOST ?? process.env.PRIVATE_SFU_SMOKE_HOST ?? 'localhost'
@@ -65,6 +73,8 @@ const shouldUseProductDefaultPilot = process.env.CHANNEL_AUDIO_SFU_SMOKE_PRODUCT
 const shouldUseImplicitSfuGate = shouldUseCandidateGate || shouldUseProductDefaultPilot
 const participantCount = parsePositiveInteger(process.env.CHANNEL_AUDIO_SFU_SMOKE_USERS, 3)
 const shouldRunLeaveRejoin = process.env.CHANNEL_AUDIO_SFU_SMOKE_LEAVE_REJOIN !== '0'
+const shouldRunRouteChangeRejoin = process.env.CHANNEL_AUDIO_SFU_SMOKE_ROUTE_CHANGE_REJOIN !== '0'
+const shouldRunPageReloadRejoin = process.env.CHANNEL_AUDIO_SFU_SMOKE_PAGE_RELOAD_REJOIN !== '0'
 const shouldRunOfflineRestore = process.env.CHANNEL_AUDIO_SFU_SMOKE_OFFLINE_RESTORE === '1'
 const shouldAssertCleanup = process.env.CHANNEL_AUDIO_SFU_SMOKE_ASSERT_CLEANUP === '1'
 const cleanupSettleMs = parsePositiveInteger(process.env.CHANNEL_AUDIO_SFU_SMOKE_CLEANUP_SETTLE_MS, 25_000)
@@ -156,6 +166,23 @@ test.describe('channel AUDIO SFU browser smoke', () => {
         )
       }
       await expect(pages[0].getByText('Requested media: audio on, video off')).toBeVisible()
+      await expect(pages[0].getByTestId('private-sfu-local-speaking')).toContainText('Local voice:')
+      await expect(pages[0].getByTestId('private-sfu-remote-speaking')).toContainText('Remote voice:')
+
+      const firstParticipantScope = await readParticipantScope(pages[0])
+
+      await pages[0].getByTestId('private-sfu-audio-toggle').click()
+      await expectProducerPaused(ownerContext, firstParticipantScope, true)
+      await expect(pages[1].getByTestId('private-sfu-remote-speaking')).toHaveText('Remote voice: silent')
+
+      await pages[0].getByTestId('private-sfu-audio-toggle').click()
+      await expectProducerPaused(ownerContext, firstParticipantScope, false)
+
+      if (shouldRunPageReloadRejoin) {
+        await pages[0].reload()
+        await expectAllStatuses(pages, 'connected')
+        await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
+      }
 
       await pages[0].getByRole('button', { name: 'Restart SFU channel audio' }).click()
       await expectAllStatuses(pages, 'connected')
@@ -180,6 +207,18 @@ test.describe('channel AUDIO SFU browser smoke', () => {
         )
 
         await rejoiningPage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${audioChannel.id}${sfuQuery}`)
+        await expectAllStatuses(pages, 'connected')
+        await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
+      }
+
+      if (shouldRunRouteChangeRejoin) {
+        const navigatingPage = pages[0]
+
+        await navigatingPage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${generalChannel.id}`)
+        await expect(navigatingPage.getByTestId('private-sfu-provider')).toHaveCount(0)
+        await expectAllRemoteProducerCounts(pages.slice(1), getRemoteProducerText(participantCount - 2))
+
+        await navigatingPage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${audioChannel.id}${sfuQuery}`)
         await expectAllStatuses(pages, 'connected')
         await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
       }
@@ -321,6 +360,50 @@ const expectPrototypeHealthSettled = async (context: BrowserContext, settleMs: n
       trackedSessionCount: 0,
       cleanedSessionCount: expect.any(Number),
     })
+}
+
+const readParticipantScope = async (page: Awaited<ReturnType<BrowserContext['newPage']>>) => {
+  const roomId = (await page.getByTestId('private-sfu-room-id').textContent())?.trim()
+  const participantSessionId = (await page.getByTestId('private-sfu-session-id').textContent())?.trim()
+  const producerId = (await page.getByTestId('private-sfu-producer-id').textContent())?.trim()
+
+  if (!roomId || !participantSessionId || !producerId || producerId === '-') {
+    throw new Error('SFU participant scope is not visible in the channel AUDIO smoke UI')
+  }
+
+  return {
+    roomId,
+    participantSessionId,
+    producerId,
+  }
+}
+
+const expectProducerPaused = async (
+  context: BrowserContext,
+  scope: { roomId: string; participantSessionId: string; producerId: string },
+  paused: boolean,
+) => {
+  await expect
+    .poll(
+      async () => {
+        const discovery = await postJson<MediasoupPrototypeProducerDiscovery>(
+          context,
+          '/api/media/prototype/mediasoup/producers/discover',
+          {
+            roomId: scope.roomId,
+            participantSessionId: scope.participantSessionId,
+          },
+        )
+        const producer = discovery.producers.find((item) => item.producerId === scope.producerId)
+
+        return producer?.paused
+      },
+      {
+        message: `SFU producer ${scope.producerId} should be ${paused ? 'paused' : 'resumed'}`,
+        timeout: 10_000,
+      },
+    )
+    .toBe(paused)
 }
 
 function getRemoteProducerText(count: number) {
