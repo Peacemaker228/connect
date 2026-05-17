@@ -612,10 +612,13 @@ Done:
 - follow-up operator review confirmed muted audio was no longer audible, while remote speaking visibility still needed producer pause/resume signaling
 - page reload/pagehide now sends keepalive control-plane leave so browser refresh cleanup is not dependent on ordinary async React cleanup
 - channel `AUDIO` smoke now covers route-change/rejoin without pressing Leave, page reload/rejoin, expected remote producer count, remote speaking silence after mute, and backend producer paused-state assertions
+- backend mediasoup `producer.pause()` / `producer.resume()` is awaited before producer paused/resumed signaling is emitted, avoiding stale paused-state events in the channel `AUDIO` pilot
+- latest operator direct rerun confirmed muted audio was no longer audible, route-change cleanup no longer leaked audio, the remaining remote speaking delay was minor/acceptable, and duplicate `Remote producers` was not reproduced
+- pagehide keepalive remains a local/dev refresh cleanup support path, not a production-grade unload guarantee; explicit Leave and route change/unmount cleanup remain the primary controlled cleanup paths
 - attempted TURN review is `not tested / invalid run` because coturn was not running
 
 Remaining:
-- rerun the channel `AUDIO` limited pilot operator checklist after the scoped mute/cleanup/navigation/speaking-indicator fix before any broader product-facing default work
+- rerun the channel `AUDIO` limited pilot operator checklist for rollback, optional TURN, and one final direct audio-quality pass before any broader product-facing default work
 - keep physical camera QA scoped as two-user headed Windows Virtual Camera pass; five-user load remains fake-device based
 - optionally run human subjective audio/video quality signoff if required for release confidence
 - process-local mediasoup/signaling state remains a production/multi-process blocker

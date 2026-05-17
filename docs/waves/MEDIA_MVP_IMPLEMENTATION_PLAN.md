@@ -853,7 +853,7 @@ Segment 127 result:
 - recommended next segment is `channel-audio-sfu-limited-pilot-controlled-product-review`
 
 Segment 128 result:
-- status: `controlled product review review / scoped mute-cleanup fix added`
+- status: `controlled product review review / direct rerun improved after scoped fixes`
 - controlled product review checklist is complete for the channel `AUDIO` SFU limited pilot
 - automated/local evidence remains pass for direct channel `AUDIO` pilot, TURN channel `AUDIO` pilot, cleanup counters settling to zero, private SFU regression, and LiveKit rollback/default preservation
 - first operator direct review reached connected channel `AUDIO` SFU state with real capture, `Transport: direct`, and one remote producer per two-user client
@@ -865,8 +865,11 @@ Segment 128 result:
 - follow-up operator review confirmed muted audio was no longer audible, while remote speaking visibility still needed producer pause/resume signaling
 - page reload/pagehide now sends keepalive control-plane leave so browser refresh cleanup is not dependent on ordinary async React cleanup
 - channel `AUDIO` smoke now includes route-change/rejoin coverage without pressing Leave, page reload/rejoin coverage, expected remote producer count, remote speaking silence after mute, and backend producer paused-state assertions for mute/unmute
+- backend mediasoup `producer.pause()` / `producer.resume()` is awaited before producer paused/resumed signaling is emitted, avoiding stale paused-state events in the channel `AUDIO` pilot
+- latest operator direct rerun confirmed muted audio was no longer audible, route-change cleanup no longer leaked audio, the remaining remote speaking delay was minor/acceptable, and duplicate `Remote producers` was not reproduced
+- pagehide keepalive remains a local/dev refresh cleanup support path, not a production-grade unload guarantee; explicit Leave and route change/unmount cleanup remain the primary controlled cleanup paths
 - attempted TURN review is `not tested / invalid run` because coturn was not running; TURN needs a running local coturn container in addition to local TURN env
-- direct manual audio quality, mute/cleanup/navigation behavior after the fix, TURN manual audio quality, permission UX, and rollback confidence must be rerun by an operator before product review can be marked pass
+- rollback, optional TURN, permission UX, and one final direct audio-quality pass must be rerun by an operator before product review can be marked pass
 - channel `VIDEO`, ordinary private `?video=true`, and production remain LiveKit/default; no default switch changed
 - recommended next segment is `channel-audio-sfu-limited-pilot-operator-review-rerun`
 

@@ -816,7 +816,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     };
   }
 
-  setProducerPaused({
+  async setProducerPaused({
     producerId,
     scope,
     paused,
@@ -824,7 +824,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     producerId: string | undefined;
     scope?: LocalMediasoupSessionScope;
     paused: boolean;
-  }): LocalMediasoupProducerMetadata {
+  }): Promise<LocalMediasoupProducerMetadata> {
     if (process.env.NODE_ENV === 'production') {
       return {
         status: 'disabled',
@@ -873,9 +873,9 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     }
 
     if (paused) {
-      producer.pause();
+      await producer.pause();
     } else {
-      producer.resume();
+      await producer.resume();
     }
 
     const producerScope = this.producerScopes.get(producerId);

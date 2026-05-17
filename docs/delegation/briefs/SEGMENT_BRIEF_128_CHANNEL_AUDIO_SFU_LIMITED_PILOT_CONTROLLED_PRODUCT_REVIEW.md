@@ -121,7 +121,7 @@ Automated/local evidence:
 - LiveKit rollback/default preservation: `pass` from Segment 124 through Segment 127.
 
 Manual/operator product review:
-- status: `review`
+- status: `review / direct rerun materially improved`
 - evidence: two clients reached channel `AUDIO` SFU connected state in direct mode with `Remote producers: 1`, `Capture mode: real`, `Transport: direct`, and `Requested media: audio on, video off`.
 - issue: operator reported unreliable mute/unmute behavior and continued audio after navigating away from the channel/server before the scoped runtime fix.
 - follow-up: first scoped fix added producer pause/resume, immediate leave cleanup, route/session remounting, remote audio track removal, and speaking indicators.
@@ -130,10 +130,13 @@ Manual/operator product review:
 - third scoped fix: mute now calls backend mediasoup producer pause/resume endpoints; browser smoke asserts the scoped producer paused state.
 - fourth scoped fix: startup now prevents stale async initial runs from leaving duplicate producers after reload/React dev re-run races.
 - fifth scoped fix: producer pause/resume signaling now drives remote speaking visibility, and pagehide keepalive leave covers browser refresh cleanup.
+- review hardening: backend mediasoup `producer.pause()` / `producer.resume()` is awaited before logging, returning metadata, or publishing producer paused/resumed signaling.
+- operator rerun after the scoped fixes confirmed muted audio was no longer audible, route-change cleanup no longer leaked audio, remote speaking delay was minor/acceptable, and the duplicate `Remote producers` issue was not reproduced.
+- pagehide keepalive is treated as local/dev refresh cleanup support, not a production-grade unload guarantee; normal route change/unmount and explicit Leave remain the primary cleanup paths.
 
 Direct manual audio quality:
-- status: `review`
-- evidence: direct channel `AUDIO` connected with real capture; operator reported audio was present enough to notice mute/navigation issues.
+- status: `review / acceptable for continued controlled review`
+- evidence: direct channel `AUDIO` connected with real capture; after the scoped fixes, operator reported the remaining speaking-indicator delay as minor enough to continue.
 
 TURN manual audio quality:
 - status: `not tested / invalid run`
@@ -145,12 +148,12 @@ Rollback manual confidence:
 ## Decision
 
 Controlled product review status:
-- `review / scoped fix added`
+- `review / direct operator rerun improved after scoped fixes`
 
 Interpretation:
 - the limited channel `AUDIO` SFU pilot remains technically ready for controlled non-production product review.
 - automated direct/TURN/cleanup/regression evidence is strong enough to start operator review.
-- the first operator review found direct connectivity, but mute/navigation cleanup required a scoped runtime fix before the checklist can be rerun for pass/fail.
+- the first operator review found direct connectivity, then mute/navigation/speaking cleanup issues; scoped fixes were added and the latest operator rerun no longer reproduced the audio leak or duplicate-producer issue.
 
 ## What Remains LiveKit
 
@@ -161,9 +164,9 @@ Interpretation:
 
 ## Remaining Blockers
 
-- operator manual product review must be rerun after the scoped mute/cleanup/speaking-indicator fix.
-- operator rerun must specifically cover navigation away without pressing Leave.
-- subjective real microphone audio quality signoff remains incomplete.
+- full operator manual product review remains `review`, because rollback and optional TURN were not signed off in the same final manual pass.
+- subjective real microphone audio quality signoff remains incomplete beyond the latest direct two-user observation.
+- page refresh cleanup remains `review`: pagehide keepalive is useful for local/dev reload cleanup, but not a production-grade unload guarantee.
 - optional TURN manual review remains incomplete because coturn was not running for the attempted TURN URL.
 - process-local mediasoup/signaling state remains a multi-process/production blocker.
 - production TURN/SFU infra, runbook, monitoring, firewall/process management, and rollback procedure remain out of scope.
@@ -178,7 +181,7 @@ Expected shape:
 - capture direct manual audio quality status.
 - capture optional TURN manual audio quality status if local coturn is available.
 - capture rollback confidence.
-- verify mute/unmute reliability, navigation cleanup, and local/remote speaking indicators after the scoped fix.
+- verify rollback, optional TURN, and one final direct audio-quality pass after the scoped fix.
 - keep production, channel `VIDEO`, private default, and LiveKit fallback unchanged.
 
 ## Verification Performed
@@ -197,4 +200,5 @@ Commands:
 
 Results:
 - all verification commands passed.
-- guarded browser scripts skipped safely without smoke env flags.
+- guarded browser scripts skipped safely without smoke env flags in the standard command set.
+- additional guarded channel `AUDIO` pilot smoke was run locally after the scoped fixes with cleanup/mute/rejoin assertions and passed.

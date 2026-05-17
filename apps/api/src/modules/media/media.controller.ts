@@ -447,11 +447,11 @@ export class MediaController {
 
   @Post('prototype/mediasoup/producers/:producerId/pause')
   @UseGuards(RequireAuthGuard)
-  pauseMediasoupPrototypeProducer(
+  async pauseMediasoupPrototypeProducer(
     @CurrentProfileId() profileId: string | undefined,
     @Param('producerId') producerId: string | undefined,
     @Body() body: CloseMediasoupPrototypeProducerBody | undefined,
-  ): LocalMediasoupProducerMetadata {
+  ): Promise<LocalMediasoupProducerMetadata> {
     const scope = this.resolvePrototypeSessionScope(profileId, body);
 
     return this.mediasoupPrototypeService.setProducerPaused({
@@ -463,11 +463,11 @@ export class MediaController {
 
   @Post('prototype/mediasoup/producers/:producerId/resume')
   @UseGuards(RequireAuthGuard)
-  resumeMediasoupPrototypeProducer(
+  async resumeMediasoupPrototypeProducer(
     @CurrentProfileId() profileId: string | undefined,
     @Param('producerId') producerId: string | undefined,
     @Body() body: CloseMediasoupPrototypeProducerBody | undefined,
-  ): LocalMediasoupProducerMetadata {
+  ): Promise<LocalMediasoupProducerMetadata> {
     const scope = this.resolvePrototypeSessionScope(profileId, body);
 
     return this.mediasoupPrototypeService.setProducerPaused({
