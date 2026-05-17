@@ -272,6 +272,22 @@ export type MediasoupPrototypeProducerClosedEvent = {
   occurredAt: string
 }
 
+export type MediasoupPrototypeProducerPausedEvent = {
+  type: 'producer.paused'
+  roomId: string
+  participantSessionId: string
+  producerId: string
+  occurredAt: string
+}
+
+export type MediasoupPrototypeProducerResumedEvent = {
+  type: 'producer.resumed'
+  roomId: string
+  participantSessionId: string
+  producerId: string
+  occurredAt: string
+}
+
 export type MediasoupPrototypeConsumerClosedEvent = {
   type: 'consumer.closed'
   roomId: string
@@ -285,6 +301,8 @@ export type MediasoupPrototypeEvent =
   | MediasoupPrototypeProducerSnapshotEvent
   | MediasoupPrototypeProducerPublishedEvent
   | MediasoupPrototypeProducerClosedEvent
+  | MediasoupPrototypeProducerPausedEvent
+  | MediasoupPrototypeProducerResumedEvent
   | MediasoupPrototypeConsumerClosedEvent
 
 export type ConsumeMediasoupPrototypeRequest = {
@@ -600,6 +618,27 @@ export const joinRoom = async (payload: JoinRoomCommandPayload) =>
 
 export const leaveRoom = async (payload: LeaveRoomCommandPayload) =>
   postMediaCommand<LeaveRoomResponse, LeaveRoomCommandPayload>(MEDIA_CONTROL_PATHS.leaveRoom, payload)
+
+export const leaveRoomKeepAlive = (payload: LeaveRoomCommandPayload) => {
+  if (typeof fetch === 'undefined') {
+    return false
+  }
+
+  const baseUrl = getBackendApiBaseUrl()
+  const url = baseUrl ? resolveBackendApiUrl(MEDIA_CONTROL_PATHS.leaveRoom, baseUrl) : MEDIA_CONTROL_PATHS.leaveRoom
+
+  void fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+    credentials: 'include',
+    keepalive: true,
+  }).catch(() => undefined)
+
+  return true
+}
 
 export const closeRoom = async (payload: CloseRoomCommandPayload) =>
   postMediaCommand<CloseRoomResponse, CloseRoomCommandPayload>(MEDIA_CONTROL_PATHS.closeRoom, payload)

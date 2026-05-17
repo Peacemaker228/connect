@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getLiveKitToken, joinRoom, leaveRoom } from '@sdk/actions/media'
+import { getLiveKitToken, joinRoom, leaveRoom, leaveRoomKeepAlive } from '@sdk/actions/media'
 import type { JoinRoomResponse } from '@sdk/actions/media'
 import type { MediaDisconnectReason } from '@app-core/contracts'
 
@@ -31,7 +31,11 @@ export const useMediaRoomController = ({ mediaEntry, displayName }: UseMediaRoom
   const closedParticipantSessionIdsRef = useRef(new Set<string>())
 
   const closeParticipantSession = useCallback(
-    async (participantSession: JoinRoomResponse['participantSession'], reason: MediaDisconnectReason) => {
+    async (
+      participantSession: JoinRoomResponse['participantSession'],
+      reason: MediaDisconnectReason,
+      options: { keepAlive?: boolean } = {},
+    ) => {
       if (closedParticipantSessionIdsRef.current.has(participantSession.participantSessionId)) {
         return
       }
@@ -42,13 +46,19 @@ export const useMediaRoomController = ({ mediaEntry, displayName }: UseMediaRoom
         activeParticipantSessionRef.current = null
       }
 
+      const payload = {
+        requestId: createMediaRequestId('media.leave'),
+        roomId: participantSession.roomId,
+        participantSessionId: participantSession.participantSessionId,
+        reason,
+      }
+
       try {
-        await leaveRoom({
-          requestId: createMediaRequestId('media.leave'),
-          roomId: participantSession.roomId,
-          participantSessionId: participantSession.participantSessionId,
-          reason,
-        })
+        if (options.keepAlive && leaveRoomKeepAlive(payload)) {
+          return
+        }
+
+        await leaveRoom(payload)
       } catch (error) {
         console.warn('[media] control-plane leave failed', error)
       }
@@ -145,6 +155,28 @@ export const useMediaRoomController = ({ mediaEntry, displayName }: UseMediaRoom
       }
     }
   }, [closeParticipantSession, displayName, mediaEntry])
+
+  useEffect(() => {
+    const closeActiveSessionOnPageHide = () => {
+      const participantSession = activeParticipantSessionRef.current
+
+      if (!participantSession) {
+        return
+      }
+
+      void closeParticipantSession(participantSession, 'page-refresh', {
+        keepAlive: true,
+      })
+    }
+
+    window.addEventListener('pagehide', closeActiveSessionOnPageHide)
+    window.addEventListener('beforeunload', closeActiveSessionOnPageHide)
+
+    return () => {
+      window.removeEventListener('pagehide', closeActiveSessionOnPageHide)
+      window.removeEventListener('beforeunload', closeActiveSessionOnPageHide)
+    }
+  }, [closeParticipantSession])
 
   const leaveControlPlane = useCallback(async () => {
     const participantSession = activeParticipantSessionRef.current ?? controlPlaneJoin?.participantSession

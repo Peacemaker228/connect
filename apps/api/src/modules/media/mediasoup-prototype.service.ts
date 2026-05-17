@@ -888,6 +888,15 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
       paused: producer.paused,
     });
 
+    if (producerScope) {
+      this.mediaSignalingService.publishProducerPausedState({
+        roomId: producerScope.roomId,
+        participantSessionId: producerScope.participantSessionId,
+        producerId,
+        paused: producer.paused,
+      });
+    }
+
     return {
       status: 'ready',
       enabled: true,

@@ -49,6 +49,10 @@ Scoped runtime follow-up:
 - channel `AUDIO` smoke now asserts backend producer `paused` state after mute/unmute through scoped producer discovery.
 - operator screenshot also showed `Remote producers: 2` in a two-user channel, which means stale initial producer duplication could leave an unmuted producer outside the current adapter.
 - SFU startup now treats async startup as run-owned resources: stale runs close their own adapter/tracks and cannot publish/keep producers after a newer run or cleanup.
+- follow-up operator review confirmed muted audio was no longer audible, but remote speaking visibility still showed `Remote voice: speaking` after the remote participant muted.
+- pause/resume now emits scoped `producer.paused` / `producer.resumed` signaling events, and remote speaking detection ignores paused remote audio tracks.
+- page reload/pagehide now sends a keepalive control-plane leave so browser refresh is not dependent on ordinary async React cleanup.
+- channel `AUDIO` smoke now includes page reload/rejoin coverage and checks that remote speaking becomes silent after remote mute.
 
 ## Review Environment
 
@@ -125,6 +129,7 @@ Manual/operator product review:
 - second scoped fix: control-plane ownership was corrected so route change/unmount closes the backend participant session, and the browser smoke now covers route-change/rejoin without pressing Leave.
 - third scoped fix: mute now calls backend mediasoup producer pause/resume endpoints; browser smoke asserts the scoped producer paused state.
 - fourth scoped fix: startup now prevents stale async initial runs from leaving duplicate producers after reload/React dev re-run races.
+- fifth scoped fix: producer pause/resume signaling now drives remote speaking visibility, and pagehide keepalive leave covers browser refresh cleanup.
 
 Direct manual audio quality:
 - status: `review`

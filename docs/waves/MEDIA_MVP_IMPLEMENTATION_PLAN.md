@@ -862,7 +862,9 @@ Segment 128 result:
 - follow-up operator review confirmed route-change cleanup was fixed, while mute still leaked audio before Restart because client-side track state was not enough
 - scoped backend mediasoup producer pause/resume endpoints were added and wired through SDK/SFU client adapter so mute owns server-side producer state
 - operator screenshot also showed duplicate `Remote producers: 2` in a two-user channel; SFU startup now cleans stale async run-owned adapters/tracks before they can leave duplicate producers
-- channel `AUDIO` smoke now includes route-change/rejoin coverage without pressing Leave, expected remote producer count, and backend producer paused-state assertions for mute/unmute
+- follow-up operator review confirmed muted audio was no longer audible, while remote speaking visibility still needed producer pause/resume signaling
+- page reload/pagehide now sends keepalive control-plane leave so browser refresh cleanup is not dependent on ordinary async React cleanup
+- channel `AUDIO` smoke now includes route-change/rejoin coverage without pressing Leave, page reload/rejoin coverage, expected remote producer count, remote speaking silence after mute, and backend producer paused-state assertions for mute/unmute
 - attempted TURN review is `not tested / invalid run` because coturn was not running; TURN needs a running local coturn container in addition to local TURN env
 - direct manual audio quality, mute/cleanup/navigation behavior after the fix, TURN manual audio quality, permission UX, and rollback confidence must be rerun by an operator before product review can be marked pass
 - channel `VIDEO`, ordinary private `?video=true`, and production remain LiveKit/default; no default switch changed

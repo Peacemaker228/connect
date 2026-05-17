@@ -199,6 +199,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   const remoteAudioTrackByProducerIdRef = useRef(new Map<string, MediaStreamTrack>())
   const eventSourceRef = useRef<EventSource | null>(null)
   const heartbeatTimerRef = useRef<number | null>(null)
+  const producerStateSyncTimerRef = useRef<number | null>(null)
   const localSpeakingDetectorRef = useRef<SpeakingDetectorHandle | null>(null)
   const remoteSpeakingDetectorRef = useRef<SpeakingDetectorHandle | null>(null)
   const consumedProducerIdsRef = useRef(new Set<string>())
@@ -233,6 +234,11 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     if (heartbeatTimerRef.current !== null) {
       window.clearInterval(heartbeatTimerRef.current)
       heartbeatTimerRef.current = null
+    }
+
+    if (producerStateSyncTimerRef.current !== null) {
+      window.clearInterval(producerStateSyncTimerRef.current)
+      producerStateSyncTimerRef.current = null
     }
 
     eventSourceRef.current?.close()
@@ -323,12 +329,14 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       remoteSpeakingDetectorRef.current?.close()
       remoteSpeakingDetectorRef.current = null
 
-      if (!stream || stream.getAudioTracks().length === 0) {
+      const audioTracks = stream?.getAudioTracks().filter((track) => track.enabled && track.readyState === 'live') ?? []
+
+      if (audioTracks.length === 0) {
         setRemoteSpeakingState(false)
         return
       }
 
-      remoteSpeakingDetectorRef.current = createSpeakingDetector(stream, setRemoteSpeakingState)
+      remoteSpeakingDetectorRef.current = createSpeakingDetector(new MediaStream(audioTracks), setRemoteSpeakingState)
     },
     [setRemoteSpeakingState],
   )
@@ -348,6 +356,46 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       setIsLocalSpeaking(false)
     }
   }, [])
+
+  const applyRemoteProducerPausedState = useCallback(
+    (producerId: string, paused: boolean) => {
+      const producer = consumedProducerByIdRef.current.get(producerId)
+
+      if (!producer) {
+        return
+      }
+
+      if (producer.kind === 'audio') {
+        const remoteTrack = remoteAudioTrackByProducerIdRef.current.get(producerId)
+
+        if (remoteTrack) {
+          remoteTrack.enabled = !paused
+        }
+
+        startRemoteSpeakingDetector(remoteStreamRef.current)
+      }
+
+      if (producer.kind === 'video' && remoteVideoLayout === 'participant-grid') {
+        setRemoteParticipants((current) =>
+          current.map((participant) => {
+            const videoTrack = participant.videoTrack
+
+            if (participant.videoProducerId !== producerId || !videoTrack) {
+              return participant
+            }
+
+            videoTrack.enabled = !paused
+
+            return {
+              ...participant,
+              videoTrack,
+            }
+          }),
+        )
+      }
+    },
+    [remoteVideoLayout, startRemoteSpeakingDetector],
+  )
 
   const createSyntheticAudioCapture = useCallback(async (): Promise<LocalCaptureResult> => {
     const audioContext = new AudioContext()
@@ -481,6 +529,38 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     [sessionScope],
   )
 
+  const startProducerStateSync = useCallback(
+    (adapter: SfuClientAdapter, runId: number) => {
+      if (producerStateSyncTimerRef.current !== null) {
+        window.clearInterval(producerStateSyncTimerRef.current)
+      }
+
+      producerStateSyncTimerRef.current = window.setInterval(() => {
+        if (startRunIdRef.current !== runId) {
+          return
+        }
+
+        void adapter
+          .discoverProducers(sessionScope)
+          .then((discovery) => {
+            if (startRunIdRef.current !== runId || !discovery.enabled || discovery.status !== 'ready') {
+              return
+            }
+
+            for (const producer of discovery.producers) {
+              if (producer.participantSessionId === sessionScope.participantSessionId) {
+                continue
+              }
+
+              applyRemoteProducerPausedState(producer.producerId, producer.paused)
+            }
+          })
+          .catch(() => undefined)
+      }, 1000)
+    },
+    [applyRemoteProducerPausedState, sessionScope],
+  )
+
   const attachRemoteTrack = useCallback(
     async (track: MediaStreamTrack, producer: RemoteProducerMetadata) => {
       if (remoteVideoLayout === 'participant-grid') {
@@ -574,6 +654,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       })
 
       await attachRemoteTrack(consumed.track, producer)
+      applyRemoteProducerPausedState(producer.producerId, producer.paused)
       await waitForRemoteTrackFlow(consumed.track)
 
       if (startRunIdRef.current !== runId) {
@@ -591,7 +672,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       setStatus('connected')
       setDetail('Remote SFU producer event received and consumed')
     },
-    [attachRemoteTrack, sessionScope],
+    [applyRemoteProducerPausedState, attachRemoteTrack, sessionScope],
   )
 
   const subscribeToProducerEvents = useCallback(
@@ -726,6 +807,10 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
 
               setRemoteProducerIds((current) => current.filter((producerId) => producerId !== event.producerId))
             }
+
+            if (event.type === 'producer.paused' || event.type === 'producer.resumed') {
+              applyRemoteProducerPausedState(event.producerId, event.type === 'producer.paused')
+            }
           })().catch((error: unknown) => {
             if (startRunIdRef.current !== runId) {
               return
@@ -743,7 +828,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         }
       })
     },
-    [consumeRemoteProducer, remoteVideoLayout, sessionScope, startRemoteSpeakingDetector],
+    [applyRemoteProducerPausedState, consumeRemoteProducer, remoteVideoLayout, sessionScope, startRemoteSpeakingDetector],
   )
 
   const startSfuPath = useCallback(async () => {
@@ -808,6 +893,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         recvTransportId,
         runId,
       })
+      startProducerStateSync(adapter, runId)
       if (isStaleRun()) {
         cleanupStaleRun()
         return
@@ -888,6 +974,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     iceTransportPolicy,
     sessionScope,
     startSessionHeartbeat,
+    startProducerStateSync,
     startLocalSpeakingDetector,
     subscribeToProducerEvents,
     video,

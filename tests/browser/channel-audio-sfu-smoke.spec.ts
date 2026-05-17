@@ -74,6 +74,7 @@ const shouldUseImplicitSfuGate = shouldUseCandidateGate || shouldUseProductDefau
 const participantCount = parsePositiveInteger(process.env.CHANNEL_AUDIO_SFU_SMOKE_USERS, 3)
 const shouldRunLeaveRejoin = process.env.CHANNEL_AUDIO_SFU_SMOKE_LEAVE_REJOIN !== '0'
 const shouldRunRouteChangeRejoin = process.env.CHANNEL_AUDIO_SFU_SMOKE_ROUTE_CHANGE_REJOIN !== '0'
+const shouldRunPageReloadRejoin = process.env.CHANNEL_AUDIO_SFU_SMOKE_PAGE_RELOAD_REJOIN !== '0'
 const shouldRunOfflineRestore = process.env.CHANNEL_AUDIO_SFU_SMOKE_OFFLINE_RESTORE === '1'
 const shouldAssertCleanup = process.env.CHANNEL_AUDIO_SFU_SMOKE_ASSERT_CLEANUP === '1'
 const cleanupSettleMs = parsePositiveInteger(process.env.CHANNEL_AUDIO_SFU_SMOKE_CLEANUP_SETTLE_MS, 25_000)
@@ -172,9 +173,16 @@ test.describe('channel AUDIO SFU browser smoke', () => {
 
       await pages[0].getByTestId('private-sfu-audio-toggle').click()
       await expectProducerPaused(ownerContext, firstParticipantScope, true)
+      await expect(pages[1].getByTestId('private-sfu-remote-speaking')).toHaveText('Remote voice: silent')
 
       await pages[0].getByTestId('private-sfu-audio-toggle').click()
       await expectProducerPaused(ownerContext, firstParticipantScope, false)
+
+      if (shouldRunPageReloadRejoin) {
+        await pages[0].reload()
+        await expectAllStatuses(pages, 'connected')
+        await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
+      }
 
       await pages[0].getByRole('button', { name: 'Restart SFU channel audio' }).click()
       await expectAllStatuses(pages, 'connected')
