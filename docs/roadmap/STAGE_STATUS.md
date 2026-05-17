@@ -608,7 +608,8 @@ Done:
 - follow-up operator review confirmed the permanent local speaking `silent` state after unmute was resolved, while navigation cleanup required the broader control-plane lifecycle fix
 - follow-up operator review confirmed route-change cleanup was fixed, while mute still leaked audio before Restart because client-side track state was not enough
 - backend mediasoup producer pause/resume endpoints were added and wired through SDK/SFU client adapter
-- channel `AUDIO` smoke now covers route-change/rejoin without pressing Leave and backend producer paused-state assertions
+- operator screenshot showed duplicate `Remote producers: 2` in a two-user channel; SFU startup now cleans stale async run-owned adapters/tracks before they can leave duplicate producers
+- channel `AUDIO` smoke now covers route-change/rejoin without pressing Leave, expected remote producer count, and backend producer paused-state assertions
 - attempted TURN review is `not tested / invalid run` because coturn was not running
 
 Remaining:

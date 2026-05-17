@@ -43,6 +43,14 @@ type SpeakingDetectorHandle = {
   close: () => void
 }
 
+type LocalCaptureResult = {
+  tracks: MediaStreamTrack[]
+  audioContext?: AudioContext
+  oscillator?: OscillatorNode
+  videoTrack?: MediaStreamTrack
+  continuedAudioOnly?: boolean
+}
+
 const getMediaErrorMessage = (error: unknown) => {
   return error instanceof Error ? error.message : 'Unknown media capture failure'
 }
@@ -341,7 +349,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     }
   }, [])
 
-  const createSyntheticAudioTrack = useCallback(async () => {
+  const createSyntheticAudioCapture = useCallback(async (): Promise<LocalCaptureResult> => {
     const audioContext = new AudioContext()
     const oscillator = audioContext.createOscillator()
     const gain = audioContext.createGain()
@@ -365,16 +373,14 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       throw new Error('Synthetic audio track was not created')
     }
 
-    audioContextRef.current = audioContext
-    oscillatorRef.current = oscillator
-    localTracksRef.current = [track]
-    setLocalAudioEnabled(true)
-    setLocalVideoEnabled(false)
-
-    return [track]
+    return {
+      tracks: [track],
+      audioContext,
+      oscillator,
+    }
   }, [])
 
-  const createRealDeviceTracks = useCallback(async () => {
+  const createRealDeviceCapture = useCallback(async (): Promise<LocalCaptureResult> => {
     if (!navigator.mediaDevices?.getUserMedia) {
       throw new Error('Browser media device capture is not available')
     }
@@ -409,15 +415,8 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         })
         continuedAudioOnly = true
       } catch (audioOnlyError) {
-        throw new Error(
-          `Camera was not found and audio-only fallback failed: ${getMediaErrorMessage(audioOnlyError)}`,
-        )
+        throw new Error(`Camera was not found and audio-only fallback failed: ${getMediaErrorMessage(audioOnlyError)}`)
       }
-    }
-
-    if (continuedAudioOnly) {
-      setCaptureNotice(MISSING_CAMERA_NOTICE)
-      setDetail(MISSING_CAMERA_NOTICE)
     }
 
     const tracks = stream.getTracks()
@@ -427,92 +426,108 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       throw new Error('No local media tracks were captured')
     }
 
-    localTracksRef.current = tracks
-    setLocalAudioEnabled(stream.getAudioTracks().some((track) => track.enabled))
-    setLocalVideoEnabled(stream.getVideoTracks().some((track) => track.enabled))
-
-    if (localVideoRef.current && videoTrack) {
-      localVideoRef.current.srcObject = new MediaStream([videoTrack])
-      await localVideoRef.current.play().catch(() => undefined)
+    return {
+      tracks,
+      videoTrack,
+      continuedAudioOnly,
     }
-
-    return tracks
   }, [audio, simulateMissingCamera, video])
 
-  const createLocalTracks = useCallback(async () => {
+  const createLocalCapture = useCallback(async () => {
     if (captureMode === 'real') {
-      return createRealDeviceTracks()
+      return createRealDeviceCapture()
     }
 
-    return createSyntheticAudioTrack()
-  }, [captureMode, createRealDeviceTracks, createSyntheticAudioTrack])
+    return createSyntheticAudioCapture()
+  }, [captureMode, createRealDeviceCapture, createSyntheticAudioCapture])
 
-  const assertScopedTransport = useCallback(
-    (transport: SfuClientTransportBundle) => {
-      if (!transport.backendTransport.transportId) {
-        throw new Error('Backend transport id is missing')
-      }
-
-      return transport.backendTransport.transportId
-    },
-    [],
-  )
-
-  const startSessionHeartbeat = useCallback((adapter: SfuClientAdapter) => {
-    if (heartbeatTimerRef.current !== null) {
-      window.clearInterval(heartbeatTimerRef.current)
-    }
-
-    void adapter.heartbeatSession(sessionScope).catch(() => undefined)
-    heartbeatTimerRef.current = window.setInterval(() => {
-      void adapterRef.current?.heartbeatSession(sessionScope).catch(() => undefined)
-    }, 5000)
-  }, [sessionScope])
-
-  const attachRemoteTrack = useCallback(async (track: MediaStreamTrack, producer: RemoteProducerMetadata) => {
-    if (remoteVideoLayout === 'participant-grid') {
-      setRemoteParticipants((current) =>
-        upsertRemoteParticipant({
-          current,
-          participantSessionId: producer.participantSessionId,
-          audioProducerId: track.kind === 'audio' ? producer.producerId : undefined,
-          videoProducerId: track.kind === 'video' ? producer.producerId : undefined,
-          videoTrack: track.kind === 'video' ? track : undefined,
-        }),
-      )
-    }
-
-    if (track.kind === 'video') {
-      if (remoteVideoLayout === 'participant-grid') {
-        return
-      }
-
-      const remoteVideoStream = remoteVideoStreamRef.current ?? new MediaStream()
-
-      remoteVideoStreamRef.current = remoteVideoStream
-      remoteVideoStream.addTrack(track)
-      setHasSingleRemoteVideoTrack(true)
-
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = remoteVideoStream
-        await remoteVideoRef.current.play().catch(() => undefined)
-      }
-
+  const cleanupLocalCapture = useCallback((capture: LocalCaptureResult | null) => {
+    if (!capture) {
       return
     }
 
-    const remoteStream = remoteStreamRef.current ?? new MediaStream()
-
-    remoteStreamRef.current = remoteStream
-    remoteStream.addTrack(track)
-    remoteAudioTrackByProducerIdRef.current.set(producer.producerId, track)
-    startRemoteSpeakingDetector(remoteStream)
-
-    if (remoteAudioRef.current) {
-      remoteAudioRef.current.srcObject = remoteStream
-      await remoteAudioRef.current.play().catch(() => undefined)
+    for (const track of capture.tracks) {
+      track.stop()
     }
-  }, [remoteVideoLayout, startRemoteSpeakingDetector])
+
+    try {
+      capture.oscillator?.stop()
+    } catch {
+      // OscillatorNode throws if it has already stopped.
+    }
+
+    void capture.audioContext?.close()
+  }, [])
+
+  const assertScopedTransport = useCallback((transport: SfuClientTransportBundle) => {
+    if (!transport.backendTransport.transportId) {
+      throw new Error('Backend transport id is missing')
+    }
+
+    return transport.backendTransport.transportId
+  }, [])
+
+  const startSessionHeartbeat = useCallback(
+    (adapter: SfuClientAdapter) => {
+      if (heartbeatTimerRef.current !== null) {
+        window.clearInterval(heartbeatTimerRef.current)
+      }
+
+      void adapter.heartbeatSession(sessionScope).catch(() => undefined)
+      heartbeatTimerRef.current = window.setInterval(() => {
+        void adapterRef.current?.heartbeatSession(sessionScope).catch(() => undefined)
+      }, 5000)
+    },
+    [sessionScope],
+  )
+
+  const attachRemoteTrack = useCallback(
+    async (track: MediaStreamTrack, producer: RemoteProducerMetadata) => {
+      if (remoteVideoLayout === 'participant-grid') {
+        setRemoteParticipants((current) =>
+          upsertRemoteParticipant({
+            current,
+            participantSessionId: producer.participantSessionId,
+            audioProducerId: track.kind === 'audio' ? producer.producerId : undefined,
+            videoProducerId: track.kind === 'video' ? producer.producerId : undefined,
+            videoTrack: track.kind === 'video' ? track : undefined,
+          }),
+        )
+      }
+
+      if (track.kind === 'video') {
+        if (remoteVideoLayout === 'participant-grid') {
+          return
+        }
+
+        const remoteVideoStream = remoteVideoStreamRef.current ?? new MediaStream()
+
+        remoteVideoStreamRef.current = remoteVideoStream
+        remoteVideoStream.addTrack(track)
+        setHasSingleRemoteVideoTrack(true)
+
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = remoteVideoStream
+          await remoteVideoRef.current.play().catch(() => undefined)
+        }
+
+        return
+      }
+
+      const remoteStream = remoteStreamRef.current ?? new MediaStream()
+
+      remoteStreamRef.current = remoteStream
+      remoteStream.addTrack(track)
+      remoteAudioTrackByProducerIdRef.current.set(producer.producerId, track)
+      startRemoteSpeakingDetector(remoteStream)
+
+      if (remoteAudioRef.current) {
+        remoteAudioRef.current.srcObject = remoteStream
+        await remoteAudioRef.current.play().catch(() => undefined)
+      }
+    },
+    [remoteVideoLayout, startRemoteSpeakingDetector],
+  )
 
   const consumeRemoteProducer = useCallback(
     async ({
@@ -751,6 +766,13 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     const adapter = new SfuClientAdapter()
     adapterRef.current = adapter
     startSessionHeartbeat(adapter)
+    let localCapture: LocalCaptureResult | null = null
+
+    const isStaleRun = () => startRunIdRef.current !== runId
+    const cleanupStaleRun = () => {
+      adapter.close()
+      cleanupLocalCapture(localCapture)
+    }
 
     try {
       const sendTransport = await adapter.createTransport({
@@ -759,6 +781,11 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         iceTransportPolicy,
         sessionScope,
       })
+      if (isStaleRun()) {
+        cleanupStaleRun()
+        return
+      }
+
       const sendTransportId = assertScopedTransport(sendTransport)
 
       const recvTransport = await adapter.createTransport({
@@ -767,6 +794,11 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         iceTransportPolicy,
         sessionScope,
       })
+      if (isStaleRun()) {
+        cleanupStaleRun()
+        return
+      }
+
       const recvTransportId = assertScopedTransport(recvTransport)
 
       setStatus('waiting')
@@ -776,8 +808,34 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         recvTransportId,
         runId,
       })
+      if (isStaleRun()) {
+        cleanupStaleRun()
+        return
+      }
 
-      const localTracks = await createLocalTracks()
+      localCapture = await createLocalCapture()
+      if (isStaleRun()) {
+        cleanupStaleRun()
+        return
+      }
+
+      if (localCapture.continuedAudioOnly) {
+        setCaptureNotice(MISSING_CAMERA_NOTICE)
+        setDetail(MISSING_CAMERA_NOTICE)
+      }
+
+      audioContextRef.current = localCapture.audioContext ?? null
+      oscillatorRef.current = localCapture.oscillator ?? null
+      localTracksRef.current = localCapture.tracks
+      setLocalAudioEnabled(localCapture.tracks.some((track) => track.kind === 'audio' && track.enabled))
+      setLocalVideoEnabled(localCapture.tracks.some((track) => track.kind === 'video' && track.enabled))
+
+      if (localVideoRef.current && localCapture.videoTrack) {
+        localVideoRef.current.srcObject = new MediaStream([localCapture.videoTrack])
+        await localVideoRef.current.play().catch(() => undefined)
+      }
+
+      const localTracks = localCapture.tracks
       await applyLocalTrackEnabled('audio', desiredLocalAudioEnabledRef.current)
       await applyLocalTrackEnabled('video', desiredLocalVideoEnabledRef.current)
       startLocalSpeakingDetector(localTracks)
@@ -798,7 +856,8 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         throw new Error('Backend producer metadata is missing')
       }
 
-      if (startRunIdRef.current !== runId) {
+      if (isStaleRun()) {
+        cleanupStaleRun()
         return
       }
 
@@ -811,7 +870,8 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         setDetail('Local SFU producer is published; waiting for remote participant producer')
       }
     } catch (error) {
-      if (startRunIdRef.current !== runId) {
+      if (isStaleRun()) {
+        cleanupStaleRun()
         return
       }
 
@@ -823,7 +883,8 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     audio,
     applyLocalTrackEnabled,
     cleanup,
-    createLocalTracks,
+    cleanupLocalCapture,
+    createLocalCapture,
     iceTransportPolicy,
     sessionScope,
     startSessionHeartbeat,
@@ -873,9 +934,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
           <div className="text-sm font-medium" data-testid="private-sfu-provider">
             {roomLabel}
           </div>
-          <div className="truncate text-xs text-zinc-400">
-            {controlPlaneJoin.room.roomId}
-          </div>
+          <div className="truncate text-xs text-zinc-400">{controlPlaneJoin.room.roomId}</div>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -885,8 +944,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
             aria-label={localAudioEnabled ? 'Mute microphone' : 'Unmute microphone'}
             disabled={!hasLocalAudioTrack}
             data-testid="private-sfu-audio-toggle"
-            onClick={toggleLocalAudio}
-          >
+            onClick={toggleLocalAudio}>
             {localAudioEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
           </Button>
           <Button
@@ -896,8 +954,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
             aria-label={localVideoEnabled ? 'Stop camera' : 'Start camera'}
             disabled={!hasLocalVideoTrack}
             data-testid="private-sfu-video-toggle"
-            onClick={toggleLocalVideo}
-          >
+            onClick={toggleLocalVideo}>
             {localVideoEnabled ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
           </Button>
           <Button
@@ -905,8 +962,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
             size="icon"
             variant="outline"
             aria-label={restartAriaLabel}
-            onClick={() => void startSfuPath()}
-          >
+            onClick={() => void startSfuPath()}>
             <RotateCcw className="h-4 w-4" />
           </Button>
           <Button type="button" size="icon" variant="destructive" aria-label="Leave call" onClick={handleLeaveClick}>
@@ -966,14 +1022,12 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         <div className="flex flex-wrap justify-center gap-2 text-xs">
           <span
             className={isLocalSpeaking ? 'text-emerald-300' : 'text-zinc-500'}
-            data-testid="private-sfu-local-speaking"
-          >
+            data-testid="private-sfu-local-speaking">
             Local voice: {isLocalSpeaking ? 'speaking' : 'silent'}
           </span>
           <span
             className={isRemoteSpeaking ? 'text-emerald-300' : 'text-zinc-500'}
-            data-testid="private-sfu-remote-speaking"
-          >
+            data-testid="private-sfu-remote-speaking">
             Remote voice: {isRemoteSpeaking ? 'speaking' : 'silent'}
           </span>
         </div>
@@ -1058,8 +1112,7 @@ const removeRemoteParticipantProducer = ({
           kind === 'audio' && participant.audioProducerId === producerId ? undefined : participant.audioProducerId,
         videoProducerId:
           kind === 'video' && participant.videoProducerId === producerId ? undefined : participant.videoProducerId,
-        videoTrack:
-          kind === 'video' && participant.videoProducerId === producerId ? undefined : participant.videoTrack,
+        videoTrack: kind === 'video' && participant.videoProducerId === producerId ? undefined : participant.videoTrack,
       }
     })
     .filter((participant) => participant.audioProducerId || participant.videoProducerId)
@@ -1092,8 +1145,7 @@ const RemoteVideoTile: FC<{ participant: RemoteParticipantMedia }> = ({ particip
   return (
     <div
       className="flex aspect-video w-full items-center justify-center overflow-hidden border border-zinc-800 bg-black"
-      data-testid="private-sfu-remote-video-tile"
-    >
+      data-testid="private-sfu-remote-video-tile">
       {participant.videoTrack ? (
         <video
           ref={videoRef}

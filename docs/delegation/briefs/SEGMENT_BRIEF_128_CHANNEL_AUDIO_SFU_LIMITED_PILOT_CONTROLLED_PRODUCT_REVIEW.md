@@ -47,6 +47,8 @@ Scoped runtime follow-up:
 - root cause was broadened again from client track state to SFU producer ownership: mute must pause/resume the scoped backend mediasoup producer, not only toggle the browser `MediaStreamTrack` and client-side producer.
 - backend local mediasoup producer pause/resume endpoints were added and wired through the SDK and SFU client adapter.
 - channel `AUDIO` smoke now asserts backend producer `paused` state after mute/unmute through scoped producer discovery.
+- operator screenshot also showed `Remote producers: 2` in a two-user channel, which means stale initial producer duplication could leave an unmuted producer outside the current adapter.
+- SFU startup now treats async startup as run-owned resources: stale runs close their own adapter/tracks and cannot publish/keep producers after a newer run or cleanup.
 
 ## Review Environment
 
@@ -122,6 +124,7 @@ Manual/operator product review:
 - follow-up rerun: permanent `Local voice: silent` after unmute was resolved, but navigation cleanup still failed.
 - second scoped fix: control-plane ownership was corrected so route change/unmount closes the backend participant session, and the browser smoke now covers route-change/rejoin without pressing Leave.
 - third scoped fix: mute now calls backend mediasoup producer pause/resume endpoints; browser smoke asserts the scoped producer paused state.
+- fourth scoped fix: startup now prevents stale async initial runs from leaving duplicate producers after reload/React dev re-run races.
 
 Direct manual audio quality:
 - status: `review`
