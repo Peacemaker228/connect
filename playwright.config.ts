@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
 const useRealMediaDevices = process.env.PLAYWRIGHT_REAL_MEDIA === '1'
+const useScreenCapture = process.env.PLAYWRIGHT_SCREEN_CAPTURE === '1'
 
 export default defineConfig({
   testDir: './tests/browser',
@@ -27,6 +28,9 @@ export default defineConfig({
             ...(useRealMediaDevices
               ? []
               : ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream']),
+            ...(useScreenCapture
+              ? ['--auto-select-desktop-capture-source=Entire screen', '--use-fake-ui-for-media-stream']
+              : []),
           ],
         },
         permissions: ['camera', 'microphone'],

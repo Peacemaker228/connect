@@ -7,6 +7,7 @@ import { MediaParticipantSessionService } from './media-participant-session.serv
 
 type LocalMediasoupPrototypeStatus = 'disabled' | 'ready' | 'failed';
 type LocalMediasoupTransportDirection = 'send' | 'recv';
+type LocalMediasoupTrackSource = 'microphone' | 'camera' | 'screen';
 
 export type LocalMediasoupSessionScope = {
   roomId: string;
@@ -88,6 +89,7 @@ export type LocalMediasoupProducerMetadata = {
   participantSessionId?: string;
   producerId?: string;
   kind?: mediasoupTypes.MediaKind;
+  source?: LocalMediasoupTrackSource;
   paused?: boolean;
   reason?: string;
 };
@@ -113,6 +115,7 @@ export type LocalMediasoupProducerDiscoveryMetadata = {
   roomId: string;
   participantSessionId: string;
   kind: mediasoupTypes.MediaKind;
+  source: LocalMediasoupTrackSource;
   paused: boolean;
   createdAt?: string;
 };
@@ -160,6 +163,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
   private readonly producers = new Map<string, mediasoupTypes.Producer>();
   private readonly producerScopes = new Map<string, LocalMediasoupSessionScope>();
   private readonly producerCreatedAt = new Map<string, string>();
+  private readonly producerSources = new Map<string, LocalMediasoupTrackSource>();
   private readonly consumers = new Map<string, mediasoupTypes.Consumer>();
   private readonly consumerScopes = new Map<string, LocalMediasoupSessionScope>();
   private readonly consumerProducerIds = new Map<string, string>();
@@ -395,12 +399,14 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     transportId,
     scope,
     kind,
+    source,
     rtpParameters,
     paused,
   }: {
     transportId: string | undefined;
     scope?: LocalMediasoupSessionScope;
     kind: mediasoupTypes.MediaKind | undefined;
+    source?: LocalMediasoupTrackSource;
     rtpParameters: mediasoupTypes.RtpParameters | undefined;
     paused?: boolean;
   }): Promise<LocalMediasoupProducerMetadata> {
@@ -466,6 +472,25 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
       };
     }
 
+    const resolvedSource = this.resolveTrackSource(kind, source);
+
+    if (!resolvedSource) {
+      return {
+        status: 'failed',
+        enabled: false,
+        transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        kind,
+        source,
+        reason: 'source must be microphone for audio or camera/screen for video',
+      };
+    }
+
+    if (scope && resolvedSource === 'screen') {
+      this.closeActiveRoomScreenProducers(scope);
+    }
+
     try {
       const producer = await transport.transport.produce({
         kind,
@@ -476,6 +501,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
           transportId,
           roomId: scope?.roomId,
           participantSessionId: scope?.participantSessionId,
+          source: resolvedSource,
         },
       });
 
@@ -483,6 +509,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
       const createdAt = new Date().toISOString();
 
       this.producerCreatedAt.set(producer.id, createdAt);
+      this.producerSources.set(producer.id, resolvedSource);
 
       if (scope) {
         this.producerScopes.set(producer.id, scope);
@@ -498,6 +525,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
           roomId: scope.roomId,
           participantSessionId: scope.participantSessionId,
           kind: producer.kind,
+          source: resolvedSource,
           paused: producer.paused,
           createdAt,
         });
@@ -509,6 +537,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         participantSessionId: scope?.participantSessionId,
         producerId: producer.id,
         kind: producer.kind,
+        source: resolvedSource,
       });
 
       return {
@@ -519,6 +548,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         participantSessionId: scope?.participantSessionId,
         producerId: producer.id,
         kind: producer.kind,
+        source: resolvedSource,
         paused: producer.paused,
       };
     } catch (error) {
@@ -801,6 +831,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     }
 
     const producerScope = this.producerScopes.get(producerId);
+    const source = this.getProducerSource(producerId, producer.kind);
 
     producer.close();
     this.removeProducerState(producerId);
@@ -812,6 +843,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
       roomId: producerScope?.roomId ?? scope?.roomId,
       participantSessionId: producerScope?.participantSessionId ?? scope?.participantSessionId,
       kind: producer.kind,
+      source,
       paused: producer.paused,
     };
   }
@@ -879,12 +911,14 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     }
 
     const producerScope = this.producerScopes.get(producerId);
+    const source = this.getProducerSource(producerId, producer.kind);
 
     this.logLifecycle(paused ? 'producer.paused' : 'producer.resumed', {
       producerId,
       roomId: producerScope?.roomId ?? scope?.roomId,
       participantSessionId: producerScope?.participantSessionId ?? scope?.participantSessionId,
       kind: producer.kind,
+      source,
       paused: producer.paused,
     });
 
@@ -904,6 +938,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
       roomId: producerScope?.roomId ?? scope?.roomId,
       participantSessionId: producerScope?.participantSessionId ?? scope?.participantSessionId,
       kind: producer.kind,
+      source,
       paused: producer.paused,
     };
   }
@@ -1028,15 +1063,17 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
       }
 
       const createdAt = this.producerCreatedAt.get(producerId);
+      const source = this.getProducerSource(producerId, producer.kind);
       const discoveryMetadata: LocalMediasoupProducerDiscoveryMetadata = {
         producerId,
         roomId: producerScope.roomId,
         participantSessionId: producerScope.participantSessionId,
         kind: producer.kind,
+        source,
         paused: producer.paused,
         createdAt,
       };
-      const ownerAndKindKey = `${producerScope.participantSessionId}:${producer.kind}`;
+      const ownerAndKindKey = `${producerScope.participantSessionId}:${producer.kind}:${source}`;
       const existing = latestProducerByOwnerAndKind.get(ownerAndKindKey);
 
       if (!existing || (createdAt ?? '') > (existing.createdAt ?? '')) {
@@ -1298,11 +1335,13 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
   private removeProducerState(producerId: string) {
     const producer = this.producers.get(producerId);
     const producerScope = this.producerScopes.get(producerId);
+    const source = producer ? this.getProducerSource(producerId, producer.kind) : undefined;
 
     this.closeConsumersForProducer(producerId);
     this.producers.delete(producerId);
     this.producerScopes.delete(producerId);
     this.producerCreatedAt.delete(producerId);
+    this.producerSources.delete(producerId);
 
     if (producerScope && producer) {
       this.mediaSignalingService.publishProducerClosed({
@@ -1315,6 +1354,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         participantSessionId: producerScope.participantSessionId,
         producerId,
         kind: producer.kind,
+        source,
       });
     }
   }
@@ -1349,6 +1389,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     this.consumers.clear();
     this.producerCreatedAt.clear();
     this.producerScopes.clear();
+    this.producerSources.clear();
     this.producers.clear();
     this.transportScopes.clear();
     this.transportDirections.clear();
@@ -1460,6 +1501,20 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     }
   }
 
+  private closeActiveRoomScreenProducers(scope: LocalMediasoupSessionScope) {
+    for (const [producerId, producerScope] of [...this.producerScopes.entries()]) {
+      if (
+        producerScope.roomId !== scope.roomId ||
+        this.producerSources.get(producerId) !== 'screen'
+      ) {
+        continue;
+      }
+
+      this.producers.get(producerId)?.close();
+      this.removeProducerState(producerId);
+    }
+  }
+
   private createLifecycleCounts() {
     const activeRoomIds = new Set<string>();
 
@@ -1495,6 +1550,26 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     this.sessionLastSeenAt.set(this.toSessionKey(scope), lastSeenAt);
 
     return lastSeenAt;
+  }
+
+  private resolveTrackSource(kind?: mediasoupTypes.MediaKind, source?: LocalMediasoupTrackSource) {
+    if (kind === 'audio') {
+      return source === undefined || source === 'microphone' ? 'microphone' : undefined;
+    }
+
+    if (kind === 'video') {
+      if (source === undefined) {
+        return 'camera';
+      }
+
+      return source === 'camera' || source === 'screen' ? source : undefined;
+    }
+
+    return undefined;
+  }
+
+  private getProducerSource(producerId: string, kind: mediasoupTypes.MediaKind): LocalMediasoupTrackSource {
+    return this.producerSources.get(producerId) ?? (kind === 'audio' ? 'microphone' : 'camera');
   }
 
   private ensureStaleSessionSweeper() {

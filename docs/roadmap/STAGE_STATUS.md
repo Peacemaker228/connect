@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `sfu-screen-share-parity-prototype`.
+The next Stage 8 segment should be `sfu-screen-share-guarded-browser-smoke-rerun`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `sfu-screen-share-parity-prototype`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `sfu-screen-share-guarded-browser-smoke-rerun`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / channel audio SFU controlled review improved; SFU screen-share parity next`
+Status: `in progress / SFU screen-share prototype implemented; guarded screen-capture smoke next`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -626,9 +626,15 @@ Remaining:
 - process-local mediasoup/signaling state remains a production/multi-process blocker
 - implement SFU screen-share parity as the next scoped Stage 8 runtime gap before revisiting broader video/private default decisions
 - production media infra/runbook remains separate and required before production default switch
+- `sfu-screen-share-parity-prototype` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_129_SFU_SCREEN_SHARE_PARITY_PROTOTYPE.md`
+- SFU producer metadata is now source-aware for `microphone`, `camera`, and `screen`, so camera video and screen-share video can coexist from the same participant
+- gated SFU video rooms now have a first screen-share prototype: local `getDisplayMedia` capture, `source=screen` producer publish, separate remote screen-share render area, manual stop, display-track ended cleanup, Restart/Leave cleanup, and source-aware dedupe
+- screen-share MVP policy is `latest screen share wins` within the room
+- guarded channel `VIDEO` smoke has optional `CHANNEL_VIDEO_SFU_SMOKE_SCREEN_SHARE=1` assertions, but direct screen-share proof remains `review` until a headed/local screen-capture smoke or manual run is executed
+- channel `AUDIO` pilot, ordinary channel `VIDEO`, ordinary private `?video=true`, production defaults, and LiveKit fallback remain preserved
 
 Next likely work:
-- run `sfu-screen-share-parity-prototype`
+- run `sfu-screen-share-guarded-browser-smoke-rerun`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

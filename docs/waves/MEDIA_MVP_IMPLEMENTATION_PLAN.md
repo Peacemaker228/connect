@@ -875,6 +875,18 @@ Segment 128 result:
 - channel `VIDEO`, ordinary private `?video=true`, and production remain LiveKit/default; no default switch changed
 - recommended next segment is `sfu-screen-share-parity-prototype`
 
+Segment 129 result:
+- status: `screen-share prototype implemented / direct proof review`
+- source-aware SFU producer metadata now distinguishes `microphone`, `camera`, and `screen`
+- producer discovery now dedupes by participant, kind, and source so camera video and screen-share video can coexist from the same participant
+- screen-share MVP policy is `latest screen share wins` within a room
+- gated SFU video rooms now expose a screen-share control that uses `getDisplayMedia`, publishes a separate `source=screen` video producer, renders local preview, and renders remote screen-share video outside the camera grid
+- manual Stop, display-track `ended`, Restart, Leave, route change/unmount, and stale session cleanup use the existing scoped producer/session cleanup lifecycle
+- guarded channel `VIDEO` smoke now has optional `CHANNEL_VIDEO_SFU_SMOKE_SCREEN_SHARE=1` assertions for start, remote render, stop, and producer count recovery
+- direct screen-share proof remains `review` until a headed/local screen-capture smoke or manual run is executed with browser screen-capture support
+- channel `AUDIO` pilot, ordinary channel `VIDEO`, ordinary private `?video=true`, production defaults, and LiveKit fallback remain preserved
+- recommended next segment is `sfu-screen-share-guarded-browser-smoke-rerun`
+
 ## Dependency Summary
 
 Critical path:
@@ -962,7 +974,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `sfu-screen-share-parity-prototype`
+- `sfu-screen-share-guarded-browser-smoke-rerun`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -984,4 +996,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `sfu-screen-share-parity-prototype`
+- `sfu-screen-share-guarded-browser-smoke-rerun`

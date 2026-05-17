@@ -169,12 +169,14 @@ export type MediasoupPrototypeTransportConnectResponse = {
 }
 
 export type MediasoupPrototypeMediaKind = 'audio' | 'video'
+export type MediasoupPrototypeTrackSource = 'microphone' | 'camera' | 'screen'
 
 export type ProduceMediasoupPrototypeRequest = {
   transportId?: string
   roomId?: string
   participantSessionId?: string
   kind?: MediasoupPrototypeMediaKind
+  source?: MediasoupPrototypeTrackSource
   rtpParameters?: Record<string, unknown>
   paused?: boolean
 }
@@ -187,6 +189,7 @@ export type MediasoupPrototypeProducerResponse = {
   participantSessionId?: string
   producerId?: string
   kind?: MediasoupPrototypeMediaKind
+  source?: MediasoupPrototypeTrackSource
   paused?: boolean
   reason?: string
 }
@@ -232,6 +235,7 @@ export type MediasoupPrototypeProducerDiscoveryMetadata = {
   roomId: string
   participantSessionId: string
   kind: MediasoupPrototypeMediaKind
+  source: MediasoupPrototypeTrackSource
   paused: boolean
   createdAt?: string
 }

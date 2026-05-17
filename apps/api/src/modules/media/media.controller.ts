@@ -117,6 +117,7 @@ type ProduceMediasoupPrototypeBody = {
   roomId?: string;
   participantSessionId?: string;
   kind?: mediasoupTypes.MediaKind;
+  source?: 'microphone' | 'camera' | 'screen';
   rtpParameters?: mediasoupTypes.RtpParameters;
   paused?: boolean;
 };
@@ -370,6 +371,7 @@ export class MediaController {
       transportId: body?.transportId,
       scope,
       kind: body?.kind,
+      source: body?.source,
       rtpParameters: body?.rtpParameters,
       paused: body?.paused,
     });
