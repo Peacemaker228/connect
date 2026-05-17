@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `channel-audio-sfu-limited-pilot-operator-review-rerun`.
+The next Stage 8 segment should be `sfu-screen-share-parity-prototype`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `channel-audio-sfu-limited-pilot-operator-review-rerun`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `sfu-screen-share-parity-prototype`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / channel audio SFU controlled review improved`
+Status: `in progress / channel audio SFU controlled review improved; SFU screen-share parity next`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -614,19 +614,21 @@ Done:
 - channel `AUDIO` smoke now covers route-change/rejoin without pressing Leave, page reload/rejoin, expected remote producer count, remote speaking silence after mute, and backend producer paused-state assertions
 - backend mediasoup `producer.pause()` / `producer.resume()` is awaited before producer paused/resumed signaling is emitted, avoiding stale paused-state events in the channel `AUDIO` pilot
 - latest operator direct rerun confirmed muted audio was no longer audible, route-change cleanup no longer leaked audio, the remaining remote speaking delay was minor/acceptable, and duplicate `Remote producers` was not reproduced
+- operator confirmed explicit LiveKit rollback for channel `AUDIO`: `?mediaProvider=livekit` disables the SFU adapter and returns the route to LiveKit fallback/default while the pilot env is enabled
 - pagehide keepalive remains a local/dev refresh cleanup support path, not a production-grade unload guarantee; explicit Leave and route change/unmount cleanup remain the primary controlled cleanup paths
 - attempted TURN review is `not tested / invalid run` because coturn was not running
 
 Remaining:
-- rerun the channel `AUDIO` limited pilot operator checklist for rollback, optional TURN, and one final direct audio-quality pass before any broader product-facing default work
+- optional TURN channel `AUDIO` manual review can stay deferred for now, but must be closed as `pass` or explicit `review` before any broader/default decision
+- broader permission UX and subjective audio-quality signoff remain review items if required for release confidence
 - keep physical camera QA scoped as two-user headed Windows Virtual Camera pass; five-user load remains fake-device based
 - optionally run human subjective audio/video quality signoff if required for release confidence
 - process-local mediasoup/signaling state remains a production/multi-process blocker
-- implement SFU screen-share later only if MVP parity or a later default-switch decision requires it
+- implement SFU screen-share parity as the next scoped Stage 8 runtime gap before revisiting broader video/private default decisions
 - production media infra/runbook remains separate and required before production default switch
 
 Next likely work:
-- run `channel-audio-sfu-limited-pilot-operator-review-rerun`
+- run `sfu-screen-share-parity-prototype`
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

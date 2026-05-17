@@ -869,9 +869,11 @@ Segment 128 result:
 - latest operator direct rerun confirmed muted audio was no longer audible, route-change cleanup no longer leaked audio, the remaining remote speaking delay was minor/acceptable, and duplicate `Remote producers` was not reproduced
 - pagehide keepalive remains a local/dev refresh cleanup support path, not a production-grade unload guarantee; explicit Leave and route change/unmount cleanup remain the primary controlled cleanup paths
 - attempted TURN review is `not tested / invalid run` because coturn was not running; TURN needs a running local coturn container in addition to local TURN env
-- rollback, optional TURN, permission UX, and one final direct audio-quality pass must be rerun by an operator before product review can be marked pass
+- rollback manual confidence is now `pass / operator confirmed`: `?mediaProvider=livekit` disables the SFU adapter and returns channel `AUDIO` to LiveKit fallback/default while the pilot env is enabled
+- optional TURN can stay deferred for now, but must be closed as `pass` or explicit `review` before any broader/default decision
+- permission UX and broader subjective audio-quality signoff remain review items if required for release confidence
 - channel `VIDEO`, ordinary private `?video=true`, and production remain LiveKit/default; no default switch changed
-- recommended next segment is `channel-audio-sfu-limited-pilot-operator-review-rerun`
+- recommended next segment is `sfu-screen-share-parity-prototype`
 
 ## Dependency Summary
 
@@ -960,7 +962,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-audio-sfu-limited-pilot-operator-review-rerun`
+- `sfu-screen-share-parity-prototype`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -973,7 +975,7 @@ Stage 7 planning can close after this segment if this implementation plan is acc
 
 Reason:
 - stack decision is fixed
-- current runtime inventory is documented
+- the current runtime inventory is documented
 - contract shapes are designed
 - backend control-plane is designed
 - client boundary is designed
@@ -982,4 +984,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-audio-sfu-limited-pilot-operator-review-rerun`
+- `sfu-screen-share-parity-prototype`

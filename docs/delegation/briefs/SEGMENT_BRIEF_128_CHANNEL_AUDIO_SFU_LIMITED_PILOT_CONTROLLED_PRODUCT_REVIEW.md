@@ -143,7 +143,8 @@ TURN manual audio quality:
 - reason: `?sfuTransport=turn` was tried without a running coturn container. Setting `LOCAL_TURN_URLS` and `LOCAL_TURN_STATIC_AUTH_SECRET` without coturn does not constitute a valid TURN relay review.
 
 Rollback manual confidence:
-- status: `requires operator`
+- status: `pass / operator confirmed`
+- evidence: operator confirmed that opening the channel `AUDIO` route with `?mediaProvider=livekit` disables the SFU adapter and returns the route to the LiveKit fallback/default path while the channel `AUDIO` SFU pilot env is enabled.
 
 ## Decision
 
@@ -164,25 +165,24 @@ Interpretation:
 
 ## Remaining Blockers
 
-- full operator manual product review remains `review`, because rollback and optional TURN were not signed off in the same final manual pass.
+- full operator manual product review remains `review`, because optional TURN and broader permission/audio-quality signoff are intentionally not closed in the same final manual pass.
 - subjective real microphone audio quality signoff remains incomplete beyond the latest direct two-user observation.
 - page refresh cleanup remains `review`: pagehide keepalive is useful for local/dev reload cleanup, but not a production-grade unload guarantee.
-- optional TURN manual review remains incomplete because coturn was not running for the attempted TURN URL.
+- optional TURN manual review remains incomplete because coturn was not running for the attempted TURN URL; this can stay deferred for now, but it must be closed as `pass` or explicit `review` before any broader/default decision.
 - process-local mediasoup/signaling state remains a multi-process/production blocker.
 - production TURN/SFU infra, runbook, monitoring, firewall/process management, and rollback procedure remain out of scope.
-- SFU screen-share remains deferred for channel `VIDEO` and private parity.
+- SFU screen-share remains deferred for channel `VIDEO` and private parity, and is now the next scoped parity gap to address.
 
 ## Recommended Next Segment
 
-- `channel-audio-sfu-limited-pilot-operator-review-rerun`
+- `sfu-screen-share-parity-prototype`
 
 Expected shape:
-- run the checklist with two or more authenticated users.
-- capture direct manual audio quality status.
-- capture optional TURN manual audio quality status if local coturn is available.
-- capture rollback confidence.
-- verify rollback, optional TURN, and one final direct audio-quality pass after the scoped fix.
-- keep production, channel `VIDEO`, private default, and LiveKit fallback unchanged.
+- implement the first non-production SFU screen-share parity prototype behind explicit gates.
+- add source-aware screen producer metadata and cleanup.
+- prove direct screen-share start/stop/remote render in guarded smoke where browser automation supports it.
+- keep optional TURN screen-share as review/deferred unless local coturn is explicitly run in this segment.
+- keep production, default channel `VIDEO`, private default, channel `AUDIO` pilot, and LiveKit fallback unchanged.
 
 ## Verification Performed
 
