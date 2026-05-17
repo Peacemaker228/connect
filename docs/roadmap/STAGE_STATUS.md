@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `sfu-screen-share-guarded-browser-smoke-rerun`.
+The next Stage 8 segment should be `sfu-screen-share-private-regression-smoke`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,7 +347,7 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `sfu-screen-share-guarded-browser-smoke-rerun`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `sfu-screen-share-private-regression-smoke`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
@@ -632,9 +632,13 @@ Remaining:
 - screen-share MVP policy is `latest screen share wins` within the room
 - guarded channel `VIDEO` smoke has optional `CHANNEL_VIDEO_SFU_SMOKE_SCREEN_SHARE=1` assertions, but direct screen-share proof remains `review` until a headed/local screen-capture smoke or manual run is executed
 - channel `AUDIO` pilot, ordinary channel `VIDEO`, ordinary private `?video=true`, production defaults, and LiveKit fallback remain preserved
+- `sfu-screen-share-guarded-browser-smoke-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_130_SFU_SCREEN_SHARE_GUARDED_BROWSER_SMOKE_RERUN.md`
+- direct channel `VIDEO` SFU screen-share guarded smoke passed with `PLAYWRIGHT_SCREEN_CAPTURE=1`, two users, local screen preview, remote screen render, remote producer count `+1` while sharing, stop cleanup, producer count recovery, Restart, Leave/rejoin, and LiveKit fallback/default assertions
+- channel `AUDIO` SFU regression smoke passed again with two users after the screen-share prototype
+- TURN screen-share remains deferred; this segment intentionally closed direct proof only
 
 Next likely work:
-- run `sfu-screen-share-guarded-browser-smoke-rerun`
+- run `sfu-screen-share-private-regression-smoke`; keep TURN screen-share deferred until a broader/default decision needs relay proof
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

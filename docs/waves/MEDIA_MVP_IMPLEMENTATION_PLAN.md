@@ -887,6 +887,19 @@ Segment 129 result:
 - channel `AUDIO` pilot, ordinary channel `VIDEO`, ordinary private `?video=true`, production defaults, and LiveKit fallback remain preserved
 - recommended next segment is `sfu-screen-share-guarded-browser-smoke-rerun`
 
+Segment 130 result:
+- status: `direct screen-share pass / TURN deferred`
+- guarded direct channel `VIDEO` SFU screen-share smoke passed with `PLAYWRIGHT_SCREEN_CAPTURE=1`, two authenticated users, local API on `4000`, and web on `3001`
+- user A started screen share and saw local screen preview
+- user B saw the remote screen-share render area/video
+- user B remote producer count grew by `+1` while user A shared and returned to baseline after Stop
+- Stop removed the remote screen render
+- Restart and Leave/rejoin cleanup remained pass in the guarded channel `VIDEO` smoke
+- ordinary channel `VIDEO` without the full SFU gate and channel `AUDIO` without the video gate remained LiveKit/default through existing smoke assertions
+- channel `AUDIO` SFU regression smoke passed again with two users after the screen-share prototype
+- TURN screen-share remains deferred because this segment intentionally closed direct proof only; it must be closed as `pass` or explicit `review` before any broader/default decision that depends on relay screen-share
+- recommended next segment is `sfu-screen-share-private-regression-smoke`, because screen-share now lives in the shared SFU adapter and the explicit private SFU path should be regression-smoked before readiness decisions
+
 ## Dependency Summary
 
 Critical path:
@@ -974,7 +987,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `sfu-screen-share-guarded-browser-smoke-rerun`
+- `sfu-screen-share-private-regression-smoke`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -996,4 +1009,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `sfu-screen-share-guarded-browser-smoke-rerun`
+- `sfu-screen-share-private-regression-smoke`
