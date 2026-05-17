@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `channel-audio-sfu-limited-pilot-readiness-decision`.
+The next Stage 8 segment should be `channel-audio-sfu-limited-pilot-operator-review-rerun`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,18 +347,18 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `channel-audio-sfu-limited-pilot-readiness-decision`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `channel-audio-sfu-limited-pilot-operator-review-rerun`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / channel audio SFU cleanup soak pass`
+Status: `in progress / channel audio SFU controlled review improved`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
 
 Intent:
 - deliver the first working project-owned media path without LiveKit for private/small-room flow
-- keep current LiveKit runtime as fallback/bridge until parity passes
+- keep the current LiveKit runtime as fallback/bridge until parity passes
 - implement in small scoped PRs, not one rewrite
 
 Current rule:
