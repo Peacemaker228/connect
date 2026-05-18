@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `sfu-screen-share-turn-relay-smoke`.
+The next Stage 8 segment should be `sfu-screen-share-readiness-decision`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `sfu-screen-share-turn-relay-smoke`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `sfu-screen-share-readiness-decision`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / SFU screen-share direct private/channel smokes passed; TURN screen-share deferred`
+Status: `in progress / SFU screen-share direct and TURN smokes passed for channel video and explicit private SFU`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -640,9 +640,15 @@ Remaining:
 - guarded explicit private SFU screen-share smoke passed with `PLAYWRIGHT_SCREEN_CAPTURE=1`, two users, local screen preview, remote screen render, remote producer count `+1` while sharing, stop cleanup, producer count recovery, Restart, Leave redirect, and ordinary private `?video=true` LiveKit/default assertion
 - channel `AUDIO` pilot regression and channel `VIDEO` screen-share regression both passed again after the private screen-share smoke
 - TURN screen-share remains deferred and must be closed as `pass` or explicit `review` before broader/default relay-dependent decisions
+- `sfu-screen-share-turn-relay-smoke` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_132_SFU_SCREEN_SHARE_TURN_RELAY_SMOKE.md`
+- local Docker coturn relay smoke passed for channel `VIDEO` SFU screen-share and explicit private SFU screen-share with `PLAYWRIGHT_SCREEN_CAPTURE=1` and `sfuTransport=turn`
+- both TURN smokes verified local preview, remote screen render, remote producer count `+1`, Stop cleanup, producer count recovery, Restart/Leave cleanup, and LiveKit/default preservation assertions
+- coturn logs showed authenticated `ALLOCATE`, `CREATE_PERMISSION`, relay usage, and peer usage for peer `192.168.0.16`
+- the local-only relay range was widened at runtime from default `49160-49170` to `49160-49240` after an initial `508 Cannot create socket / no available ports` result; no repo config or production infra changed
+- production remains blocked by process-local mediasoup/signaling state and missing production TURN/SFU infra/runbook/monitoring/rollback
 
 Next likely work:
-- run `sfu-screen-share-turn-relay-smoke`; keep production/default routes and LiveKit fallback unchanged
+- run `sfu-screen-share-readiness-decision`; keep production/default routes and LiveKit fallback unchanged
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

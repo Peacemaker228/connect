@@ -129,6 +129,9 @@ test.describe('private SFU two-user browser smoke', () => {
         )
         await expect(userTwoPage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
           `Remote producers: ${expectedRemoteProducerNumber + 1}`,
+          {
+            timeout: 45_000,
+          },
         )
 
         await userOnePage.getByRole('button', { name: 'Stop screen share' }).click()

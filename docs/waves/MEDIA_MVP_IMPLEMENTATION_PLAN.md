@@ -915,6 +915,20 @@ Segment 131 result:
 - TURN screen-share remains deferred; before any broader/default relay-dependent decision it still needs a `pass` or explicit `review`
 - recommended next segment is `sfu-screen-share-turn-relay-smoke`
 
+Segment 132 result:
+- status: `screen-share TURN relay pass / production still blocked`
+- local Docker coturn was started from `infra/coturn/docker-compose.local.yml`
+- API ran with `LOCAL_TURN_URLS=turn:127.0.0.1:3478?transport=udp,turn:127.0.0.1:3478?transport=tcp`, `LOCAL_TURN_STATIC_AUTH_SECRET=replace-with-random-local-secret`, `LOCAL_TURN_TTL_SECONDS=600`, `LOCAL_MEDIASOUP_LISTEN_IP=0.0.0.0`, and `LOCAL_MEDIASOUP_ANNOUNCED_ADDRESS=192.168.0.16`
+- the first attempt with the default local relay range `49160-49170` showed authenticated TURN usage but also coturn `508 Cannot create socket / no available ports`
+- coturn was recreated with a local-only widened relay range `49160-49240`; no repo config or production infra changed
+- channel `VIDEO` SFU screen-share TURN smoke passed with `PLAYWRIGHT_SCREEN_CAPTURE=1`, two authenticated users, `CHANNEL_VIDEO_SFU_SMOKE_SCREEN_SHARE=1`, and `CHANNEL_VIDEO_SFU_SMOKE_TRANSPORT=turn`
+- explicit private SFU screen-share TURN smoke passed with `PLAYWRIGHT_SCREEN_CAPTURE=1`, two authenticated users, `PRIVATE_SFU_SMOKE_SCREEN_SHARE=1`, and `PRIVATE_SFU_SMOKE_TRANSPORT=turn`
+- both TURN smokes verified local preview, remote screen render, remote producer count `+1`, Stop cleanup, producer count recovery, Restart/Leave cleanup, and LiveKit/default preservation assertions
+- coturn logs showed authenticated `ALLOCATE`, `CREATE_PERMISSION`, relay usage, and peer usage for peer `192.168.0.16`
+- smoke-only assertion timeout was widened for screen-share producer-count checks because TURN render can arrive before the UI counter update; screen render and cleanup assertions remain strict
+- production remains blocked by process-local mediasoup/signaling state and missing production TURN/SFU infra/runbook/monitoring/rollback
+- recommended next segment is `sfu-screen-share-readiness-decision`
+
 ## Dependency Summary
 
 Critical path:
@@ -1002,7 +1016,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `sfu-screen-share-turn-relay-smoke`
+- `sfu-screen-share-readiness-decision`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1024,4 +1038,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `sfu-screen-share-turn-relay-smoke`
+- `sfu-screen-share-readiness-decision`

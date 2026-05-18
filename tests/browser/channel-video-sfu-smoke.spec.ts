@@ -172,6 +172,9 @@ test.describe('channel VIDEO SFU browser smoke', () => {
         await expect(pages[0].getByTestId('private-sfu-remote-producer-count')).toHaveText(expectedRemoteProducerText)
         await expect(pages[1].getByTestId('private-sfu-remote-producer-count')).toHaveText(
           getRemoteProducerText((participantCount - 1) * 2 + 1),
+          {
+            timeout: 45_000,
+          },
         )
 
         await pages[0].getByRole('button', { name: 'Stop screen share' }).click()
