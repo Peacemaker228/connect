@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `sfu-screen-share-private-regression-smoke`.
+The next Stage 8 segment should be `sfu-screen-share-turn-relay-smoke`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `sfu-screen-share-private-regression-smoke`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `sfu-screen-share-turn-relay-smoke`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / SFU screen-share prototype implemented; guarded screen-capture smoke next`
+Status: `in progress / SFU screen-share direct private/channel smokes passed; TURN screen-share deferred`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -636,9 +636,13 @@ Remaining:
 - direct channel `VIDEO` SFU screen-share guarded smoke passed with `PLAYWRIGHT_SCREEN_CAPTURE=1`, two users, local screen preview, remote screen render, remote producer count `+1` while sharing, stop cleanup, producer count recovery, Restart, Leave/rejoin, and LiveKit fallback/default assertions
 - channel `AUDIO` SFU regression smoke passed again with two users after the screen-share prototype
 - TURN screen-share remains deferred; this segment intentionally closed direct proof only
+- `sfu-screen-share-private-regression-smoke` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_131_SFU_SCREEN_SHARE_PRIVATE_REGRESSION_SMOKE.md`
+- guarded explicit private SFU screen-share smoke passed with `PLAYWRIGHT_SCREEN_CAPTURE=1`, two users, local screen preview, remote screen render, remote producer count `+1` while sharing, stop cleanup, producer count recovery, Restart, Leave redirect, and ordinary private `?video=true` LiveKit/default assertion
+- channel `AUDIO` pilot regression and channel `VIDEO` screen-share regression both passed again after the private screen-share smoke
+- TURN screen-share remains deferred and must be closed as `pass` or explicit `review` before broader/default relay-dependent decisions
 
 Next likely work:
-- run `sfu-screen-share-private-regression-smoke`; keep TURN screen-share deferred until a broader/default decision needs relay proof
+- run `sfu-screen-share-turn-relay-smoke`; keep production/default routes and LiveKit fallback unchanged
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

@@ -900,6 +900,21 @@ Segment 130 result:
 - TURN screen-share remains deferred because this segment intentionally closed direct proof only; it must be closed as `pass` or explicit `review` before any broader/default decision that depends on relay screen-share
 - recommended next segment is `sfu-screen-share-private-regression-smoke`, because screen-share now lives in the shared SFU adapter and the explicit private SFU path should be regression-smoked before readiness decisions
 
+Segment 131 result:
+- status: `private screen-share regression pass / TURN deferred`
+- guarded explicit private SFU screen-share smoke passed with `PLAYWRIGHT_SCREEN_CAPTURE=1`, two authenticated users, local API on `4000`, and web on `3001`
+- `PRIVATE_SFU_SMOKE_SCREEN_SHARE=1` now enables private screen-share assertions in `tests/browser/private-sfu-two-user-smoke.spec.ts`; the default private smoke remains unchanged without the flag
+- user A started screen share and saw local screen preview
+- user B saw the remote screen-share render/video
+- user B remote producer count grew by `+1` while user A shared and returned to baseline after Stop
+- Stop removed the remote screen render
+- Restart remained pass and Leave redirect remained `/servers/:serverId/conversations/:memberId`
+- ordinary private `?video=true` remained LiveKit/default through the existing guarded assertion
+- channel `AUDIO` pilot regression smoke passed again after the private screen-share regression
+- channel `VIDEO` screen-share regression smoke passed again after the private screen-share regression
+- TURN screen-share remains deferred; before any broader/default relay-dependent decision it still needs a `pass` or explicit `review`
+- recommended next segment is `sfu-screen-share-turn-relay-smoke`
+
 ## Dependency Summary
 
 Critical path:
@@ -987,7 +1002,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `sfu-screen-share-private-regression-smoke`
+- `sfu-screen-share-turn-relay-smoke`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1009,4 +1024,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `sfu-screen-share-private-regression-smoke`
+- `sfu-screen-share-turn-relay-smoke`
