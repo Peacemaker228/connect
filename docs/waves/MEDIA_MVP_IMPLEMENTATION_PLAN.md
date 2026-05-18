@@ -929,6 +929,20 @@ Segment 132 result:
 - production remains blocked by process-local mediasoup/signaling state and missing production TURN/SFU infra/runbook/monitoring/rollback
 - recommended next segment is `sfu-screen-share-readiness-decision`
 
+Segment 133 result:
+- status: `screen-share readiness pass for controlled non-production review / production blocked`
+- channel `VIDEO` explicit SFU screen-share is `pass` based on direct and TURN guarded browser smoke
+- explicit private SFU screen-share is `pass` based on direct and TURN guarded browser smoke
+- direct screen-share is `pass`
+- TURN screen-share is `pass`
+- LiveKit fallback/default is `preserved`
+- ordinary channel `VIDEO` and ordinary private `?video=true` defaults remain unchanged and still use LiveKit without explicit SFU gates
+- SFU screen-share is no longer the blocking parity gap for controlled non-production channel `VIDEO` or explicit private SFU review
+- production readiness remains `blocked` by process-local mediasoup/signaling state and missing production TURN/SFU infra, firewall, monitoring, runbook, process management, and rollback
+- process-local mediasoup/signaling state remains a multi-process blocker
+- subjective product UX review remains optional/review before broader product-facing pilots
+- recommended next runtime segment is `channel-video-sfu-limited-nonproduction-default-pilot`; alternative docs/manual segment is `sfu-screen-share-controlled-product-review`
+
 ## Dependency Summary
 
 Critical path:
@@ -1016,7 +1030,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `sfu-screen-share-readiness-decision`
+- `channel-video-sfu-limited-nonproduction-default-pilot`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1038,4 +1052,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `sfu-screen-share-readiness-decision`
+- `channel-video-sfu-limited-nonproduction-default-pilot`

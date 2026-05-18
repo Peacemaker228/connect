@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `sfu-screen-share-readiness-decision`.
+The next Stage 8 segment should be `channel-video-sfu-limited-nonproduction-default-pilot`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `sfu-screen-share-readiness-decision`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `channel-video-sfu-limited-nonproduction-default-pilot`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / SFU screen-share direct and TURN smokes passed for channel video and explicit private SFU`
+Status: `in progress / SFU screen-share readiness pass for controlled non-production review; production blocked`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -646,9 +646,16 @@ Remaining:
 - coturn logs showed authenticated `ALLOCATE`, `CREATE_PERMISSION`, relay usage, and peer usage for peer `192.168.0.16`
 - the local-only relay range was widened at runtime from default `49160-49170` to `49160-49240` after an initial `508 Cannot create socket / no available ports` result; no repo config or production infra changed
 - production remains blocked by process-local mediasoup/signaling state and missing production TURN/SFU infra/runbook/monitoring/rollback
+- `sfu-screen-share-readiness-decision` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_133_SFU_SCREEN_SHARE_READINESS_DECISION.md`
+- screen-share readiness is `pass` for controlled non-production review across channel `VIDEO` explicit SFU and explicit private SFU
+- direct screen-share is `pass`; TURN screen-share is `pass`
+- LiveKit fallback/default remains preserved; ordinary channel `VIDEO`, ordinary channel `AUDIO`, and ordinary private `?video=true` defaults remain unchanged
+- screen-share is no longer the blocking parity gap for controlled non-production channel `VIDEO` or explicit private SFU review
+- production readiness remains `blocked`, and process-local mediasoup/signaling remains a multi-process blocker
+- subjective product UX review remains optional/review before broader product-facing pilots
 
 Next likely work:
-- run `sfu-screen-share-readiness-decision`; keep production/default routes and LiveKit fallback unchanged
+- run `channel-video-sfu-limited-nonproduction-default-pilot`; keep production/default routes and LiveKit fallback unchanged
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
