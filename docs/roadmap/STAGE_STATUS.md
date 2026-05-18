@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `channel-video-sfu-limited-nonproduction-default-pilot`.
+The next Stage 8 segment should be `channel-video-sfu-limited-pilot-soak-product-review`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `channel-video-sfu-limited-nonproduction-default-pilot`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `channel-video-sfu-limited-pilot-soak-product-review`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / SFU screen-share readiness pass for controlled non-production review; production blocked`
+Status: `in progress / channel video SFU limited non-production pilot pass; production blocked`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -653,9 +653,15 @@ Remaining:
 - screen-share is no longer the blocking parity gap for controlled non-production channel `VIDEO` or explicit private SFU review
 - production readiness remains `blocked`, and process-local mediasoup/signaling remains a multi-process blocker
 - subjective product UX review remains optional/review before broader product-facing pilots
+- `channel-video-sfu-limited-nonproduction-default-pilot` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_134_CHANNEL_VIDEO_SFU_LIMITED_NONPRODUCTION_DEFAULT_PILOT.md`
+- channel `VIDEO` now has a separate non-production product-default pilot gate: `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_PRODUCT_DEFAULT_PILOT=1`
+- the pilot gate is channel `VIDEO` only, off by default, production-blocked, and keeps explicit LiveKit rollback through `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`
+- guarded channel `VIDEO` pilot direct smoke passed with two users, no per-URL SFU query, screen-share, restart, leave/rejoin, rollback assertions, and private default preservation
+- guarded channel `VIDEO` pilot TURN smoke passed through the local coturn/API TURN env from Segment 132
+- channel `AUDIO` regression smoke passed and ordinary private `?video=true` remained LiveKit/default
 
 Next likely work:
-- run `channel-video-sfu-limited-nonproduction-default-pilot`; keep production/default routes and LiveKit fallback unchanged
+- run `channel-video-sfu-limited-pilot-soak-product-review`; keep production/default routes and LiveKit fallback unchanged
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

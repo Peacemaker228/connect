@@ -943,6 +943,20 @@ Segment 133 result:
 - subjective product UX review remains optional/review before broader product-facing pilots
 - recommended next runtime segment is `channel-video-sfu-limited-nonproduction-default-pilot`; alternative docs/manual segment is `sfu-screen-share-controlled-product-review`
 
+Segment 134 result:
+- status: `channel VIDEO limited non-production product-default pilot pass / production blocked`
+- added the separate non-production channel `VIDEO` product-default pilot env gate: `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_PRODUCT_DEFAULT_PILOT=1`
+- pilot scope is channel `VIDEO` only, `NODE_ENV !== 'production'` only, off by default, and suppressed by explicit LiveKit rollback overrides: `?mediaProvider=livekit`, `?livekit=true`, or `?sfu=false`
+- enabling the pilot opens channel `VIDEO` through SFU without per-URL SFU query and uses real capture mode, matching the existing candidate gate behavior
+- ordinary channel `VIDEO` without the env gate remains LiveKit/default
+- ordinary private `?video=true` remains LiveKit/default
+- channel `AUDIO` pilot/gates were not changed
+- guarded channel `VIDEO` pilot direct smoke passed with two users, no per-URL SFU query, screen-share, restart, leave/rejoin, rollback assertions, and private default preservation
+- guarded channel `VIDEO` pilot TURN smoke also passed because local coturn/API TURN env from Segment 132 was available
+- channel `AUDIO` regression smoke passed
+- production remains blocked by process-local mediasoup/signaling state and missing production TURN/SFU infra/runbook/monitoring/rollback
+- recommended next segment is `channel-video-sfu-limited-pilot-soak-product-review`
+
 ## Dependency Summary
 
 Critical path:
@@ -1030,7 +1044,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-video-sfu-limited-nonproduction-default-pilot`
+- `channel-video-sfu-limited-pilot-soak-product-review`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1052,4 +1066,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-video-sfu-limited-nonproduction-default-pilot`
+- `channel-video-sfu-limited-pilot-soak-product-review`

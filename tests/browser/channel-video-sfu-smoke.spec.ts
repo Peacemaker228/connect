@@ -65,6 +65,8 @@ const apiOrigin = new URL(apiBaseUrl)
 const webOrigin = new URL(webBaseUrl)
 const smokeTransport = process.env.CHANNEL_VIDEO_SFU_SMOKE_TRANSPORT
 const shouldUseCandidateGate = process.env.CHANNEL_VIDEO_SFU_SMOKE_CANDIDATE_GATE === '1'
+const shouldUseProductDefaultPilot = process.env.CHANNEL_VIDEO_SFU_SMOKE_PRODUCT_DEFAULT_PILOT === '1'
+const shouldUseImplicitSfuGate = shouldUseCandidateGate || shouldUseProductDefaultPilot
 const participantCount = parsePositiveInteger(process.env.CHANNEL_VIDEO_SFU_SMOKE_USERS, 2)
 const shouldRunLeaveRejoin = process.env.CHANNEL_VIDEO_SFU_SMOKE_LEAVE_REJOIN !== '0'
 const shouldRunOfflineRestore = process.env.CHANNEL_VIDEO_SFU_SMOKE_OFFLINE_RESTORE === '1'
@@ -86,7 +88,7 @@ test.describe('channel VIDEO SFU browser smoke', () => {
     ).toBe(webOrigin.hostname)
   })
 
-  test('connects authenticated channel VIDEO SFU participants behind full explicit or candidate gate', async ({
+  test('connects authenticated channel VIDEO SFU participants behind full explicit, candidate, or product-default pilot gate', async ({
     browser,
   }) => {
     test.setTimeout(180_000)
@@ -97,7 +99,9 @@ test.describe('channel VIDEO SFU browser smoke', () => {
     const [ownerContext, ...memberContexts] = contexts
 
     try {
-      await Promise.all(contexts.map((context, index) => registerUser(context, String(index + 1))))
+      const registeredUsers = await Promise.all(
+        contexts.map((context, index) => registerUser(context, String(index + 1))),
+      )
       const createdServer = await postJson<ServerResponse>(ownerContext, '/api/servers', {
         name: `channel-video-sfu-smoke-${Date.now()}`,
         imageUrl: null,
@@ -133,13 +137,14 @@ test.describe('channel VIDEO SFU browser smoke', () => {
       const videoChannel = findChannel(serverWithChannels, videoChannelName, 'VIDEO')
       const noCameraVideoChannel = findChannel(serverWithChannels, noCameraVideoChannelName, 'VIDEO')
       const generalChannel = findChannel(serverWithChannels, 'general', 'TEXT')
+      const secondMember = findMember(serverWithChannels, registeredUsers[1].profileId)
 
       const pages = await Promise.all(contexts.map((context) => context.newPage()))
       const sfuQuery = toSearchQuery({
-        mediaProvider: shouldUseCandidateGate ? undefined : 'sfu',
-        sfuChannel: shouldUseCandidateGate ? undefined : 'true',
-        sfuVideo: shouldUseCandidateGate ? undefined : 'true',
-        sfuCapture: shouldUseCandidateGate ? undefined : 'real',
+        mediaProvider: shouldUseImplicitSfuGate ? undefined : 'sfu',
+        sfuChannel: shouldUseImplicitSfuGate ? undefined : 'true',
+        sfuVideo: shouldUseImplicitSfuGate ? undefined : 'true',
+        sfuCapture: shouldUseImplicitSfuGate ? undefined : 'real',
         sfuTransport: smokeTransport === 'turn' ? 'turn' : undefined,
       })
       const expectedRemoteProducerText = getRemoteProducerText((participantCount - 1) * 2)
@@ -224,24 +229,45 @@ test.describe('channel VIDEO SFU browser smoke', () => {
       const defaultVideoPage = await ownerContext.newPage()
       await defaultVideoPage.goto(
         `${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}${
-          shouldUseCandidateGate ? '?mediaProvider=livekit' : ''
+          shouldUseImplicitSfuGate ? '?mediaProvider=livekit' : ''
         }`,
       )
       await expect(defaultVideoPage.getByTestId('private-sfu-provider')).toHaveCount(0)
 
       const partialGateVideoPage = await ownerContext.newPage()
       await partialGateVideoPage.goto(
-        shouldUseCandidateGate
+        shouldUseImplicitSfuGate
           ? `${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}?mediaProvider=livekit`
           : `${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}?mediaProvider=sfu&sfuChannel=true&sfuVideo=true`,
       )
       await expect(partialGateVideoPage.getByTestId('private-sfu-provider')).toHaveCount(0)
+
+      const liveKitQueryRollbackPage = await ownerContext.newPage()
+      await liveKitQueryRollbackPage.goto(
+        `${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}?livekit=true`,
+      )
+      await expect(liveKitQueryRollbackPage.getByTestId('private-sfu-provider')).toHaveCount(0)
+
+      const sfuFalseRollbackPage = await ownerContext.newPage()
+      await sfuFalseRollbackPage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}?sfu=false`)
+      await expect(sfuFalseRollbackPage.getByTestId('private-sfu-provider')).toHaveCount(0)
 
       const defaultAudioPage = await ownerContext.newPage()
       await defaultAudioPage.goto(
         `${webBaseUrl}/servers/${createdServer.id}/channels/${audioChannel.id}?mediaProvider=livekit`,
       )
       await expect(defaultAudioPage.getByTestId('private-sfu-provider')).toHaveCount(0)
+
+      await postJson(
+        ownerContext,
+        `/api/direct-messages/conversations/${secondMember.id}?serverId=${createdServer.id}`,
+        {},
+      )
+      const defaultPrivatePage = await ownerContext.newPage()
+      await defaultPrivatePage.goto(
+        `${webBaseUrl}/servers/${createdServer.id}/conversations/${secondMember.id}?video=true`,
+      )
+      await expect(defaultPrivatePage.getByTestId('private-sfu-provider')).toHaveCount(0)
 
       const noCameraContexts = contexts.slice(0, 2)
       const [noCameraPageOne, noCameraPageTwo] = await Promise.all(noCameraContexts.map((context) => context.newPage()))
@@ -313,6 +339,16 @@ const findChannel = (server: ServerResponse, name: string, type: ServerChannel['
   }
 
   return channel
+}
+
+const findMember = (server: ServerResponse, profileId: string) => {
+  const member = server.members.find((item) => item.profileId === profileId)
+
+  if (!member) {
+    throw new Error(`Server ${server.id} does not include member for profile ${profileId}`)
+  }
+
+  return member
 }
 
 const expectAllProviders = async (pages: Awaited<ReturnType<BrowserContext['newPage']>>[], label: string) => {
