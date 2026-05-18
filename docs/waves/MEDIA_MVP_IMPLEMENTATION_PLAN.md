@@ -875,6 +875,74 @@ Segment 128 result:
 - channel `VIDEO`, ordinary private `?video=true`, and production remain LiveKit/default; no default switch changed
 - recommended next segment is `sfu-screen-share-parity-prototype`
 
+Segment 129 result:
+- status: `screen-share prototype implemented / direct proof review`
+- source-aware SFU producer metadata now distinguishes `microphone`, `camera`, and `screen`
+- producer discovery now dedupes by participant, kind, and source so camera video and screen-share video can coexist from the same participant
+- screen-share MVP policy is `latest screen share wins` within a room
+- gated SFU video rooms now expose a screen-share control that uses `getDisplayMedia`, publishes a separate `source=screen` video producer, renders local preview, and renders remote screen-share video outside the camera grid
+- manual Stop, display-track `ended`, Restart, Leave, route change/unmount, and stale session cleanup use the existing scoped producer/session cleanup lifecycle
+- guarded channel `VIDEO` smoke now has optional `CHANNEL_VIDEO_SFU_SMOKE_SCREEN_SHARE=1` assertions for start, remote render, stop, and producer count recovery
+- direct screen-share proof remains `review` until a headed/local screen-capture smoke or manual run is executed with browser screen-capture support
+- channel `AUDIO` pilot, ordinary channel `VIDEO`, ordinary private `?video=true`, production defaults, and LiveKit fallback remain preserved
+- recommended next segment is `sfu-screen-share-guarded-browser-smoke-rerun`
+
+Segment 130 result:
+- status: `direct screen-share pass / TURN deferred`
+- guarded direct channel `VIDEO` SFU screen-share smoke passed with `PLAYWRIGHT_SCREEN_CAPTURE=1`, two authenticated users, local API on `4000`, and web on `3001`
+- user A started screen share and saw local screen preview
+- user B saw the remote screen-share render area/video
+- user B remote producer count grew by `+1` while user A shared and returned to baseline after Stop
+- Stop removed the remote screen render
+- Restart and Leave/rejoin cleanup remained pass in the guarded channel `VIDEO` smoke
+- ordinary channel `VIDEO` without the full SFU gate and channel `AUDIO` without the video gate remained LiveKit/default through existing smoke assertions
+- channel `AUDIO` SFU regression smoke passed again with two users after the screen-share prototype
+- TURN screen-share remains deferred because this segment intentionally closed direct proof only; it must be closed as `pass` or explicit `review` before any broader/default decision that depends on relay screen-share
+- recommended next segment is `sfu-screen-share-private-regression-smoke`, because screen-share now lives in the shared SFU adapter and the explicit private SFU path should be regression-smoked before readiness decisions
+
+Segment 131 result:
+- status: `private screen-share regression pass / TURN deferred`
+- guarded explicit private SFU screen-share smoke passed with `PLAYWRIGHT_SCREEN_CAPTURE=1`, two authenticated users, local API on `4000`, and web on `3001`
+- `PRIVATE_SFU_SMOKE_SCREEN_SHARE=1` now enables private screen-share assertions in `tests/browser/private-sfu-two-user-smoke.spec.ts`; the default private smoke remains unchanged without the flag
+- user A started screen share and saw local screen preview
+- user B saw the remote screen-share render/video
+- user B remote producer count grew by `+1` while user A shared and returned to baseline after Stop
+- Stop removed the remote screen render
+- Restart remained pass and Leave redirect remained `/servers/:serverId/conversations/:memberId`
+- ordinary private `?video=true` remained LiveKit/default through the existing guarded assertion
+- channel `AUDIO` pilot regression smoke passed again after the private screen-share regression
+- channel `VIDEO` screen-share regression smoke passed again after the private screen-share regression
+- TURN screen-share remains deferred; before any broader/default relay-dependent decision it still needs a `pass` or explicit `review`
+- recommended next segment is `sfu-screen-share-turn-relay-smoke`
+
+Segment 132 result:
+- status: `screen-share TURN relay pass / production still blocked`
+- local Docker coturn was started from `infra/coturn/docker-compose.local.yml`
+- API ran with `LOCAL_TURN_URLS=turn:127.0.0.1:3478?transport=udp,turn:127.0.0.1:3478?transport=tcp`, `LOCAL_TURN_STATIC_AUTH_SECRET=replace-with-random-local-secret`, `LOCAL_TURN_TTL_SECONDS=600`, `LOCAL_MEDIASOUP_LISTEN_IP=0.0.0.0`, and `LOCAL_MEDIASOUP_ANNOUNCED_ADDRESS=192.168.0.16`
+- the first attempt with the default local relay range `49160-49170` showed authenticated TURN usage but also coturn `508 Cannot create socket / no available ports`
+- coturn was recreated with a local-only widened relay range `49160-49240`; no repo config or production infra changed
+- channel `VIDEO` SFU screen-share TURN smoke passed with `PLAYWRIGHT_SCREEN_CAPTURE=1`, two authenticated users, `CHANNEL_VIDEO_SFU_SMOKE_SCREEN_SHARE=1`, and `CHANNEL_VIDEO_SFU_SMOKE_TRANSPORT=turn`
+- explicit private SFU screen-share TURN smoke passed with `PLAYWRIGHT_SCREEN_CAPTURE=1`, two authenticated users, `PRIVATE_SFU_SMOKE_SCREEN_SHARE=1`, and `PRIVATE_SFU_SMOKE_TRANSPORT=turn`
+- both TURN smokes verified local preview, remote screen render, remote producer count `+1`, Stop cleanup, producer count recovery, Restart/Leave cleanup, and LiveKit/default preservation assertions
+- coturn logs showed authenticated `ALLOCATE`, `CREATE_PERMISSION`, relay usage, and peer usage for peer `192.168.0.16`
+- smoke-only assertion timeout was widened for screen-share producer-count checks because TURN render can arrive before the UI counter update; screen render and cleanup assertions remain strict
+- production remains blocked by process-local mediasoup/signaling state and missing production TURN/SFU infra/runbook/monitoring/rollback
+- recommended next segment is `sfu-screen-share-readiness-decision`
+
+Segment 133 result:
+- status: `screen-share readiness pass for controlled non-production review / production blocked`
+- channel `VIDEO` explicit SFU screen-share is `pass` based on direct and TURN guarded browser smoke
+- explicit private SFU screen-share is `pass` based on direct and TURN guarded browser smoke
+- direct screen-share is `pass`
+- TURN screen-share is `pass`
+- LiveKit fallback/default is `preserved`
+- ordinary channel `VIDEO` and ordinary private `?video=true` defaults remain unchanged and still use LiveKit without explicit SFU gates
+- SFU screen-share is no longer the blocking parity gap for controlled non-production channel `VIDEO` or explicit private SFU review
+- production readiness remains `blocked` by process-local mediasoup/signaling state and missing production TURN/SFU infra, firewall, monitoring, runbook, process management, and rollback
+- process-local mediasoup/signaling state remains a multi-process blocker
+- subjective product UX review remains optional/review before broader product-facing pilots
+- recommended next runtime segment is `channel-video-sfu-limited-nonproduction-default-pilot`; alternative docs/manual segment is `sfu-screen-share-controlled-product-review`
+
 ## Dependency Summary
 
 Critical path:
@@ -962,7 +1030,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `sfu-screen-share-parity-prototype`
+- `channel-video-sfu-limited-nonproduction-default-pilot`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -984,4 +1052,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `sfu-screen-share-parity-prototype`
+- `channel-video-sfu-limited-nonproduction-default-pilot`

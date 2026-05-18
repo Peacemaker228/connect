@@ -1,7 +1,7 @@
 'use client'
 
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Mic, MicOff, PhoneOff, RotateCcw, Video, VideoOff } from 'lucide-react'
+import { Mic, MicOff, PhoneOff, RotateCcw, ScreenShare, ScreenShareOff, Video, VideoOff } from 'lucide-react'
 import type { JoinRoomResponse } from '@sdk/actions/media'
 
 import { Button } from '@/lib/shared/ui/button'
@@ -37,6 +37,12 @@ type RemoteParticipantMedia = {
   audioProducerId?: string
   videoProducerId?: string
   videoTrack?: MediaStreamTrack
+}
+
+type RemoteScreenShareMedia = {
+  participantSessionId: string
+  producerId: string
+  track: MediaStreamTrack
 }
 
 type SpeakingDetectorHandle = {
@@ -191,6 +197,9 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   const audioContextRef = useRef<AudioContext | null>(null)
   const oscillatorRef = useRef<OscillatorNode | null>(null)
   const localTracksRef = useRef<MediaStreamTrack[]>([])
+  const screenShareTrackRef = useRef<MediaStreamTrack | null>(null)
+  const screenShareProducerIdRef = useRef<string | null>(null)
+  const sendTransportIdRef = useRef<string | null>(null)
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null)
   const localVideoRef = useRef<HTMLVideoElement | null>(null)
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null)
@@ -213,7 +222,10 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   const [consumerIds, setConsumerIds] = useState<string[]>([])
   const [remoteProducerIds, setRemoteProducerIds] = useState<string[]>([])
   const [remoteParticipants, setRemoteParticipants] = useState<RemoteParticipantMedia[]>([])
+  const [remoteScreenShares, setRemoteScreenShares] = useState<RemoteScreenShareMedia[]>([])
   const [hasSingleRemoteVideoTrack, setHasSingleRemoteVideoTrack] = useState(false)
+  const [localScreenShareTrack, setLocalScreenShareTrack] = useState<MediaStreamTrack | null>(null)
+  const [localScreenShareProducerId, setLocalScreenShareProducerId] = useState<string | null>(null)
   const [localAudioEnabled, setLocalAudioEnabled] = useState(audio)
   const [localVideoEnabled, setLocalVideoEnabled] = useState(video)
   const [captureNotice, setCaptureNotice] = useState<string | null>(null)
@@ -246,6 +258,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
 
     adapterRef.current?.close()
     adapterRef.current = null
+    sendTransportIdRef.current = null
     remoteAudioTrackByProducerIdRef.current.clear()
     consumedProducerIdsRef.current.clear()
     consumedProducerKeysRef.current.clear()
@@ -259,6 +272,18 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     }
 
     localTracksRef.current = []
+    screenShareTrackRef.current?.stop()
+    screenShareTrackRef.current = null
+    screenShareProducerIdRef.current = null
+    setLocalScreenShareTrack(null)
+    setLocalScreenShareProducerId(null)
+    setRemoteScreenShares((current) => {
+      for (const screenShare of current) {
+        screenShare.track.stop()
+      }
+
+      return []
+    })
     localSpeakingDetectorRef.current?.close()
     localSpeakingDetectorRef.current = null
     remoteSpeakingDetectorRef.current?.close()
@@ -341,13 +366,17 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     [setRemoteSpeakingState],
   )
 
-  const applyLocalTrackEnabled = useCallback(async (kind: MediaStreamTrack['kind'], enabled: boolean) => {
+  const applyLocalTrackEnabled = useCallback(async (
+    kind: MediaStreamTrack['kind'],
+    enabled: boolean,
+    source?: 'microphone' | 'camera' | 'screen',
+  ) => {
     for (const track of localTracksRef.current.filter((item) => item.kind === kind)) {
       track.enabled = enabled
     }
 
     try {
-      await adapterRef.current?.setProducerTrackEnabled(kind, enabled)
+      await adapterRef.current?.setProducerTrackEnabled(kind, enabled, source)
     } catch (error) {
       console.warn('[media] failed to update SFU producer enabled state', error)
     }
@@ -376,6 +405,24 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       }
 
       if (producer.kind === 'video' && remoteVideoLayout === 'participant-grid') {
+        if (producer.source === 'screen') {
+          setRemoteScreenShares((current) =>
+            current.map((screenShare) => {
+              if (screenShare.producerId !== producerId) {
+                return screenShare
+              }
+
+              screenShare.track.enabled = !paused
+
+              return {
+                ...screenShare,
+                track: screenShare.track,
+              }
+            }),
+          )
+          return
+        }
+
         setRemoteParticipants((current) =>
           current.map((participant) => {
             const videoTrack = participant.videoTrack
@@ -563,6 +610,25 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
 
   const attachRemoteTrack = useCallback(
     async (track: MediaStreamTrack, producer: RemoteProducerMetadata) => {
+      if (track.kind === 'video' && producer.source === 'screen') {
+        setRemoteScreenShares((current) => {
+          for (const screenShare of current) {
+            if (screenShare.producerId !== producer.producerId) {
+              screenShare.track.stop()
+            }
+          }
+
+          return [
+            {
+              participantSessionId: producer.participantSessionId,
+              producerId: producer.producerId,
+              track,
+            },
+          ]
+        })
+        return
+      }
+
       if (remoteVideoLayout === 'participant-grid') {
         setRemoteParticipants((current) =>
           upsertRemoteParticipant({
@@ -633,7 +699,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         return
       }
 
-      const producerKey = `${producer.participantSessionId}:${producer.kind}`
+      const producerKey = `${producer.participantSessionId}:${producer.kind}:${producer.source ?? 'unknown'}`
 
       if (consumedProducerKeysRef.current.has(producerKey)) {
         return
@@ -790,16 +856,27 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
                 }
               }
 
-              if (producer?.kind === 'video' && remoteVideoLayout === 'single') {
+              if (producer?.kind === 'video' && producer.source === 'screen') {
+                setRemoteScreenShares((current) => {
+                  const screenShare = current.find((item) => item.producerId === event.producerId)
+
+                  screenShare?.track.stop()
+
+                  return current.filter((item) => item.producerId !== event.producerId)
+                })
+              }
+
+              if (producer?.kind === 'video' && producer.source !== 'screen' && remoteVideoLayout === 'single') {
                 setHasSingleRemoteVideoTrack(false)
               }
 
-              if (producer && remoteVideoLayout === 'participant-grid') {
+              if (producer && producer.source !== 'screen' && remoteVideoLayout === 'participant-grid') {
                 setRemoteParticipants((current) =>
                   removeRemoteParticipantProducer({
                     current,
                     participantSessionId: producer.participantSessionId,
                     kind: producer.kind,
+                    source: producer.source,
                     producerId: producer.producerId,
                   }),
                 )
@@ -841,6 +918,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     setConsumerIds([])
     setRemoteProducerIds([])
     setRemoteParticipants([])
+    setRemoteScreenShares([])
     setHasSingleRemoteVideoTrack(false)
     desiredLocalAudioEnabledRef.current = audio
     desiredLocalVideoEnabledRef.current = video
@@ -872,6 +950,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       }
 
       const sendTransportId = assertScopedTransport(sendTransport)
+      sendTransportIdRef.current = sendTransportId
 
       const recvTransport = await adapter.createTransport({
         direction: 'recv',
@@ -922,14 +1001,15 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       }
 
       const localTracks = localCapture.tracks
-      await applyLocalTrackEnabled('audio', desiredLocalAudioEnabledRef.current)
-      await applyLocalTrackEnabled('video', desiredLocalVideoEnabledRef.current)
+      await applyLocalTrackEnabled('audio', desiredLocalAudioEnabledRef.current, 'microphone')
+      await applyLocalTrackEnabled('video', desiredLocalVideoEnabledRef.current, 'camera')
       startLocalSpeakingDetector(localTracks)
       const produced = await Promise.all(
         localTracks.map((track) =>
           adapter.produce(track, {
             transportId: sendTransportId,
             sessionScope,
+            source: track.kind === 'audio' ? 'microphone' : 'camera',
             stopTracks: false,
           }),
         ),
@@ -947,8 +1027,8 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         return
       }
 
-      await applyLocalTrackEnabled('audio', desiredLocalAudioEnabledRef.current)
-      await applyLocalTrackEnabled('video', desiredLocalVideoEnabledRef.current)
+      await applyLocalTrackEnabled('audio', desiredLocalAudioEnabledRef.current, 'microphone')
+      await applyLocalTrackEnabled('video', desiredLocalVideoEnabledRef.current, 'camera')
       setProducerIds(backendProducerIds)
 
       if (consumedProducerIdsRef.current.size === 0) {
@@ -988,7 +1068,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     const nextEnabled = !localAudioEnabled
 
     desiredLocalAudioEnabledRef.current = nextEnabled
-    void applyLocalTrackEnabled('audio', nextEnabled)
+    void applyLocalTrackEnabled('audio', nextEnabled, 'microphone')
 
     if (nextEnabled) {
       startLocalSpeakingDetector(localTracksRef.current)
@@ -1001,12 +1081,89 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     const nextEnabled = !localVideoEnabled
 
     desiredLocalVideoEnabledRef.current = nextEnabled
-    void applyLocalTrackEnabled('video', nextEnabled)
+    void applyLocalTrackEnabled('video', nextEnabled, 'camera')
     setLocalVideoEnabled(nextEnabled)
   }, [applyLocalTrackEnabled, localVideoEnabled])
 
+  const stopScreenShare = useCallback(async () => {
+    const producerId = screenShareProducerIdRef.current
+    const track = screenShareTrackRef.current
+
+    screenShareProducerIdRef.current = null
+    screenShareTrackRef.current = null
+    setLocalScreenShareProducerId(null)
+    setLocalScreenShareTrack(null)
+    if (producerId) {
+      setProducerIds((current) => current.filter((item) => item !== producerId))
+    }
+
+    if (track && track.readyState === 'live') {
+      track.stop()
+    }
+
+    if (producerId) {
+      await adapterRef.current?.closeProducer(producerId, sessionScope).catch((error: unknown) => {
+        console.warn('[media] failed to close SFU screen-share producer', error)
+      })
+    }
+  }, [sessionScope])
+
+  const startScreenShare = useCallback(async () => {
+    if (screenShareProducerIdRef.current) {
+      await stopScreenShare()
+    }
+
+    const adapter = adapterRef.current
+    const sendTransportId = sendTransportIdRef.current
+
+    if (!adapter || !sendTransportId || !navigator.mediaDevices?.getDisplayMedia) {
+      setDetail('Screen share is not available in this browser/session')
+      return
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        audio: false,
+        video: true,
+      })
+      const screenTrack = stream.getVideoTracks()[0]
+
+      if (!screenTrack) {
+        throw new Error('Screen share did not create a video track')
+      }
+
+      screenShareTrackRef.current = screenTrack
+      setLocalScreenShareTrack(screenTrack)
+
+      const produced = await adapter.produce(screenTrack, {
+        transportId: sendTransportId,
+        sessionScope,
+        source: 'screen',
+        stopTracks: false,
+      })
+      const producerId = produced.backendProducer.producerId
+
+      if (!producerId) {
+        throw new Error('Backend screen-share producer metadata is missing')
+      }
+
+      screenShareProducerIdRef.current = producerId
+      setLocalScreenShareProducerId(producerId)
+      setProducerIds((current) => (current.includes(producerId) ? current : [...current, producerId]))
+      setDetail('Local SFU screen share is published')
+
+      screenTrack.addEventListener('ended', () => {
+        void stopScreenShare()
+      })
+    } catch (error) {
+      await stopScreenShare()
+      setDetail(error instanceof Error ? `Screen share failed: ${error.message}` : 'Screen share failed')
+    }
+  }, [sessionScope, stopScreenShare])
+
   const hasLocalAudioTrack = localTracksRef.current.some((track) => track.kind === 'audio')
   const hasLocalVideoTrack = localTracksRef.current.some((track) => track.kind === 'video')
+  const isScreenSharing = Boolean(localScreenShareProducerId)
   const transportMode = iceTransportPolicy === 'relay' ? 'turn' : 'direct'
   const handleLeaveClick = useCallback(() => {
     startRunIdRef.current += 1
@@ -1043,6 +1200,16 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
             data-testid="private-sfu-video-toggle"
             onClick={toggleLocalVideo}>
             {localVideoEnabled ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
+          </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            aria-label={isScreenSharing ? 'Stop screen share' : 'Start screen share'}
+            disabled={!video || status === 'starting' || status === 'failed'}
+            data-testid="private-sfu-screen-share-toggle"
+            onClick={() => void (isScreenSharing ? stopScreenShare() : startScreenShare())}>
+            {isScreenSharing ? <ScreenShareOff className="h-4 w-4" /> : <ScreenShare className="h-4 w-4" />}
           </Button>
           <Button
             type="button"
@@ -1118,6 +1285,27 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
             Remote voice: {isRemoteSpeaking ? 'speaking' : 'silent'}
           </span>
         </div>
+        {localScreenShareTrack || remoteScreenShares.length > 0 ? (
+          <div className="grid w-full max-w-4xl grid-cols-1 gap-3">
+            {localScreenShareTrack ? (
+              <ScreenShareVideoTile
+                label="You are sharing your screen"
+                testId="private-sfu-local-screen-share"
+                videoTestId="private-sfu-local-screen-video"
+                track={localScreenShareTrack}
+              />
+            ) : null}
+            {remoteScreenShares.map((screenShare) => (
+              <ScreenShareVideoTile
+                key={screenShare.producerId}
+                label="Remote screen share"
+                testId="private-sfu-remote-screen-share"
+                videoTestId="private-sfu-remote-screen-video"
+                track={screenShare.track}
+              />
+            ))}
+          </div>
+        ) : null}
         <div className="grid w-full max-w-4xl grid-cols-1 gap-3 sm:grid-cols-2">
           <video
             ref={localVideoRef}
@@ -1180,11 +1368,13 @@ const removeRemoteParticipantProducer = ({
   current,
   participantSessionId,
   kind,
+  source,
   producerId,
 }: {
   current: RemoteParticipantMedia[]
   participantSessionId: string
   kind: RemoteProducerMetadata['kind']
+  source?: RemoteProducerMetadata['source']
   producerId: string
 }) => {
   return current
@@ -1198,11 +1388,48 @@ const removeRemoteParticipantProducer = ({
         audioProducerId:
           kind === 'audio' && participant.audioProducerId === producerId ? undefined : participant.audioProducerId,
         videoProducerId:
-          kind === 'video' && participant.videoProducerId === producerId ? undefined : participant.videoProducerId,
-        videoTrack: kind === 'video' && participant.videoProducerId === producerId ? undefined : participant.videoTrack,
+          kind === 'video' && source !== 'screen' && participant.videoProducerId === producerId
+            ? undefined
+            : participant.videoProducerId,
+        videoTrack:
+          kind === 'video' && source !== 'screen' && participant.videoProducerId === producerId
+            ? undefined
+            : participant.videoTrack,
       }
     })
     .filter((participant) => participant.audioProducerId || participant.videoProducerId)
+}
+
+const ScreenShareVideoTile: FC<{
+  label: string
+  testId: string
+  videoTestId: string
+  track: MediaStreamTrack
+}> = ({ label, testId, videoTestId, track }) => {
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+
+  useEffect(() => {
+    const videoElement = videoRef.current
+
+    if (!videoElement) {
+      return
+    }
+
+    videoElement.srcObject = new MediaStream([track])
+    void videoElement.play().catch(() => undefined)
+
+    return () => {
+      videoElement.pause()
+      videoElement.srcObject = null
+    }
+  }, [track])
+
+  return (
+    <section className="w-full border border-zinc-800 bg-black" data-testid={testId}>
+      <div className="border-b border-zinc-800 px-3 py-2 text-left text-xs text-zinc-400">{label}</div>
+      <video ref={videoRef} playsInline muted className="aspect-video w-full object-contain" data-testid={videoTestId} />
+    </section>
+  )
 }
 
 const RemoteVideoTile: FC<{ participant: RemoteParticipantMedia }> = ({ participant }) => {

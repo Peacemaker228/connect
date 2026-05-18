@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `sfu-screen-share-parity-prototype`.
+The next Stage 8 segment should be `channel-video-sfu-limited-nonproduction-default-pilot`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `sfu-screen-share-parity-prototype`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `channel-video-sfu-limited-nonproduction-default-pilot`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / channel audio SFU controlled review improved; SFU screen-share parity next`
+Status: `in progress / SFU screen-share readiness pass for controlled non-production review; production blocked`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -626,9 +626,36 @@ Remaining:
 - process-local mediasoup/signaling state remains a production/multi-process blocker
 - implement SFU screen-share parity as the next scoped Stage 8 runtime gap before revisiting broader video/private default decisions
 - production media infra/runbook remains separate and required before production default switch
+- `sfu-screen-share-parity-prototype` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_129_SFU_SCREEN_SHARE_PARITY_PROTOTYPE.md`
+- SFU producer metadata is now source-aware for `microphone`, `camera`, and `screen`, so camera video and screen-share video can coexist from the same participant
+- gated SFU video rooms now have a first screen-share prototype: local `getDisplayMedia` capture, `source=screen` producer publish, separate remote screen-share render area, manual stop, display-track ended cleanup, Restart/Leave cleanup, and source-aware dedupe
+- screen-share MVP policy is `latest screen share wins` within the room
+- guarded channel `VIDEO` smoke has optional `CHANNEL_VIDEO_SFU_SMOKE_SCREEN_SHARE=1` assertions, but direct screen-share proof remains `review` until a headed/local screen-capture smoke or manual run is executed
+- channel `AUDIO` pilot, ordinary channel `VIDEO`, ordinary private `?video=true`, production defaults, and LiveKit fallback remain preserved
+- `sfu-screen-share-guarded-browser-smoke-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_130_SFU_SCREEN_SHARE_GUARDED_BROWSER_SMOKE_RERUN.md`
+- direct channel `VIDEO` SFU screen-share guarded smoke passed with `PLAYWRIGHT_SCREEN_CAPTURE=1`, two users, local screen preview, remote screen render, remote producer count `+1` while sharing, stop cleanup, producer count recovery, Restart, Leave/rejoin, and LiveKit fallback/default assertions
+- channel `AUDIO` SFU regression smoke passed again with two users after the screen-share prototype
+- TURN screen-share remains deferred; this segment intentionally closed direct proof only
+- `sfu-screen-share-private-regression-smoke` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_131_SFU_SCREEN_SHARE_PRIVATE_REGRESSION_SMOKE.md`
+- guarded explicit private SFU screen-share smoke passed with `PLAYWRIGHT_SCREEN_CAPTURE=1`, two users, local screen preview, remote screen render, remote producer count `+1` while sharing, stop cleanup, producer count recovery, Restart, Leave redirect, and ordinary private `?video=true` LiveKit/default assertion
+- channel `AUDIO` pilot regression and channel `VIDEO` screen-share regression both passed again after the private screen-share smoke
+- TURN screen-share remains deferred and must be closed as `pass` or explicit `review` before broader/default relay-dependent decisions
+- `sfu-screen-share-turn-relay-smoke` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_132_SFU_SCREEN_SHARE_TURN_RELAY_SMOKE.md`
+- local Docker coturn relay smoke passed for channel `VIDEO` SFU screen-share and explicit private SFU screen-share with `PLAYWRIGHT_SCREEN_CAPTURE=1` and `sfuTransport=turn`
+- both TURN smokes verified local preview, remote screen render, remote producer count `+1`, Stop cleanup, producer count recovery, Restart/Leave cleanup, and LiveKit/default preservation assertions
+- coturn logs showed authenticated `ALLOCATE`, `CREATE_PERMISSION`, relay usage, and peer usage for peer `192.168.0.16`
+- the local-only relay range was widened at runtime from default `49160-49170` to `49160-49240` after an initial `508 Cannot create socket / no available ports` result; no repo config or production infra changed
+- production remains blocked by process-local mediasoup/signaling state and missing production TURN/SFU infra/runbook/monitoring/rollback
+- `sfu-screen-share-readiness-decision` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_133_SFU_SCREEN_SHARE_READINESS_DECISION.md`
+- screen-share readiness is `pass` for controlled non-production review across channel `VIDEO` explicit SFU and explicit private SFU
+- direct screen-share is `pass`; TURN screen-share is `pass`
+- LiveKit fallback/default remains preserved; ordinary channel `VIDEO`, ordinary channel `AUDIO`, and ordinary private `?video=true` defaults remain unchanged
+- screen-share is no longer the blocking parity gap for controlled non-production channel `VIDEO` or explicit private SFU review
+- production readiness remains `blocked`, and process-local mediasoup/signaling remains a multi-process blocker
+- subjective product UX review remains optional/review before broader product-facing pilots
 
 Next likely work:
-- run `sfu-screen-share-parity-prototype`
+- run `channel-video-sfu-limited-nonproduction-default-pilot`; keep production/default routes and LiveKit fallback unchanged
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

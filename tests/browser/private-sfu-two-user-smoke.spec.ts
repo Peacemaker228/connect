@@ -43,7 +43,9 @@ const captureQuery =
       : ''
 const expectedRemoteProducerCount =
   process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real' ? 'Remote producers: 2' : 'Remote producers: 1'
+const expectedRemoteProducerNumber = process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real' ? 2 : 1
 const shouldRunNetworkInterruptionSmoke = process.env.PRIVATE_SFU_SMOKE_NETWORK_INTERRUPT === '1'
+const shouldRunScreenShareSmoke = process.env.PRIVATE_SFU_SMOKE_SCREEN_SHARE === '1'
 
 test.describe('private SFU two-user browser smoke', () => {
   test.skip(!isSmokeEnabled, 'Set PRIVATE_SFU_BROWSER_SMOKE=1 with local API/web to run this smoke.')
@@ -111,6 +113,39 @@ test.describe('private SFU two-user browser smoke', () => {
       await expect(userTwoPage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
         expectedRemoteProducerCount,
       )
+
+      if (shouldRunScreenShareSmoke) {
+        await userOnePage.getByRole('button', { name: 'Start screen share' }).click()
+        await expect(userOnePage.getByTestId('private-sfu-local-screen-share')).toBeVisible({
+          timeout: 45_000,
+        })
+
+        await expect(userTwoPage.getByTestId('private-sfu-remote-screen-share')).toHaveCount(1, {
+          timeout: 45_000,
+        })
+        await expect(userTwoPage.getByTestId('private-sfu-remote-screen-video')).toBeVisible()
+        await expect(userOnePage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
+          expectedRemoteProducerCount,
+        )
+        await expect(userTwoPage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
+          `Remote producers: ${expectedRemoteProducerNumber + 1}`,
+          {
+            timeout: 45_000,
+          },
+        )
+
+        await userOnePage.getByRole('button', { name: 'Stop screen share' }).click()
+        await expect(userOnePage.getByTestId('private-sfu-local-screen-share')).toHaveCount(0)
+        await expect(userTwoPage.getByTestId('private-sfu-remote-screen-share')).toHaveCount(0, {
+          timeout: 45_000,
+        })
+        await expect(userOnePage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
+          expectedRemoteProducerCount,
+        )
+        await expect(userTwoPage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
+          expectedRemoteProducerCount,
+        )
+      }
 
       if (shouldRunNetworkInterruptionSmoke) {
         await userOne.setOffline(true)

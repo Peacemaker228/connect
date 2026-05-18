@@ -154,7 +154,7 @@ Controlled product review status:
 Interpretation:
 - the limited channel `AUDIO` SFU pilot remains technically ready for controlled non-production product review.
 - automated direct/TURN/cleanup/regression evidence is strong enough to start operator review.
-- the first operator review found direct connectivity, then mute/navigation/speaking cleanup issues; scoped fixes were added and the latest operator rerun no longer reproduced the audio leak or duplicate-producer issue.
+- the first operator review found direct connectivity, then mute/navigation/speaking cleanup issues; scoped fixes were added, and the latest operator rerun no longer reproduced the audio leak or duplicate-producer issue.
 
 ## What Remains LiveKit
 

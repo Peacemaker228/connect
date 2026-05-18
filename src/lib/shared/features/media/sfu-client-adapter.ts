@@ -18,6 +18,7 @@ import {
   type MediasoupPrototypeEvent,
   type MediasoupPrototypeProducerDiscoveryResponse,
   type MediasoupPrototypeProducerResponse,
+  type MediasoupPrototypeTrackSource,
   type MediasoupPrototypeTransportDirection,
   type MediasoupPrototypeTransportResponse,
 } from '@sdk/actions/media'
@@ -50,6 +51,7 @@ export type CreateSfuClientTransportInput = {
 export type ProduceSfuClientTrackInput = {
   transportId?: string
   sessionScope?: SfuClientSessionScope
+  source?: MediasoupPrototypeTrackSource
   appData?: mediasoupClientTypes.AppData
   stopTracks?: boolean
 }
@@ -143,6 +145,7 @@ export class SfuClientAdapter {
       appData: {
         provider: 'mediasoup-prototype',
         trackKind: track.kind,
+        trackSource: input.source,
         roomId: input.sessionScope?.roomId,
         participantSessionId: input.sessionScope?.participantSessionId,
         paused: !track.enabled,
@@ -201,13 +204,20 @@ export class SfuClientAdapter {
     return heartbeatMediasoupPrototypeSession(sessionScope)
   }
 
-  async setProducerTrackEnabled(kind: MediaStreamTrack['kind'], enabled: boolean) {
+  async setProducerTrackEnabled(kind: MediaStreamTrack['kind'], enabled: boolean, source?: MediasoupPrototypeTrackSource) {
     const producerUpdates: Array<Promise<unknown>> = []
 
     for (const producer of this.producers.values()) {
-      const appData = producer.appData as { trackKind?: MediaStreamTrack['kind'] }
+      const appData = producer.appData as {
+        trackKind?: MediaStreamTrack['kind']
+        trackSource?: MediasoupPrototypeTrackSource
+      }
 
       if (appData.trackKind !== kind) {
+        continue
+      }
+
+      if (source && appData.trackSource !== source) {
         continue
       }
 
@@ -238,6 +248,22 @@ export class SfuClientAdapter {
     }
 
     await Promise.all(producerUpdates)
+  }
+
+  async closeProducer(producerId: string, sessionScope?: SfuClientSessionScope) {
+    const producer = this.producers.get(producerId)
+    const backendProducer = this.backendProducers.get(producerId)
+
+    if (backendProducer?.producerId) {
+      await closeMediasoupPrototypeProducer(backendProducer.producerId, {
+        roomId: sessionScope?.roomId ?? backendProducer.roomId,
+        participantSessionId: sessionScope?.participantSessionId ?? backendProducer.participantSessionId,
+      })
+    }
+
+    producer?.close()
+    this.producers.delete(producerId)
+    this.backendProducers.delete(producerId)
   }
 
   async consume(
@@ -385,13 +411,19 @@ export class SfuClientAdapter {
   private bindProduceEvent(transport: mediasoupClientTypes.Transport<SfuClientTransportAppData>) {
     transport.on('produce', ({ kind, rtpParameters, appData }, callback, errback) => {
       const scopedAppData =
-        appData as { roomId?: string; participantSessionId?: string; paused?: boolean } | undefined
+        appData as {
+          roomId?: string
+          participantSessionId?: string
+          paused?: boolean
+          trackSource?: MediasoupPrototypeTrackSource
+        } | undefined
 
       void produceMediasoupPrototypeTrack({
         transportId: transport.id,
         roomId: scopedAppData?.roomId ?? transport.appData.roomId,
         participantSessionId: scopedAppData?.participantSessionId ?? transport.appData.participantSessionId,
         kind,
+        source: scopedAppData?.trackSource,
         rtpParameters: rtpParameters as Record<string, unknown>,
         paused: scopedAppData?.paused,
       })

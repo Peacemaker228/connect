@@ -68,6 +68,7 @@ const shouldUseCandidateGate = process.env.CHANNEL_VIDEO_SFU_SMOKE_CANDIDATE_GAT
 const participantCount = parsePositiveInteger(process.env.CHANNEL_VIDEO_SFU_SMOKE_USERS, 2)
 const shouldRunLeaveRejoin = process.env.CHANNEL_VIDEO_SFU_SMOKE_LEAVE_REJOIN !== '0'
 const shouldRunOfflineRestore = process.env.CHANNEL_VIDEO_SFU_SMOKE_OFFLINE_RESTORE === '1'
+const shouldRunScreenShare = process.env.CHANNEL_VIDEO_SFU_SMOKE_SCREEN_SHARE === '1'
 
 test.describe('channel VIDEO SFU browser smoke', () => {
   test.skip(!isSmokeEnabled, 'Set CHANNEL_VIDEO_SFU_BROWSER_SMOKE=1 with local API/web to run this smoke.')
@@ -157,6 +158,32 @@ test.describe('channel VIDEO SFU browser smoke', () => {
       await expectAllLocalVideosVisible(pages)
       await expectAllRemoteVideoTileCounts(pages, expectedRemoteVideoTileCount)
       await expectAllRemoteVideosVisible(pages, expectedRemoteVideoTileCount)
+
+      if (shouldRunScreenShare) {
+        await pages[0].getByRole('button', { name: 'Start screen share' }).click()
+        await expect(pages[0].getByTestId('private-sfu-local-screen-share')).toBeVisible({
+          timeout: 45_000,
+        })
+
+        await expect(pages[1].getByTestId('private-sfu-remote-screen-share')).toHaveCount(1, {
+          timeout: 45_000,
+        })
+        await expect(pages[1].getByTestId('private-sfu-remote-screen-video')).toBeVisible()
+        await expect(pages[0].getByTestId('private-sfu-remote-producer-count')).toHaveText(expectedRemoteProducerText)
+        await expect(pages[1].getByTestId('private-sfu-remote-producer-count')).toHaveText(
+          getRemoteProducerText((participantCount - 1) * 2 + 1),
+          {
+            timeout: 45_000,
+          },
+        )
+
+        await pages[0].getByRole('button', { name: 'Stop screen share' }).click()
+        await expect(pages[0].getByTestId('private-sfu-local-screen-share')).toHaveCount(0)
+        await expect(pages[1].getByTestId('private-sfu-remote-screen-share')).toHaveCount(0, {
+          timeout: 45_000,
+        })
+        await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
+      }
 
       await pages[0].getByRole('button', { name: 'Restart SFU channel video' }).click()
       await expectAllStatuses(pages, 'connected')
