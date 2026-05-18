@@ -957,6 +957,17 @@ Segment 134 result:
 - production remains blocked by process-local mediasoup/signaling state and missing production TURN/SFU infra/runbook/monitoring/rollback
 - recommended next segment is `channel-video-sfu-limited-pilot-soak-product-review`
 
+Segment 135 result:
+- status: `channel VIDEO pilot automated review pass / manual product review required`
+- repeated channel `VIDEO` product-default pilot direct smoke with 2 users, no per-URL SFU query, screen-share, restart, leave/rejoin, rollback assertions, no-camera fallback, and private default preservation: `pass`
+- repeated channel `VIDEO` product-default pilot direct smoke with 3 users: `pass`
+- repeated channel `VIDEO` product-default pilot TURN smoke with 2 users through local coturn/API TURN env: `pass`
+- channel `AUDIO` regression smoke passed
+- automated review covers SFU open without query, screen-share start/stop, local preview, remote render, producer count `+1`, rollback via `?mediaProvider=livekit`, `?livekit=true`, `?sfu=false`, restart, leave/rejoin, and ordinary private `?video=true` LiveKit/default preservation
+- subjective product/manual review remains `review / requires operator`; no quality/layout/control UX pass is claimed without human review
+- production remains blocked by process-local mediasoup/signaling state and missing production TURN/SFU infra/runbook/monitoring/rollback
+- recommended next segment is `channel-video-sfu-limited-pilot-operator-review-rerun`; if operator review is deferred, use `channel-video-sfu-product-default-readiness-decision`
+
 ## Dependency Summary
 
 Critical path:
@@ -1044,7 +1055,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-video-sfu-limited-pilot-soak-product-review`
+- `channel-video-sfu-limited-pilot-operator-review-rerun`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1066,4 +1077,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-video-sfu-limited-pilot-soak-product-review`
+- `channel-video-sfu-limited-pilot-operator-review-rerun`

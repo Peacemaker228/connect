@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `channel-video-sfu-limited-pilot-soak-product-review`.
+The next Stage 8 segment should be `channel-video-sfu-limited-pilot-operator-review-rerun`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `channel-video-sfu-limited-pilot-soak-product-review`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `channel-video-sfu-limited-pilot-operator-review-rerun`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / channel video SFU limited non-production pilot pass; production blocked`
+Status: `in progress / channel video SFU limited pilot automated review pass; manual product review required`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -659,9 +659,14 @@ Remaining:
 - guarded channel `VIDEO` pilot direct smoke passed with two users, no per-URL SFU query, screen-share, restart, leave/rejoin, rollback assertions, and private default preservation
 - guarded channel `VIDEO` pilot TURN smoke passed through the local coturn/API TURN env from Segment 132
 - channel `AUDIO` regression smoke passed and ordinary private `?video=true` remained LiveKit/default
+- `channel-video-sfu-limited-pilot-soak-product-review` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_135_CHANNEL_VIDEO_SFU_LIMITED_PILOT_SOAK_PRODUCT_REVIEW.md`
+- channel `VIDEO` pilot automated review passed with 2-user direct, 3-user direct, and 2-user TURN guarded smoke
+- automated review covered SFU open without query, screen-share start/stop, local preview, remote render, producer count `+1`, rollback via `?mediaProvider=livekit`, `?livekit=true`, `?sfu=false`, restart, leave/rejoin, no-camera fallback, and ordinary private `?video=true` LiveKit/default preservation
+- channel `AUDIO` regression passed again
+- subjective product/manual review remains `review / requires operator`; no human quality/layout/control UX pass is claimed yet
 
 Next likely work:
-- run `channel-video-sfu-limited-pilot-soak-product-review`; keep production/default routes and LiveKit fallback unchanged
+- run `channel-video-sfu-limited-pilot-operator-review-rerun`; keep production/default routes and LiveKit fallback unchanged
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
