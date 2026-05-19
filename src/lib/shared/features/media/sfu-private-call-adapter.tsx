@@ -1310,6 +1310,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
           <video
             ref={localVideoRef}
             muted
+            autoPlay
             playsInline
             className="hidden aspect-video w-full bg-black object-cover data-[active=true]:block"
             data-active={hasLocalVideoTrack}
@@ -1322,6 +1323,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
           ) : (
             <video
               ref={remoteVideoRef}
+              autoPlay
               playsInline
               className="hidden aspect-video w-full bg-black object-cover data-[active=true]:block"
               data-active={hasSingleRemoteVideoTrack}
@@ -1329,7 +1331,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
             />
           )}
         </div>
-        <audio ref={remoteAudioRef} controls className="h-10 w-full max-w-xl" />
+        <audio ref={remoteAudioRef} autoPlay controls className="h-10 w-full max-w-xl" />
       </div>
     </div>
   )
@@ -1427,7 +1429,14 @@ const ScreenShareVideoTile: FC<{
   return (
     <section className="w-full border border-zinc-800 bg-black" data-testid={testId}>
       <div className="border-b border-zinc-800 px-3 py-2 text-left text-xs text-zinc-400">{label}</div>
-      <video ref={videoRef} playsInline muted className="aspect-video w-full object-contain" data-testid={videoTestId} />
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className="aspect-video w-full object-contain"
+        data-testid={videoTestId}
+      />
     </section>
   )
 }
@@ -1463,6 +1472,7 @@ const RemoteVideoTile: FC<{ participant: RemoteParticipantMedia }> = ({ particip
       {participant.videoTrack ? (
         <video
           ref={videoRef}
+          autoPlay
           playsInline
           className="h-full w-full object-cover"
           data-testid="private-sfu-remote-video"

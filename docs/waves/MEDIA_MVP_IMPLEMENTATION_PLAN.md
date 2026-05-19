@@ -968,6 +968,16 @@ Segment 135 result:
 - production remains blocked by process-local mediasoup/signaling state and missing production TURN/SFU infra/runbook/monitoring/rollback
 - recommended next segment is `channel-video-sfu-limited-pilot-operator-review-rerun`; if operator review is deferred, use `channel-video-sfu-product-default-readiness-decision`
 
+Segment 136 result:
+- status: `channel VIDEO pilot remote media fix implemented / manual rerun required`
+- operator review after Segment 135 found real blockers: no remote audio, no remote camera render, blank remote screen-share, and inflated/divergent remote producer counts after restarts
+- the prior automated smoke evidence is not enough for product review until this manual path is rerun
+- join now closes mediasoup resources for superseded participant sessions of the same room identity instead of waiting for stale TTL/sweeper cleanup
+- SFU consumer creation now follows the safer mediasoup sequence: backend consumer starts paused, client creates the local consumer, then backend consumer resumes
+- SFU remote/local video, screen-share video, and remote audio elements now declare `autoPlay`
+- production default remains blocked, LiveKit fallback/default remains preserved, ordinary private `?video=true` remains LiveKit, and production media infra remains out of scope
+- recommended next segment is `channel-video-sfu-limited-pilot-operator-review-rerun`
+
 ## Dependency Summary
 
 Critical path:

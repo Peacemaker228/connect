@@ -13,6 +13,7 @@ import {
   heartbeatMediasoupPrototypeSession,
   pauseMediasoupPrototypeProducer,
   produceMediasoupPrototypeTrack,
+  resumeMediasoupPrototypeConsumer,
   resumeMediasoupPrototypeProducer,
   type MediasoupPrototypeConsumerResponse,
   type MediasoupPrototypeEvent,
@@ -177,7 +178,7 @@ export class SfuClientAdapter {
     transportId,
     sessionScope,
     producerId,
-    paused = false,
+    paused = true,
   }: CreateSfuClientConsumerMetadataInput): Promise<MediasoupPrototypeConsumerResponse> {
     const device = await this.getLoadedDevice()
     const transport = this.getTransportForDirection('recv', transportId)
@@ -294,8 +295,20 @@ export class SfuClientAdapter {
       },
     })
 
+    const resumeResult = await resumeMediasoupPrototypeConsumer(metadata.consumerId, {
+      roomId: metadata.roomId ?? transport.appData.roomId,
+      participantSessionId: metadata.participantSessionId ?? transport.appData.participantSessionId,
+    })
+
+    if (!resumeResult.enabled || resumeResult.status !== 'ready') {
+      consumer.close()
+      throw new Error(resumeResult.reason ?? 'mediasoup consumer resume was not accepted')
+    }
+
+    consumer.resume()
+
     this.consumers.set(consumer.id, consumer)
-    this.backendConsumers.set(consumer.id, metadata)
+    this.backendConsumers.set(consumer.id, resumeResult)
 
     consumer.observer.on('close', () => {
       this.consumers.delete(consumer.id)
@@ -303,7 +316,7 @@ export class SfuClientAdapter {
     })
 
     return {
-      backendConsumer: metadata,
+      backendConsumer: resumeResult,
       consumer,
       track: consumer.track,
     }

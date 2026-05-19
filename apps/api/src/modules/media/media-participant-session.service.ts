@@ -14,6 +14,10 @@ type StoredParticipantSession = {
   state: MediaStateSnapshot;
 };
 
+type CreateParticipantSessionResult = StoredParticipantSession & {
+  supersededParticipantSessions: MediaParticipantSession[];
+};
+
 @Injectable()
 export class MediaParticipantSessionService {
   private readonly sessions = new Map<string, StoredParticipantSession>();
@@ -26,10 +30,10 @@ export class MediaParticipantSessionService {
     roomId: string;
     identity: MediaParticipantIdentity;
     desiredState?: MediaStatePatch;
-  }): StoredParticipantSession {
+  }): CreateParticipantSessionResult {
     const now = new Date().toISOString();
 
-    this.leaveJoinedSessionsForIdentity({
+    const supersededParticipantSessions = this.leaveJoinedSessionsForIdentity({
       roomId,
       identity,
       now,
@@ -71,6 +75,7 @@ export class MediaParticipantSessionService {
     return {
       participantSession,
       state,
+      supersededParticipantSessions,
     };
   }
 
@@ -179,8 +184,9 @@ export class MediaParticipantSessionService {
     roomId: string;
     identity: MediaParticipantIdentity;
     now: string;
-  }) {
+  }): MediaParticipantSession[] {
     const identityKey = this.getIdentityKey(identity);
+    const supersededParticipantSessions: MediaParticipantSession[] = [];
 
     for (const [participantSessionId, storedSession] of this.sessions.entries()) {
       if (
@@ -191,6 +197,7 @@ export class MediaParticipantSessionService {
         continue;
       }
 
+      supersededParticipantSessions.push(storedSession.participantSession);
       this.sessions.set(participantSessionId, {
         participantSession: {
           ...storedSession.participantSession,
@@ -215,6 +222,8 @@ export class MediaParticipantSessionService {
         },
       });
     }
+
+    return supersededParticipantSessions;
   }
 
   private getIdentityKey(identity: MediaParticipantIdentity) {

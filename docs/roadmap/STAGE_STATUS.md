@@ -664,6 +664,12 @@ Remaining:
 - automated review covered SFU open without query, screen-share start/stop, local preview, remote render, producer count `+1`, rollback via `?mediaProvider=livekit`, `?livekit=true`, `?sfu=false`, restart, leave/rejoin, no-camera fallback, and ordinary private `?video=true` LiveKit/default preservation
 - channel `AUDIO` regression passed again
 - subjective product/manual review remains `review / requires operator`; no human quality/layout/control UX pass is claimed yet
+- `channel-video-sfu-remote-media-flow-fix` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_136_CHANNEL_VIDEO_SFU_REMOTE_MEDIA_FLOW_FIX.md`
+- operator review found real blockers in the channel `VIDEO` SFU pilot: no remote audio, no remote camera render, blank remote screen-share, and inflated/divergent remote producer counts after restarts
+- the Segment 135 automated smoke evidence remains useful but is not sufficient for product review until the manual path is rerun
+- media join now closes mediasoup resources for superseded participant sessions of the same room identity immediately, rather than waiting for stale TTL/sweeper cleanup
+- SFU consumer creation now starts backend consumers paused, creates the local mediasoup-client consumer, then resumes the backend consumer to avoid the unpaused-consumer black-video/keyframe race
+- SFU media elements now declare `autoPlay` for local/remote video, screen-share video, and remote audio
 
 Next likely work:
 - run `channel-video-sfu-limited-pilot-operator-review-rerun`; keep production/default routes and LiveKit fallback unchanged
