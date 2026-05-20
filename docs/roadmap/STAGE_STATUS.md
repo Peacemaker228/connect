@@ -670,6 +670,15 @@ Remaining:
 - media join now closes mediasoup resources for superseded participant sessions of the same room identity immediately, rather than waiting for stale TTL/sweeper cleanup
 - SFU consumer creation now starts backend consumers paused, creates the local mediasoup-client consumer, then resumes the backend consumer to avoid the unpaused-consumer black-video/keyframe race
 - SFU media elements now declare `autoPlay` for local/remote video, screen-share video, and remote audio
+- `channel-video-sfu-screen-share-restart-cleanup-fix` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_137_CHANNEL_VIDEO_SFU_SCREEN_SHARE_RESTART_CLEANUP_FIX.md`
+- operator review found remaining channel `VIDEO` SFU pilot issues: multiple apparent concurrent screen-shares, inflated `Remote producers` after restarts/retries, and transient remote screen-share loss after restart
+- current MVP screen-share policy remains one active screen-share per room; latest screen-share wins
+- backend screen producer cleanup now runs after a new screen producer is created and stored, closing older room screen producers while preserving the newest one
+- Restart now waits for previous SFU adapter backend cleanup before publishing new producers
+- producer snapshots now reconcile local consumed-producer state and remove stale producers if a close event was missed during reconnect/restart
+- if another participant takes over screen-share, the previous local screen-share owner now stops its local display track and removes the local screen-share UI when its backend screen producer closes
+- guarded channel `VIDEO` screen-share smoke now covers takeover from user A to user B
+- SFU debug UI now reports `Remote tracks` with `audio/camera/screen` breakdown instead of the misleading `Remote producers` label
 
 Next likely work:
 - run `channel-video-sfu-limited-pilot-operator-review-rerun`; keep production/default routes and LiveKit fallback unchanged

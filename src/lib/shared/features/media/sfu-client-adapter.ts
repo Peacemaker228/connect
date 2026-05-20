@@ -267,6 +267,14 @@ export class SfuClientAdapter {
     this.backendProducers.delete(producerId)
   }
 
+  closeLocalProducer(producerId: string) {
+    const producer = this.producers.get(producerId)
+
+    producer?.close()
+    this.producers.delete(producerId)
+    this.backendProducers.delete(producerId)
+  }
+
   async consume(
     metadata: MediasoupPrototypeConsumerResponse,
     input: ConsumeSfuClientMetadataInput = {},
@@ -322,16 +330,20 @@ export class SfuClientAdapter {
     }
   }
 
-  close() {
+  async close() {
+    const closeRequests: Array<Promise<unknown>> = []
+
     for (const backendConsumer of this.backendConsumers.values()) {
       if (!backendConsumer.consumerId) {
         continue
       }
 
-      void closeMediasoupPrototypeConsumer(backendConsumer.consumerId, {
-        roomId: backendConsumer.roomId,
-        participantSessionId: backendConsumer.participantSessionId,
-      }).catch(() => undefined)
+      closeRequests.push(
+        closeMediasoupPrototypeConsumer(backendConsumer.consumerId, {
+          roomId: backendConsumer.roomId,
+          participantSessionId: backendConsumer.participantSessionId,
+        }),
+      )
     }
 
     for (const backendProducer of this.backendProducers.values()) {
@@ -339,10 +351,12 @@ export class SfuClientAdapter {
         continue
       }
 
-      void closeMediasoupPrototypeProducer(backendProducer.producerId, {
-        roomId: backendProducer.roomId,
-        participantSessionId: backendProducer.participantSessionId,
-      }).catch(() => undefined)
+      closeRequests.push(
+        closeMediasoupPrototypeProducer(backendProducer.producerId, {
+          roomId: backendProducer.roomId,
+          participantSessionId: backendProducer.participantSessionId,
+        }),
+      )
     }
 
     for (const consumer of this.consumers.values()) {
@@ -363,6 +377,8 @@ export class SfuClientAdapter {
     this.backendProducers.clear()
     this.transports.clear()
     this.device = null
+
+    await Promise.allSettled(closeRequests)
   }
 
   private async getLoadedDevice() {

@@ -42,7 +42,7 @@ const captureQuery =
       ? '&sfuCapture=real'
       : ''
 const expectedRemoteProducerCount =
-  process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real' ? 'Remote producers: 2' : 'Remote producers: 1'
+  process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real' ? 'Remote tracks: 2' : 'Remote tracks: 1'
 const expectedRemoteProducerNumber = process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real' ? 2 : 1
 const shouldRunNetworkInterruptionSmoke = process.env.PRIVATE_SFU_SMOKE_NETWORK_INTERRUPT === '1'
 const shouldRunScreenShareSmoke = process.env.PRIVATE_SFU_SMOKE_SCREEN_SHARE === '1'
@@ -128,7 +128,7 @@ test.describe('private SFU two-user browser smoke', () => {
           expectedRemoteProducerCount,
         )
         await expect(userTwoPage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
-          `Remote producers: ${expectedRemoteProducerNumber + 1}`,
+          `Remote tracks: ${expectedRemoteProducerNumber + 1}`,
           {
             timeout: 45_000,
           },

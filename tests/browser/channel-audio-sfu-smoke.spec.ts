@@ -407,7 +407,7 @@ const expectProducerPaused = async (
 }
 
 function getRemoteProducerText(count: number) {
-  return `Remote producers: ${count}`
+  return `Remote tracks: ${count}`
 }
 
 function parsePositiveInteger(value: string | undefined, fallback: number) {

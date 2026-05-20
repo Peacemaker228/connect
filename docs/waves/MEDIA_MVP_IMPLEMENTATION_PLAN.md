@@ -978,6 +978,20 @@ Segment 136 result:
 - production default remains blocked, LiveKit fallback/default remains preserved, ordinary private `?video=true` remains LiveKit, and production media infra remains out of scope
 - recommended next segment is `channel-video-sfu-limited-pilot-operator-review-rerun`
 
+Segment 137 result:
+- status: `channel VIDEO pilot screen-share/restart cleanup fix implemented / manual rerun required`
+- operator review found that multiple users could appear to screen-share concurrently, restarted clients could temporarily lose an existing remote screen-share, and `Remote producers` could stay inflated after retries/restarts
+- MVP screen-share policy remains one active screen-share per room; latest screen-share wins
+- backend screen producer cleanup now runs after the new screen producer is created and stored, closing older room screen producers while preserving the newest one
+- Restart now waits for previous SFU adapter backend cleanup before publishing new producers
+- `SfuClientAdapter.close()` now awaits backend consumer/producer close requests instead of using only fire-and-forget cleanup
+- producer snapshot handling now reconciles local consumed-producer state and removes stale producers if a close event was missed during reconnect/restart
+- if another participant takes over screen-share, the previous local screen-share owner now stops its local display track and removes the local screen-share UI when its backend screen producer closes
+- channel `VIDEO` guarded screen-share smoke now covers takeover: A shares, B starts sharing, A loses local share and sees B's remote share
+- SFU debug UI now reports `Remote tracks` with `audio/camera/screen` breakdown instead of the misleading `Remote producers` label
+- production default remains blocked, LiveKit fallback/default remains preserved, ordinary private `?video=true` remains LiveKit, and production media infra remains out of scope
+- recommended next segment remains `channel-video-sfu-limited-pilot-operator-review-rerun`
+
 ## Dependency Summary
 
 Critical path:

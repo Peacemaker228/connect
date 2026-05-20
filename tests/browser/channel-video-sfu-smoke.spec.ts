@@ -182,8 +182,31 @@ test.describe('channel VIDEO SFU browser smoke', () => {
           },
         )
 
-        await pages[0].getByRole('button', { name: 'Stop screen share' }).click()
-        await expect(pages[0].getByTestId('private-sfu-local-screen-share')).toHaveCount(0)
+        await pages[1].getByRole('button', { name: 'Start screen share' }).click()
+        await expect(pages[1].getByTestId('private-sfu-local-screen-share')).toBeVisible({
+          timeout: 45_000,
+        })
+        await expect(pages[0].getByTestId('private-sfu-local-screen-share')).toHaveCount(0, {
+          timeout: 45_000,
+        })
+        await expect(pages[0].getByTestId('private-sfu-remote-screen-share')).toHaveCount(1, {
+          timeout: 45_000,
+        })
+        await expect(pages[1].getByTestId('private-sfu-remote-screen-share')).toHaveCount(0, {
+          timeout: 45_000,
+        })
+        await expect(pages[0].getByTestId('private-sfu-remote-producer-count')).toHaveText(
+          getRemoteProducerText((participantCount - 1) * 2 + 1),
+          {
+            timeout: 45_000,
+          },
+        )
+
+        await pages[1].getByRole('button', { name: 'Stop screen share' }).click()
+        await expect(pages[1].getByTestId('private-sfu-local-screen-share')).toHaveCount(0)
+        await expect(pages[0].getByTestId('private-sfu-remote-screen-share')).toHaveCount(0, {
+          timeout: 45_000,
+        })
         await expect(pages[1].getByTestId('private-sfu-remote-screen-share')).toHaveCount(0, {
           timeout: 45_000,
         })
@@ -284,7 +307,7 @@ test.describe('channel VIDEO SFU browser smoke', () => {
 
       await expectAllProviders([noCameraPageOne, noCameraPageTwo], 'SFU channel video')
       await expectAllStatuses([noCameraPageOne, noCameraPageTwo], 'connected')
-      await expectAllRemoteProducerCounts([noCameraPageOne, noCameraPageTwo], 'Remote producers: 1')
+      await expectAllRemoteProducerCounts([noCameraPageOne, noCameraPageTwo], 'Remote tracks: 1')
       await expect(noCameraPageOne.getByTestId('private-sfu-capture-notice')).toHaveText(
         'Camera not found; continuing audio-only',
       )
@@ -407,7 +430,7 @@ const expectAllRemoteVideosVisible = async (pages: Awaited<ReturnType<BrowserCon
 }
 
 function getRemoteProducerText(count: number) {
-  return `Remote producers: ${count}`
+  return `Remote tracks: ${count}`
 }
 
 function parsePositiveInteger(value: string | undefined, fallback: number) {

@@ -487,10 +487,6 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
       };
     }
 
-    if (scope && resolvedSource === 'screen') {
-      this.closeActiveRoomScreenProducers(scope);
-    }
-
     try {
       const producer = await transport.transport.produce({
         kind,
@@ -513,6 +509,10 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
 
       if (scope) {
         this.producerScopes.set(producer.id, scope);
+      }
+
+      if (scope && resolvedSource === 'screen') {
+        this.closeActiveRoomScreenProducers(scope, producer.id);
       }
 
       producer.observer.on('close', () => {
@@ -1593,9 +1593,10 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     }
   }
 
-  private closeActiveRoomScreenProducers(scope: LocalMediasoupSessionScope) {
+  private closeActiveRoomScreenProducers(scope: LocalMediasoupSessionScope, exceptProducerId?: string) {
     for (const [producerId, producerScope] of [...this.producerScopes.entries()]) {
       if (
+        producerId === exceptProducerId ||
         producerScope.roomId !== scope.roomId ||
         this.producerSources.get(producerId) !== 'screen'
       ) {
