@@ -36,10 +36,11 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
     lastName: null,
     username: profile?.name ?? null,
   })
-  const { liveKitToken, controlPlaneJoin, controlPlaneStatus, leaveControlPlane } = useMediaRoomController({
-    mediaEntry,
-    displayName: profile?.name ? name : null,
-  })
+  const { liveKitToken, controlPlaneJoin, controlPlaneStatus, leaveControlPlane, rejoinControlPlane } =
+    useMediaRoomController({
+      mediaEntry,
+      displayName: profile?.name ? name : null,
+    })
   const isNonProductionRuntime = process.env.NODE_ENV !== 'production'
   const isLiveKitProviderRequested =
     searchParams?.get('mediaProvider') === 'livekit' ||
@@ -146,6 +147,7 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
           isChannelVideoSfu ? 'Restart SFU channel video' : isChannelAudioSfu ? 'Restart SFU channel audio' : undefined
         }
         remoteVideoLayout={isChannelVideoSfu ? 'participant-grid' : 'single'}
+        onRecover={rejoinControlPlane}
         onLeave={handleLeave}
       />
     )

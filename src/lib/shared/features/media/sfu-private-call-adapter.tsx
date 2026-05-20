@@ -27,6 +27,7 @@ type SfuPrivateCallAdapterProps = {
   roomLabel?: string
   restartAriaLabel?: string
   remoteVideoLayout?: 'single' | 'participant-grid'
+  onRecover?: () => Promise<void> | void
   onLeave: () => void
 }
 
@@ -203,6 +204,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   roomLabel = 'SFU private call',
   restartAriaLabel = 'Restart SFU private call',
   remoteVideoLayout = 'single',
+  onRecover,
   onLeave,
 }) => {
   const adapterRef = useRef<SfuClientAdapter | null>(null)
@@ -1256,6 +1258,16 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     cleanup()
     onLeave()
   }, [cleanup, onLeave])
+  const handleRestartClick = useCallback(() => {
+    if (status === 'failed' && onRecover) {
+      startRunIdRef.current += 1
+      cleanup()
+      void onRecover()
+      return
+    }
+
+    void startSfuPath()
+  }, [cleanup, onRecover, startSfuPath, status])
 
   return (
     <div className="flex h-full flex-col bg-zinc-950 text-zinc-50">
@@ -1302,7 +1314,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
             size="icon"
             variant="outline"
             aria-label={restartAriaLabel}
-            onClick={() => void startSfuPath()}>
+            onClick={handleRestartClick}>
             <RotateCcw className="h-4 w-4" />
           </Button>
           <Button type="button" size="icon" variant="destructive" aria-label="Leave call" onClick={handleLeaveClick}>

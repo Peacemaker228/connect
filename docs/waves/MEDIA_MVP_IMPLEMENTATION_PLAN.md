@@ -992,6 +992,17 @@ Segment 137 result:
 - production default remains blocked, LiveKit fallback/default remains preserved, ordinary private `?video=true` remains LiveKit, and production media infra remains out of scope
 - recommended next segment remains `channel-video-sfu-limited-pilot-operator-review-rerun`
 
+Segment 138 result:
+- status: `SFU failed restart rejoin recovery pass / bounded operator confirmation`
+- operator observed a rare route lifecycle case: after leaving and returning to a SFU call, the call could land in `failed`, and ordinary Restart could briefly enter `waiting` before failing again
+- ordinary Restart still restarts the current SFU path for non-terminal states
+- when the SFU adapter is already in `failed`, Restart now asks the media controller to close the active participant session and perform a fresh backend `joinRoom`
+- this avoids repeatedly retrying transports/producers against a participant session that may already be closed, superseded, or invalidated by route/page lifecycle cleanup
+- operator reproduced the rare failed state once and confirmed Restart recovered the call through the new rejoin path
+- residual risk remains review-only because the original issue is rare and this is not a long-soak proof
+- production default remains blocked, LiveKit fallback/default remains preserved, and production media infra remains out of scope
+- recommended next segment is `channel-video-sfu-limited-pilot-readiness-decision`
+
 ## Dependency Summary
 
 Critical path:
@@ -1079,7 +1090,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-video-sfu-limited-pilot-operator-review-rerun`
+- `channel-video-sfu-limited-pilot-readiness-decision`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1101,4 +1112,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-video-sfu-limited-pilot-operator-review-rerun`
+- `channel-video-sfu-limited-pilot-readiness-decision`

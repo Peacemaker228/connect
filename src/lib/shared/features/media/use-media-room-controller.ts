@@ -27,6 +27,7 @@ export const useMediaRoomController = ({ mediaEntry, displayName }: UseMediaRoom
   const [controlPlaneJoin, setControlPlaneJoin] = useState<JoinRoomResponse | null>(null)
   const [controlPlaneStatus, setControlPlaneStatus] = useState<MediaControlPlaneStatus>('idle')
   const [controlPlaneError, setControlPlaneError] = useState<unknown>(null)
+  const [joinEpoch, setJoinEpoch] = useState(0)
   const activeParticipantSessionRef = useRef<JoinRoomResponse['participantSession'] | null>(null)
   const closedParticipantSessionIdsRef = useRef(new Set<string>())
 
@@ -154,7 +155,7 @@ export const useMediaRoomController = ({ mediaEntry, displayName }: UseMediaRoom
         void closeParticipantSession(joinedParticipantSession, 'intentional-leave')
       }
     }
-  }, [closeParticipantSession, displayName, mediaEntry])
+  }, [closeParticipantSession, displayName, joinEpoch, mediaEntry])
 
   useEffect(() => {
     const closeActiveSessionOnPageHide = () => {
@@ -190,11 +191,25 @@ export const useMediaRoomController = ({ mediaEntry, displayName }: UseMediaRoom
     await closeParticipantSession(participantSession, 'intentional-leave')
   }, [closeParticipantSession, controlPlaneJoin?.participantSession])
 
+  const rejoinControlPlane = useCallback(async () => {
+    const participantSession = activeParticipantSessionRef.current ?? controlPlaneJoin?.participantSession
+
+    setControlPlaneJoin(null)
+    setControlPlaneStatus('joining')
+
+    if (participantSession) {
+      await closeParticipantSession(participantSession, 'transport-failure')
+    }
+
+    setJoinEpoch((current) => current + 1)
+  }, [closeParticipantSession, controlPlaneJoin?.participantSession])
+
   return {
     liveKitToken,
     controlPlaneJoin,
     controlPlaneStatus,
     controlPlaneError,
     leaveControlPlane,
+    rejoinControlPlane,
   }
 }

@@ -679,9 +679,14 @@ Remaining:
 - if another participant takes over screen-share, the previous local screen-share owner now stops its local display track and removes the local screen-share UI when its backend screen producer closes
 - guarded channel `VIDEO` screen-share smoke now covers takeover from user A to user B
 - SFU debug UI now reports `Remote tracks` with `audio/camera/screen` breakdown instead of the misleading `Remote producers` label
+- `sfu-failed-restart-rejoin-recovery` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_138_SFU_FAILED_RESTART_REJOIN_RECOVERY.md`
+- if the SFU adapter is already in `failed`, Restart now triggers a fresh backend control-plane rejoin instead of retrying transports/producers against the same possibly-invalid participant session
+- ordinary Restart behavior for non-terminal SFU states remains unchanged
+- operator reproduced the rare failed state once and confirmed Restart recovered the call through the new rejoin path
+- residual risk remains review-only because this is bounded operator confirmation, not a long-soak proof
 
 Next likely work:
-- run `channel-video-sfu-limited-pilot-operator-review-rerun`; keep production/default routes and LiveKit fallback unchanged
+- run `channel-video-sfu-limited-pilot-readiness-decision`; keep production/default routes and LiveKit fallback unchanged
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
