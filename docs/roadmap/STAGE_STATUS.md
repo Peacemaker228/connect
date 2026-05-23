@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `channel-video-sfu-limited-pilot-operator-review-rerun`.
+The next Stage 8 segment should be `channel-video-sfu-limited-pilot-long-soak-run-report`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,7 +347,7 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `channel-video-sfu-limited-pilot-operator-review-rerun`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `channel-video-sfu-limited-pilot-long-soak-run-report`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
@@ -699,9 +699,15 @@ Remaining:
 - bounded long-soak scenarios are now defined for 2-user direct, 3-user direct, 5-user fake-device direct, screen-share takeover A -> B, restart loop, leave/rejoin loop, route change away/back loop, failed -> Restart rejoin recovery, and optional TURN rerun when local coturn is available
 - pass/review/fail criteria require no stale remote tracks after cleanup, settled counts after leave/rejoin/context close, screen-share latest-wins, working remote audio/video, recoverable failed states through Restart/rejoin, and no LiveKit fallback regression
 - broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and production-like soak remains absent
+- `channel-video-sfu-limited-pilot-observability-instrumentation` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_141_CHANNEL_VIDEO_SFU_OBSERVABILITY_INSTRUMENTATION.md`
+- local/dev mediasoup prototype health now exposes active room/session/transport/producer/consumer gauges, producer/consumer counts by source, requested transport mode counts, per-room breakdowns, and process-local failure/lifecycle/recovery counters
+- implemented counters cover failed transport create/connect, failed produce, failed consume, failed consumer resume, screen-share start/stop/takeover, older screen producer closes due to takeover, session close, stale sweep, stale sessions closed, and failed-state rejoin recovery requests
+- production still returns disabled local prototype health and does not expose the new prototype internals; this is not production monitoring
+- deferred observability remains actual ICE selected relay-vs-direct mode, client-visible SFU `failed` UI state count, production monitoring/alerting, and multi-process aggregation
+- local/dev observability coverage is `pass`; long-soak is `review / ready to run`; production monitoring remains `blocked / out of scope`
 
 Next likely work:
-- run `channel-video-sfu-limited-pilot-observability-instrumentation` or `channel-video-sfu-limited-pilot-long-soak-run-report`; do not proceed next to production rollout or LiveKit removal
+- run `channel-video-sfu-limited-pilot-long-soak-run-report`; do not proceed next to production rollout or LiveKit removal
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

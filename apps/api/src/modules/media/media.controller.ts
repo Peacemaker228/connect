@@ -276,6 +276,13 @@ export class MediaController {
       participantSessionId: participantSession.participantSessionId,
     });
 
+    if (body?.reason === 'transport-failure') {
+      this.mediasoupPrototypeService.recordFailedStateRejoinRecovery({
+        roomId: participantSession.roomId,
+        participantSessionId: participantSession.participantSessionId,
+      });
+    }
+
     return {
       room,
       participantSession,
@@ -339,6 +346,7 @@ export class MediaController {
     const scope = this.resolvePrototypeSessionScope(profileId, body);
     const transport = await this.mediasoupPrototypeService.createWebRtcTransport({
       direction: body?.direction === 'recv' ? 'recv' : 'send',
+      requestedTransportMode: body?.includeTurnCredentials ? 'turn' : 'direct',
       scope,
     });
 

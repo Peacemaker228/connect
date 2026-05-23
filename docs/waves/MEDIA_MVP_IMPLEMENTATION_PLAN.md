@@ -1030,6 +1030,18 @@ Segment 140 result:
 - process-local mediasoup/signaling state remains a blocker before production or multi-process readiness
 - recommended next segment is `channel-video-sfu-limited-pilot-observability-instrumentation` or `channel-video-sfu-limited-pilot-long-soak-run-report`; do not proceed next to production rollout or LiveKit removal
 
+Segment 141 result:
+- status: `channel VIDEO SFU local/dev observability instrumentation implemented / long-soak not run`
+- `channel-video-sfu-limited-pilot-observability-instrumentation` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_141_CHANNEL_VIDEO_SFU_OBSERVABILITY_INSTRUMENTATION.md`
+- the existing local mediasoup prototype health endpoint now exposes active room/session/transport/producer/consumer gauges, producer and consumer counts by `microphone`/`camera`/`screen`, requested `direct`/`turn`/`unknown` transport mode counts, and per-room breakdowns
+- process-local counters now cover failed transport create/connect, failed produce, failed consume, failed consumer resume, screen-share start/stop/takeover, older screen producer closes due to takeover, session close, stale sweep, stale sessions closed, and failed-state rejoin recovery requests through `reason: 'transport-failure'`
+- SDK media health response types were updated for the extended observability shape
+- production still returns disabled local prototype health and does not expose the new prototype internals
+- deferred/review observability: actual ICE selected candidate pair / confirmed relay-vs-direct mode, client-visible SFU `failed` UI state count, production monitoring/alerting, and multi-process aggregation
+- local/dev observability coverage is `pass`; long-soak is `review / ready to run`; production monitoring remains `blocked / out of scope`
+- broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- recommended next segment is `channel-video-sfu-limited-pilot-long-soak-run-report`; do not proceed next to production rollout or LiveKit removal
+
 ## Dependency Summary
 
 Critical path:
@@ -1117,7 +1129,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-video-sfu-limited-pilot-observability-instrumentation` or `channel-video-sfu-limited-pilot-long-soak-run-report`
+- `channel-video-sfu-limited-pilot-long-soak-run-report`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1139,4 +1151,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-video-sfu-limited-pilot-observability-instrumentation` or `channel-video-sfu-limited-pilot-long-soak-run-report`
+- `channel-video-sfu-limited-pilot-long-soak-run-report`
