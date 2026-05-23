@@ -1069,6 +1069,18 @@ Segment 143 result:
 - broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
 - recommended next segment is `channel-video-sfu-multi-user-screen-share-rejoin-cleanup-fix`; acceptable alternative is `channel-video-sfu-failed-restart-recovery-soak-coverage`; do not proceed next to production rollout, broader/default switch, or LiveKit removal
 
+Segment 144 result:
+- status: `channel VIDEO SFU multi-user screen-share/rejoin cleanup fix pass / broader defaults still hold`
+- `channel-video-sfu-multi-user-screen-share-rejoin-cleanup-fix` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_144_CHANNEL_VIDEO_SFU_MULTI_USER_SCREEN_SHARE_REJOIN_CLEANUP_FIX.md`
+- root cause was client-side stale remote producer reconciliation: `producer.closed`/snapshot handling could clean state when events arrived, but periodic producer discovery only refreshed paused state and did not remove consumed producer ids that disappeared from the backend authoritative producer list
+- SFU cleanup now clears all remote UI state, stops participant-grid video tracks, and periodic producer discovery removes stale consumed producer ids when the backend producer list no longer includes them
+- the previously failing 3-user channel `VIDEO` product-default pilot with screen-share takeover plus leave/rejoin now passes; expected remote track counts stabilize and no duplicate/stale remote screen/camera/audio tiles were observed by the smoke assertions
+- guarded 2-user screen-share, 3-user no-screen, and 5-user no-screen channel `VIDEO` product-default pilot smokes also passed
+- final local/dev health counters settled to zero active rooms/sessions/transports/producers/consumers, and `failedConsumeCount` stayed `0` in the rerun
+- no backend runtime behavior, production/default rollout, env defaults, production infra, broad private default switch, or LiveKit fallback/removal changed
+- broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- recommended next segment is `channel-video-sfu-failed-restart-recovery-soak-coverage`; acceptable alternative is `channel-video-sfu-route-away-back-loop-coverage`; do not proceed next to production rollout, broader/default switch, or LiveKit removal
+
 ## Dependency Summary
 
 Critical path:
@@ -1156,7 +1168,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-video-sfu-multi-user-screen-share-rejoin-cleanup-fix`
+- `channel-video-sfu-failed-restart-recovery-soak-coverage`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1178,4 +1190,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-video-sfu-multi-user-screen-share-rejoin-cleanup-fix`
+- `channel-video-sfu-failed-restart-recovery-soak-coverage`

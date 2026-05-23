@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `channel-video-sfu-limited-pilot-long-soak-env-unblock-and-rerun`.
+The next Stage 8 segment should be `channel-video-sfu-failed-restart-recovery-soak-coverage`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `channel-video-sfu-multi-user-screen-share-rejoin-cleanup-fix`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `channel-video-sfu-failed-restart-recovery-soak-coverage`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / channel video SFU limited pilot long-soak rerun review with fail findings`
+Status: `in progress / channel video SFU multi-user screen-share rejoin cleanup pass; broader defaults hold`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -720,9 +720,16 @@ Remaining:
 - final health counters included `failedConsumeCount=1`, `screenShareTakeoverCount=2`, `olderScreenProducerClosedDueToTakeoverCount=2`, `staleSessionsClosedCount=12`, and `failedStateRejoinRecoveryCount=0`
 - optional local TURN rerun was not run because coturn was unavailable on `3478`; actual selected direct-vs-relay ICE path remains deferred observability
 - broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- `channel-video-sfu-multi-user-screen-share-rejoin-cleanup-fix` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_144_CHANNEL_VIDEO_SFU_MULTI_USER_SCREEN_SHARE_REJOIN_CLEANUP_FIX.md`
+- root cause was client-side stale remote producer reconciliation after screen-share/restart/leave timing: periodic discovery refreshed paused state but did not remove consumed producer ids that no longer existed in the backend authoritative producer list
+- SFU cleanup now clears all remote UI state, stops participant-grid video tracks, and periodic producer discovery removes stale consumed producer ids when the backend producer list no longer includes them
+- the previously failing 3-user channel `VIDEO` product-default pilot with screen-share takeover plus leave/rejoin now passes with expected remote track counts
+- guarded 2-user screen-share, 3-user no-screen, and 5-user no-screen channel `VIDEO` product-default pilot smokes also passed
+- final local/dev health counters settled to zero active rooms/sessions/transports/producers/consumers, and `failedConsumeCount` stayed `0` in the rerun
+- broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
 
 Next likely work:
-- run `channel-video-sfu-multi-user-screen-share-rejoin-cleanup-fix`; acceptable alternative is `channel-video-sfu-failed-restart-recovery-soak-coverage`; do not proceed next to production rollout, broader/default switch, or LiveKit removal
+- run `channel-video-sfu-failed-restart-recovery-soak-coverage`; acceptable alternative is `channel-video-sfu-route-away-back-loop-coverage`; do not proceed next to production rollout, broader/default switch, or LiveKit removal
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
