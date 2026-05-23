@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `channel-video-sfu-limited-pilot-long-soak-env-unblock-and-rerun`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `channel-video-sfu-multi-user-screen-share-rejoin-cleanup-fix`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / channel video SFU limited pilot automated review pass; manual product review required`
+Status: `in progress / channel video SFU limited pilot long-soak rerun review with fail findings`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -711,9 +711,18 @@ Remaining:
 - health snapshots before/after the blocked attempt showed mediasoup prototype health `ready`, zero active media resources, zero transport mode counts, zero media failure counters, and only `staleSweepCount` increasing due health/sweeper activity
 - all bounded long-soak media scenarios remain `blocked / not run`; optional TURN rerun remains `review / not run`
 - broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- `channel-video-sfu-limited-pilot-long-soak-env-unblock-and-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_143_CHANNEL_VIDEO_SFU_LIMITED_PILOT_LONG_SOAK_ENV_UNBLOCK_RERUN.md`
+- local DB-backed smoke env was unblocked: Docker daemon was available, `connect-postgres-validation` was healthy on `localhost:5433`, active `DATABASE_URL` targeted disposable `connect_validation`, and local-only Prisma db push reported the active schema already in sync
+- 2-user channel `VIDEO` product-default pilot with screen-share takeover passed with remote audio/video, Restart, leave/rejoin, rollback assertions, no-camera fallback, and private default preservation
+- 3-user channel `VIDEO` without screen-share passed, and 5-user fake-device channel `VIDEO` without screen-share passed; health counts settled to zero active rooms/sessions/transports/producers/consumers after context close and stale cleanup convergence
+- 3-user channel `VIDEO` with screen-share takeover failed after leave/rejoin because one page expected `Remote tracks: 2` but remained at `Remote tracks: 3`, so multi-user screen-share/rejoin cleanup remains a runtime blocker before broader/default decisions
+- 2-user offline/restore failed by reaching `failed` instead of returning to `connected`; a focused failed-state Restart attempt did not reproduce `failed`, so failed -> Restart rejoin recovery remains `review / not proven` in this rerun
+- final health counters included `failedConsumeCount=1`, `screenShareTakeoverCount=2`, `olderScreenProducerClosedDueToTakeoverCount=2`, `staleSessionsClosedCount=12`, and `failedStateRejoinRecoveryCount=0`
+- optional local TURN rerun was not run because coturn was unavailable on `3478`; actual selected direct-vs-relay ICE path remains deferred observability
+- broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
 
 Next likely work:
-- run `channel-video-sfu-limited-pilot-long-soak-env-unblock-and-rerun`; do not proceed next to production rollout or LiveKit removal
+- run `channel-video-sfu-multi-user-screen-share-rejoin-cleanup-fix`; acceptable alternative is `channel-video-sfu-failed-restart-recovery-soak-coverage`; do not proceed next to production rollout, broader/default switch, or LiveKit removal
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

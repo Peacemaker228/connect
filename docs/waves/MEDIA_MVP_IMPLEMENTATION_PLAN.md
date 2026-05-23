@@ -1054,6 +1054,21 @@ Segment 142 result:
 - broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
 - recommended next segment is `channel-video-sfu-limited-pilot-long-soak-env-unblock-and-rerun`; do not proceed next to production rollout or LiveKit removal
 
+Segment 143 result:
+- status: `channel VIDEO SFU long-soak rerun review with fail findings / env unblocked`
+- `channel-video-sfu-limited-pilot-long-soak-env-unblock-and-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_143_CHANNEL_VIDEO_SFU_LIMITED_PILOT_LONG_SOAK_ENV_UNBLOCK_RERUN.md`
+- local DB-backed smoke env was unblocked: Docker daemon was available, `connect-postgres-validation` was healthy on `localhost:5433`, active `DATABASE_URL` targeted disposable `connect_validation`, and local-only `bun.cmd x prisma db push` reported the database already in sync
+- local API/web ran with `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_PRODUCT_DEFAULT_PILOT=1` and local/dev mediasoup cleanup env; no production env, infra, rollout, default switch, or LiveKit removal was performed
+- 2-user channel `VIDEO` product-default pilot with screen-share takeover passed, including remote audio/video, Restart, leave/rejoin, rollback assertions, no-camera fallback, and private default preservation
+- 3-user channel `VIDEO` without screen-share passed, and 5-user fake-device channel `VIDEO` without screen-share passed; counts settled to zero after browser context close and stale cleanup convergence
+- 3-user channel `VIDEO` with screen-share takeover failed after leave/rejoin because one page expected `Remote tracks: 2` but remained at `Remote tracks: 3`; this is a stale/duplicated remote track finding in the multi-user screen-share/rejoin path
+- 2-user offline/restore failed by reaching `failed` instead of returning to `connected`; a focused failed-state Restart attempt did not reproduce `failed`, so failed -> Restart rejoin recovery remains `review / not proven` in this rerun
+- health snapshots showed active resources during the 5-user run (`5` sessions, `10` producers, `33` consumers at the sampled moment) and final cleanup convergence to zero active rooms/sessions/transports/producers/consumers
+- final counters included `failedConsumeCount=1`, `screenShareTakeoverCount=2`, `olderScreenProducerClosedDueToTakeoverCount=2`, `staleSessionsClosedCount=12`, and `failedStateRejoinRecoveryCount=0`; `failedConsumeCount=1` remains a review signal to triage
+- requested transport mode health counts reported `turn` during active rooms because the current SFU adapter requests TURN credential metadata by default; actual selected direct-vs-relay ICE path remains deferred observability, and optional coturn rerun was not run because local coturn was unavailable on `3478`
+- broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- recommended next segment is `channel-video-sfu-multi-user-screen-share-rejoin-cleanup-fix`; acceptable alternative is `channel-video-sfu-failed-restart-recovery-soak-coverage`; do not proceed next to production rollout, broader/default switch, or LiveKit removal
+
 ## Dependency Summary
 
 Critical path:
@@ -1141,7 +1156,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-video-sfu-limited-pilot-long-soak-env-unblock-and-rerun`
+- `channel-video-sfu-multi-user-screen-share-rejoin-cleanup-fix`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1163,4 +1178,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-video-sfu-limited-pilot-long-soak-env-unblock-and-rerun`
+- `channel-video-sfu-multi-user-screen-share-rejoin-cleanup-fix`
