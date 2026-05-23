@@ -1116,6 +1116,20 @@ Segment 147 result:
 - LiveKit removal remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
 - recommended next segment is `channel-video-sfu-broader-nonproduction-default-candidate-implementation`; acceptable alternative is `channel-video-sfu-optional-local-turn-rerun`; do not proceed next to production rollout, LiveKit removal, or private default switch
 
+Segment 148 result:
+- status: `channel VIDEO SFU broader non-production default-candidate implemented / production and private defaults still blocked or hold`
+- `channel-video-sfu-broader-nonproduction-default-candidate-implementation` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_148_CHANNEL_VIDEO_SFU_BROADER_NONPRODUCTION_DEFAULT_CANDIDATE_IMPLEMENTATION.md`
+- no new env flag was added; the existing broader candidate gate remains `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_DEFAULT_CANDIDATE=1`
+- `media-room.tsx` now names the existing channel `VIDEO` candidate boolean as `isChannelVideoSfuBroaderDefaultCandidateRequested`, preserving behavior while documenting the broader-candidate path in code
+- channel `VIDEO` SFU can open without query params only in non-production when `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_DEFAULT_CANDIDATE=1`; `NODE_ENV=production` remains blocked by both candidate predicate and `isSfuGateOpen`
+- explicit LiveKit rollback remains preserved through `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`
+- ordinary private `?video=true` remains LiveKit/default, channel `AUDIO` behavior is unchanged, and the product-default pilot gate remains unchanged
+- guarded broader candidate smoke passed without SFU query params and covered screen-share takeover, Restart, route away/back, leave/rejoin, no-camera fallback, LiveKit rollback/default assertions, private default preservation, and channel `AUDIO` non-regression assertion inside the channel `VIDEO` smoke
+- final local/dev health counters settled to zero active rooms/sessions/transports/producers/consumers after stale cleanup convergence
+- production default, production media infra readiness, and multi-process readiness remain `blocked`
+- LiveKit removal remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- recommended next segment is `channel-video-sfu-broader-nonproduction-default-candidate-run-report`; acceptable alternative is `channel-video-sfu-optional-local-turn-rerun`; do not proceed next to production rollout, LiveKit removal, or private default switch
+
 ## Dependency Summary
 
 Critical path:
@@ -1203,7 +1217,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-video-sfu-broader-nonproduction-default-candidate-implementation`
+- `channel-video-sfu-broader-nonproduction-default-candidate-run-report`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1225,4 +1239,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-video-sfu-broader-nonproduction-default-candidate-implementation`
+- `channel-video-sfu-broader-nonproduction-default-candidate-run-report`

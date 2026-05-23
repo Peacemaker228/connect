@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `channel-video-sfu-broader-nonproduction-default-candidate-implementation`.
+The next Stage 8 segment should be `channel-video-sfu-broader-nonproduction-default-candidate-run-report`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `channel-video-sfu-broader-nonproduction-default-candidate-implementation`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `channel-video-sfu-broader-nonproduction-default-candidate-run-report`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / channel video SFU broader non-production default-candidate review pass; production blocked`
+Status: `in progress / channel video SFU broader non-production default-candidate implemented; production blocked`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -749,9 +749,19 @@ Remaining:
 - optional local TURN rerun is not required before the next non-production default-candidate implementation because earlier channel `VIDEO` TURN and screen-share TURN checks passed through local Docker coturn, but it remains recommended before TURN-sensitive expansion and required before production readiness claims
 - production default, production media infra readiness, and multi-process readiness remain `blocked`
 - LiveKit removal remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- `channel-video-sfu-broader-nonproduction-default-candidate-implementation` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_148_CHANNEL_VIDEO_SFU_BROADER_NONPRODUCTION_DEFAULT_CANDIDATE_IMPLEMENTATION.md`
+- no new env flag was added; the broader candidate gate is the existing `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_DEFAULT_CANDIDATE=1`
+- `media-room.tsx` now names the existing channel `VIDEO` candidate boolean as `isChannelVideoSfuBroaderDefaultCandidateRequested` without changing behavior
+- channel `VIDEO` SFU can open without query params only in non-production under `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_DEFAULT_CANDIDATE=1`; production remains blocked by `NODE_ENV !== 'production'` checks
+- explicit LiveKit rollback remains preserved through `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`
+- ordinary private `?video=true` remains LiveKit/default, channel `AUDIO` behavior is unchanged, and the product-default pilot gate remains unchanged
+- guarded broader candidate smoke passed without SFU query params and covered screen-share takeover, Restart, route away/back, leave/rejoin, no-camera fallback, rollback/default assertions, private default preservation, and channel `AUDIO` non-regression assertion inside the channel `VIDEO` smoke
+- final local/dev health counters settled to zero active rooms/sessions/transports/producers/consumers after stale cleanup convergence
+- production default, production media infra readiness, and multi-process readiness remain `blocked`
+- LiveKit removal remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
 
 Next likely work:
-- run `channel-video-sfu-broader-nonproduction-default-candidate-implementation`; acceptable alternative is `channel-video-sfu-optional-local-turn-rerun`; do not proceed next to production rollout, LiveKit removal, or private default switch
+- run `channel-video-sfu-broader-nonproduction-default-candidate-run-report`; acceptable alternative is `channel-video-sfu-optional-local-turn-rerun`; do not proceed next to production rollout, LiveKit removal, or private default switch
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
