@@ -1093,6 +1093,18 @@ Segment 145 result:
 - broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
 - recommended next segment is `channel-video-sfu-route-away-back-loop-coverage`; acceptable alternative is `channel-video-sfu-limited-pilot-broader-default-readiness-review`; do not proceed next to production rollout, broader/default switch, or LiveKit removal
 
+Segment 146 result:
+- status: `channel VIDEO SFU route away/back coverage pass / broader defaults still hold`
+- `channel-video-sfu-route-away-back-loop-coverage` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_146_CHANNEL_VIDEO_SFU_ROUTE_AWAY_BACK_LOOP_COVERAGE.md`
+- guarded channel `VIDEO` product-default pilot smoke now supports `CHANNEL_VIDEO_SFU_SMOKE_ROUTE_AWAY_BACK=1`
+- route away/back iterations are fixed and bounded through `CHANNEL_VIDEO_SFU_SMOKE_ROUTE_AWAY_BACK_ITERATIONS`, defaulting to `1` and capped at `2`
+- a 3-user smoke navigated one participant from the SFU video channel to the server `general` text route without pressing Leave, verified remaining remote tracks/video tiles decreased, navigated back to the video channel, and verified all participants returned to `connected` with restored remote tracks/video tiles
+- no runtime cleanup fix was needed; existing MediaRoom/control-plane unmount cleanup and SFU adapter cleanup handled the route change
+- final local/dev health counters settled to zero active rooms/sessions/transports/producers/consumers after stale cleanup convergence
+- 3-user screen-share takeover plus leave/rejoin stayed `pass`, with no stale remote track regression and `failedConsumeCount=0`
+- broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- recommended next segment is `channel-video-sfu-limited-pilot-broader-default-readiness-review`; acceptable alternative is `channel-video-sfu-optional-local-turn-rerun`; do not proceed next to production rollout, LiveKit removal, or a broader/default switch without an explicit readiness review
+
 ## Dependency Summary
 
 Critical path:
@@ -1180,7 +1192,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-video-sfu-route-away-back-loop-coverage`
+- `channel-video-sfu-limited-pilot-broader-default-readiness-review`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1202,4 +1214,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-video-sfu-route-away-back-loop-coverage`
+- `channel-video-sfu-limited-pilot-broader-default-readiness-review`

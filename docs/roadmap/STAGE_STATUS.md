@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `channel-video-sfu-route-away-back-loop-coverage`.
+The next Stage 8 segment should be `channel-video-sfu-limited-pilot-broader-default-readiness-review`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `channel-video-sfu-route-away-back-loop-coverage`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `channel-video-sfu-limited-pilot-broader-default-readiness-review`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / channel video SFU failed Restart recovery coverage pass; broader defaults hold`
+Status: `in progress / channel video SFU route away/back coverage pass; broader defaults hold`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -734,9 +734,17 @@ Remaining:
 - final local/dev health counters again settled to zero active rooms/sessions/transports/producers/consumers after stale cleanup convergence
 - the 3-user screen-share takeover plus leave/rejoin regression stayed `pass`, and `failedConsumeCount` remained `0` in this segment's rerun
 - broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- `channel-video-sfu-route-away-back-loop-coverage` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_146_CHANNEL_VIDEO_SFU_ROUTE_AWAY_BACK_LOOP_COVERAGE.md`
+- guarded channel `VIDEO` product-default pilot smoke now has bounded route away/back coverage through `CHANNEL_VIDEO_SFU_SMOKE_ROUTE_AWAY_BACK=1`
+- route away/back iterations default to `1` and are capped at `2`
+- the focused 3-user route smoke navigated one participant to the server `general` text route without pressing Leave, verified remaining remote tracks/video tiles decreased, navigated back to the video channel, and verified all participants returned to `connected` with restored remote tracks/video tiles
+- no runtime cleanup fix was needed; route-change unmount cleanup handled the participant session and local SFU adapter cleanup
+- final local/dev health counters again settled to zero active rooms/sessions/transports/producers/consumers after stale cleanup convergence
+- the 3-user screen-share takeover plus leave/rejoin regression stayed `pass`, and `failedConsumeCount` remained `0`
+- broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
 
 Next likely work:
-- run `channel-video-sfu-route-away-back-loop-coverage`; acceptable alternative is `channel-video-sfu-limited-pilot-broader-default-readiness-review`; do not proceed next to production rollout, broader/default switch, or LiveKit removal
+- run `channel-video-sfu-limited-pilot-broader-default-readiness-review`; acceptable alternative is `channel-video-sfu-optional-local-turn-rerun`; do not proceed next to production rollout, broader/default switch, or LiveKit removal
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

@@ -71,6 +71,10 @@ const participantCount = parsePositiveInteger(process.env.CHANNEL_VIDEO_SFU_SMOK
 const shouldRunLeaveRejoin = process.env.CHANNEL_VIDEO_SFU_SMOKE_LEAVE_REJOIN !== '0'
 const shouldRunOfflineRestore = process.env.CHANNEL_VIDEO_SFU_SMOKE_OFFLINE_RESTORE === '1'
 const shouldRunFailedRestartRecovery = process.env.CHANNEL_VIDEO_SFU_SMOKE_FAILED_RESTART_RECOVERY === '1'
+const shouldRunRouteAwayBack = process.env.CHANNEL_VIDEO_SFU_SMOKE_ROUTE_AWAY_BACK === '1'
+const routeAwayBackIterationCount = shouldRunRouteAwayBack
+  ? Math.min(parsePositiveInteger(process.env.CHANNEL_VIDEO_SFU_SMOKE_ROUTE_AWAY_BACK_ITERATIONS, 1), 2)
+  : 0
 const shouldRunScreenShare = process.env.CHANNEL_VIDEO_SFU_SMOKE_SCREEN_SHARE === '1'
 
 test.describe('channel VIDEO SFU browser smoke', () => {
@@ -253,6 +257,32 @@ test.describe('channel VIDEO SFU browser smoke', () => {
         await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
         await expectAllRemoteVideoTileCounts(pages, expectedRemoteVideoTileCount)
         await expectAllRemoteVideosVisible(pages, expectedRemoteVideoTileCount)
+      }
+
+      if (shouldRunRouteAwayBack) {
+        const routingPageIndex = Math.min(1, participantCount - 1)
+        const routingPage = pages[routingPageIndex]
+        const remainingPages = pages.filter((_, pageIndex) => pageIndex !== routingPageIndex)
+        const expectedRemainingRemoteProducerText = getRemoteProducerText((participantCount - 2) * 2)
+        const expectedRemainingRemoteVideoTileCount = participantCount - 2
+
+        for (let iteration = 0; iteration < routeAwayBackIterationCount; iteration += 1) {
+          await routingPage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${generalChannel.id}`)
+          await expect(routingPage).toHaveURL(new RegExp(`/servers/${createdServer.id}/channels/${generalChannel.id}$`))
+          await expectAllRemoteProducerCounts(remainingPages, expectedRemainingRemoteProducerText)
+          await expectAllRemoteVideoTileCounts(remainingPages, expectedRemainingRemoteVideoTileCount)
+          await expectAllRemoteVideosVisible(remainingPages, expectedRemainingRemoteVideoTileCount)
+
+          await routingPage.goto(
+            `${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}${getSfuQueryForPage(
+              routingPageIndex,
+            )}`,
+          )
+          await expectAllStatuses(pages, 'connected')
+          await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
+          await expectAllRemoteVideoTileCounts(pages, expectedRemoteVideoTileCount)
+          await expectAllRemoteVideosVisible(pages, expectedRemoteVideoTileCount)
+        }
       }
 
       if (shouldRunLeaveRejoin) {
