@@ -1130,6 +1130,19 @@ Segment 148 result:
 - LiveKit removal remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
 - recommended next segment is `channel-video-sfu-broader-nonproduction-default-candidate-run-report`; acceptable alternative is `channel-video-sfu-optional-local-turn-rerun`; do not proceed next to production rollout, LiveKit removal, or private default switch
 
+Segment 149 result:
+- status: `channel VIDEO SFU broader non-production default-candidate local TURN rerun pass with relay-range review note / production and private defaults still blocked or hold`
+- `channel-video-sfu-optional-local-turn-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_149_CHANNEL_VIDEO_SFU_OPTIONAL_LOCAL_TURN_RERUN.md`
+- local Docker coturn was started from `infra/coturn/docker-compose.local.yml` with a local-only shared secret and `LOCAL_TURN_URLS=turn:127.0.0.1:3478?transport=udp,turn:127.0.0.1:3478?transport=tcp`
+- `127.0.0.1:3478` became reachable over TCP after coturn startup, and Docker published the local TCP/UDP TURN listener plus the local UDP relay range
+- guarded channel `VIDEO` broader default-candidate TURN smoke passed with `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_DEFAULT_CANDIDATE=1`, `CHANNEL_VIDEO_SFU_SMOKE_TRANSPORT=turn`, 3 users, screen-share takeover, Restart, bounded route away/back, leave/rejoin, no-camera fallback, LiveKit rollback/default assertions, ordinary private default preservation, and channel `AUDIO` non-regression assertion
+- health counters observed TURN mode during the smoke with `transportModeCounts.turn=6`, zero app-level SFU failure counters, and final active rooms/sessions/transports/producers/consumers settling back to `0` after stale cleanup convergence
+- coturn logs showed authenticated TURN sessions and client-closed cleanup back to zero allocations; they also showed transient local `508 Cannot create socket` entries from the small default relay port range, so heavier local TURN stress should widen the local-only relay range before rerun
+- this is local Docker coturn evidence only; it is not production TURN readiness
+- production default, production media infra readiness, and multi-process readiness remain `blocked`
+- LiveKit removal remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- recommended next segment is `channel-video-sfu-broader-nonproduction-default-candidate-run-report`; do not proceed next to production rollout, LiveKit removal, or private default switch
+
 ## Dependency Summary
 
 Critical path:

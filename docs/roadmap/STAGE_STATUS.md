@@ -351,7 +351,7 @@ Next likely work:
 
 ### Stage 8. Media MVP
 
-Status: `in progress / channel video SFU broader non-production default-candidate implemented; production blocked`
+Status: `in progress / channel video SFU broader non-production default-candidate local TURN rerun pass; production blocked`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -760,8 +760,16 @@ Remaining:
 - production default, production media infra readiness, and multi-process readiness remain `blocked`
 - LiveKit removal remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
 
+- `channel-video-sfu-optional-local-turn-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_149_CHANNEL_VIDEO_SFU_OPTIONAL_LOCAL_TURN_RERUN.md`
+- local Docker coturn started from `infra/coturn/docker-compose.local.yml`, exposed `127.0.0.1:3478` over TCP/UDP, and the guarded channel `VIDEO` broader non-production default-candidate TURN smoke passed with 3 users, screen-share takeover, Restart, bounded route away/back, leave/rejoin, no-camera fallback, rollback/default assertions, ordinary private default preservation, and channel `AUDIO` non-regression assertion
+- local/dev health observed `transportModeCounts.turn=6` during the smoke, app-level SFU failure counters stayed `0`, and final active rooms/sessions/transports/producers/consumers settled back to `0` after stale cleanup convergence
+- coturn logs showed authenticated TURN sessions and cleanup back to zero allocations; transient local `508 Cannot create socket` entries were observed from the small default relay port range, so heavier local TURN stress should widen the local-only relay range before rerun
+- the latest TURN rerun is `pass with local relay-range review note`, but it remains local Docker coturn evidence only and does not change production readiness
+- production default, production media infra readiness, and multi-process readiness remain `blocked`
+- LiveKit removal remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+
 Next likely work:
-- run `channel-video-sfu-broader-nonproduction-default-candidate-run-report`; acceptable alternative is `channel-video-sfu-optional-local-turn-rerun`; do not proceed next to production rollout, LiveKit removal, or private default switch
+- run `channel-video-sfu-broader-nonproduction-default-candidate-run-report`; do not proceed next to production rollout, LiveKit removal, or private default switch
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
