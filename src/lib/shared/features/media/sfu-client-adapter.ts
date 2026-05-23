@@ -13,6 +13,7 @@ import {
   heartbeatMediasoupPrototypeSession,
   pauseMediasoupPrototypeProducer,
   produceMediasoupPrototypeTrack,
+  resumeMediasoupPrototypeConsumer,
   resumeMediasoupPrototypeProducer,
   type MediasoupPrototypeConsumerResponse,
   type MediasoupPrototypeEvent,
@@ -177,7 +178,7 @@ export class SfuClientAdapter {
     transportId,
     sessionScope,
     producerId,
-    paused = false,
+    paused = true,
   }: CreateSfuClientConsumerMetadataInput): Promise<MediasoupPrototypeConsumerResponse> {
     const device = await this.getLoadedDevice()
     const transport = this.getTransportForDirection('recv', transportId)
@@ -266,6 +267,14 @@ export class SfuClientAdapter {
     this.backendProducers.delete(producerId)
   }
 
+  closeLocalProducer(producerId: string) {
+    const producer = this.producers.get(producerId)
+
+    producer?.close()
+    this.producers.delete(producerId)
+    this.backendProducers.delete(producerId)
+  }
+
   async consume(
     metadata: MediasoupPrototypeConsumerResponse,
     input: ConsumeSfuClientMetadataInput = {},
@@ -294,8 +303,20 @@ export class SfuClientAdapter {
       },
     })
 
+    const resumeResult = await resumeMediasoupPrototypeConsumer(metadata.consumerId, {
+      roomId: metadata.roomId ?? transport.appData.roomId,
+      participantSessionId: metadata.participantSessionId ?? transport.appData.participantSessionId,
+    })
+
+    if (!resumeResult.enabled || resumeResult.status !== 'ready') {
+      consumer.close()
+      throw new Error(resumeResult.reason ?? 'mediasoup consumer resume was not accepted')
+    }
+
+    consumer.resume()
+
     this.consumers.set(consumer.id, consumer)
-    this.backendConsumers.set(consumer.id, metadata)
+    this.backendConsumers.set(consumer.id, resumeResult)
 
     consumer.observer.on('close', () => {
       this.consumers.delete(consumer.id)
@@ -303,22 +324,26 @@ export class SfuClientAdapter {
     })
 
     return {
-      backendConsumer: metadata,
+      backendConsumer: resumeResult,
       consumer,
       track: consumer.track,
     }
   }
 
-  close() {
+  async close() {
+    const closeRequests: Array<Promise<unknown>> = []
+
     for (const backendConsumer of this.backendConsumers.values()) {
       if (!backendConsumer.consumerId) {
         continue
       }
 
-      void closeMediasoupPrototypeConsumer(backendConsumer.consumerId, {
-        roomId: backendConsumer.roomId,
-        participantSessionId: backendConsumer.participantSessionId,
-      }).catch(() => undefined)
+      closeRequests.push(
+        closeMediasoupPrototypeConsumer(backendConsumer.consumerId, {
+          roomId: backendConsumer.roomId,
+          participantSessionId: backendConsumer.participantSessionId,
+        }),
+      )
     }
 
     for (const backendProducer of this.backendProducers.values()) {
@@ -326,10 +351,12 @@ export class SfuClientAdapter {
         continue
       }
 
-      void closeMediasoupPrototypeProducer(backendProducer.producerId, {
-        roomId: backendProducer.roomId,
-        participantSessionId: backendProducer.participantSessionId,
-      }).catch(() => undefined)
+      closeRequests.push(
+        closeMediasoupPrototypeProducer(backendProducer.producerId, {
+          roomId: backendProducer.roomId,
+          participantSessionId: backendProducer.participantSessionId,
+        }),
+      )
     }
 
     for (const consumer of this.consumers.values()) {
@@ -350,6 +377,8 @@ export class SfuClientAdapter {
     this.backendProducers.clear()
     this.transports.clear()
     this.device = null
+
+    await Promise.allSettled(closeRequests)
   }
 
   private async getLoadedDevice() {

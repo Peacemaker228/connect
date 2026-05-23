@@ -487,10 +487,6 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
       };
     }
 
-    if (scope && resolvedSource === 'screen') {
-      this.closeActiveRoomScreenProducers(scope);
-    }
-
     try {
       const producer = await transport.transport.produce({
         kind,
@@ -513,6 +509,10 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
 
       if (scope) {
         this.producerScopes.set(producer.id, scope);
+      }
+
+      if (scope && resolvedSource === 'screen') {
+        this.closeActiveRoomScreenProducers(scope, producer.id);
       }
 
       producer.observer.on('close', () => {
@@ -1019,6 +1019,98 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     };
   }
 
+  async setConsumerPaused({
+    consumerId,
+    scope,
+    paused,
+  }: {
+    consumerId: string | undefined;
+    scope?: LocalMediasoupSessionScope;
+    paused: boolean;
+  }): Promise<LocalMediasoupConsumerMetadata> {
+    if (process.env.NODE_ENV === 'production') {
+      return {
+        status: 'disabled',
+        enabled: false,
+        consumerId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        reason: 'Local mediasoup consumer pause/resume prototype is disabled in production runtime',
+      };
+    }
+
+    if (!consumerId) {
+      return {
+        status: 'failed',
+        enabled: false,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        reason: 'consumerId is required',
+      };
+    }
+
+    const consumer = this.consumers.get(consumerId);
+    const producerId = this.consumerProducerIds.get(consumerId);
+
+    if (!consumer || consumer.closed) {
+      return {
+        status: 'ready',
+        enabled: true,
+        consumerId,
+        producerId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        paused,
+      };
+    }
+
+    const scopeCheck = this.validateConsumerOwnerScope(consumerId, scope);
+
+    if (!scopeCheck.enabled) {
+      return {
+        status: 'failed',
+        enabled: false,
+        consumerId,
+        producerId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        reason: scopeCheck.reason,
+      };
+    }
+
+    if (paused) {
+      await consumer.pause();
+    } else {
+      await consumer.resume();
+    }
+
+    const consumerScope = this.consumerScopes.get(consumerId);
+
+    this.logLifecycle(paused ? 'consumer.paused' : 'consumer.resumed', {
+      consumerId,
+      producerId,
+      roomId: consumerScope?.roomId ?? scope?.roomId,
+      participantSessionId: consumerScope?.participantSessionId ?? scope?.participantSessionId,
+      kind: consumer.kind,
+      paused: consumer.paused,
+      producerPaused: consumer.producerPaused,
+    });
+
+    return {
+      status: 'ready',
+      enabled: true,
+      consumerId,
+      producerId,
+      roomId: consumerScope?.roomId ?? scope?.roomId,
+      participantSessionId: consumerScope?.participantSessionId ?? scope?.participantSessionId,
+      kind: consumer.kind,
+      rtpParameters: consumer.rtpParameters,
+      type: consumer.type,
+      paused: consumer.paused,
+      producerPaused: consumer.producerPaused,
+    };
+  }
+
   listProducers(scope: LocalMediasoupSessionScope | undefined): LocalMediasoupProducerDiscoveryResult {
     this.markSessionActive(scope);
 
@@ -1501,9 +1593,10 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     }
   }
 
-  private closeActiveRoomScreenProducers(scope: LocalMediasoupSessionScope) {
+  private closeActiveRoomScreenProducers(scope: LocalMediasoupSessionScope, exceptProducerId?: string) {
     for (const [producerId, producerScope] of [...this.producerScopes.entries()]) {
       if (
+        producerId === exceptProducerId ||
         producerScope.roomId !== scope.roomId ||
         this.producerSources.get(producerId) !== 'screen'
       ) {

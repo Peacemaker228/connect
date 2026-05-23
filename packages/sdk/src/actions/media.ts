@@ -756,6 +756,15 @@ export const closeMediasoupPrototypeConsumer = async (
     payload,
   )
 
+export const resumeMediasoupPrototypeConsumer = async (
+  consumerId: string,
+  payload: CloseMediasoupPrototypeConsumerRequest,
+) =>
+  postMediaCommand<MediasoupPrototypeConsumerResponse, CloseMediasoupPrototypeConsumerRequest>(
+    `${MEDIA_CONTROL_PATHS.mediasoupPrototypeConsumers}/${consumerId}/resume`,
+    payload,
+  )
+
 export const createMediasoupPrototypeEventSource = ({
   roomId,
   participantSessionId,

@@ -943,6 +943,66 @@ Segment 133 result:
 - subjective product UX review remains optional/review before broader product-facing pilots
 - recommended next runtime segment is `channel-video-sfu-limited-nonproduction-default-pilot`; alternative docs/manual segment is `sfu-screen-share-controlled-product-review`
 
+Segment 134 result:
+- status: `channel VIDEO limited non-production product-default pilot pass / production blocked`
+- added the separate non-production channel `VIDEO` product-default pilot env gate: `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_PRODUCT_DEFAULT_PILOT=1`
+- pilot scope is channel `VIDEO` only, `NODE_ENV !== 'production'` only, off by default, and suppressed by explicit LiveKit rollback overrides: `?mediaProvider=livekit`, `?livekit=true`, or `?sfu=false`
+- enabling the pilot opens channel `VIDEO` through SFU without per-URL SFU query and uses real capture mode, matching the existing candidate gate behavior
+- ordinary channel `VIDEO` without the env gate remains LiveKit/default
+- ordinary private `?video=true` remains LiveKit/default
+- channel `AUDIO` pilot/gates were not changed
+- guarded channel `VIDEO` pilot direct smoke passed with two users, no per-URL SFU query, screen-share, restart, leave/rejoin, rollback assertions, and private default preservation
+- guarded channel `VIDEO` pilot TURN smoke also passed because local coturn/API TURN env from Segment 132 was available
+- channel `AUDIO` regression smoke passed
+- production remains blocked by process-local mediasoup/signaling state and missing production TURN/SFU infra/runbook/monitoring/rollback
+- recommended next segment is `channel-video-sfu-limited-pilot-soak-product-review`
+
+Segment 135 result:
+- status: `channel VIDEO pilot automated review pass / manual product review required`
+- repeated channel `VIDEO` product-default pilot direct smoke with 2 users, no per-URL SFU query, screen-share, restart, leave/rejoin, rollback assertions, no-camera fallback, and private default preservation: `pass`
+- repeated channel `VIDEO` product-default pilot direct smoke with 3 users: `pass`
+- repeated channel `VIDEO` product-default pilot TURN smoke with 2 users through local coturn/API TURN env: `pass`
+- channel `AUDIO` regression smoke passed
+- automated review covers SFU open without query, screen-share start/stop, local preview, remote render, producer count `+1`, rollback via `?mediaProvider=livekit`, `?livekit=true`, `?sfu=false`, restart, leave/rejoin, and ordinary private `?video=true` LiveKit/default preservation
+- subjective product/manual review remains `review / requires operator`; no quality/layout/control UX pass is claimed without human review
+- production remains blocked by process-local mediasoup/signaling state and missing production TURN/SFU infra/runbook/monitoring/rollback
+- recommended next segment is `channel-video-sfu-limited-pilot-operator-review-rerun`; if operator review is deferred, use `channel-video-sfu-product-default-readiness-decision`
+
+Segment 136 result:
+- status: `channel VIDEO pilot remote media fix implemented / manual rerun required`
+- operator review after Segment 135 found real blockers: no remote audio, no remote camera render, blank remote screen-share, and inflated/divergent remote producer counts after restarts
+- the prior automated smoke evidence is not enough for product review until this manual path is rerun
+- join now closes mediasoup resources for superseded participant sessions of the same room identity instead of waiting for stale TTL/sweeper cleanup
+- SFU consumer creation now follows the safer mediasoup sequence: backend consumer starts paused, client creates the local consumer, then backend consumer resumes
+- SFU remote/local video, screen-share video, and remote audio elements now declare `autoPlay`
+- production default remains blocked, LiveKit fallback/default remains preserved, ordinary private `?video=true` remains LiveKit, and production media infra remains out of scope
+- recommended next segment is `channel-video-sfu-limited-pilot-operator-review-rerun`
+
+Segment 137 result:
+- status: `channel VIDEO pilot screen-share/restart cleanup fix implemented / manual rerun required`
+- operator review found that multiple users could appear to screen-share concurrently, restarted clients could temporarily lose an existing remote screen-share, and `Remote producers` could stay inflated after retries/restarts
+- MVP screen-share policy remains one active screen-share per room; latest screen-share wins
+- backend screen producer cleanup now runs after the new screen producer is created and stored, closing older room screen producers while preserving the newest one
+- Restart now waits for previous SFU adapter backend cleanup before publishing new producers
+- `SfuClientAdapter.close()` now awaits backend consumer/producer close requests instead of using only fire-and-forget cleanup
+- producer snapshot handling now reconciles local consumed-producer state and removes stale producers if a close event was missed during reconnect/restart
+- if another participant takes over screen-share, the previous local screen-share owner now stops its local display track and removes the local screen-share UI when its backend screen producer closes
+- channel `VIDEO` guarded screen-share smoke now covers takeover: A shares, B starts sharing, A loses local share and sees B's remote share
+- SFU debug UI now reports `Remote tracks` with `audio/camera/screen` breakdown instead of the misleading `Remote producers` label
+- production default remains blocked, LiveKit fallback/default remains preserved, ordinary private `?video=true` remains LiveKit, and production media infra remains out of scope
+- recommended next segment remains `channel-video-sfu-limited-pilot-operator-review-rerun`
+
+Segment 138 result:
+- status: `SFU failed restart rejoin recovery pass / bounded operator confirmation`
+- operator observed a rare route lifecycle case: after leaving and returning to a SFU call, the call could land in `failed`, and ordinary Restart could briefly enter `waiting` before failing again
+- ordinary Restart still restarts the current SFU path for non-terminal states
+- when the SFU adapter is already in `failed`, Restart now asks the media controller to close the active participant session and perform a fresh backend `joinRoom`
+- this avoids repeatedly retrying transports/producers against a participant session that may already be closed, superseded, or invalidated by route/page lifecycle cleanup
+- operator reproduced the rare failed state once and confirmed Restart recovered the call through the new rejoin path
+- residual risk remains review-only because the original issue is rare and this is not a long-soak proof
+- production default remains blocked, LiveKit fallback/default remains preserved, and production media infra remains out of scope
+- recommended next segment is `channel-video-sfu-limited-pilot-readiness-decision`
+
 ## Dependency Summary
 
 Critical path:
@@ -1030,7 +1090,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-video-sfu-limited-nonproduction-default-pilot`
+- `channel-video-sfu-limited-pilot-readiness-decision`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1052,4 +1112,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-video-sfu-limited-nonproduction-default-pilot`
+- `channel-video-sfu-limited-pilot-readiness-decision`

@@ -218,11 +218,20 @@ export class MediaController {
       body?.mode,
     );
     const resolvedRoom = this.mediaRoomService.resolveRoom(access);
-    const { participantSession, state } = this.mediaParticipantSessionService.createSession({
-      roomId: resolvedRoom.roomId,
-      identity: access.identity,
-      desiredState: body?.desiredState,
-    });
+    const { participantSession, state, supersededParticipantSessions } =
+      this.mediaParticipantSessionService.createSession({
+        roomId: resolvedRoom.roomId,
+        identity: access.identity,
+        desiredState: body?.desiredState,
+      });
+
+    for (const supersededSession of supersededParticipantSessions) {
+      this.mediasoupPrototypeService.closeSession({
+        roomId: supersededSession.roomId,
+        participantSessionId: supersededSession.participantSessionId,
+      });
+    }
+
     const room = this.mediaRoomService.activateRoom(resolvedRoom.roomId);
     const permissions = this.mediaPermissionService.getPermissionSnapshot(
       access,
@@ -491,6 +500,22 @@ export class MediaController {
     return this.mediasoupPrototypeService.closeConsumer({
       consumerId,
       scope,
+    });
+  }
+
+  @Post('prototype/mediasoup/consumers/:consumerId/resume')
+  @UseGuards(RequireAuthGuard)
+  resumeMediasoupPrototypeConsumer(
+    @CurrentProfileId() profileId: string | undefined,
+    @Param('consumerId') consumerId: string | undefined,
+    @Body() body: CloseMediasoupPrototypeConsumerBody | undefined,
+  ): Promise<LocalMediasoupConsumerMetadata> {
+    const scope = this.resolvePrototypeSessionScope(profileId, body);
+
+    return this.mediasoupPrototypeService.setConsumerPaused({
+      consumerId,
+      scope,
+      paused: false,
     });
   }
 

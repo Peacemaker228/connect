@@ -36,10 +36,11 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
     lastName: null,
     username: profile?.name ?? null,
   })
-  const { liveKitToken, controlPlaneJoin, controlPlaneStatus, leaveControlPlane } = useMediaRoomController({
-    mediaEntry,
-    displayName: profile?.name ? name : null,
-  })
+  const { liveKitToken, controlPlaneJoin, controlPlaneStatus, leaveControlPlane, rejoinControlPlane } =
+    useMediaRoomController({
+      mediaEntry,
+      displayName: profile?.name ? name : null,
+    })
   const isNonProductionRuntime = process.env.NODE_ENV !== 'production'
   const isLiveKitProviderRequested =
     searchParams?.get('mediaProvider') === 'livekit' ||
@@ -69,6 +70,13 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
     isNonProductionRuntime &&
     !isLiveKitProviderRequested &&
     process.env.NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_DEFAULT_CANDIDATE === '1'
+  const isChannelVideoSfuProductDefaultPilotRequested =
+    isChannelScope &&
+    audio &&
+    video &&
+    isNonProductionRuntime &&
+    !isLiveKitProviderRequested &&
+    process.env.NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_PRODUCT_DEFAULT_PILOT === '1'
   const isPrivateSfuGateRequested = mediaEntry.scope.kind === 'conversation' && isSfuProviderRequested
   const isChannelAudioSfuGateRequested =
     isChannelScope &&
@@ -83,7 +91,8 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
   const sfuCaptureMode =
     isChannelAudioSfuDefaultCandidateRequested ||
     isChannelAudioSfuProductDefaultPilotRequested ||
-    isChannelVideoSfuDefaultCandidateRequested
+    isChannelVideoSfuDefaultCandidateRequested ||
+    isChannelVideoSfuProductDefaultPilotRequested
       ? 'real'
       : requestedSfuCaptureMode
   const isChannelVideoSfuGateRequested =
@@ -94,7 +103,8 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
       searchParams?.get('sfuVideo') === 'true' &&
       sfuCaptureMode === 'real' &&
       isSfuProviderRequested) ||
-      isChannelVideoSfuDefaultCandidateRequested)
+      isChannelVideoSfuDefaultCandidateRequested ||
+      isChannelVideoSfuProductDefaultPilotRequested)
   const isSfuGateRequested =
     isPrivateSfuGateRequested || isChannelAudioSfuGateRequested || isChannelVideoSfuGateRequested
   const isSfuGateOpen = isSfuGateRequested && isNonProductionRuntime
@@ -137,6 +147,7 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
           isChannelVideoSfu ? 'Restart SFU channel video' : isChannelAudioSfu ? 'Restart SFU channel audio' : undefined
         }
         remoteVideoLayout={isChannelVideoSfu ? 'participant-grid' : 'single'}
+        onRecover={rejoinControlPlane}
         onLeave={handleLeave}
       />
     )

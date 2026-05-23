@@ -27,6 +27,7 @@ type SfuPrivateCallAdapterProps = {
   roomLabel?: string
   restartAriaLabel?: string
   remoteVideoLayout?: 'single' | 'participant-grid'
+  onRecover?: () => Promise<void> | void
   onLeave: () => void
 }
 
@@ -55,6 +56,18 @@ type LocalCaptureResult = {
   oscillator?: OscillatorNode
   videoTrack?: MediaStreamTrack
   continuedAudioOnly?: boolean
+}
+
+type RemoteTrackCounts = {
+  audio: number
+  camera: number
+  screen: number
+}
+
+const EMPTY_REMOTE_TRACK_COUNTS: RemoteTrackCounts = {
+  audio: 0,
+  camera: 0,
+  screen: 0,
 }
 
 const getMediaErrorMessage = (error: unknown) => {
@@ -191,6 +204,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   roomLabel = 'SFU private call',
   restartAriaLabel = 'Restart SFU private call',
   remoteVideoLayout = 'single',
+  onRecover,
   onLeave,
 }) => {
   const adapterRef = useRef<SfuClientAdapter | null>(null)
@@ -221,6 +235,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   const [producerIds, setProducerIds] = useState<string[]>([])
   const [consumerIds, setConsumerIds] = useState<string[]>([])
   const [remoteProducerIds, setRemoteProducerIds] = useState<string[]>([])
+  const [remoteTrackCounts, setRemoteTrackCounts] = useState<RemoteTrackCounts>(EMPTY_REMOTE_TRACK_COUNTS)
   const [remoteParticipants, setRemoteParticipants] = useState<RemoteParticipantMedia[]>([])
   const [remoteScreenShares, setRemoteScreenShares] = useState<RemoteScreenShareMedia[]>([])
   const [hasSingleRemoteVideoTrack, setHasSingleRemoteVideoTrack] = useState(false)
@@ -242,7 +257,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     [controlPlaneJoin.participantSession.participantSessionId, controlPlaneJoin.participantSession.roomId],
   )
 
-  const cleanup = useCallback(() => {
+  const cleanup = useCallback((options: { closeAdapter?: boolean } = {}) => {
     if (heartbeatTimerRef.current !== null) {
       window.clearInterval(heartbeatTimerRef.current)
       heartbeatTimerRef.current = null
@@ -256,7 +271,9 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     eventSourceRef.current?.close()
     eventSourceRef.current = null
 
-    adapterRef.current?.close()
+    if (options.closeAdapter !== false) {
+      void adapterRef.current?.close()
+    }
     adapterRef.current = null
     sendTransportIdRef.current = null
     remoteAudioTrackByProducerIdRef.current.clear()
@@ -264,6 +281,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     consumedProducerKeysRef.current.clear()
     consumedProducerKeyByIdRef.current.clear()
     consumedProducerByIdRef.current.clear()
+    setRemoteTrackCounts(EMPTY_REMOTE_TRACK_COUNTS)
     remoteStreamRef.current = null
     remoteVideoStreamRef.current = null
 
@@ -366,25 +384,24 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     [setRemoteSpeakingState],
   )
 
-  const applyLocalTrackEnabled = useCallback(async (
-    kind: MediaStreamTrack['kind'],
-    enabled: boolean,
-    source?: 'microphone' | 'camera' | 'screen',
-  ) => {
-    for (const track of localTracksRef.current.filter((item) => item.kind === kind)) {
-      track.enabled = enabled
-    }
+  const applyLocalTrackEnabled = useCallback(
+    async (kind: MediaStreamTrack['kind'], enabled: boolean, source?: 'microphone' | 'camera' | 'screen') => {
+      for (const track of localTracksRef.current.filter((item) => item.kind === kind)) {
+        track.enabled = enabled
+      }
 
-    try {
-      await adapterRef.current?.setProducerTrackEnabled(kind, enabled, source)
-    } catch (error) {
-      console.warn('[media] failed to update SFU producer enabled state', error)
-    }
+      try {
+        await adapterRef.current?.setProducerTrackEnabled(kind, enabled, source)
+      } catch (error) {
+        console.warn('[media] failed to update SFU producer enabled state', error)
+      }
 
-    if (kind === 'audio' && !enabled) {
-      setIsLocalSpeaking(false)
-    }
-  }, [])
+      if (kind === 'audio' && !enabled) {
+        setIsLocalSpeaking(false)
+      }
+    },
+    [],
+  )
 
   const applyRemoteProducerPausedState = useCallback(
     (producerId: string, paused: boolean) => {
@@ -443,6 +460,30 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     },
     [remoteVideoLayout, startRemoteSpeakingDetector],
   )
+
+  const syncRemoteTrackCounts = useCallback(() => {
+    const counts: RemoteTrackCounts = {
+      audio: 0,
+      camera: 0,
+      screen: 0,
+    }
+
+    for (const producer of consumedProducerByIdRef.current.values()) {
+      if (producer.kind === 'audio') {
+        counts.audio += 1
+        continue
+      }
+
+      if (producer.source === 'screen') {
+        counts.screen += 1
+        continue
+      }
+
+      counts.camera += 1
+    }
+
+    setRemoteTrackCounts(counts)
+  }, [])
 
   const createSyntheticAudioCapture = useCallback(async (): Promise<LocalCaptureResult> => {
     const audioContext = new AudioContext()
@@ -730,6 +771,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       setRemoteProducerIds((current) =>
         current.includes(producer.producerId) ? current : [...current, producer.producerId],
       )
+      syncRemoteTrackCounts()
       setConsumerIds((current) =>
         consumed.backendConsumer.consumerId && !current.includes(consumed.backendConsumer.consumerId)
           ? [...current, consumed.backendConsumer.consumerId]
@@ -738,8 +780,99 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       setStatus('connected')
       setDetail('Remote SFU producer event received and consumed')
     },
-    [applyRemoteProducerPausedState, attachRemoteTrack, sessionScope],
+    [applyRemoteProducerPausedState, attachRemoteTrack, sessionScope, syncRemoteTrackCounts],
   )
+
+  const removeRemoteProducer = useCallback(
+    (producerId: string) => {
+      const producerKey = consumedProducerKeyByIdRef.current.get(producerId)
+
+      consumedProducerIdsRef.current.delete(producerId)
+      consumedProducerKeyByIdRef.current.delete(producerId)
+
+      if (producerKey) {
+        consumedProducerKeysRef.current.delete(producerKey)
+      }
+
+      const producer = consumedProducerByIdRef.current.get(producerId)
+      consumedProducerByIdRef.current.delete(producerId)
+
+      if (producer?.kind === 'audio') {
+        const remoteTrack = remoteAudioTrackByProducerIdRef.current.get(producerId)
+
+        remoteAudioTrackByProducerIdRef.current.delete(producerId)
+
+        if (remoteTrack && remoteStreamRef.current) {
+          remoteStreamRef.current.removeTrack(remoteTrack)
+          remoteTrack.stop()
+
+          if (remoteStreamRef.current.getAudioTracks().length === 0) {
+            remoteAudioRef.current?.pause()
+
+            if (remoteAudioRef.current) {
+              remoteAudioRef.current.srcObject = null
+            }
+
+            remoteStreamRef.current = null
+            startRemoteSpeakingDetector(null)
+          } else {
+            startRemoteSpeakingDetector(remoteStreamRef.current)
+          }
+        }
+      }
+
+      if (producer?.kind === 'video' && producer.source === 'screen') {
+        setRemoteScreenShares((current) => {
+          const screenShare = current.find((item) => item.producerId === producerId)
+
+          screenShare?.track.stop()
+
+          return current.filter((item) => item.producerId !== producerId)
+        })
+      }
+
+      if (producer?.kind === 'video' && producer.source !== 'screen' && remoteVideoLayout === 'single') {
+        setHasSingleRemoteVideoTrack(false)
+      }
+
+      if (producer && producer.source !== 'screen' && remoteVideoLayout === 'participant-grid') {
+        setRemoteParticipants((current) =>
+          removeRemoteParticipantProducer({
+            current,
+            participantSessionId: producer.participantSessionId,
+            kind: producer.kind,
+            source: producer.source,
+            producerId,
+          }),
+        )
+      }
+
+      setRemoteProducerIds((current) => current.filter((item) => item !== producerId))
+      syncRemoteTrackCounts()
+    },
+    [remoteVideoLayout, startRemoteSpeakingDetector, syncRemoteTrackCounts],
+  )
+
+  const clearLocalScreenShare = useCallback((producerId?: string) => {
+    const currentProducerId = screenShareProducerIdRef.current
+
+    if (!currentProducerId || (producerId && currentProducerId !== producerId)) {
+      return
+    }
+
+    const track = screenShareTrackRef.current
+
+    screenShareProducerIdRef.current = null
+    screenShareTrackRef.current = null
+    setLocalScreenShareProducerId(null)
+    setLocalScreenShareTrack(null)
+    setProducerIds((current) => current.filter((item) => item !== currentProducerId))
+    adapterRef.current?.closeLocalProducer(currentProducerId)
+
+    if (track && track.readyState === 'live') {
+      track.stop()
+    }
+  }, [])
 
   const subscribeToProducerEvents = useCallback(
     ({
@@ -777,9 +910,22 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
             const event = JSON.parse(message.data) as MediasoupPrototypeEvent
 
             if (event.type === 'producer.snapshot') {
+              const allSnapshotProducerIds = new Set(event.producers.map((producer) => producer.producerId))
               const remoteProducers = event.producers.filter(
                 (producer) => producer.participantSessionId !== sessionScope.participantSessionId,
               )
+              const snapshotProducerIds = new Set(remoteProducers.map((producer) => producer.producerId))
+              const localScreenShareProducerId = screenShareProducerIdRef.current
+
+              if (localScreenShareProducerId && !allSnapshotProducerIds.has(localScreenShareProducerId)) {
+                clearLocalScreenShare(localScreenShareProducerId)
+              }
+
+              for (const producerId of [...consumedProducerIdsRef.current]) {
+                if (!snapshotProducerIds.has(producerId)) {
+                  removeRemoteProducer(producerId)
+                }
+              }
 
               if (!initialSnapshotReceived) {
                 initialSnapshotReceived = true
@@ -820,69 +966,8 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
             }
 
             if (event.type === 'producer.closed') {
-              const producerKey = consumedProducerKeyByIdRef.current.get(event.producerId)
-
-              consumedProducerIdsRef.current.delete(event.producerId)
-              consumedProducerKeyByIdRef.current.delete(event.producerId)
-
-              if (producerKey) {
-                consumedProducerKeysRef.current.delete(producerKey)
-              }
-
-              const producer = consumedProducerByIdRef.current.get(event.producerId)
-              consumedProducerByIdRef.current.delete(event.producerId)
-
-              if (producer?.kind === 'audio') {
-                const remoteTrack = remoteAudioTrackByProducerIdRef.current.get(event.producerId)
-
-                remoteAudioTrackByProducerIdRef.current.delete(event.producerId)
-
-                if (remoteTrack && remoteStreamRef.current) {
-                  remoteStreamRef.current.removeTrack(remoteTrack)
-                  remoteTrack.stop()
-
-                  if (remoteStreamRef.current.getAudioTracks().length === 0) {
-                    remoteAudioRef.current?.pause()
-
-                    if (remoteAudioRef.current) {
-                      remoteAudioRef.current.srcObject = null
-                    }
-
-                    remoteStreamRef.current = null
-                    startRemoteSpeakingDetector(null)
-                  } else {
-                    startRemoteSpeakingDetector(remoteStreamRef.current)
-                  }
-                }
-              }
-
-              if (producer?.kind === 'video' && producer.source === 'screen') {
-                setRemoteScreenShares((current) => {
-                  const screenShare = current.find((item) => item.producerId === event.producerId)
-
-                  screenShare?.track.stop()
-
-                  return current.filter((item) => item.producerId !== event.producerId)
-                })
-              }
-
-              if (producer?.kind === 'video' && producer.source !== 'screen' && remoteVideoLayout === 'single') {
-                setHasSingleRemoteVideoTrack(false)
-              }
-
-              if (producer && producer.source !== 'screen' && remoteVideoLayout === 'participant-grid') {
-                setRemoteParticipants((current) =>
-                  removeRemoteParticipantProducer({
-                    current,
-                    participantSessionId: producer.participantSessionId,
-                    kind: producer.kind,
-                    source: producer.source,
-                    producerId: producer.producerId,
-                  }),
-                )
-              }
-
-              setRemoteProducerIds((current) => current.filter((producerId) => producerId !== event.producerId))
+              clearLocalScreenShare(event.producerId)
+              removeRemoteProducer(event.producerId)
             }
 
             if (event.type === 'producer.paused' || event.type === 'producer.resumed') {
@@ -905,18 +990,21 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         }
       })
     },
-    [applyRemoteProducerPausedState, consumeRemoteProducer, remoteVideoLayout, sessionScope, startRemoteSpeakingDetector],
+    [applyRemoteProducerPausedState, clearLocalScreenShare, consumeRemoteProducer, removeRemoteProducer, sessionScope],
   )
 
   const startSfuPath = useCallback(async () => {
     const runId = startRunIdRef.current + 1
     startRunIdRef.current = runId
-    cleanup()
+    const previousAdapter = adapterRef.current
+    cleanup({ closeAdapter: false })
+    await previousAdapter?.close()
     setStatus('starting')
     setDetail('Starting scoped SFU media path')
     setProducerIds([])
     setConsumerIds([])
     setRemoteProducerIds([])
+    setRemoteTrackCounts(EMPTY_REMOTE_TRACK_COUNTS)
     setRemoteParticipants([])
     setRemoteScreenShares([])
     setHasSingleRemoteVideoTrack(false)
@@ -933,7 +1021,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
 
     const isStaleRun = () => startRunIdRef.current !== runId
     const cleanupStaleRun = () => {
-      adapter.close()
+      void adapter.close()
       cleanupLocalCapture(localCapture)
     }
 
@@ -1170,6 +1258,16 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     cleanup()
     onLeave()
   }, [cleanup, onLeave])
+  const handleRestartClick = useCallback(() => {
+    if (status === 'failed' && onRecover) {
+      startRunIdRef.current += 1
+      cleanup()
+      void onRecover()
+      return
+    }
+
+    void startSfuPath()
+  }, [cleanup, onRecover, startSfuPath, status])
 
   return (
     <div className="flex h-full flex-col bg-zinc-950 text-zinc-50">
@@ -1216,7 +1314,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
             size="icon"
             variant="outline"
             aria-label={restartAriaLabel}
-            onClick={() => void startSfuPath()}>
+            onClick={handleRestartClick}>
             <RotateCcw className="h-4 w-4" />
           </Button>
           <Button type="button" size="icon" variant="destructive" aria-label="Leave call" onClick={handleLeaveClick}>
@@ -1257,7 +1355,10 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
           </div>
         </dl>
         <div className="text-xs text-zinc-500" data-testid="private-sfu-remote-producer-count">
-          Remote producers: {remoteProducerIds.length}
+          Remote tracks: {remoteProducerIds.length}
+        </div>
+        <div className="text-xs text-zinc-500" data-testid="private-sfu-remote-track-breakdown">
+          audio {remoteTrackCounts.audio}, camera {remoteTrackCounts.camera}, screen {remoteTrackCounts.screen}
         </div>
         <div className="text-xs text-zinc-500" data-testid="private-sfu-capture-mode">
           Capture mode: {captureMode}
@@ -1310,6 +1411,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
           <video
             ref={localVideoRef}
             muted
+            autoPlay
             playsInline
             className="hidden aspect-video w-full bg-black object-cover data-[active=true]:block"
             data-active={hasLocalVideoTrack}
@@ -1322,6 +1424,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
           ) : (
             <video
               ref={remoteVideoRef}
+              autoPlay
               playsInline
               className="hidden aspect-video w-full bg-black object-cover data-[active=true]:block"
               data-active={hasSingleRemoteVideoTrack}
@@ -1329,7 +1432,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
             />
           )}
         </div>
-        <audio ref={remoteAudioRef} controls className="h-10 w-full max-w-xl" />
+        <audio ref={remoteAudioRef} autoPlay controls className="h-10 w-full max-w-xl" />
       </div>
     </div>
   )
@@ -1427,7 +1530,14 @@ const ScreenShareVideoTile: FC<{
   return (
     <section className="w-full border border-zinc-800 bg-black" data-testid={testId}>
       <div className="border-b border-zinc-800 px-3 py-2 text-left text-xs text-zinc-400">{label}</div>
-      <video ref={videoRef} playsInline muted className="aspect-video w-full object-contain" data-testid={videoTestId} />
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className="aspect-video w-full object-contain"
+        data-testid={videoTestId}
+      />
     </section>
   )
 }
@@ -1463,6 +1573,7 @@ const RemoteVideoTile: FC<{ participant: RemoteParticipantMedia }> = ({ particip
       {participant.videoTrack ? (
         <video
           ref={videoRef}
+          autoPlay
           playsInline
           className="h-full w-full object-cover"
           data-testid="private-sfu-remote-video"
