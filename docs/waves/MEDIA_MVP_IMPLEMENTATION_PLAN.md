@@ -1105,6 +1105,17 @@ Segment 146 result:
 - broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
 - recommended next segment is `channel-video-sfu-limited-pilot-broader-default-readiness-review`; acceptable alternative is `channel-video-sfu-optional-local-turn-rerun`; do not proceed next to production rollout, LiveKit removal, or a broader/default switch without an explicit readiness review
 
+Segment 147 result:
+- status: `channel VIDEO SFU broader non-production default-candidate review pass / production and private defaults still blocked or hold`
+- `channel-video-sfu-limited-pilot-broader-default-readiness-review` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_147_CHANNEL_VIDEO_SFU_LIMITED_PILOT_BROADER_DEFAULT_READINESS_REVIEW.md`
+- reviewed post-fix evidence covers 2-user screen-share takeover, 3-user no-screen, 5-user fake-device no-screen, fixed 3-user screen-share takeover plus leave/rejoin, bounded failed/offline Restart recovery, bounded route away/back, cleanup convergence to zero active media resources, and preserved LiveKit rollback/default behavior
+- channel `VIDEO` limited non-production pilot is `pass for broader non-production default-candidate review`
+- broader product-facing default is now `ready for a separate non-production default-candidate implementation segment`; this segment does not enable broader/default runtime behavior
+- optional local TURN rerun is not required before the next non-production default-candidate implementation because earlier channel `VIDEO` TURN and screen-share TURN checks passed through local Docker coturn, but it remains recommended before TURN-sensitive expansion and required before production readiness claims
+- production default, production media infra readiness, and multi-process readiness remain `blocked`
+- LiveKit removal remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- recommended next segment is `channel-video-sfu-broader-nonproduction-default-candidate-implementation`; acceptable alternative is `channel-video-sfu-optional-local-turn-rerun`; do not proceed next to production rollout, LiveKit removal, or private default switch
+
 ## Dependency Summary
 
 Critical path:
@@ -1192,7 +1203,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-video-sfu-limited-pilot-broader-default-readiness-review`
+- `channel-video-sfu-broader-nonproduction-default-candidate-implementation`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1214,4 +1225,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-video-sfu-limited-pilot-broader-default-readiness-review`
+- `channel-video-sfu-broader-nonproduction-default-candidate-implementation`

@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `channel-video-sfu-limited-pilot-broader-default-readiness-review`.
+The next Stage 8 segment should be `channel-video-sfu-broader-nonproduction-default-candidate-implementation`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `channel-video-sfu-limited-pilot-broader-default-readiness-review`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `channel-video-sfu-broader-nonproduction-default-candidate-implementation`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / channel video SFU route away/back coverage pass; broader defaults hold`
+Status: `in progress / channel video SFU broader non-production default-candidate review pass; production blocked`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -742,9 +742,16 @@ Remaining:
 - final local/dev health counters again settled to zero active rooms/sessions/transports/producers/consumers after stale cleanup convergence
 - the 3-user screen-share takeover plus leave/rejoin regression stayed `pass`, and `failedConsumeCount` remained `0`
 - broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- `channel-video-sfu-limited-pilot-broader-default-readiness-review` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_147_CHANNEL_VIDEO_SFU_LIMITED_PILOT_BROADER_DEFAULT_READINESS_REVIEW.md`
+- post-fix evidence now covers 2-user screen-share takeover, 3-user no-screen, 5-user fake-device no-screen, fixed 3-user screen-share takeover plus leave/rejoin, bounded failed/offline Restart recovery, bounded route away/back, cleanup convergence to zero active media resources, and preserved LiveKit rollback/default behavior
+- channel `VIDEO` limited non-production pilot is `pass for broader non-production default-candidate review`
+- broader product-facing default is ready only for a separate non-production default-candidate implementation segment; no broader/default runtime switch was made in the readiness review
+- optional local TURN rerun is not required before the next non-production default-candidate implementation because earlier channel `VIDEO` TURN and screen-share TURN checks passed through local Docker coturn, but it remains recommended before TURN-sensitive expansion and required before production readiness claims
+- production default, production media infra readiness, and multi-process readiness remain `blocked`
+- LiveKit removal remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
 
 Next likely work:
-- run `channel-video-sfu-limited-pilot-broader-default-readiness-review`; acceptable alternative is `channel-video-sfu-optional-local-turn-rerun`; do not proceed next to production rollout, broader/default switch, or LiveKit removal
+- run `channel-video-sfu-broader-nonproduction-default-candidate-implementation`; acceptable alternative is `channel-video-sfu-optional-local-turn-rerun`; do not proceed next to production rollout, LiveKit removal, or private default switch
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
