@@ -86,6 +86,41 @@ export type MediasoupPrototypeStatus = 'disabled' | 'ready' | 'failed'
 
 export type MediasoupPrototypeTransportDirection = 'send' | 'recv'
 
+export type MediasoupPrototypeTransportMode = 'direct' | 'turn' | 'unknown'
+
+export type MediasoupPrototypeTrackSource = 'microphone' | 'camera' | 'screen'
+
+export type MediasoupPrototypeTrackSourceCounts = Record<MediasoupPrototypeTrackSource, number>
+
+export type MediasoupPrototypeTransportModeCounts = Record<MediasoupPrototypeTransportMode, number>
+
+export type MediasoupPrototypeRoomBreakdown = {
+  roomId: string
+  participantSessionCount: number
+  transportCount: number
+  producerCount: number
+  consumerCount: number
+  producerCountsBySource: MediasoupPrototypeTrackSourceCounts
+  consumerCountsBySource: MediasoupPrototypeTrackSourceCounts
+  transportModeCounts: MediasoupPrototypeTransportModeCounts
+}
+
+export type MediasoupPrototypeObservabilityCounters = {
+  failedTransportCreateCount: number
+  failedTransportConnectCount: number
+  failedProduceCount: number
+  failedConsumeCount: number
+  failedConsumerResumeCount: number
+  screenShareStartCount: number
+  screenShareStopCount: number
+  screenShareTakeoverCount: number
+  olderScreenProducerClosedDueToTakeoverCount: number
+  sessionCloseCount: number
+  staleSweepCount: number
+  staleSessionsClosedCount: number
+  failedStateRejoinRecoveryCount: number
+}
+
 export type LocalTurnCredentialResponse = {
   status: MediasoupPrototypeStatus
   enabled: boolean
@@ -114,6 +149,11 @@ export type MediasoupPrototypeHealthResponse = {
   activeConsumerCount?: number
   activeRoomCount?: number
   trackedSessionCount?: number
+  producerCountsBySource?: MediasoupPrototypeTrackSourceCounts
+  consumerCountsBySource?: MediasoupPrototypeTrackSourceCounts
+  transportModeCounts?: MediasoupPrototypeTransportModeCounts
+  rooms?: MediasoupPrototypeRoomBreakdown[]
+  counters?: MediasoupPrototypeObservabilityCounters
   staleSessionTtlMs?: number
   staleSessionSweepIntervalMs?: number
   lastCleanup?: MediasoupPrototypeCleanupResult
@@ -145,6 +185,7 @@ export type MediasoupPrototypeTransportResponse = {
   status: MediasoupPrototypeStatus
   enabled: boolean
   direction?: MediasoupPrototypeTransportDirection
+  requestedTransportMode?: MediasoupPrototypeTransportMode
   transportId?: string
   iceParameters?: Record<string, unknown>
   iceCandidates?: Array<Record<string, unknown>>
@@ -169,7 +210,6 @@ export type MediasoupPrototypeTransportConnectResponse = {
 }
 
 export type MediasoupPrototypeMediaKind = 'audio' | 'video'
-export type MediasoupPrototypeTrackSource = 'microphone' | 'camera' | 'screen'
 
 export type ProduceMediasoupPrototypeRequest = {
   transportId?: string
