@@ -1019,6 +1019,17 @@ Segment 139 result:
 - process-local mediasoup/signaling state remains a blocker before production or multi-process readiness
 - recommended next segment is `channel-video-sfu-limited-pilot-observability-and-long-soak-plan` or `private-sfu-default-readiness-decision`; do not proceed next to production default or LiveKit removal
 
+Segment 140 result:
+- status: `channel VIDEO limited pilot observability / long-soak plan documented / implementation not started`
+- `channel-video-sfu-limited-pilot-observability-and-long-soak-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_140_CHANNEL_VIDEO_SFU_LIMITED_PILOT_OBSERVABILITY_LONG_SOAK_PLAN.md`
+- this is a plan-only segment; it does not change runtime code, env defaults, production/default rollout, LiveKit fallback, TURN/SFU infra, or Stage 6/Postgres production migration docs
+- minimum local/dev observability signals are defined for active room/session/transport/producer/consumer counts, stale cleanup counters, failed join/transport/produce/consume/rejoin counters, screen-share takeover events, restart/rejoin recovery events, direct-vs-TURN mode visibility, and per-room remote track count expectations
+- bounded long-soak scenarios are defined for 2-user direct, 3-user direct, 5-user fake-device direct, screen-share takeover A -> B, restart loop, leave/rejoin loop, route change away/back loop, failed -> Restart rejoin recovery, and optional TURN rerun when local coturn is available
+- pass/review/fail criteria require remote audio/video stability, no stale remote tracks after cleanup, settled resource counts after leave/rejoin/context close, screen-share latest-wins, recoverable failed state through Restart/rejoin, and preserved LiveKit rollback/default behavior
+- broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- process-local mediasoup/signaling state remains a blocker before production or multi-process readiness
+- recommended next segment is `channel-video-sfu-limited-pilot-observability-instrumentation` or `channel-video-sfu-limited-pilot-long-soak-run-report`; do not proceed next to production rollout or LiveKit removal
+
 ## Dependency Summary
 
 Critical path:
@@ -1106,7 +1117,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-video-sfu-limited-pilot-observability-and-long-soak-plan` or `private-sfu-default-readiness-decision`
+- `channel-video-sfu-limited-pilot-observability-instrumentation` or `channel-video-sfu-limited-pilot-long-soak-run-report`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1128,4 +1139,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-video-sfu-limited-pilot-observability-and-long-soak-plan` or `private-sfu-default-readiness-decision`
+- `channel-video-sfu-limited-pilot-observability-instrumentation` or `channel-video-sfu-limited-pilot-long-soak-run-report`

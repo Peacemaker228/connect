@@ -693,9 +693,15 @@ Remaining:
 - latest bounded operator checks confirmed remote audio/video, screen-share takeover, understandable `Remote tracks` labeling, and one failed -> Restart recovery through rejoin
 - local Docker coturn TURN checks previously passed for channel `VIDEO` screen-share and the channel `VIDEO` pilot, but production TURN/SFU infra is still not ready
 - process-local mediasoup/signaling remains a blocker before production or multi-process readiness, and long-soak remains `review`
+- `channel-video-sfu-limited-pilot-observability-and-long-soak-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_140_CHANNEL_VIDEO_SFU_LIMITED_PILOT_OBSERVABILITY_LONG_SOAK_PLAN.md`
+- this is plan-only and does not change runtime code, env defaults, production/default rollout, TURN/SFU infra, or LiveKit fallback
+- minimum local/dev observability signals are now defined for active room/session/transport/producer/consumer counts, stale cleanup counters, failed join/transport/produce/consume/rejoin counters, screen-share takeover events, restart/rejoin recovery events, direct-vs-TURN mode visibility, and per-room remote track expectations
+- bounded long-soak scenarios are now defined for 2-user direct, 3-user direct, 5-user fake-device direct, screen-share takeover A -> B, restart loop, leave/rejoin loop, route change away/back loop, failed -> Restart rejoin recovery, and optional TURN rerun when local coturn is available
+- pass/review/fail criteria require no stale remote tracks after cleanup, settled counts after leave/rejoin/context close, screen-share latest-wins, working remote audio/video, recoverable failed states through Restart/rejoin, and no LiveKit fallback regression
+- broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and production-like soak remains absent
 
 Next likely work:
-- run `channel-video-sfu-limited-pilot-observability-and-long-soak-plan` or `private-sfu-default-readiness-decision`; do not proceed next to production default or LiveKit removal
+- run `channel-video-sfu-limited-pilot-observability-instrumentation` or `channel-video-sfu-limited-pilot-long-soak-run-report`; do not proceed next to production rollout or LiveKit removal
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
