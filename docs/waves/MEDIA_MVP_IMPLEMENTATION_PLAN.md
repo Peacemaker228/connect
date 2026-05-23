@@ -1042,6 +1042,18 @@ Segment 141 result:
 - broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
 - recommended next segment is `channel-video-sfu-limited-pilot-long-soak-run-report`; do not proceed next to production rollout or LiveKit removal
 
+Segment 142 result:
+- status: `channel VIDEO SFU long-soak blocked by local DB precondition / media path not reached`
+- `channel-video-sfu-limited-pilot-long-soak-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_142_CHANNEL_VIDEO_SFU_LIMITED_PILOT_LONG_SOAK_RUN_REPORT.md`
+- local API/web were started with the non-production channel `VIDEO` pilot gate and local/dev mediasoup cleanup env, but DB-backed auth registration failed because local Postgres on `localhost:5433` was unavailable
+- Docker daemon was unavailable, so local Postgres and optional coturn could not be started from repo compose files in this shell
+- representative 2-user guarded channel `VIDEO` direct pilot smoke failed at `/api/auth/register/password` before media join; this is a local environment precondition failure, not a channel `VIDEO` SFU media pass/fail
+- health snapshots before/after the blocked attempt showed mediasoup prototype health `ready`, zero active rooms/sessions/transports/producers/consumers, zero direct/turn/unknown transport modes, zero media failure counters, and only `staleSweepCount` increasing from health/sweeper activity
+- all bounded long-soak media scenarios remain `blocked / not run`: 2-user direct, 3-user direct, 5-user fake-device direct, screen-share takeover, restart loop, leave/rejoin loop, route away/back loop, failed -> Restart rejoin recovery, and LiveKit rollback/default preservation
+- optional TURN rerun is `review / not run` because local coturn was not already available and Docker was unavailable
+- broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- recommended next segment is `channel-video-sfu-limited-pilot-long-soak-env-unblock-and-rerun`; do not proceed next to production rollout or LiveKit removal
+
 ## Dependency Summary
 
 Critical path:
@@ -1129,7 +1141,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-video-sfu-limited-pilot-long-soak-run-report`
+- `channel-video-sfu-limited-pilot-long-soak-env-unblock-and-rerun`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1151,4 +1163,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-video-sfu-limited-pilot-long-soak-run-report`
+- `channel-video-sfu-limited-pilot-long-soak-env-unblock-and-rerun`

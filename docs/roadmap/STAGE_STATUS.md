@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `channel-video-sfu-limited-pilot-long-soak-run-report`.
+The next Stage 8 segment should be `channel-video-sfu-limited-pilot-long-soak-env-unblock-and-rerun`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,7 +347,7 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `channel-video-sfu-limited-pilot-long-soak-run-report`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `channel-video-sfu-limited-pilot-long-soak-env-unblock-and-rerun`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
@@ -705,9 +705,15 @@ Remaining:
 - production still returns disabled local prototype health and does not expose the new prototype internals; this is not production monitoring
 - deferred observability remains actual ICE selected relay-vs-direct mode, client-visible SFU `failed` UI state count, production monitoring/alerting, and multi-process aggregation
 - local/dev observability coverage is `pass`; long-soak is `review / ready to run`; production monitoring remains `blocked / out of scope`
+- `channel-video-sfu-limited-pilot-long-soak-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_142_CHANNEL_VIDEO_SFU_LIMITED_PILOT_LONG_SOAK_RUN_REPORT.md`
+- long-soak is `blocked by local DB precondition`: local Postgres on `localhost:5433` was unavailable, and Docker was unavailable for starting repo local Postgres/coturn compose services
+- representative 2-user guarded channel `VIDEO` direct pilot smoke failed at `/api/auth/register/password` before media join; no channel `VIDEO` SFU media pass/fail is claimed from this run
+- health snapshots before/after the blocked attempt showed mediasoup prototype health `ready`, zero active media resources, zero transport mode counts, zero media failure counters, and only `staleSweepCount` increasing due health/sweeper activity
+- all bounded long-soak media scenarios remain `blocked / not run`; optional TURN rerun remains `review / not run`
+- broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
 
 Next likely work:
-- run `channel-video-sfu-limited-pilot-long-soak-run-report`; do not proceed next to production rollout or LiveKit removal
+- run `channel-video-sfu-limited-pilot-long-soak-env-unblock-and-rerun`; do not proceed next to production rollout or LiveKit removal
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
