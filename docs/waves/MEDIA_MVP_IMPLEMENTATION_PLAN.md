@@ -1081,6 +1081,18 @@ Segment 144 result:
 - broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
 - recommended next segment is `channel-video-sfu-failed-restart-recovery-soak-coverage`; acceptable alternative is `channel-video-sfu-route-away-back-loop-coverage`; do not proceed next to production rollout, broader/default switch, or LiveKit removal
 
+Segment 145 result:
+- status: `channel VIDEO SFU failed/offline Restart recovery coverage pass / broader defaults still hold`
+- `channel-video-sfu-failed-restart-recovery-soak-coverage` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_145_CHANNEL_VIDEO_SFU_FAILED_RESTART_RECOVERY_SOAK_COVERAGE.md`
+- guarded channel `VIDEO` product-default pilot smoke now supports `CHANNEL_VIDEO_SFU_SMOKE_FAILED_RESTART_RECOVERY=1`
+- the failed recovery smoke performs a bounded offline/online interruption, then uses an explicit non-production one-shot simulation only for the selected tab to reach `failed`, clicks `Restart SFU channel video` exactly once, and requires both users to return to `connected`
+- `sfuSimulateFailedAfterOfflineRestore=true` is wired only outside production and does not change env defaults, rollout behavior, LiveKit fallback, or production media behavior
+- `failedStateRejoinRecoveryCount` incremented from `0` to `1` when the failed Restart path closed the active session with `transport-failure` and performed a fresh backend rejoin
+- final local/dev health counters settled to zero active rooms/sessions/transports/producers/consumers after stale cleanup convergence
+- 3-user screen-share takeover plus leave/rejoin stayed `pass`, with no stale remote track regression and `failedConsumeCount=0` in this segment's rerun
+- broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- recommended next segment is `channel-video-sfu-route-away-back-loop-coverage`; acceptable alternative is `channel-video-sfu-limited-pilot-broader-default-readiness-review`; do not proceed next to production rollout, broader/default switch, or LiveKit removal
+
 ## Dependency Summary
 
 Critical path:
@@ -1168,7 +1180,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-video-sfu-failed-restart-recovery-soak-coverage`
+- `channel-video-sfu-route-away-back-loop-coverage`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1190,4 +1202,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-video-sfu-failed-restart-recovery-soak-coverage`
+- `channel-video-sfu-route-away-back-loop-coverage`

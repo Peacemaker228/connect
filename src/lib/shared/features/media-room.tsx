@@ -109,6 +109,8 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
     isPrivateSfuGateRequested || isChannelAudioSfuGateRequested || isChannelVideoSfuGateRequested
   const isSfuGateOpen = isSfuGateRequested && isNonProductionRuntime
   const sfuSimulateMissingCamera = searchParams?.get('sfuSimulateMissingCamera') === 'true'
+  const sfuSimulateFailedStateAfterOfflineRestore =
+    isNonProductionRuntime && searchParams?.get('sfuSimulateFailedAfterOfflineRestore') === 'true'
   const expectedSfuRoomId =
     mediaEntry.scope.kind === 'channel'
       ? `channel:${mediaEntry.scope.serverId}:${mediaEntry.scope.channelId}`
@@ -142,6 +144,7 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
         iceTransportPolicy={sfuIceTransportPolicy}
         captureMode={sfuCaptureMode}
         simulateMissingCamera={sfuSimulateMissingCamera}
+        simulateFailedStateAfterOfflineRestore={sfuSimulateFailedStateAfterOfflineRestore}
         roomLabel={isChannelVideoSfu ? 'SFU channel video' : isChannelAudioSfu ? 'SFU channel audio' : undefined}
         restartAriaLabel={
           isChannelVideoSfu ? 'Restart SFU channel video' : isChannelAudioSfu ? 'Restart SFU channel audio' : undefined

@@ -1,4 +1,4 @@
-import { expect, test, type BrowserContext } from '@playwright/test'
+import { expect, test, type BrowserContext, type Page } from '@playwright/test'
 
 type AuthSnapshot = {
   session: {
@@ -70,6 +70,7 @@ const shouldUseImplicitSfuGate = shouldUseCandidateGate || shouldUseProductDefau
 const participantCount = parsePositiveInteger(process.env.CHANNEL_VIDEO_SFU_SMOKE_USERS, 2)
 const shouldRunLeaveRejoin = process.env.CHANNEL_VIDEO_SFU_SMOKE_LEAVE_REJOIN !== '0'
 const shouldRunOfflineRestore = process.env.CHANNEL_VIDEO_SFU_SMOKE_OFFLINE_RESTORE === '1'
+const shouldRunFailedRestartRecovery = process.env.CHANNEL_VIDEO_SFU_SMOKE_FAILED_RESTART_RECOVERY === '1'
 const shouldRunScreenShare = process.env.CHANNEL_VIDEO_SFU_SMOKE_SCREEN_SHARE === '1'
 
 test.describe('channel VIDEO SFU browser smoke', () => {
@@ -147,12 +148,19 @@ test.describe('channel VIDEO SFU browser smoke', () => {
         sfuCapture: shouldUseImplicitSfuGate ? undefined : 'real',
         sfuTransport: smokeTransport === 'turn' ? 'turn' : undefined,
       })
+      const failedRecoveryPageIndex = Math.min(1, participantCount - 1)
+      const getSfuQueryForPage = (pageIndex: number) =>
+        shouldRunFailedRestartRecovery && pageIndex === failedRecoveryPageIndex
+          ? appendSearchParam(sfuQuery, 'sfuSimulateFailedAfterOfflineRestore', 'true')
+          : sfuQuery
       const expectedRemoteProducerText = getRemoteProducerText((participantCount - 1) * 2)
       const expectedRemoteVideoTileCount = participantCount - 1
 
       await Promise.all(
-        pages.map((page) =>
-          page.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}${sfuQuery}`),
+        pages.map((page, pageIndex) =>
+          page.goto(
+            `${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}${getSfuQueryForPage(pageIndex)}`,
+          ),
         ),
       )
 
@@ -220,9 +228,27 @@ test.describe('channel VIDEO SFU browser smoke', () => {
       await expectAllRemoteVideosVisible(pages, expectedRemoteVideoTileCount)
 
       if (shouldRunOfflineRestore) {
-        await contexts[1].setOffline(true)
-        await pages[1].waitForTimeout(6_000)
-        await contexts[1].setOffline(false)
+        const interruptedContext = contexts[failedRecoveryPageIndex]
+        const interruptedPage = pages[failedRecoveryPageIndex]
+
+        await interruptedContext.setOffline(true)
+        await interruptedPage.waitForTimeout(6_000)
+        await interruptedContext.setOffline(false)
+
+        if (shouldRunFailedRestartRecovery) {
+          await interruptedPage.evaluate(() => {
+            window.dispatchEvent(new Event('media-sfu-simulate-failed-state-after-offline-restore'))
+          })
+          await waitForSfuStatus(interruptedPage, ['failed'])
+          await interruptedPage.getByRole('button', { name: 'Restart SFU channel video' }).click()
+        } else {
+          const restoredStatus = await waitForSfuStatus(interruptedPage, ['connected', 'failed'])
+
+          if (restoredStatus === 'failed') {
+            await interruptedPage.getByRole('button', { name: 'Restart SFU channel video' }).click()
+          }
+        }
+
         await expectAllStatuses(pages, 'connected')
         await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
         await expectAllRemoteVideoTileCounts(pages, expectedRemoteVideoTileCount)
@@ -238,7 +264,11 @@ test.describe('channel VIDEO SFU browser smoke', () => {
         await expectAllRemoteProducerCounts(remainingPages, getRemoteProducerText((participantCount - 2) * 2))
         await expectAllRemoteVideoTileCounts(remainingPages, participantCount - 2)
 
-        await rejoiningPage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}${sfuQuery}`)
+        await rejoiningPage.goto(
+          `${webBaseUrl}/servers/${createdServer.id}/channels/${videoChannel.id}${getSfuQueryForPage(
+            participantCount - 1,
+          )}`,
+        )
         await expectAllStatuses(pages, 'connected')
         await expectAllRemoteProducerCounts(pages, expectedRemoteProducerText)
         await expectAllRemoteVideoTileCounts(pages, expectedRemoteVideoTileCount)
@@ -386,6 +416,23 @@ const expectAllStatuses = async (pages: Awaited<ReturnType<BrowserContext['newPa
       }),
     ),
   )
+}
+
+const waitForSfuStatus = async (page: Page, statuses: string[], timeoutMs = 45_000) => {
+  const deadline = Date.now() + timeoutMs
+  let lastStatus = ''
+
+  while (Date.now() < deadline) {
+    lastStatus = (await page.getByTestId('private-sfu-status').textContent().catch(() => ''))?.trim() ?? ''
+
+    if (statuses.includes(lastStatus)) {
+      return lastStatus
+    }
+
+    await page.waitForTimeout(500)
+  }
+
+  throw new Error(`SFU status did not become one of ${statuses.join(', ')} within ${timeoutMs}ms; last=${lastStatus}`)
 }
 
 const expectAllLocalVideosVisible = async (pages: Awaited<ReturnType<BrowserContext['newPage']>>[]) => {

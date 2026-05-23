@@ -24,6 +24,7 @@ type SfuPrivateCallAdapterProps = {
   iceTransportPolicy?: RTCIceTransportPolicy
   captureMode?: 'synthetic' | 'real'
   simulateMissingCamera?: boolean
+  simulateFailedStateAfterOfflineRestore?: boolean
   roomLabel?: string
   restartAriaLabel?: string
   remoteVideoLayout?: 'single' | 'participant-grid'
@@ -201,6 +202,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   iceTransportPolicy,
   captureMode = 'synthetic',
   simulateMissingCamera = false,
+  simulateFailedStateAfterOfflineRestore = false,
   roomLabel = 'SFU private call',
   restartAriaLabel = 'Restart SFU private call',
   remoteVideoLayout = 'single',
@@ -230,6 +232,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   const consumedProducerKeyByIdRef = useRef(new Map<string, string>())
   const consumedProducerByIdRef = useRef(new Map<string, RemoteProducerMetadata>())
   const startRunIdRef = useRef(0)
+  const simulatedFailedStateAfterOfflineRestoreRef = useRef(false)
   const [status, setStatus] = useState<SfuPrivateCallStatus>('idle')
   const [detail, setDetail] = useState('Waiting for scoped SFU gate')
   const [producerIds, setProducerIds] = useState<string[]>([])
@@ -1169,6 +1172,55 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   useEffect(() => {
     void startSfuPath()
   }, [startSfuPath])
+
+  useEffect(() => {
+    if (!simulateFailedStateAfterOfflineRestore || process.env.NODE_ENV === 'production') {
+      return
+    }
+
+    let sawOffline = !navigator.onLine
+    let failureTimer: number | null = null
+
+    const handleOffline = () => {
+      sawOffline = true
+    }
+
+    const triggerSimulatedFailure = () => {
+      if (simulatedFailedStateAfterOfflineRestoreRef.current) {
+        return
+      }
+
+      simulatedFailedStateAfterOfflineRestoreRef.current = true
+      failureTimer = window.setTimeout(() => {
+        startRunIdRef.current += 1
+        cleanup()
+        setStatus('failed')
+        setDetail('Simulated failed state after offline restore for bounded Restart recovery smoke')
+      }, 250)
+    }
+
+    const handleOnline = () => {
+      if (!sawOffline) {
+        return
+      }
+
+      triggerSimulatedFailure()
+    }
+
+    window.addEventListener('offline', handleOffline)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('media-sfu-simulate-failed-state-after-offline-restore', triggerSimulatedFailure)
+
+    return () => {
+      window.removeEventListener('offline', handleOffline)
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('media-sfu-simulate-failed-state-after-offline-restore', triggerSimulatedFailure)
+
+      if (failureTimer !== null) {
+        window.clearTimeout(failureTimer)
+      }
+    }
+  }, [cleanup, simulateFailedStateAfterOfflineRestore])
 
   const toggleLocalAudio = useCallback(() => {
     const nextEnabled = !localAudioEnabled

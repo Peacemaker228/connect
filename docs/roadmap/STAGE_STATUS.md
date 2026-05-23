@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `channel-video-sfu-failed-restart-recovery-soak-coverage`.
+The next Stage 8 segment should be `channel-video-sfu-route-away-back-loop-coverage`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `channel-video-sfu-failed-restart-recovery-soak-coverage`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `channel-video-sfu-route-away-back-loop-coverage`, not Stage 6 production-track work and not a one-shot media rewrite
 
 ### Stage 8. Media MVP
 
-Status: `in progress / channel video SFU multi-user screen-share rejoin cleanup pass; broader defaults hold`
+Status: `in progress / channel video SFU failed Restart recovery coverage pass; broader defaults hold`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -727,9 +727,16 @@ Remaining:
 - guarded 2-user screen-share, 3-user no-screen, and 5-user no-screen channel `VIDEO` product-default pilot smokes also passed
 - final local/dev health counters settled to zero active rooms/sessions/transports/producers/consumers, and `failedConsumeCount` stayed `0` in the rerun
 - broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- `channel-video-sfu-failed-restart-recovery-soak-coverage` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_145_CHANNEL_VIDEO_SFU_FAILED_RESTART_RECOVERY_SOAK_COVERAGE.md`
+- guarded channel `VIDEO` product-default pilot smoke now has bounded failed/offline Restart recovery coverage through `CHANNEL_VIDEO_SFU_SMOKE_FAILED_RESTART_RECOVERY=1`
+- the focused 2-user recovery smoke performs a real offline/online interruption, uses a one-shot non-production failed-state simulation for one selected tab, clicks Restart exactly once, and returns both users to `connected`
+- `failedStateRejoinRecoveryCount` incremented from `0` to `1`, proving the failed Restart path closes the old participant session with `transport-failure` and performs a fresh backend rejoin
+- final local/dev health counters again settled to zero active rooms/sessions/transports/producers/consumers after stale cleanup convergence
+- the 3-user screen-share takeover plus leave/rejoin regression stayed `pass`, and `failedConsumeCount` remained `0` in this segment's rerun
+- broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
 
 Next likely work:
-- run `channel-video-sfu-failed-restart-recovery-soak-coverage`; acceptable alternative is `channel-video-sfu-route-away-back-loop-coverage`; do not proceed next to production rollout, broader/default switch, or LiveKit removal
+- run `channel-video-sfu-route-away-back-loop-coverage`; acceptable alternative is `channel-video-sfu-limited-pilot-broader-default-readiness-review`; do not proceed next to production rollout, broader/default switch, or LiveKit removal
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
