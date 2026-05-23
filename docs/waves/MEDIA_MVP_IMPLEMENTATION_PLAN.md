@@ -1003,6 +1003,22 @@ Segment 138 result:
 - production default remains blocked, LiveKit fallback/default remains preserved, and production media infra remains out of scope
 - recommended next segment is `channel-video-sfu-limited-pilot-readiness-decision`
 
+Segment 139 result:
+- status: `channel VIDEO limited non-production pilot pass for controlled local/product review / broader defaults hold / production blocked`
+- `channel-video-sfu-limited-pilot-readiness-decision` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_139_CHANNEL_VIDEO_SFU_LIMITED_PILOT_READINESS_DECISION.md`
+- channel `VIDEO` SFU product-default pilot remains non-production only through `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_PRODUCT_DEFAULT_PILOT=1`
+- ordinary channel `VIDEO` without the pilot gate remains LiveKit/default
+- explicit LiveKit rollback remains preserved through `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`
+- Segment 135 automated pass was insufficient by itself because manual/operator review had not validated real perceived remote audio/video, screen-share UX, layout, controls, restart, and rejoin behavior
+- Segments 136-138 closed the operator-found pilot bugs: remote media flow, screen-share latest-wins/takeover and local track cleanup, restart cleanup/rejoin recovery from failed state, and the confusing `Remote producers` label now replaced by `Remote tracks` with `audio/camera/screen` breakdown
+- latest bounded manual checks confirmed remote audio/video, screen-share takeover, understandable `Remote tracks` labeling, and one failed -> Restart recovery through control-plane rejoin
+- channel `VIDEO` screen-share TURN and channel `VIDEO` pilot TURN previously passed through local Docker coturn, but production TURN remains not ready
+- broader product-facing default remains `review / hold` because confidence is bounded local/operator confidence, not production-like long-soak
+- production default remains `blocked` by process-local mediasoup/signaling state and missing production SFU/TURN infra, firewall, monitoring, runbook, process management, and rollback
+- private default remains `hold`; ordinary private `?video=true` remains LiveKit/default until a separate readiness decision
+- process-local mediasoup/signaling state remains a blocker before production or multi-process readiness
+- recommended next segment is `channel-video-sfu-limited-pilot-observability-and-long-soak-plan` or `private-sfu-default-readiness-decision`; do not proceed next to production default or LiveKit removal
+
 ## Dependency Summary
 
 Critical path:
@@ -1090,7 +1106,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-video-sfu-limited-pilot-readiness-decision`
+- `channel-video-sfu-limited-pilot-observability-and-long-soak-plan` or `private-sfu-default-readiness-decision`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1112,4 +1128,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-video-sfu-limited-pilot-readiness-decision`
+- `channel-video-sfu-limited-pilot-observability-and-long-soak-plan` or `private-sfu-default-readiness-decision`

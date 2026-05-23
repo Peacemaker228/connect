@@ -684,9 +684,18 @@ Remaining:
 - ordinary Restart behavior for non-terminal SFU states remains unchanged
 - operator reproduced the rare failed state once and confirmed Restart recovered the call through the new rejoin path
 - residual risk remains review-only because this is bounded operator confirmation, not a long-soak proof
+- `channel-video-sfu-limited-pilot-readiness-decision` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_139_CHANNEL_VIDEO_SFU_LIMITED_PILOT_READINESS_DECISION.md`
+- channel `VIDEO` limited non-production product-default pilot is `pass for controlled local/product review` under `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_PRODUCT_DEFAULT_PILOT=1`
+- broader product-facing default is `review / hold`, private default is `hold`, and production default remains `blocked`
+- ordinary channel `VIDEO` without the pilot gate and ordinary private `?video=true` remain LiveKit/default
+- explicit LiveKit rollback remains preserved through `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`
+- Segment 135 automated pass was insufficient without manual review; Segments 136-138 closed the operator-found remote media flow, screen-share/latest-wins/local cleanup, failed Restart rejoin recovery, and confusing `Remote producers` label issues
+- latest bounded operator checks confirmed remote audio/video, screen-share takeover, understandable `Remote tracks` labeling, and one failed -> Restart recovery through rejoin
+- local Docker coturn TURN checks previously passed for channel `VIDEO` screen-share and the channel `VIDEO` pilot, but production TURN/SFU infra is still not ready
+- process-local mediasoup/signaling remains a blocker before production or multi-process readiness, and long-soak remains `review`
 
 Next likely work:
-- run `channel-video-sfu-limited-pilot-readiness-decision`; keep production/default routes and LiveKit fallback unchanged
+- run `channel-video-sfu-limited-pilot-observability-and-long-soak-plan` or `private-sfu-default-readiness-decision`; do not proceed next to production default or LiveKit removal
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
