@@ -1143,6 +1143,20 @@ Segment 149 result:
 - LiveKit removal remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
 - recommended next segment is `channel-video-sfu-broader-nonproduction-default-candidate-run-report`; do not proceed next to production rollout, LiveKit removal, or private default switch
 
+Segment 150 result:
+- status: `channel VIDEO SFU broader non-production default-candidate closeout pass / production and private defaults still blocked or hold`
+- `channel-video-sfu-broader-nonproduction-default-candidate-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_150_CHANNEL_VIDEO_SFU_BROADER_NONPRODUCTION_DEFAULT_CANDIDATE_RUN_REPORT.md`
+- final broader non-production default-candidate classification is `pass`
+- direct local smoke is `pass`
+- local TURN smoke is `pass with relay-range review note`
+- screen-share, route away/back, failed Restart recovery, and cleanup health are `pass`
+- active media resources settle back to `0` after cleanup convergence in the recorded runs
+- explicit LiveKit rollback remains preserved through `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`
+- ordinary private `?video=true` remains LiveKit/default
+- production default, production media infra readiness, and multi-process readiness remain `blocked`
+- LiveKit removal remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- recommended next segment is `private-sfu-nonproduction-default-candidate-implementation`; keep it gated, reversible, and stop if the upfront private-SFU evidence check finds a blocker
+
 ## Dependency Summary
 
 Critical path:
@@ -1230,7 +1244,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `channel-video-sfu-broader-nonproduction-default-candidate-run-report`
+- `private-sfu-nonproduction-default-candidate-implementation`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1252,4 +1266,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `channel-video-sfu-broader-nonproduction-default-candidate-run-report`
+- `private-sfu-nonproduction-default-candidate-implementation`
