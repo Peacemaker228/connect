@@ -1209,6 +1209,17 @@ Segment 154 result:
 - optional offline/restore remains `review` pending a focused rerun; production default, LiveKit removal, production TURN/SFU infra, channel `AUDIO`/`VIDEO`, env defaults, and Stage 6/Postgres production migration remain unchanged
 - recommended next runtime segment is `private-sfu-nonproduction-default-candidate-long-soak-rerun-report`; acceptable alternative is `private-sfu-offline-restore-reconciliation-rerun`; do not proceed next to production rollout or LiveKit removal
 
+Segment 155 result:
+- status: `private SFU non-production default-candidate long-soak rerun pass / production blocked`
+- `private-sfu-nonproduction-default-candidate-long-soak-rerun-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_155_PRIVATE_SFU_NONPRODUCTION_DEFAULT_CANDIDATE_LONG_SOAK_RERUN_REPORT.md`
+- guarded private default-candidate long-soak smoke passed with ordinary `?video=true`, two Restart clicks, route away/back, and explicit leave/rejoin
+- route away/back and leave/rejoin now restore expected remote tracks after the Segment 154 reconciliation fix
+- guarded private default-candidate offline/restore smoke passed
+- final authenticated mediasoup health after bounded cleanup convergence reported active rooms/sessions/transports/producers/consumers all `0`, with SFU failure counters `0`
+- production default, production media infra readiness, and multi-process readiness remain `blocked`
+- LiveKit removal remains `blocked`, and LiveKit fallback remains preserved
+- recommended next segment is `private-sfu-controlled-product-review`; acceptable alternative is `stage8-media-mvp-local-completion-review`; do not proceed next to production rollout or LiveKit removal
+
 ## Dependency Summary
 
 Critical path:
@@ -1296,7 +1307,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `private-sfu-nonproduction-default-candidate-long-soak-rerun-report`
+- `private-sfu-controlled-product-review`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1318,4 +1329,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `private-sfu-nonproduction-default-candidate-long-soak-rerun-report`
+- `private-sfu-controlled-product-review`

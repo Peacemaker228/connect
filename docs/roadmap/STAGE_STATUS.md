@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `private-sfu-nonproduction-default-candidate-long-soak-rerun-report`.
+The next Stage 8 segment should be `private-sfu-controlled-product-review`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `private-sfu-nonproduction-default-candidate-long-soak-rerun-report`, not Stage 6 production-track work and not production rollout
+- continue Stage 8 with `private-sfu-controlled-product-review`, not Stage 6 production-track work and not production rollout
 
 ### Stage 8. Media MVP
 
-Status: `in progress / private SFU long-soak fail findings; production blocked`
+Status: `in progress / private SFU long-soak rerun pass; production blocked`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -817,6 +817,16 @@ Next likely work:
 - optional offline/restore remains `review` pending a focused rerun
 - production default, LiveKit removal, production TURN/SFU infra, channel `AUDIO`/`VIDEO`, env defaults, and Stage 6/Postgres production migration remain unchanged
 - next likely work is `private-sfu-nonproduction-default-candidate-long-soak-rerun-report` or `private-sfu-offline-restore-reconciliation-rerun`; do not proceed next to production rollout, LiveKit removal, or production TURN/SFU infrastructure work
+- `private-sfu-nonproduction-default-candidate-long-soak-rerun-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_155_PRIVATE_SFU_NONPRODUCTION_DEFAULT_CANDIDATE_LONG_SOAK_RERUN_REPORT.md`
+- guarded private default-candidate long-soak rerun passed with two Restart clicks, route away/back, and explicit leave/rejoin
+- route away/back and leave/rejoin now restore expected remote tracks after the Segment 154 reconciliation fix
+- guarded private default-candidate offline/restore smoke passed
+- final authenticated mediasoup health after bounded cleanup convergence reported active rooms/sessions/transports/producers/consumers all `0`, with SFU failure counters `0`
+- production default, production media infra readiness, and multi-process readiness remain `blocked`
+- LiveKit removal remains `blocked`, and LiveKit fallback remains preserved
+
+Next likely work:
+- continue with `private-sfu-controlled-product-review`; do not proceed next to production rollout, LiveKit removal, or production TURN/SFU infrastructure work
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
