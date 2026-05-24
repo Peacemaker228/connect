@@ -1172,6 +1172,79 @@ Segment 151 result:
 - rollback to LiveKit was preserved through the smoke assertion
 - recommended next segment is `private-sfu-nonproduction-default-candidate-run-report`; do not proceed to production rollout or LiveKit removal
 
+Segment 152 result:
+- status: `private SFU non-production default-candidate closeout pass / production blocked`
+- `private-sfu-nonproduction-default-candidate-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_152_PRIVATE_SFU_NONPRODUCTION_DEFAULT_CANDIDATE_RUN_REPORT.md`
+- final private SFU non-production default-candidate classification is `pass`
+- env gate remains `NEXT_PUBLIC_MEDIA_PRIVATE_SFU_DEFAULT_CANDIDATE=1`
+- ordinary private `?video=true` enters SFU only in non-production, only under the env gate, and only when no explicit LiveKit rollback query is present
+- LiveKit rollback remains preserved through `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`
+- candidate direct smoke, candidate screen-share smoke, and explicit private SFU regression are `pass`
+- channel `AUDIO` and channel `VIDEO` behavior did not change in the closeout
+- production default remains `blocked`, LiveKit removal remains `blocked`, and Stage 6/Postgres production migration remains untouched
+- recommended next runtime segment is `private-sfu-nonproduction-default-candidate-long-soak-coverage`; do not proceed next to production rollout
+
+Segment 153 result:
+- status: `private SFU non-production default-candidate long-soak review with fail findings / production blocked`
+- `private-sfu-nonproduction-default-candidate-long-soak-coverage` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_153_PRIVATE_SFU_NONPRODUCTION_DEFAULT_CANDIDATE_LONG_SOAK_COVERAGE.md`
+- private SFU smoke helper now has bounded flags for restart count, route away/back, and leave/rejoin coverage
+- candidate direct, candidate screen-share start/stop, bounded 2-click Restart with 2s cooldown, LiveKit rollback, explicit private SFU regression without candidate gate, and final cleanup convergence are `pass`
+- route away/back without Leave is `fail / needs fix` because the peer can remain at `Remote tracks: 1` instead of restoring `Remote tracks: 2`
+- explicit leave/rejoin is `fail / needs fix` for the same peer remote-track reconciliation symptom
+- optional offline/restore is `review / fail finding` because it can also leave peer remote tracks incomplete
+- health snapshots showed backend producers/consumers present during the fail findings and final active rooms/sessions/transports/producers/consumers settling back to `0`, so the finding points at client remote-track reconciliation after private rejoin/remount rather than final backend resource leakage
+- no runtime fix landed in this segment; production default, LiveKit removal, production TURN/SFU infra, channel `AUDIO`/`VIDEO`, and Stage 6/Postgres production migration remain unchanged
+- recommended next runtime segment is `private-sfu-remote-track-reconciliation-after-rejoin-fix`; do not proceed next to production rollout
+
+Segment 154 result:
+- status: `private SFU remote-track reconciliation after rejoin/remount pass / production blocked`
+- `private-sfu-remote-track-reconciliation-after-rejoin-fix` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_154_PRIVATE_SFU_REMOTE_TRACK_RECONCILIATION_AFTER_REJOIN_FIX.md`
+- the private SFU client now tracks single-layout remote camera tracks by `producerId` so stale camera tracks can be removed exactly like audio and participant-grid tracks
+- the existing 1s authoritative producer sync now removes stale consumed producer IDs and also consumes newly discovered backend producers through the existing bounded consume path when signaling events or replacement snapshots were missed
+- no unbounded reconnect/retry loop was added; Restart and route-away/back smoke limits remain capped by their existing helper env flags
+- guarded private default-candidate smoke passed with ordinary `?video=true`, `PRIVATE_SFU_SMOKE_RESTART_COUNT=2`, route away/back, and explicit leave/rejoin, and remote tracks restored to `Remote tracks: 2`
+- explicit private SFU regression without the candidate gate passed and ordinary private `?video=true` stayed LiveKit/default in that regression path
+- explicit private SFU screen-share start/stop regression passed
+- final local/dev health counters settled to zero active rooms/sessions/transports/producers/consumers after cleanup convergence, with SFU failure counters remaining `0`
+- optional offline/restore remains `review` pending a focused rerun; production default, LiveKit removal, production TURN/SFU infra, channel `AUDIO`/`VIDEO`, env defaults, and Stage 6/Postgres production migration remain unchanged
+- recommended next runtime segment is `private-sfu-nonproduction-default-candidate-long-soak-rerun-report`; acceptable alternative is `private-sfu-offline-restore-reconciliation-rerun`; do not proceed next to production rollout or LiveKit removal
+
+Segment 155 result:
+- status: `private SFU non-production default-candidate long-soak rerun pass / production blocked`
+- `private-sfu-nonproduction-default-candidate-long-soak-rerun-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_155_PRIVATE_SFU_NONPRODUCTION_DEFAULT_CANDIDATE_LONG_SOAK_RERUN_REPORT.md`
+- guarded private default-candidate long-soak smoke passed with ordinary `?video=true`, two Restart clicks, route away/back, and explicit leave/rejoin
+- route away/back and leave/rejoin now restore expected remote tracks after the Segment 154 reconciliation fix
+- guarded private default-candidate offline/restore smoke passed
+- final authenticated mediasoup health after bounded cleanup convergence reported active rooms/sessions/transports/producers/consumers all `0`, with SFU failure counters `0`
+- production default, production media infra readiness, and multi-process readiness remain `blocked`
+- LiveKit removal remains `blocked`, and LiveKit fallback remains preserved
+- recommended next segment is `private-sfu-controlled-product-review`; acceptable alternative is `stage8-media-mvp-local-completion-review`; do not proceed next to production rollout or LiveKit removal
+
+Segment 156 result:
+- status: `private SFU non-production default-candidate pass for controlled product review / production blocked`
+- `private-sfu-controlled-product-review` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_156_PRIVATE_SFU_CONTROLLED_PRODUCT_REVIEW.md`
+- reviewed Segment 151-155 evidence: private `?video=true` candidate direct, screen-share, bounded Restart, route away/back, explicit leave/rejoin, offline/restore, LiveKit rollback, and cleanup health are all pass for controlled review
+- direct private `?video=true` candidate UX is ready for controlled manual/product review only under `NEXT_PUBLIC_MEDIA_PRIVATE_SFU_DEFAULT_CANDIDATE=1`
+- screen-share UX is acceptable for review, no-camera fallback is not a blocker, and restart/leave/rejoin/route-away have no known blocking bug after the Segment 154 fix and Segment 155 rerun
+- LiveKit rollback remains preserved through `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`
+- added a manual operator checklist for real-user audio/video, mute/camera controls, screen-share start/stop, Restart, route away/back, Leave/rejoin, offline/restore, no-camera fallback, LiveKit rollback, and cleanup health convergence
+- production default, production media infra readiness, multi-process readiness, LiveKit removal, production TURN/SFU infra, env defaults, channel `AUDIO`/`VIDEO`, and Stage 6/Postgres production migration remain unchanged or blocked as before
+- recommended next segment is `stage8-media-mvp-local-completion-review`; acceptable scoped alternative is `private-sfu-controlled-product-review-manual-run-report`; do not proceed next to production rollout or LiveKit removal
+
+Segment 157 result:
+- status: `Stage 8 Media MVP local completion pass / production blocked`
+- `stage8-media-mvp-local-completion-review` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_157_STAGE8_MEDIA_MVP_LOCAL_COMPLETION_REVIEW.md`
+- local Stage 8 Media MVP is closed as `pass` because channel `AUDIO`, channel `VIDEO`, and private SFU paths all have gated/local or non-production default-candidate evidence with no remaining scoped runtime blocker
+- channel `AUDIO` is `pass for limited non-production controlled review`
+- channel `VIDEO` is `pass for broader non-production default-candidate`
+- private SFU is `pass for controlled product review`
+- screen-share is `pass locally`, including direct evidence and local Docker coturn TURN evidence for channel `VIDEO` and explicit private SFU
+- Restart, rejoin, route-away/back, offline/restore, and cleanup health are `pass locally` within the bounded local/dev MVP scope
+- LiveKit rollback/fallback remains preserved and required
+- production readiness, production media infra readiness, multi-process readiness, and LiveKit removal remain `blocked`
+- Stage 6/Postgres production migration remains `deferred` and separate from this media MVP closeout
+- next recommended track is production media infrastructure/runbook planning only if production rollout is the next business goal; acceptable alternatives are scoped manual product-review run reports or Stage 8 media documentation cleanup
+
 ## Dependency Summary
 
 Critical path:
@@ -1259,7 +1332,9 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `private-sfu-nonproduction-default-candidate-run-report` after guarded candidate smoke passes
+- none by default after the Stage 8 local completion pass.
+- production media infrastructure/runbook planning should start only if production rollout becomes the next business goal.
+- otherwise keep follow-up work scoped to manual product-review run reports or Stage 8 media documentation cleanup.
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1280,5 +1355,6 @@ Reason:
 - LiveKit containment is planned
 - MVP implementation order, fallback, and acceptance are now documented
 
-Next active work can continue controlled replacement:
-- `private-sfu-nonproduction-default-candidate-run-report` after guarded candidate smoke passes
+Next active work:
+- operator decision after Stage 8 local completion.
+- do not start production rollout, LiveKit removal, or Stage 6 production cutover by default.
