@@ -1157,6 +1157,21 @@ Segment 150 result:
 - LiveKit removal remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
 - recommended next segment is `private-sfu-nonproduction-default-candidate-implementation`; keep it gated, reversible, and stop if the upfront private-SFU evidence check finds a blocker
 
+Segment 151 result:
+- status: `private SFU non-production default-candidate pass / production blocked`
+- `private-sfu-nonproduction-default-candidate-implementation` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_151_PRIVATE_SFU_NONPRODUCTION_DEFAULT_CANDIDATE_IMPLEMENTATION.md`
+- added the private SFU default-candidate env gate: `NEXT_PUBLIC_MEDIA_PRIVATE_SFU_DEFAULT_CANDIDATE=1`
+- ordinary private `?video=true` can enter SFU only in non-production, only under the env gate, and only when no explicit LiveKit rollback query is present
+- default-candidate private SFU uses real capture mode by default; explicit private SFU query behavior remains supported
+- explicit LiveKit rollback remains preserved through `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`
+- channel `AUDIO`, channel `VIDEO`, production default behavior, LiveKit fallback/removal, production TURN/SFU infra, and Stage 6 production Postgres migration are unchanged
+- private SFU browser smoke now supports `PRIVATE_SFU_SMOKE_DEFAULT_CANDIDATE=1`
+- guarded private default-candidate direct smoke passed with ordinary private `?video=true` and no `mediaProvider=sfu`
+- guarded private default-candidate screen-share smoke passed with fake screen capture
+- guarded explicit private SFU regression smoke passed without the default-candidate env gate
+- rollback to LiveKit was preserved through the smoke assertion
+- recommended next segment is `private-sfu-nonproduction-default-candidate-run-report`; do not proceed to production rollout or LiveKit removal
+
 ## Dependency Summary
 
 Critical path:
@@ -1244,7 +1259,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `private-sfu-nonproduction-default-candidate-implementation`
+- `private-sfu-nonproduction-default-candidate-run-report` after guarded candidate smoke passes
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1266,4 +1281,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `private-sfu-nonproduction-default-candidate-implementation`
+- `private-sfu-nonproduction-default-candidate-run-report` after guarded candidate smoke passes

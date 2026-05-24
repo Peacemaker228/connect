@@ -77,7 +77,15 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
     isNonProductionRuntime &&
     !isLiveKitProviderRequested &&
     process.env.NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_PRODUCT_DEFAULT_PILOT === '1'
-  const isPrivateSfuGateRequested = mediaEntry.scope.kind === 'conversation' && isSfuProviderRequested
+  const isPrivateScope = mediaEntry.scope.kind === 'conversation'
+  const isPrivateSfuDefaultCandidateRequested =
+    isPrivateScope &&
+    audio &&
+    video &&
+    isNonProductionRuntime &&
+    !isLiveKitProviderRequested &&
+    process.env.NEXT_PUBLIC_MEDIA_PRIVATE_SFU_DEFAULT_CANDIDATE === '1'
+  const isPrivateSfuGateRequested = isPrivateScope && (isSfuProviderRequested || isPrivateSfuDefaultCandidateRequested)
   const isChannelAudioSfuGateRequested =
     isChannelScope &&
     audio &&
@@ -89,6 +97,7 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
     searchParams?.get('sfuTransport') === 'turn' || searchParams?.get('sfuIce') === 'relay' ? 'relay' : undefined
   const requestedSfuCaptureMode = searchParams?.get('sfuCapture') === 'real' ? 'real' : 'synthetic'
   const sfuCaptureMode =
+    isPrivateSfuDefaultCandidateRequested ||
     isChannelAudioSfuDefaultCandidateRequested ||
     isChannelAudioSfuProductDefaultPilotRequested ||
     isChannelVideoSfuBroaderDefaultCandidateRequested ||

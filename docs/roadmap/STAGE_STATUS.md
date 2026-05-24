@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `private-sfu-nonproduction-default-candidate-implementation`.
+The next Stage 8 segment should be `private-sfu-nonproduction-default-candidate-run-report`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `private-sfu-nonproduction-default-candidate-implementation`, not Stage 6 production-track work and not another docs-only readiness loop
+- continue Stage 8 with `private-sfu-nonproduction-default-candidate-run-report`, not Stage 6 production-track work and not production rollout
 
 ### Stage 8. Media MVP
 
-Status: `in progress / channel video SFU broader non-production default-candidate closeout pass; production blocked`
+Status: `in progress / private SFU non-production default-candidate pass; production blocked`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -777,9 +777,19 @@ Remaining:
 - explicit LiveKit rollback remains preserved, and ordinary private `?video=true` remains LiveKit/default
 - production default, production media infra readiness, and multi-process readiness remain `blocked`
 - LiveKit removal remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- `private-sfu-nonproduction-default-candidate-implementation` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_151_PRIVATE_SFU_NONPRODUCTION_DEFAULT_CANDIDATE_IMPLEMENTATION.md`
+- private SFU now has a non-production default-candidate env gate: `NEXT_PUBLIC_MEDIA_PRIVATE_SFU_DEFAULT_CANDIDATE=1`
+- ordinary private `?video=true` can enter SFU only in non-production, only under that env gate, and only when no explicit LiveKit rollback query is present
+- default-candidate private SFU uses real capture mode by default, while explicit private SFU query behavior remains supported
+- explicit LiveKit rollback remains preserved through `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`
+- channel `AUDIO`, channel `VIDEO`, production defaults, LiveKit fallback/removal, production TURN/SFU infra, and Stage 6 production Postgres migration remain unchanged
+- guarded private default-candidate direct smoke passed with ordinary private `?video=true` and no `mediaProvider=sfu`
+- guarded private default-candidate screen-share smoke passed with fake screen capture
+- guarded explicit private SFU regression smoke passed without the default-candidate env gate
+- rollback to LiveKit was preserved through the smoke assertion
 
 Next likely work:
-- continue with `private-sfu-nonproduction-default-candidate-implementation` as a scoped code/runtime segment; do not proceed next to production rollout, LiveKit removal, or an ungated private default switch
+- close with `private-sfu-nonproduction-default-candidate-run-report`; do not proceed next to production rollout, LiveKit removal, or an ungated private default switch
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
