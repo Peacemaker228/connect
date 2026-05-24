@@ -1172,6 +1172,18 @@ Segment 151 result:
 - rollback to LiveKit was preserved through the smoke assertion
 - recommended next segment is `private-sfu-nonproduction-default-candidate-run-report`; do not proceed to production rollout or LiveKit removal
 
+Segment 152 result:
+- status: `private SFU non-production default-candidate closeout pass / production blocked`
+- `private-sfu-nonproduction-default-candidate-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_152_PRIVATE_SFU_NONPRODUCTION_DEFAULT_CANDIDATE_RUN_REPORT.md`
+- final private SFU non-production default-candidate classification is `pass`
+- env gate remains `NEXT_PUBLIC_MEDIA_PRIVATE_SFU_DEFAULT_CANDIDATE=1`
+- ordinary private `?video=true` enters SFU only in non-production, only under the env gate, and only when no explicit LiveKit rollback query is present
+- LiveKit rollback remains preserved through `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`
+- candidate direct smoke, candidate screen-share smoke, and explicit private SFU regression are `pass`
+- channel `AUDIO` and channel `VIDEO` behavior did not change in the closeout
+- production default remains `blocked`, LiveKit removal remains `blocked`, and Stage 6/Postgres production migration remains untouched
+- recommended next runtime segment is `private-sfu-nonproduction-default-candidate-long-soak-coverage`; do not proceed next to production rollout
+
 ## Dependency Summary
 
 Critical path:
@@ -1259,7 +1271,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `private-sfu-nonproduction-default-candidate-run-report` after guarded candidate smoke passes
+- `private-sfu-nonproduction-default-candidate-long-soak-coverage`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1281,4 +1293,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `private-sfu-nonproduction-default-candidate-run-report` after guarded candidate smoke passes
+- `private-sfu-nonproduction-default-candidate-long-soak-coverage`
