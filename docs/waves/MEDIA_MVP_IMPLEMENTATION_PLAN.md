@@ -1231,6 +1231,20 @@ Segment 156 result:
 - production default, production media infra readiness, multi-process readiness, LiveKit removal, production TURN/SFU infra, env defaults, channel `AUDIO`/`VIDEO`, and Stage 6/Postgres production migration remain unchanged or blocked as before
 - recommended next segment is `stage8-media-mvp-local-completion-review`; acceptable scoped alternative is `private-sfu-controlled-product-review-manual-run-report`; do not proceed next to production rollout or LiveKit removal
 
+Segment 157 result:
+- status: `Stage 8 Media MVP local completion pass / production blocked`
+- `stage8-media-mvp-local-completion-review` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_157_STAGE8_MEDIA_MVP_LOCAL_COMPLETION_REVIEW.md`
+- local Stage 8 Media MVP is closed as `pass` because channel `AUDIO`, channel `VIDEO`, and private SFU paths all have gated/local or non-production default-candidate evidence with no remaining scoped runtime blocker
+- channel `AUDIO` is `pass for limited non-production controlled review`
+- channel `VIDEO` is `pass for broader non-production default-candidate`
+- private SFU is `pass for controlled product review`
+- screen-share is `pass locally`, including direct evidence and local Docker coturn TURN evidence for channel `VIDEO` and explicit private SFU
+- Restart, rejoin, route-away/back, offline/restore, and cleanup health are `pass locally` within the bounded local/dev MVP scope
+- LiveKit rollback/fallback remains preserved and required
+- production readiness, production media infra readiness, multi-process readiness, and LiveKit removal remain `blocked`
+- Stage 6/Postgres production migration remains `deferred` and separate from this media MVP closeout
+- next recommended track is production media infrastructure/runbook planning only if production rollout is the next business goal; acceptable alternatives are scoped manual product-review run reports or Stage 8 media documentation cleanup
+
 ## Dependency Summary
 
 Critical path:
@@ -1318,7 +1332,9 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `stage8-media-mvp-local-completion-review`
+- none by default after the Stage 8 local completion pass.
+- production media infrastructure/runbook planning should start only if production rollout becomes the next business goal.
+- otherwise keep follow-up work scoped to manual product-review run reports or Stage 8 media documentation cleanup.
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1339,5 +1355,6 @@ Reason:
 - LiveKit containment is planned
 - MVP implementation order, fallback, and acceptance are now documented
 
-Next active work can continue controlled replacement:
-- `private-sfu-controlled-product-review`
+Next active work:
+- operator decision after Stage 8 local completion.
+- do not start production rollout, LiveKit removal, or Stage 6 production cutover by default.

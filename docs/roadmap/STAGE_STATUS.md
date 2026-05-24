@@ -279,9 +279,13 @@ Remaining:
 
 ## Next Correct Step
 
-The active next track is `Stage 8 / Media MVP`.
+The active next track is `operator decision after Stage 8 / Media MVP local completion`.
 
-The next Stage 8 segment should be `stage8-media-mvp-local-completion-review`.
+There is no mandatory next Stage 8 runtime segment after the local completion pass.
+
+If production rollout becomes the next business goal, start a separate production media infrastructure/runbook planning track.
+
+If production rollout is not next, acceptable follow-up work is limited to scoped manual product-review run reports or Stage 8 media documentation cleanup.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +351,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `stage8-media-mvp-local-completion-review`, not Stage 6 production-track work and not production rollout
+- decide the next business track after Stage 8 local completion; do not start Stage 6 production cutover or production media rollout by default
 
 ### Stage 8. Media MVP
 
-Status: `in progress / private SFU long-soak rerun pass; production blocked`
+Status: `local complete / production blocked`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -835,6 +839,19 @@ Next likely work:
 - manual operator checklist is recorded for real-user audio/video, mute/camera controls, screen-share start/stop, Restart, route away/back, Leave/rejoin, offline/restore, no-camera fallback, LiveKit rollback, and cleanup health convergence
 - production default, production media infra readiness, multi-process readiness, LiveKit removal, production TURN/SFU infra, env defaults, channel `AUDIO`/`VIDEO`, and Stage 6/Postgres production migration remain unchanged or blocked as before
 - next likely work is `stage8-media-mvp-local-completion-review`; acceptable scoped alternative is `private-sfu-controlled-product-review-manual-run-report`; do not proceed next to production rollout, LiveKit removal, or production TURN/SFU infrastructure work
+
+Next likely work:
+- `stage8-media-mvp-local-completion-review` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_157_STAGE8_MEDIA_MVP_LOCAL_COMPLETION_REVIEW.md`
+- local Stage 8 Media MVP is closed as `pass` because channel `AUDIO`, channel `VIDEO`, and private SFU paths all have gated/local or non-production default-candidate evidence with no remaining scoped runtime blocker
+- channel `AUDIO` is `pass for limited non-production controlled review`
+- channel `VIDEO` is `pass for broader non-production default-candidate`
+- private SFU is `pass for controlled product review`
+- screen-share is `pass locally`, including direct evidence and local Docker coturn TURN evidence for channel `VIDEO` and explicit private SFU
+- Restart, rejoin, route-away/back, offline/restore, and cleanup health are `pass locally` within the bounded local/dev MVP scope
+- LiveKit rollback/fallback remains preserved and required
+- production readiness, production media infra readiness, multi-process readiness, and LiveKit removal remain `blocked`
+- Stage 6/Postgres production migration remains `deferred` and separate from this media MVP closeout
+- next recommended track is production media infrastructure/runbook planning only if production rollout is the next business goal; acceptable alternatives are scoped manual product-review run reports or Stage 8 media documentation cleanup
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
