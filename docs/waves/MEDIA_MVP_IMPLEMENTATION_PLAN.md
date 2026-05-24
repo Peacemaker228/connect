@@ -1184,6 +1184,18 @@ Segment 152 result:
 - production default remains `blocked`, LiveKit removal remains `blocked`, and Stage 6/Postgres production migration remains untouched
 - recommended next runtime segment is `private-sfu-nonproduction-default-candidate-long-soak-coverage`; do not proceed next to production rollout
 
+Segment 153 result:
+- status: `private SFU non-production default-candidate long-soak review with fail findings / production blocked`
+- `private-sfu-nonproduction-default-candidate-long-soak-coverage` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_153_PRIVATE_SFU_NONPRODUCTION_DEFAULT_CANDIDATE_LONG_SOAK_COVERAGE.md`
+- private SFU smoke helper now has bounded flags for restart count, route away/back, and leave/rejoin coverage
+- candidate direct, candidate screen-share start/stop, bounded 2-click Restart with 2s cooldown, LiveKit rollback, explicit private SFU regression without candidate gate, and final cleanup convergence are `pass`
+- route away/back without Leave is `fail / needs fix` because the peer can remain at `Remote tracks: 1` instead of restoring `Remote tracks: 2`
+- explicit leave/rejoin is `fail / needs fix` for the same peer remote-track reconciliation symptom
+- optional offline/restore is `review / fail finding` because it can also leave peer remote tracks incomplete
+- health snapshots showed backend producers/consumers present during the fail findings and final active rooms/sessions/transports/producers/consumers settling back to `0`, so the finding points at client remote-track reconciliation after private rejoin/remount rather than final backend resource leakage
+- no runtime fix landed in this segment; production default, LiveKit removal, production TURN/SFU infra, channel `AUDIO`/`VIDEO`, and Stage 6/Postgres production migration remain unchanged
+- recommended next runtime segment is `private-sfu-remote-track-reconciliation-after-rejoin-fix`; do not proceed next to production rollout
+
 ## Dependency Summary
 
 Critical path:
@@ -1271,7 +1283,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `private-sfu-nonproduction-default-candidate-long-soak-coverage`
+- `private-sfu-remote-track-reconciliation-after-rejoin-fix`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen

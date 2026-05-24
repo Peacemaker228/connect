@@ -14,9 +14,17 @@ type ServerMember = {
   serverId: string
 }
 
+type ServerChannel = {
+  id: string
+  name: string
+  serverId: string
+  type: 'TEXT' | 'AUDIO' | 'VIDEO'
+}
+
 type ServerResponse = {
   id: string
   inviteCode: string
+  channels: ServerChannel[]
   members: ServerMember[]
 }
 
@@ -54,6 +62,12 @@ const expectedRemoteProducerCount =
 const expectedRemoteProducerNumber = effectiveCaptureMode === 'real' ? 2 : 1
 const shouldRunNetworkInterruptionSmoke = process.env.PRIVATE_SFU_SMOKE_NETWORK_INTERRUPT === '1'
 const shouldRunScreenShareSmoke = process.env.PRIVATE_SFU_SMOKE_SCREEN_SHARE === '1'
+const restartCount = Math.min(parsePositiveInteger(process.env.PRIVATE_SFU_SMOKE_RESTART_COUNT, 1), 2)
+const shouldRunLeaveRejoinSmoke = process.env.PRIVATE_SFU_SMOKE_LEAVE_REJOIN === '1'
+const shouldRunRouteAwayBackSmoke = process.env.PRIVATE_SFU_SMOKE_ROUTE_AWAY_BACK === '1'
+const routeAwayBackIterationCount = shouldRunRouteAwayBackSmoke
+  ? Math.min(parsePositiveInteger(process.env.PRIVATE_SFU_SMOKE_ROUTE_AWAY_BACK_ITERATIONS, 1), 2)
+  : 0
 
 test.describe('private SFU two-user browser smoke', () => {
   test.skip(!isSmokeEnabled, 'Set PRIVATE_SFU_BROWSER_SMOKE=1 with local API/web to run this smoke.')
@@ -72,7 +86,7 @@ test.describe('private SFU two-user browser smoke', () => {
   })
 
   test('connects two authenticated private SFU participants through media signaling', async ({ browser }) => {
-    test.setTimeout(90_000)
+    test.setTimeout(180_000)
 
     const userOne = await browser.newContext()
     const userTwo = await browser.newContext()
@@ -93,6 +107,7 @@ test.describe('private SFU two-user browser smoke', () => {
       const serverForUserTwo = await getJson<ServerResponse>(userTwo, `/api/servers/${createdServer.id}`)
       const userOneMember = findMember(serverForUserOne, first.profileId)
       const userTwoMember = findMember(serverForUserTwo, second.profileId)
+      const generalChannel = findChannel(serverForUserOne, 'general', 'TEXT')
 
       await postJson(
         userOne,
@@ -105,10 +120,12 @@ test.describe('private SFU two-user browser smoke', () => {
       const sfuQuery = shouldRunDefaultCandidateSmoke
         ? `?video=true${transportQuery}${defaultCandidateCaptureQuery}`
         : `?video=true&mediaProvider=sfu${transportQuery}${captureQuery}`
+      const userOneConversationUrl = `${webBaseUrl}/servers/${createdServer.id}/conversations/${userTwoMember.id}`
+      const userTwoConversationUrl = `${webBaseUrl}/servers/${createdServer.id}/conversations/${userOneMember.id}`
 
       await Promise.all([
-        userOnePage.goto(`${webBaseUrl}/servers/${createdServer.id}/conversations/${userTwoMember.id}${sfuQuery}`),
-        userTwoPage.goto(`${webBaseUrl}/servers/${createdServer.id}/conversations/${userOneMember.id}${sfuQuery}`),
+        userOnePage.goto(`${userOneConversationUrl}${sfuQuery}`),
+        userTwoPage.goto(`${userTwoConversationUrl}${sfuQuery}`),
       ])
 
       await expect(userOnePage.getByTestId('private-sfu-status')).toHaveText('connected', {
@@ -173,16 +190,68 @@ test.describe('private SFU two-user browser smoke', () => {
         )
       }
 
-      await userOnePage.getByRole('button', { name: 'Restart SFU private call' }).click()
-      await expect(userOnePage.getByTestId('private-sfu-status')).toHaveText('connected', {
-        timeout: 45_000,
-      })
-      await expect(userTwoPage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
-        expectedRemoteProducerCount,
-        {
+      for (let restartIndex = 0; restartIndex < restartCount; restartIndex += 1) {
+        await userOnePage.getByRole('button', { name: 'Restart SFU private call' }).click()
+        await expect(userOnePage.getByTestId('private-sfu-status')).toHaveText('connected', {
           timeout: 45_000,
-        },
-      )
+        })
+        await expect(userTwoPage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
+          expectedRemoteProducerCount,
+          {
+            timeout: 45_000,
+          },
+        )
+
+        if (restartIndex < restartCount - 1) {
+          await userOnePage.waitForTimeout(2_000)
+        }
+      }
+
+      if (shouldRunRouteAwayBackSmoke) {
+        for (let iteration = 0; iteration < routeAwayBackIterationCount; iteration += 1) {
+          await userOnePage.goto(`${webBaseUrl}/servers/${createdServer.id}/channels/${generalChannel.id}`)
+          await expect(userOnePage).toHaveURL(new RegExp(`/servers/${createdServer.id}/channels/${generalChannel.id}$`))
+          await expect(userTwoPage.getByTestId('private-sfu-remote-producer-count')).toHaveText('Remote tracks: 0', {
+            timeout: 45_000,
+          })
+
+          await userOnePage.goto(`${userOneConversationUrl}${sfuQuery}`)
+          await expect(userOnePage.getByTestId('private-sfu-status')).toHaveText('connected', {
+            timeout: 45_000,
+          })
+          await expect(userTwoPage.getByTestId('private-sfu-status')).toHaveText('connected', {
+            timeout: 45_000,
+          })
+          await expect(userTwoPage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
+            expectedRemoteProducerCount,
+            {
+              timeout: 45_000,
+            },
+          )
+        }
+      }
+
+      if (shouldRunLeaveRejoinSmoke) {
+        await userOnePage.getByRole('button', { name: 'Leave call' }).click()
+        await expect(userOnePage).toHaveURL(new RegExp(`/servers/${createdServer.id}/conversations/${userTwoMember.id}$`))
+        await expect(userTwoPage.getByTestId('private-sfu-remote-producer-count')).toHaveText('Remote tracks: 0', {
+          timeout: 45_000,
+        })
+
+        await userOnePage.goto(`${userOneConversationUrl}${sfuQuery}`)
+        await expect(userOnePage.getByTestId('private-sfu-status')).toHaveText('connected', {
+          timeout: 45_000,
+        })
+        await expect(userTwoPage.getByTestId('private-sfu-status')).toHaveText('connected', {
+          timeout: 45_000,
+        })
+        await expect(userTwoPage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
+          expectedRemoteProducerCount,
+          {
+            timeout: 45_000,
+          },
+        )
+      }
 
       if (effectiveCaptureMode === 'real') {
         await expect(userOnePage.getByTestId('private-sfu-capture-mode')).toHaveText('Capture mode: real')
@@ -206,8 +275,8 @@ test.describe('private SFU two-user browser smoke', () => {
 
       await defaultPrivatePage.goto(
         shouldRunDefaultCandidateSmoke
-          ? `${webBaseUrl}/servers/${createdServer.id}/conversations/${userTwoMember.id}?video=true&mediaProvider=livekit`
-          : `${webBaseUrl}/servers/${createdServer.id}/conversations/${userTwoMember.id}?video=true`,
+          ? `${userOneConversationUrl}?video=true&mediaProvider=livekit`
+          : `${userOneConversationUrl}?video=true`,
       )
       await expect(defaultPrivatePage.getByTestId('private-sfu-provider')).toHaveCount(0)
 
@@ -270,6 +339,30 @@ const findMember = (server: ServerResponse, profileId: string) => {
   }
 
   return member
+}
+
+const findChannel = (server: ServerResponse, name: string, type: ServerChannel['type']) => {
+  const channel = server.channels.find((item) => item.name === name && item.type === type)
+
+  if (!channel) {
+    throw new Error(`Server ${server.id} does not include ${type} channel ${name}`)
+  }
+
+  return channel
+}
+
+function parsePositiveInteger(value: string | undefined, fallback: number) {
+  if (!value) {
+    return fallback
+  }
+
+  const parsed = Number.parseInt(value, 10)
+
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return fallback
+  }
+
+  return parsed
 }
 
 function normalizeBaseUrl(value: string) {

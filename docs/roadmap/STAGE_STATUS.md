@@ -797,8 +797,17 @@ Remaining:
 - channel `AUDIO`, channel `VIDEO`, production default behavior, LiveKit fallback/removal, production TURN/SFU infra, and Stage 6 production Postgres migration are unchanged
 - production default remains `blocked`, LiveKit removal remains `blocked`, and production media readiness remains blocked by process-local mediasoup/signaling plus missing production SFU/TURN infra/runbook/monitoring/rollback
 
+- `private-sfu-nonproduction-default-candidate-long-soak-coverage` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_153_PRIVATE_SFU_NONPRODUCTION_DEFAULT_CANDIDATE_LONG_SOAK_COVERAGE.md`
+- private SFU smoke helper now has bounded flags for restart count, route away/back, and leave/rejoin coverage
+- candidate direct, candidate screen-share start/stop, bounded 2-click Restart with 2s cooldown, LiveKit rollback, explicit private SFU regression without candidate gate, and final cleanup convergence are `pass`
+- route away/back without Leave is `fail / needs fix` because the peer can remain at `Remote tracks: 1` instead of restoring `Remote tracks: 2`
+- explicit leave/rejoin is `fail / needs fix` for the same peer remote-track reconciliation symptom
+- optional offline/restore is `review / fail finding` because it can also leave peer remote tracks incomplete
+- backend health showed expected producers/consumers during the fail findings and final active resources settled back to `0`, so this is tracked as client remote-track reconciliation after private rejoin/remount rather than final backend resource leakage
+- no runtime fix landed in this segment; production default, LiveKit removal, production TURN/SFU infra, channel `AUDIO`/`VIDEO`, and Stage 6/Postgres production migration remain unchanged
+
 Next likely work:
-- continue with `private-sfu-nonproduction-default-candidate-long-soak-coverage` as a scoped runtime segment; do not proceed next to production rollout, LiveKit removal, or production TURN/SFU infrastructure work
+- continue with `private-sfu-remote-track-reconciliation-after-rejoin-fix` as a scoped runtime segment; do not proceed next to production rollout, LiveKit removal, or production TURN/SFU infrastructure work
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
