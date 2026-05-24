@@ -35,15 +35,23 @@ const apiOrigin = new URL(apiBaseUrl)
 const webOrigin = new URL(webBaseUrl)
 const transportQuery =
   process.env.PRIVATE_SFU_SMOKE_TRANSPORT === 'turn' ? '&sfuTransport=turn' : ''
+const shouldRunDefaultCandidateSmoke = process.env.PRIVATE_SFU_SMOKE_DEFAULT_CANDIDATE === '1'
 const captureQuery =
   process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real-missing-camera'
     ? '&sfuCapture=real&sfuSimulateMissingCamera=true'
     : process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real'
       ? '&sfuCapture=real'
       : ''
+const defaultCandidateCaptureQuery =
+  process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real-missing-camera' ? '&sfuSimulateMissingCamera=true' : ''
+const effectiveCaptureMode = shouldRunDefaultCandidateSmoke
+  ? process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real-missing-camera'
+    ? 'real-missing-camera'
+    : 'real'
+  : process.env.PRIVATE_SFU_SMOKE_CAPTURE
 const expectedRemoteProducerCount =
-  process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real' ? 'Remote tracks: 2' : 'Remote tracks: 1'
-const expectedRemoteProducerNumber = process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real' ? 2 : 1
+  effectiveCaptureMode === 'real' ? 'Remote tracks: 2' : 'Remote tracks: 1'
+const expectedRemoteProducerNumber = effectiveCaptureMode === 'real' ? 2 : 1
 const shouldRunNetworkInterruptionSmoke = process.env.PRIVATE_SFU_SMOKE_NETWORK_INTERRUPT === '1'
 const shouldRunScreenShareSmoke = process.env.PRIVATE_SFU_SMOKE_SCREEN_SHARE === '1'
 
@@ -94,7 +102,9 @@ test.describe('private SFU two-user browser smoke', () => {
 
       const userOnePage = await userOne.newPage()
       const userTwoPage = await userTwo.newPage()
-      const sfuQuery = `?video=true&mediaProvider=sfu${transportQuery}${captureQuery}`
+      const sfuQuery = shouldRunDefaultCandidateSmoke
+        ? `?video=true${transportQuery}${defaultCandidateCaptureQuery}`
+        : `?video=true&mediaProvider=sfu${transportQuery}${captureQuery}`
 
       await Promise.all([
         userOnePage.goto(`${webBaseUrl}/servers/${createdServer.id}/conversations/${userTwoMember.id}${sfuQuery}`),
@@ -174,7 +184,7 @@ test.describe('private SFU two-user browser smoke', () => {
         },
       )
 
-      if (process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real') {
+      if (effectiveCaptureMode === 'real') {
         await expect(userOnePage.getByTestId('private-sfu-capture-mode')).toHaveText('Capture mode: real')
         await userOnePage.getByRole('button', { name: 'Mute microphone' }).click()
         await expect(userOnePage.getByRole('button', { name: 'Unmute microphone' })).toBeEnabled()
@@ -182,7 +192,7 @@ test.describe('private SFU two-user browser smoke', () => {
         await expect(userOnePage.getByRole('button', { name: 'Start camera' })).toBeEnabled()
       }
 
-      if (process.env.PRIVATE_SFU_SMOKE_CAPTURE === 'real-missing-camera') {
+      if (effectiveCaptureMode === 'real-missing-camera') {
         await expect(userOnePage.getByTestId('private-sfu-capture-mode')).toHaveText('Capture mode: real')
         await expect(userOnePage.getByTestId('private-sfu-capture-notice')).toHaveText(
           'Camera not found; continuing audio-only',
@@ -195,7 +205,9 @@ test.describe('private SFU two-user browser smoke', () => {
       const defaultPrivatePage = await userOne.newPage()
 
       await defaultPrivatePage.goto(
-        `${webBaseUrl}/servers/${createdServer.id}/conversations/${userTwoMember.id}?video=true`,
+        shouldRunDefaultCandidateSmoke
+          ? `${webBaseUrl}/servers/${createdServer.id}/conversations/${userTwoMember.id}?video=true&mediaProvider=livekit`
+          : `${webBaseUrl}/servers/${createdServer.id}/conversations/${userTwoMember.id}?video=true`,
       )
       await expect(defaultPrivatePage.getByTestId('private-sfu-provider')).toHaveCount(0)
 

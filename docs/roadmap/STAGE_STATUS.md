@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `channel-video-sfu-limited-pilot-long-soak-env-unblock-and-rerun`.
+The next Stage 8 segment should be `private-sfu-nonproduction-default-candidate-run-report`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,11 +347,11 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `channel-video-sfu-multi-user-screen-share-rejoin-cleanup-fix`, not Stage 6 production-track work and not a one-shot media rewrite
+- continue Stage 8 with `private-sfu-nonproduction-default-candidate-run-report`, not Stage 6 production-track work and not production rollout
 
 ### Stage 8. Media MVP
 
-Status: `in progress / channel video SFU limited pilot long-soak rerun review with fail findings`
+Status: `in progress / private SFU non-production default-candidate pass; production blocked`
 
 Current wave:
 - `Wave 33 / MEDIA_MVP_IMPLEMENTATION_PLAN`
@@ -720,9 +720,76 @@ Remaining:
 - final health counters included `failedConsumeCount=1`, `screenShareTakeoverCount=2`, `olderScreenProducerClosedDueToTakeoverCount=2`, `staleSessionsClosedCount=12`, and `failedStateRejoinRecoveryCount=0`
 - optional local TURN rerun was not run because coturn was unavailable on `3478`; actual selected direct-vs-relay ICE path remains deferred observability
 - broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- `channel-video-sfu-multi-user-screen-share-rejoin-cleanup-fix` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_144_CHANNEL_VIDEO_SFU_MULTI_USER_SCREEN_SHARE_REJOIN_CLEANUP_FIX.md`
+- root cause was client-side stale remote producer reconciliation after screen-share/restart/leave timing: periodic discovery refreshed paused state but did not remove consumed producer ids that no longer existed in the backend authoritative producer list
+- SFU cleanup now clears all remote UI state, stops participant-grid video tracks, and periodic producer discovery removes stale consumed producer ids when the backend producer list no longer includes them
+- the previously failing 3-user channel `VIDEO` product-default pilot with screen-share takeover plus leave/rejoin now passes with expected remote track counts
+- guarded 2-user screen-share, 3-user no-screen, and 5-user no-screen channel `VIDEO` product-default pilot smokes also passed
+- final local/dev health counters settled to zero active rooms/sessions/transports/producers/consumers, and `failedConsumeCount` stayed `0` in the rerun
+- broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- `channel-video-sfu-failed-restart-recovery-soak-coverage` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_145_CHANNEL_VIDEO_SFU_FAILED_RESTART_RECOVERY_SOAK_COVERAGE.md`
+- guarded channel `VIDEO` product-default pilot smoke now has bounded failed/offline Restart recovery coverage through `CHANNEL_VIDEO_SFU_SMOKE_FAILED_RESTART_RECOVERY=1`
+- the focused 2-user recovery smoke performs a real offline/online interruption, uses a one-shot non-production failed-state simulation for one selected tab, clicks Restart exactly once, and returns both users to `connected`
+- `failedStateRejoinRecoveryCount` incremented from `0` to `1`, proving the failed Restart path closes the old participant session with `transport-failure` and performs a fresh backend rejoin
+- final local/dev health counters again settled to zero active rooms/sessions/transports/producers/consumers after stale cleanup convergence
+- the 3-user screen-share takeover plus leave/rejoin regression stayed `pass`, and `failedConsumeCount` remained `0` in this segment's rerun
+- broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- `channel-video-sfu-route-away-back-loop-coverage` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_146_CHANNEL_VIDEO_SFU_ROUTE_AWAY_BACK_LOOP_COVERAGE.md`
+- guarded channel `VIDEO` product-default pilot smoke now has bounded route away/back coverage through `CHANNEL_VIDEO_SFU_SMOKE_ROUTE_AWAY_BACK=1`
+- route away/back iterations default to `1` and are capped at `2`
+- the focused 3-user route smoke navigated one participant to the server `general` text route without pressing Leave, verified remaining remote tracks/video tiles decreased, navigated back to the video channel, and verified all participants returned to `connected` with restored remote tracks/video tiles
+- no runtime cleanup fix was needed; route-change unmount cleanup handled the participant session and local SFU adapter cleanup
+- final local/dev health counters again settled to zero active rooms/sessions/transports/producers/consumers after stale cleanup convergence
+- the 3-user screen-share takeover plus leave/rejoin regression stayed `pass`, and `failedConsumeCount` remained `0`
+- broader product-facing default remains `review / hold`, production default remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- `channel-video-sfu-limited-pilot-broader-default-readiness-review` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_147_CHANNEL_VIDEO_SFU_LIMITED_PILOT_BROADER_DEFAULT_READINESS_REVIEW.md`
+- post-fix evidence now covers 2-user screen-share takeover, 3-user no-screen, 5-user fake-device no-screen, fixed 3-user screen-share takeover plus leave/rejoin, bounded failed/offline Restart recovery, bounded route away/back, cleanup convergence to zero active media resources, and preserved LiveKit rollback/default behavior
+- channel `VIDEO` limited non-production pilot is `pass for broader non-production default-candidate review`
+- broader product-facing default is ready only for a separate non-production default-candidate implementation segment; no broader/default runtime switch was made in the readiness review
+- optional local TURN rerun is not required before the next non-production default-candidate implementation because earlier channel `VIDEO` TURN and screen-share TURN checks passed through local Docker coturn, but it remains recommended before TURN-sensitive expansion and required before production readiness claims
+- production default, production media infra readiness, and multi-process readiness remain `blocked`
+- LiveKit removal remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- `channel-video-sfu-broader-nonproduction-default-candidate-implementation` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_148_CHANNEL_VIDEO_SFU_BROADER_NONPRODUCTION_DEFAULT_CANDIDATE_IMPLEMENTATION.md`
+- no new env flag was added; the broader candidate gate is the existing `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_DEFAULT_CANDIDATE=1`
+- `media-room.tsx` now names the existing channel `VIDEO` candidate boolean as `isChannelVideoSfuBroaderDefaultCandidateRequested` without changing behavior
+- channel `VIDEO` SFU can open without query params only in non-production under `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_DEFAULT_CANDIDATE=1`; production remains blocked by `NODE_ENV !== 'production'` checks
+- explicit LiveKit rollback remains preserved through `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`
+- ordinary private `?video=true` remains LiveKit/default, channel `AUDIO` behavior is unchanged, and the product-default pilot gate remains unchanged
+- guarded broader candidate smoke passed without SFU query params and covered screen-share takeover, Restart, route away/back, leave/rejoin, no-camera fallback, rollback/default assertions, private default preservation, and channel `AUDIO` non-regression assertion inside the channel `VIDEO` smoke
+- final local/dev health counters settled to zero active rooms/sessions/transports/producers/consumers after stale cleanup convergence
+- production default, production media infra readiness, and multi-process readiness remain `blocked`
+- LiveKit removal remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+
+- `channel-video-sfu-optional-local-turn-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_149_CHANNEL_VIDEO_SFU_OPTIONAL_LOCAL_TURN_RERUN.md`
+- local Docker coturn started from `infra/coturn/docker-compose.local.yml`, exposed `127.0.0.1:3478` over TCP/UDP, and the guarded channel `VIDEO` broader non-production default-candidate TURN smoke passed with 3 users, screen-share takeover, Restart, bounded route away/back, leave/rejoin, no-camera fallback, rollback/default assertions, ordinary private default preservation, and channel `AUDIO` non-regression assertion
+- local/dev health observed `transportModeCounts.turn=6` during the smoke, app-level SFU failure counters stayed `0`, and final active rooms/sessions/transports/producers/consumers settled back to `0` after stale cleanup convergence
+- coturn logs showed authenticated TURN sessions and cleanup back to zero allocations; transient local `508 Cannot create socket` entries were observed from the small default relay port range, so heavier local TURN stress should widen the local-only relay range before rerun
+- the latest TURN rerun is `pass with local relay-range review note`, but it remains local Docker coturn evidence only and does not change production readiness
+- production default, production media infra readiness, and multi-process readiness remain `blocked`
+- LiveKit removal remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+
+- `channel-video-sfu-broader-nonproduction-default-candidate-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_150_CHANNEL_VIDEO_SFU_BROADER_NONPRODUCTION_DEFAULT_CANDIDATE_RUN_REPORT.md`
+- final channel `VIDEO` broader non-production default-candidate classification is `pass`
+- direct local smoke is `pass`
+- local TURN smoke is `pass with relay-range review note`
+- screen-share, route away/back, failed Restart recovery, and cleanup health are `pass`
+- active media resources settle back to `0` after cleanup convergence in the recorded runs
+- explicit LiveKit rollback remains preserved, and ordinary private `?video=true` remains LiveKit/default
+- production default, production media infra readiness, and multi-process readiness remain `blocked`
+- LiveKit removal remains `blocked`, private default remains `hold`, and LiveKit fallback remains preserved
+- `private-sfu-nonproduction-default-candidate-implementation` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_151_PRIVATE_SFU_NONPRODUCTION_DEFAULT_CANDIDATE_IMPLEMENTATION.md`
+- private SFU now has a non-production default-candidate env gate: `NEXT_PUBLIC_MEDIA_PRIVATE_SFU_DEFAULT_CANDIDATE=1`
+- ordinary private `?video=true` can enter SFU only in non-production, only under that env gate, and only when no explicit LiveKit rollback query is present
+- default-candidate private SFU uses real capture mode by default, while explicit private SFU query behavior remains supported
+- explicit LiveKit rollback remains preserved through `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`
+- channel `AUDIO`, channel `VIDEO`, production defaults, LiveKit fallback/removal, production TURN/SFU infra, and Stage 6 production Postgres migration remain unchanged
+- guarded private default-candidate direct smoke passed with ordinary private `?video=true` and no `mediaProvider=sfu`
+- guarded private default-candidate screen-share smoke passed with fake screen capture
+- guarded explicit private SFU regression smoke passed without the default-candidate env gate
+- rollback to LiveKit was preserved through the smoke assertion
 
 Next likely work:
-- run `channel-video-sfu-multi-user-screen-share-rejoin-cleanup-fix`; acceptable alternative is `channel-video-sfu-failed-restart-recovery-soak-coverage`; do not proceed next to production rollout, broader/default switch, or LiveKit removal
+- close with `private-sfu-nonproduction-default-candidate-run-report`; do not proceed next to production rollout, LiveKit removal, or an ungated private default switch
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

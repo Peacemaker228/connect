@@ -24,6 +24,7 @@ type SfuPrivateCallAdapterProps = {
   iceTransportPolicy?: RTCIceTransportPolicy
   captureMode?: 'synthetic' | 'real'
   simulateMissingCamera?: boolean
+  simulateFailedStateAfterOfflineRestore?: boolean
   roomLabel?: string
   restartAriaLabel?: string
   remoteVideoLayout?: 'single' | 'participant-grid'
@@ -201,6 +202,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   iceTransportPolicy,
   captureMode = 'synthetic',
   simulateMissingCamera = false,
+  simulateFailedStateAfterOfflineRestore = false,
   roomLabel = 'SFU private call',
   restartAriaLabel = 'Restart SFU private call',
   remoteVideoLayout = 'single',
@@ -230,6 +232,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   const consumedProducerKeyByIdRef = useRef(new Map<string, string>())
   const consumedProducerByIdRef = useRef(new Map<string, RemoteProducerMetadata>())
   const startRunIdRef = useRef(0)
+  const simulatedFailedStateAfterOfflineRestoreRef = useRef(false)
   const [status, setStatus] = useState<SfuPrivateCallStatus>('idle')
   const [detail, setDetail] = useState('Waiting for scoped SFU gate')
   const [producerIds, setProducerIds] = useState<string[]>([])
@@ -281,6 +284,9 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     consumedProducerKeysRef.current.clear()
     consumedProducerKeyByIdRef.current.clear()
     consumedProducerByIdRef.current.clear()
+    setProducerIds([])
+    setConsumerIds([])
+    setRemoteProducerIds([])
     setRemoteTrackCounts(EMPTY_REMOTE_TRACK_COUNTS)
     remoteStreamRef.current = null
     remoteVideoStreamRef.current = null
@@ -302,6 +308,14 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
 
       return []
     })
+    setRemoteParticipants((current) => {
+      for (const participant of current) {
+        participant.videoTrack?.stop()
+      }
+
+      return []
+    })
+    setHasSingleRemoteVideoTrack(false)
     localSpeakingDetectorRef.current?.close()
     localSpeakingDetectorRef.current = null
     remoteSpeakingDetectorRef.current?.close()
@@ -617,38 +631,6 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     [sessionScope],
   )
 
-  const startProducerStateSync = useCallback(
-    (adapter: SfuClientAdapter, runId: number) => {
-      if (producerStateSyncTimerRef.current !== null) {
-        window.clearInterval(producerStateSyncTimerRef.current)
-      }
-
-      producerStateSyncTimerRef.current = window.setInterval(() => {
-        if (startRunIdRef.current !== runId) {
-          return
-        }
-
-        void adapter
-          .discoverProducers(sessionScope)
-          .then((discovery) => {
-            if (startRunIdRef.current !== runId || !discovery.enabled || discovery.status !== 'ready') {
-              return
-            }
-
-            for (const producer of discovery.producers) {
-              if (producer.participantSessionId === sessionScope.participantSessionId) {
-                continue
-              }
-
-              applyRemoteProducerPausedState(producer.producerId, producer.paused)
-            }
-          })
-          .catch(() => undefined)
-      }, 1000)
-    },
-    [applyRemoteProducerPausedState, sessionScope],
-  )
-
   const attachRemoteTrack = useCallback(
     async (track: MediaStreamTrack, producer: RemoteProducerMetadata) => {
       if (track.kind === 'video' && producer.source === 'screen') {
@@ -851,6 +833,45 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       syncRemoteTrackCounts()
     },
     [remoteVideoLayout, startRemoteSpeakingDetector, syncRemoteTrackCounts],
+  )
+
+  const startProducerStateSync = useCallback(
+    (adapter: SfuClientAdapter, runId: number) => {
+      if (producerStateSyncTimerRef.current !== null) {
+        window.clearInterval(producerStateSyncTimerRef.current)
+      }
+
+      producerStateSyncTimerRef.current = window.setInterval(() => {
+        if (startRunIdRef.current !== runId) {
+          return
+        }
+
+        void adapter
+          .discoverProducers(sessionScope)
+          .then((discovery) => {
+            if (startRunIdRef.current !== runId || !discovery.enabled || discovery.status !== 'ready') {
+              return
+            }
+
+            const remoteProducers = discovery.producers.filter(
+              (producer) => producer.participantSessionId !== sessionScope.participantSessionId,
+            )
+            const remoteProducerIds = new Set(remoteProducers.map((producer) => producer.producerId))
+
+            for (const producerId of [...consumedProducerIdsRef.current]) {
+              if (!remoteProducerIds.has(producerId)) {
+                removeRemoteProducer(producerId)
+              }
+            }
+
+            for (const producer of remoteProducers) {
+              applyRemoteProducerPausedState(producer.producerId, producer.paused)
+            }
+          })
+          .catch(() => undefined)
+      }, 1000)
+    },
+    [applyRemoteProducerPausedState, removeRemoteProducer, sessionScope],
   )
 
   const clearLocalScreenShare = useCallback((producerId?: string) => {
@@ -1151,6 +1172,55 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   useEffect(() => {
     void startSfuPath()
   }, [startSfuPath])
+
+  useEffect(() => {
+    if (!simulateFailedStateAfterOfflineRestore || process.env.NODE_ENV === 'production') {
+      return
+    }
+
+    let sawOffline = !navigator.onLine
+    let failureTimer: number | null = null
+
+    const handleOffline = () => {
+      sawOffline = true
+    }
+
+    const triggerSimulatedFailure = () => {
+      if (simulatedFailedStateAfterOfflineRestoreRef.current) {
+        return
+      }
+
+      simulatedFailedStateAfterOfflineRestoreRef.current = true
+      failureTimer = window.setTimeout(() => {
+        startRunIdRef.current += 1
+        cleanup()
+        setStatus('failed')
+        setDetail('Simulated failed state after offline restore for bounded Restart recovery smoke')
+      }, 250)
+    }
+
+    const handleOnline = () => {
+      if (!sawOffline) {
+        return
+      }
+
+      triggerSimulatedFailure()
+    }
+
+    window.addEventListener('offline', handleOffline)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('media-sfu-simulate-failed-state-after-offline-restore', triggerSimulatedFailure)
+
+    return () => {
+      window.removeEventListener('offline', handleOffline)
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('media-sfu-simulate-failed-state-after-offline-restore', triggerSimulatedFailure)
+
+      if (failureTimer !== null) {
+        window.clearTimeout(failureTimer)
+      }
+    }
+  }, [cleanup, simulateFailedStateAfterOfflineRestore])
 
   const toggleLocalAudio = useCallback(() => {
     const nextEnabled = !localAudioEnabled
@@ -1494,10 +1564,14 @@ const removeRemoteParticipantProducer = ({
           kind === 'video' && source !== 'screen' && participant.videoProducerId === producerId
             ? undefined
             : participant.videoProducerId,
-        videoTrack:
-          kind === 'video' && source !== 'screen' && participant.videoProducerId === producerId
-            ? undefined
-            : participant.videoTrack,
+        videoTrack: (() => {
+          if (kind === 'video' && source !== 'screen' && participant.videoProducerId === producerId) {
+            participant.videoTrack?.stop()
+            return undefined
+          }
+
+          return participant.videoTrack
+        })(),
       }
     })
     .filter((participant) => participant.audioProducerId || participant.videoProducerId)
