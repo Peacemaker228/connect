@@ -826,7 +826,15 @@ Next likely work:
 - LiveKit removal remains `blocked`, and LiveKit fallback remains preserved
 
 Next likely work:
-- continue with `private-sfu-controlled-product-review`; do not proceed next to production rollout, LiveKit removal, or production TURN/SFU infrastructure work
+- `private-sfu-controlled-product-review` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_156_PRIVATE_SFU_CONTROLLED_PRODUCT_REVIEW.md`
+- private SFU non-production default-candidate is `pass for controlled product review`
+- reviewed Segment 151-155 evidence: private `?video=true` candidate direct, screen-share, bounded Restart, route away/back, explicit leave/rejoin, offline/restore, LiveKit rollback, and cleanup health are all pass for controlled review
+- direct private `?video=true` candidate UX is ready for controlled manual/product review only under `NEXT_PUBLIC_MEDIA_PRIVATE_SFU_DEFAULT_CANDIDATE=1`
+- screen-share UX is acceptable for review, no-camera fallback is not a blocker, and restart/leave/rejoin/route-away have no known blocking bug after the Segment 154 fix and Segment 155 rerun
+- LiveKit rollback remains preserved through `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`
+- manual operator checklist is recorded for real-user audio/video, mute/camera controls, screen-share start/stop, Restart, route away/back, Leave/rejoin, offline/restore, no-camera fallback, LiveKit rollback, and cleanup health convergence
+- production default, production media infra readiness, multi-process readiness, LiveKit removal, production TURN/SFU infra, env defaults, channel `AUDIO`/`VIDEO`, and Stage 6/Postgres production migration remain unchanged or blocked as before
+- next likely work is `stage8-media-mvp-local-completion-review`; acceptable scoped alternative is `private-sfu-controlled-product-review-manual-run-report`; do not proceed next to production rollout, LiveKit removal, or production TURN/SFU infrastructure work
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
