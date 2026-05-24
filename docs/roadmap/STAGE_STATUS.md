@@ -281,7 +281,7 @@ Remaining:
 
 The active next track is `Stage 8 / Media MVP`.
 
-The next Stage 8 segment should be `private-sfu-remote-track-reconciliation-after-rejoin-fix`.
+The next Stage 8 segment should be `private-sfu-nonproduction-default-candidate-long-soak-rerun-report`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -347,7 +347,7 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- continue Stage 8 with `private-sfu-remote-track-reconciliation-after-rejoin-fix`, not Stage 6 production-track work and not production rollout
+- continue Stage 8 with `private-sfu-nonproduction-default-candidate-long-soak-rerun-report`, not Stage 6 production-track work and not production rollout
 
 ### Stage 8. Media MVP
 
