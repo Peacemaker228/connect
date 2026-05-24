@@ -807,7 +807,16 @@ Remaining:
 - no runtime fix landed in this segment; production default, LiveKit removal, production TURN/SFU infra, channel `AUDIO`/`VIDEO`, and Stage 6/Postgres production migration remain unchanged
 
 Next likely work:
-- continue with `private-sfu-remote-track-reconciliation-after-rejoin-fix` as a scoped runtime segment; do not proceed next to production rollout, LiveKit removal, or production TURN/SFU infrastructure work
+- `private-sfu-remote-track-reconciliation-after-rejoin-fix` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_154_PRIVATE_SFU_REMOTE_TRACK_RECONCILIATION_AFTER_REJOIN_FIX.md`
+- private SFU remote-track reconciliation after route away/back and explicit leave/rejoin is now `pass`
+- the private SFU client now tracks single-layout remote camera tracks by `producerId` and uses the existing authoritative backend producer sync to consume newly discovered remote producers when signaling events or replacement snapshots were missed
+- no unbounded reconnect/retry loop was added; bounded helper limits remain in place for Restart and route-away/back coverage
+- guarded private default-candidate route away/back plus leave/rejoin smoke passed with remote tracks restoring to `Remote tracks: 2`
+- explicit private SFU regression without the candidate gate passed, explicit private SFU screen-share start/stop regression passed, and ordinary private `?video=true` stayed LiveKit/default without the candidate gate
+- final local/dev health counters settled to zero active rooms/sessions/transports/producers/consumers after cleanup convergence, with SFU failure counters remaining `0`
+- optional offline/restore remains `review` pending a focused rerun
+- production default, LiveKit removal, production TURN/SFU infra, channel `AUDIO`/`VIDEO`, env defaults, and Stage 6/Postgres production migration remain unchanged
+- next likely work is `private-sfu-nonproduction-default-candidate-long-soak-rerun-report` or `private-sfu-offline-restore-reconciliation-rerun`; do not proceed next to production rollout, LiveKit removal, or production TURN/SFU infrastructure work
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

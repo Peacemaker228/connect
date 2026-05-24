@@ -222,6 +222,12 @@ test.describe('private SFU two-user browser smoke', () => {
           await expect(userTwoPage.getByTestId('private-sfu-status')).toHaveText('connected', {
             timeout: 45_000,
           })
+          await expect(userOnePage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
+            expectedRemoteProducerCount,
+            {
+              timeout: 45_000,
+            },
+          )
           await expect(userTwoPage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
             expectedRemoteProducerCount,
             {
@@ -245,6 +251,12 @@ test.describe('private SFU two-user browser smoke', () => {
         await expect(userTwoPage.getByTestId('private-sfu-status')).toHaveText('connected', {
           timeout: 45_000,
         })
+        await expect(userOnePage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
+          expectedRemoteProducerCount,
+          {
+            timeout: 45_000,
+          },
+        )
         await expect(userTwoPage.getByTestId('private-sfu-remote-producer-count')).toHaveText(
           expectedRemoteProducerCount,
           {

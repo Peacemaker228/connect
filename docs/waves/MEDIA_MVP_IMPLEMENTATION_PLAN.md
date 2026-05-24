@@ -1196,6 +1196,19 @@ Segment 153 result:
 - no runtime fix landed in this segment; production default, LiveKit removal, production TURN/SFU infra, channel `AUDIO`/`VIDEO`, and Stage 6/Postgres production migration remain unchanged
 - recommended next runtime segment is `private-sfu-remote-track-reconciliation-after-rejoin-fix`; do not proceed next to production rollout
 
+Segment 154 result:
+- status: `private SFU remote-track reconciliation after rejoin/remount pass / production blocked`
+- `private-sfu-remote-track-reconciliation-after-rejoin-fix` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_154_PRIVATE_SFU_REMOTE_TRACK_RECONCILIATION_AFTER_REJOIN_FIX.md`
+- the private SFU client now tracks single-layout remote camera tracks by `producerId` so stale camera tracks can be removed exactly like audio and participant-grid tracks
+- the existing 1s authoritative producer sync now removes stale consumed producer IDs and also consumes newly discovered backend producers through the existing bounded consume path when signaling events or replacement snapshots were missed
+- no unbounded reconnect/retry loop was added; Restart and route-away/back smoke limits remain capped by their existing helper env flags
+- guarded private default-candidate smoke passed with ordinary `?video=true`, `PRIVATE_SFU_SMOKE_RESTART_COUNT=2`, route away/back, and explicit leave/rejoin, and remote tracks restored to `Remote tracks: 2`
+- explicit private SFU regression without the candidate gate passed and ordinary private `?video=true` stayed LiveKit/default in that regression path
+- explicit private SFU screen-share start/stop regression passed
+- final local/dev health counters settled to zero active rooms/sessions/transports/producers/consumers after cleanup convergence, with SFU failure counters remaining `0`
+- optional offline/restore remains `review` pending a focused rerun; production default, LiveKit removal, production TURN/SFU infra, channel `AUDIO`/`VIDEO`, env defaults, and Stage 6/Postgres production migration remain unchanged
+- recommended next runtime segment is `private-sfu-nonproduction-default-candidate-long-soak-rerun-report`; acceptable alternative is `private-sfu-offline-restore-reconciliation-rerun`; do not proceed next to production rollout or LiveKit removal
+
 ## Dependency Summary
 
 Critical path:
@@ -1283,7 +1296,7 @@ Result:
 - the segment stayed narrow to contracts and docs only
 
 Current next code segment:
-- `private-sfu-remote-track-reconciliation-after-rejoin-fix`
+- `private-sfu-nonproduction-default-candidate-long-soak-rerun-report`
 
 Before any runtime replacement:
 - LiveKit containment and parity smoke must happen
@@ -1305,4 +1318,4 @@ Reason:
 - MVP implementation order, fallback, and acceptance are now documented
 
 Next active work can continue controlled replacement:
-- `private-sfu-nonproduction-default-candidate-long-soak-coverage`
+- `private-sfu-nonproduction-default-candidate-long-soak-rerun-report`
