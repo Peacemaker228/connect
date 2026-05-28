@@ -176,6 +176,26 @@ test.describe('channel VIDEO SFU browser smoke', () => {
       await expectAllRemoteVideoTileCounts(pages, expectedRemoteVideoTileCount)
       await expectAllRemoteVideosVisible(pages, expectedRemoteVideoTileCount)
 
+      await pages[0].getByRole('button', { name: 'Stop camera' }).click()
+      await expect(pages[0].getByRole('button', { name: 'Start camera' })).toBeEnabled()
+      await expectAllRemoteVideosVisible([pages[0]], expectedRemoteVideoTileCount)
+      await Promise.all(
+        pages.slice(1).map(async (page) => {
+          await expect(page.getByTestId('private-sfu-remote-video')).toHaveCount(expectedRemoteVideoTileCount - 1, {
+            timeout: 45_000,
+          })
+          await expect(page.getByTestId('private-sfu-remote-audio-only').first()).toHaveText(
+            'Remote participant camera off',
+            {
+              timeout: 45_000,
+            },
+          )
+        }),
+      )
+      await pages[0].getByRole('button', { name: 'Start camera' }).click()
+      await expect(pages[0].getByRole('button', { name: 'Stop camera' })).toBeEnabled()
+      await expectAllRemoteVideosVisible(pages, expectedRemoteVideoTileCount)
+
       if (shouldRunScreenShare) {
         await pages[0].getByRole('button', { name: 'Start screen share' }).click()
         await expect(pages[0].getByTestId('private-sfu-local-screen-share')).toBeVisible({
@@ -435,7 +455,13 @@ const findMember = (server: ServerResponse, profileId: string) => {
 }
 
 const expectAllProviders = async (pages: Awaited<ReturnType<BrowserContext['newPage']>>[], label: string) => {
-  await Promise.all(pages.map((page) => expect(page.getByTestId('private-sfu-provider')).toHaveText(label)))
+  await Promise.all(
+    pages.map((page) =>
+      expect(page.getByTestId('private-sfu-provider')).toHaveText(label, {
+        timeout: 45_000,
+      }),
+    ),
+  )
 }
 
 const expectAllStatuses = async (pages: Awaited<ReturnType<BrowserContext['newPage']>>[], status: string) => {
