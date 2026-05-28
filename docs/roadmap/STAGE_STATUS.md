@@ -857,6 +857,10 @@ Next likely work:
 - the client SFU adapter now treats camera producer paused state as a render state: remote video is hidden and a camera-off placeholder is shown for both private/single and channel participant-grid layouts
 - browser smoke assertions now cover remote camera pause/resume behavior
 - LiveKit fallback/default behavior, production defaults, production media infra, multi-process readiness, and Stage 6/Postgres production migration remain unchanged
+- `sfu-call-ui-product-polish` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_159_SFU_CALL_UI_PRODUCT_POLISH.md`
+- the SFU call UI now prioritizes media/screen-share surfaces over diagnostics for controlled product review
+- room/session/producer/consumer diagnostics remain available under collapsed `Session details`, while compact runtime signals and smoke selectors remain preserved
+- no media engine, signaling, production default, LiveKit fallback/removal, production media infra, or Stage 6/Postgres production migration behavior changed
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists

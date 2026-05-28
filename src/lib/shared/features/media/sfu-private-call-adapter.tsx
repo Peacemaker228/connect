@@ -1408,6 +1408,14 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
 
     void startSfuPath()
   }, [cleanup, onRecover, startSfuPath, status])
+  const statusToneClass =
+    status === 'failed'
+      ? 'border-red-900/70 bg-red-950/40 text-red-200'
+      : status === 'connected'
+        ? 'border-emerald-900/60 bg-emerald-950/30 text-emerald-200'
+        : status === 'reconnecting' || status === 'waiting'
+          ? 'border-amber-900/60 bg-amber-950/30 text-amber-200'
+          : 'border-zinc-800 bg-zinc-900 text-zinc-300'
 
   return (
     <div className="flex h-full flex-col bg-zinc-950 text-zinc-50">
@@ -1463,58 +1471,38 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 px-6 text-center">
-        <div className="text-lg font-semibold" data-testid="private-sfu-status">
-          {status}
-        </div>
-        <p className="max-w-xl text-sm text-zinc-400">{detail}</p>
-        <dl className="grid w-full max-w-xl grid-cols-2 gap-3 text-left text-xs text-zinc-400">
-          <div className="border border-zinc-800 p-3">
-            <dt className="mb-1 text-zinc-500">Room</dt>
-            <dd className="truncate text-zinc-100" data-testid="private-sfu-room-id">
-              {sessionScope.roomId}
-            </dd>
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
+        <div className="flex flex-col gap-3 border-b border-zinc-900 pb-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <div
+                className={`rounded border px-2 py-1 text-xs font-semibold ${statusToneClass}`}
+                data-testid="private-sfu-status">
+                {status}
+              </div>
+              <p className="truncate text-sm text-zinc-400">{detail}</p>
+            </div>
           </div>
-          <div className="border border-zinc-800 p-3">
-            <dt className="mb-1 text-zinc-500">Session</dt>
-            <dd className="truncate text-zinc-100" data-testid="private-sfu-session-id">
-              {sessionScope.participantSessionId}
-            </dd>
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-500">
+            <span data-testid="private-sfu-remote-producer-count">Remote tracks: {remoteProducerIds.length}</span>
+            <span data-testid="private-sfu-remote-track-breakdown">
+              audio {remoteTrackCounts.audio}, camera {remoteTrackCounts.camera}, screen {remoteTrackCounts.screen}
+            </span>
+            <span data-testid="private-sfu-capture-mode">Capture mode: {captureMode}</span>
+            <span data-testid="private-sfu-transport-mode">Transport: {transportMode}</span>
+            <span>
+              Requested media: audio {audio ? 'on' : 'off'}, video {video ? 'on' : 'off'}
+            </span>
           </div>
-          <div className="border border-zinc-800 p-3">
-            <dt className="mb-1 text-zinc-500">Producer</dt>
-            <dd className="truncate text-zinc-100" data-testid="private-sfu-producer-id">
-              {producerIds[0] ?? '-'}
-            </dd>
-          </div>
-          <div className="border border-zinc-800 p-3">
-            <dt className="mb-1 text-zinc-500">Consumer</dt>
-            <dd className="truncate text-zinc-100" data-testid="private-sfu-consumer-id">
-              {consumerIds[0] ?? '-'}
-            </dd>
-          </div>
-        </dl>
-        <div className="text-xs text-zinc-500" data-testid="private-sfu-remote-producer-count">
-          Remote tracks: {remoteProducerIds.length}
-        </div>
-        <div className="text-xs text-zinc-500" data-testid="private-sfu-remote-track-breakdown">
-          audio {remoteTrackCounts.audio}, camera {remoteTrackCounts.camera}, screen {remoteTrackCounts.screen}
-        </div>
-        <div className="text-xs text-zinc-500" data-testid="private-sfu-capture-mode">
-          Capture mode: {captureMode}
-        </div>
-        <div className="text-xs text-zinc-500" data-testid="private-sfu-transport-mode">
-          Transport: {transportMode}
         </div>
         {captureNotice ? (
-          <div className="text-xs text-amber-300" data-testid="private-sfu-capture-notice">
+          <div
+            className="border border-amber-900/60 bg-amber-950/30 px-3 py-2 text-xs text-amber-200"
+            data-testid="private-sfu-capture-notice">
             {captureNotice}
           </div>
         ) : null}
-        <div className="text-xs text-zinc-500">
-          Requested media: audio {audio ? 'on' : 'off'}, video {video ? 'on' : 'off'}
-        </div>
-        <div className="flex flex-wrap justify-center gap-2 text-xs">
+        <div className="flex flex-wrap gap-3 text-xs">
           <span
             className={isLocalSpeaking ? 'text-emerald-300' : 'text-zinc-500'}
             data-testid="private-sfu-local-speaking">
@@ -1527,7 +1515,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
           </span>
         </div>
         {localScreenShareTrack || remoteScreenShares.length > 0 ? (
-          <div className="grid w-full max-w-4xl grid-cols-1 gap-3">
+          <div className="grid w-full grid-cols-1 gap-3">
             {localScreenShareTrack ? (
               <ScreenShareVideoTile
                 label="You are sharing your screen"
@@ -1547,13 +1535,13 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
             ))}
           </div>
         ) : null}
-        <div className="grid w-full max-w-4xl grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid w-full flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
           <video
             ref={localVideoRef}
             muted
             autoPlay
             playsInline
-            className="hidden aspect-video w-full bg-black object-cover data-[active=true]:block"
+            className="hidden aspect-video min-h-48 w-full bg-black object-cover data-[active=true]:block"
             data-active={hasLocalVideoTrack}
             data-testid="private-sfu-local-video"
           />
@@ -1562,7 +1550,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
               <RemoteVideoTile key={participant.participantSessionId} participant={participant} />
             ))
           ) : (
-            <div className="flex aspect-video w-full items-center justify-center overflow-hidden bg-black">
+            <div className="flex aspect-video min-h-48 w-full items-center justify-center overflow-hidden bg-black">
               <video
                 ref={remoteVideoRef}
                 autoPlay
@@ -1579,7 +1567,36 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
             </div>
           )}
         </div>
-        <audio ref={remoteAudioRef} autoPlay controls className="h-10 w-full max-w-xl" />
+        <details className="w-full border border-zinc-900 bg-zinc-950/70 p-3 text-xs text-zinc-500">
+          <summary className="cursor-pointer text-zinc-400">Session details</summary>
+          <dl className="mt-3 grid w-full grid-cols-1 gap-3 text-left sm:grid-cols-2 lg:grid-cols-4">
+            <div className="border border-zinc-900 p-3">
+              <dt className="mb-1 text-zinc-600">Room</dt>
+              <dd className="truncate text-zinc-200" data-testid="private-sfu-room-id">
+                {sessionScope.roomId}
+              </dd>
+            </div>
+            <div className="border border-zinc-900 p-3">
+              <dt className="mb-1 text-zinc-600">Session</dt>
+              <dd className="truncate text-zinc-200" data-testid="private-sfu-session-id">
+                {sessionScope.participantSessionId}
+              </dd>
+            </div>
+            <div className="border border-zinc-900 p-3">
+              <dt className="mb-1 text-zinc-600">Producer</dt>
+              <dd className="truncate text-zinc-200" data-testid="private-sfu-producer-id">
+                {producerIds[0] ?? '-'}
+              </dd>
+            </div>
+            <div className="border border-zinc-900 p-3">
+              <dt className="mb-1 text-zinc-600">Consumer</dt>
+              <dd className="truncate text-zinc-200" data-testid="private-sfu-consumer-id">
+                {consumerIds[0] ?? '-'}
+              </dd>
+            </div>
+          </dl>
+        </details>
+        <audio ref={remoteAudioRef} autoPlay className="sr-only" />
       </div>
     </div>
   )

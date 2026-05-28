@@ -1255,6 +1255,16 @@ Segment 158 result:
 - LiveKit fallback/default behavior, production defaults, production media infra, and Stage 6/Postgres production migration remain unchanged
 - next recommended step is a narrow manual operator rerun of camera stop/start in private or channel `VIDEO` SFU; do not proceed next to production rollout, LiveKit removal, or production SFU/TURN infrastructure work
 
+Segment 159 result:
+- status: `SFU call UI product polish implemented / production still blocked`
+- `sfu-call-ui-product-polish` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_159_SFU_CALL_UI_PRODUCT_POLISH.md`
+- the SFU call surface now puts media and screen-share content ahead of diagnostics for controlled product review
+- room/session/producer/consumer diagnostics remain available in collapsed `Session details`
+- compact runtime signals, speaking status, transport, capture mode, and remote track counts remain visible for review and smoke stability
+- existing test selectors are preserved
+- no media engine, control-plane, signaling, production defaults, LiveKit fallback/removal, production media infra, or Stage 6/Postgres production migration behavior changed
+- next recommended step is a short operator visual pass; do not proceed next to production rollout, LiveKit removal, or production SFU/TURN infrastructure work
+
 ## Dependency Summary
 
 Critical path:
