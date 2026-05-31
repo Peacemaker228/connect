@@ -138,7 +138,9 @@ Risk model:
 
 Do not paste secret values into this repository. Record only presence, owner, rotation date, and non-secret shape.
 
-Current local prototype names are not automatically production names. A later env inventory segment must either approve production names or map them to reviewed equivalents.
+The detailed operator-facing inventory template is `docs/runbooks/PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md`.
+
+Current local prototype names are not automatically production names. The env inventory template proposes reviewed production mapping candidates, but runtime code has not been changed to read those names in this segment.
 
 | Group | Variables / decision | Notes |
 | --- | --- | --- |
@@ -178,6 +180,7 @@ Topology decision values to carry into the env inventory segment:
 This order is a rollout plan, not executed work.
 
 1. Prepare production env inventory:
+   - fill `docs/runbooks/PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md`
    - map the chosen single-host topology to production env names
    - record public announced IP/FQDN ownership
    - record TURN secret ownership without values
@@ -339,17 +342,17 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 - no rollback drill has passed
 - candidate production ranges are chosen but not implemented or load-proven
 - exact coturn systemd-vs-Docker ownership remains undecided
-- exact production env inventory and secret rotation plan are incomplete
+- env inventory template exists, but concrete production values, owners, and secret rotation source are not filled
 - production monitoring/alerting is not implemented
 - LiveKit fallback removal is not approved
 
 ## Next Segments
 
 Recommended next:
-- `production-media-env-inventory-template`
+- `production-coturn-readiness-plan`
 
 Acceptable alternative:
-- `production-coturn-readiness-plan`
+- `production-media-runtime-config-mapping-plan`
 
 Do not proceed next to:
 - production default switch

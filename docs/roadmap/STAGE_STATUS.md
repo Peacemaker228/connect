@@ -284,7 +284,7 @@ The active production media planning track has started with `Wave 34 / PRODUCTIO
 
 There is no mandatory next Stage 8 runtime segment after the local completion pass. Stage 8 remains `local complete / production blocked`.
 
-The next production media step is env inventory planning; production rollout, production default switch, and LiveKit removal remain blocked.
+The next production media step is coturn readiness planning or runtime config mapping; production rollout, production default switch, and LiveKit removal remain blocked.
 
 If production rollout is not next, acceptable follow-up work is limited to scoped manual product-review run reports or Stage 8 media documentation cleanup.
 
@@ -891,6 +891,8 @@ Done:
 - initial production media topology is single VPS / single media host first for MVP/canary
 - process direction is PM2-style continuity for `web`/`apps/api`, backend/media-owned mediasoup worker lifecycle for MVP, and separately managed coturn through systemd or Docker in a later implementation segment
 - candidate port model is `443/tcp` through Nginx for HTTPS/WSS, coturn `3478/udp` and `3478/tcp`, coturn relay `49160-49240`, and mediasoup RTC `40000-40100/udp`; coturn `5349/tcp` and mediasoup TCP fallback are deferred pending evidence
+- `production-media-env-inventory-template` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_162_PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md`
+- `docs/runbooks/PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md` now separates public build-time env, server-only API/media env, secret env, and LiveKit rollback env, and proposes production mapping candidates for current `LOCAL_*` prototype names
 
 Remaining:
 - process-local mediasoup/signaling state remains a production/multi-process blocker
@@ -898,15 +900,15 @@ Remaining:
 - no production-like soak has passed
 - no completed VPS firewall/process plan exists
 - no rollback drill has passed
-- production env names and secret ownership remain undecided
+- env inventory template exists, but concrete production values, owners, secret source, and final runtime mapping remain incomplete
 - coturn systemd-vs-Docker implementation remains undecided
 - candidate mediasoup/coturn ranges are chosen but not implemented or load-proven
 - production monitoring/alerting is not implemented
 - LiveKit removal remains blocked
 
 Next likely work:
-- `production-media-env-inventory-template`
-- acceptable alternative: `production-coturn-readiness-plan`
+- `production-coturn-readiness-plan`
+- acceptable alternative: `production-media-runtime-config-mapping-plan`
 
 ## Historical Notes
 

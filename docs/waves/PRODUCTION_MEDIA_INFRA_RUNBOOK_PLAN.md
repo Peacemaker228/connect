@@ -44,16 +44,16 @@ Done:
 - initial topology is single VPS / single media host first for MVP/canary.
 - candidate ranges are `40000-40100/udp` for mediasoup RTC and `49160-49240` for coturn relay, with coturn listener `3478/udp` and `3478/tcp`; `5349/tcp` and mediasoup TCP fallback are deferred.
 - process direction is PM2-style continuity for `web`/`apps/api`, backend/media-owned mediasoup worker lifecycle for MVP, and separately managed coturn via systemd or Docker in a later implementation segment.
+- `production-media-env-inventory-template` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_162_PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md`.
+- `docs/runbooks/PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md` now separates public build-time env, server-only API/media env, secret env, and LiveKit rollback env, and proposes production mapping candidates for current `LOCAL_*` prototype names.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. `production-media-env-inventory-template`
-   - map local prototype env names to production-approved names
-   - record secret ownership without values
-   - keep LiveKit fallback env until rollback removal is approved
-2. `production-coturn-readiness-plan`
+1. `production-coturn-readiness-plan`
    - define authenticated TURN config, no-open-relay checks, logs, and allocation smoke
+2. `production-media-runtime-config-mapping-plan`
+   - decide whether proposed `MEDIA_*` names become runtime config names or are mapped through another approved source
 3. `production-mediasoup-process-plan`
    - define mediasoup worker/process lifecycle, health, restart policy, and logs
 4. `production-media-staging-smoke-run-report`
@@ -79,3 +79,5 @@ Recommended sequence:
 - [MEDIA_STACK_TECHNOLOGY_DECISION.md](./MEDIA_STACK_TECHNOLOGY_DECISION.md)
 - [STAGE_STATUS.md](../roadmap/STAGE_STATUS.md)
 - [SEGMENT_BRIEF_160_PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_160_PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN.md)
+- [SEGMENT_BRIEF_161_PRODUCTION_MEDIA_TOPOLOGY_DECISION.md](../delegation/briefs/SEGMENT_BRIEF_161_PRODUCTION_MEDIA_TOPOLOGY_DECISION.md)
+- [SEGMENT_BRIEF_162_PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md](../delegation/briefs/SEGMENT_BRIEF_162_PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md)
