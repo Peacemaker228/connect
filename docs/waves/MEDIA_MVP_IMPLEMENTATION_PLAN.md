@@ -1245,6 +1245,26 @@ Segment 157 result:
 - Stage 6/Postgres production migration remains `deferred` and separate from this media MVP closeout
 - next recommended track is production media infrastructure/runbook planning only if production rollout is the next business goal; acceptable alternatives are scoped manual product-review run reports or Stage 8 media documentation cleanup
 
+Segment 158 result:
+- status: `SFU camera pause remote-frame bugfix implemented / production still blocked`
+- `sfu-camera-pause-remote-frame-fix` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_158_SFU_CAMERA_PAUSE_REMOTE_FRAME_FIX.md`
+- manual product review found a scoped bug after local Stage 8 completion: when a participant stopped camera, the peer could keep seeing the last rendered video frame
+- the fix stays in client SFU render reconciliation: paused camera producers now hide the remote video element and show a camera-off placeholder instead of leaving a frozen frame visible
+- the fix covers both single/private remote video layout and channel participant-grid layout
+- browser smoke assertions were extended to cover remote camera pause/resume behavior
+- LiveKit fallback/default behavior, production defaults, production media infra, and Stage 6/Postgres production migration remain unchanged
+- next recommended step is a narrow manual operator rerun of camera stop/start in private or channel `VIDEO` SFU; do not proceed next to production rollout, LiveKit removal, or production SFU/TURN infrastructure work
+
+Segment 159 result:
+- status: `SFU call UI product polish implemented / production still blocked`
+- `sfu-call-ui-product-polish` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_159_SFU_CALL_UI_PRODUCT_POLISH.md`
+- the SFU call surface now puts media and screen-share content ahead of diagnostics for controlled product review
+- room/session/producer/consumer diagnostics remain available in collapsed `Session details`
+- compact runtime signals, speaking status, transport, capture mode, and remote track counts remain visible for review and smoke stability
+- existing test selectors are preserved
+- no media engine, control-plane, signaling, production defaults, LiveKit fallback/removal, production media infra, or Stage 6/Postgres production migration behavior changed
+- next recommended step is a short operator visual pass; do not proceed next to production rollout, LiveKit removal, or production SFU/TURN infrastructure work
+
 ## Dependency Summary
 
 Critical path:

@@ -271,6 +271,21 @@ test.describe('private SFU two-user browser smoke', () => {
         await expect(userOnePage.getByRole('button', { name: 'Unmute microphone' })).toBeEnabled()
         await userOnePage.getByRole('button', { name: 'Stop camera' }).click()
         await expect(userOnePage.getByRole('button', { name: 'Start camera' })).toBeEnabled()
+        await expect(userTwoPage.getByTestId('private-sfu-remote-video')).not.toBeVisible({
+          timeout: 45_000,
+        })
+        await expect(userTwoPage.getByTestId('private-sfu-remote-audio-only')).toHaveText(
+          'Remote participant camera off',
+          {
+            timeout: 45_000,
+          },
+        )
+        await userOnePage.getByRole('button', { name: 'Start camera' }).click()
+        await expect(userOnePage.getByRole('button', { name: 'Stop camera' })).toBeEnabled()
+        await expect(userTwoPage.getByTestId('private-sfu-remote-video')).toHaveCount(1, {
+          timeout: 45_000,
+        })
+        await expect(userTwoPage.getByTestId('private-sfu-remote-video')).toBeVisible()
       }
 
       if (effectiveCaptureMode === 'real-missing-camera') {

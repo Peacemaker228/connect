@@ -39,6 +39,7 @@ type RemoteParticipantMedia = {
   audioProducerId?: string
   videoProducerId?: string
   videoTrack?: MediaStreamTrack
+  videoPaused?: boolean
 }
 
 type RemoteScreenShareMedia = {
@@ -243,6 +244,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
   const [remoteParticipants, setRemoteParticipants] = useState<RemoteParticipantMedia[]>([])
   const [remoteScreenShares, setRemoteScreenShares] = useState<RemoteScreenShareMedia[]>([])
   const [hasSingleRemoteVideoTrack, setHasSingleRemoteVideoTrack] = useState(false)
+  const [singleRemoteVideoPaused, setSingleRemoteVideoPaused] = useState(false)
   const [localScreenShareTrack, setLocalScreenShareTrack] = useState<MediaStreamTrack | null>(null)
   const [localScreenShareProducerId, setLocalScreenShareProducerId] = useState<string | null>(null)
   const [localAudioEnabled, setLocalAudioEnabled] = useState(audio)
@@ -318,6 +320,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
       return []
     })
     setHasSingleRemoteVideoTrack(false)
+    setSingleRemoteVideoPaused(false)
     localSpeakingDetectorRef.current?.close()
     localSpeakingDetectorRef.current = null
     remoteSpeakingDetectorRef.current?.close()
@@ -437,6 +440,35 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         startRemoteSpeakingDetector(remoteStreamRef.current)
       }
 
+      consumedProducerByIdRef.current.set(producerId, {
+        ...producer,
+        paused,
+      })
+
+      if (producer.kind === 'video' && producer.source !== 'screen' && remoteVideoLayout === 'single') {
+        const remoteTrack = remoteVideoTrackByProducerIdRef.current.get(producerId)
+
+        if (remoteTrack) {
+          remoteTrack.enabled = !paused
+        }
+
+        setSingleRemoteVideoPaused(paused)
+        setHasSingleRemoteVideoTrack(!paused && remoteVideoTrackByProducerIdRef.current.size > 0)
+
+        if (paused) {
+          remoteVideoRef.current?.pause()
+
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = null
+          }
+        } else if (remoteVideoRef.current && remoteVideoStreamRef.current) {
+          remoteVideoRef.current.srcObject = remoteVideoStreamRef.current
+          void remoteVideoRef.current.play().catch(() => undefined)
+        }
+
+        return
+      }
+
       if (producer.kind === 'video' && remoteVideoLayout === 'participant-grid') {
         if (producer.source === 'screen') {
           setRemoteScreenShares((current) =>
@@ -469,6 +501,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
             return {
               ...participant,
               videoTrack,
+              videoPaused: paused,
             }
           }),
         )
@@ -662,6 +695,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
             audioProducerId: track.kind === 'audio' ? producer.producerId : undefined,
             videoProducerId: track.kind === 'video' ? producer.producerId : undefined,
             videoTrack: track.kind === 'video' ? track : undefined,
+            videoPaused: track.kind === 'video' ? producer.paused : undefined,
           }),
         )
       }
@@ -676,7 +710,8 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         remoteVideoStreamRef.current = remoteVideoStream
         remoteVideoStream.addTrack(track)
         remoteVideoTrackByProducerIdRef.current.set(producer.producerId, track)
-        setHasSingleRemoteVideoTrack(true)
+        setSingleRemoteVideoPaused(Boolean(producer.paused))
+        setHasSingleRemoteVideoTrack(!producer.paused)
 
         if (remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = remoteVideoStream
@@ -834,11 +869,14 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
 
             remoteVideoStreamRef.current = null
             setHasSingleRemoteVideoTrack(false)
+            setSingleRemoteVideoPaused(false)
           } else {
             setHasSingleRemoteVideoTrack(true)
+            setSingleRemoteVideoPaused(false)
           }
         } else {
           setHasSingleRemoteVideoTrack(remoteVideoTrackByProducerIdRef.current.size > 0)
+          setSingleRemoteVideoPaused(false)
         }
       }
 
@@ -1060,6 +1098,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
     setRemoteParticipants([])
     setRemoteScreenShares([])
     setHasSingleRemoteVideoTrack(false)
+    setSingleRemoteVideoPaused(false)
     desiredLocalAudioEnabledRef.current = audio
     desiredLocalVideoEnabledRef.current = video
     setLocalAudioEnabled(audio)
@@ -1369,17 +1408,25 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
 
     void startSfuPath()
   }, [cleanup, onRecover, startSfuPath, status])
+  const statusToneClass =
+    status === 'failed'
+      ? 'border-red-900/70 bg-red-950/40 text-red-200'
+      : status === 'connected'
+        ? 'border-emerald-900/60 bg-emerald-950/30 text-emerald-200'
+        : status === 'reconnecting' || status === 'waiting'
+          ? 'border-amber-900/60 bg-amber-950/30 text-amber-200'
+          : 'border-zinc-800 bg-zinc-900 text-zinc-300'
 
   return (
     <div className="flex h-full flex-col bg-zinc-950 text-zinc-50">
-      <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+      <div className="flex flex-col gap-3 border-b border-zinc-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <div className="text-sm font-medium" data-testid="private-sfu-provider">
             {roomLabel}
           </div>
           <div className="truncate text-xs text-zinc-400">{controlPlaneJoin.room.roomId}</div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           <Button
             type="button"
             size="icon"
@@ -1424,58 +1471,38 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 px-6 text-center">
-        <div className="text-lg font-semibold" data-testid="private-sfu-status">
-          {status}
-        </div>
-        <p className="max-w-xl text-sm text-zinc-400">{detail}</p>
-        <dl className="grid w-full max-w-xl grid-cols-2 gap-3 text-left text-xs text-zinc-400">
-          <div className="border border-zinc-800 p-3">
-            <dt className="mb-1 text-zinc-500">Room</dt>
-            <dd className="truncate text-zinc-100" data-testid="private-sfu-room-id">
-              {sessionScope.roomId}
-            </dd>
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 py-4">
+        <div className="flex flex-col gap-3 border-b border-zinc-900 pb-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <div
+                className={`rounded border px-2 py-1 text-xs font-semibold ${statusToneClass}`}
+                data-testid="private-sfu-status">
+                {status}
+              </div>
+              <p className="truncate text-sm text-zinc-400">{detail}</p>
+            </div>
           </div>
-          <div className="border border-zinc-800 p-3">
-            <dt className="mb-1 text-zinc-500">Session</dt>
-            <dd className="truncate text-zinc-100" data-testid="private-sfu-session-id">
-              {sessionScope.participantSessionId}
-            </dd>
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-500">
+            <span data-testid="private-sfu-remote-producer-count">Remote tracks: {remoteProducerIds.length}</span>
+            <span data-testid="private-sfu-remote-track-breakdown">
+              audio {remoteTrackCounts.audio}, camera {remoteTrackCounts.camera}, screen {remoteTrackCounts.screen}
+            </span>
+            <span data-testid="private-sfu-capture-mode">Capture mode: {captureMode}</span>
+            <span data-testid="private-sfu-transport-mode">Transport: {transportMode}</span>
+            <span>
+              Requested media: audio {audio ? 'on' : 'off'}, video {video ? 'on' : 'off'}
+            </span>
           </div>
-          <div className="border border-zinc-800 p-3">
-            <dt className="mb-1 text-zinc-500">Producer</dt>
-            <dd className="truncate text-zinc-100" data-testid="private-sfu-producer-id">
-              {producerIds[0] ?? '-'}
-            </dd>
-          </div>
-          <div className="border border-zinc-800 p-3">
-            <dt className="mb-1 text-zinc-500">Consumer</dt>
-            <dd className="truncate text-zinc-100" data-testid="private-sfu-consumer-id">
-              {consumerIds[0] ?? '-'}
-            </dd>
-          </div>
-        </dl>
-        <div className="text-xs text-zinc-500" data-testid="private-sfu-remote-producer-count">
-          Remote tracks: {remoteProducerIds.length}
-        </div>
-        <div className="text-xs text-zinc-500" data-testid="private-sfu-remote-track-breakdown">
-          audio {remoteTrackCounts.audio}, camera {remoteTrackCounts.camera}, screen {remoteTrackCounts.screen}
-        </div>
-        <div className="text-xs text-zinc-500" data-testid="private-sfu-capture-mode">
-          Capture mode: {captureMode}
-        </div>
-        <div className="text-xs text-zinc-500" data-testid="private-sfu-transport-mode">
-          Transport: {transportMode}
         </div>
         {captureNotice ? (
-          <div className="text-xs text-amber-300" data-testid="private-sfu-capture-notice">
+          <div
+            className="border border-amber-900/60 bg-amber-950/30 px-3 py-2 text-xs text-amber-200"
+            data-testid="private-sfu-capture-notice">
             {captureNotice}
           </div>
         ) : null}
-        <div className="text-xs text-zinc-500">
-          Requested media: audio {audio ? 'on' : 'off'}, video {video ? 'on' : 'off'}
-        </div>
-        <div className="flex flex-wrap justify-center gap-2 text-xs">
+        <div className="flex flex-wrap gap-3 text-xs">
           <span
             className={isLocalSpeaking ? 'text-emerald-300' : 'text-zinc-500'}
             data-testid="private-sfu-local-speaking">
@@ -1488,7 +1515,7 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
           </span>
         </div>
         {localScreenShareTrack || remoteScreenShares.length > 0 ? (
-          <div className="grid w-full max-w-4xl grid-cols-1 gap-3">
+          <div className="grid w-full grid-cols-1 gap-3">
             {localScreenShareTrack ? (
               <ScreenShareVideoTile
                 label="You are sharing your screen"
@@ -1508,32 +1535,76 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
             ))}
           </div>
         ) : null}
-        <div className="grid w-full max-w-4xl grid-cols-1 gap-3 sm:grid-cols-2">
-          <video
-            ref={localVideoRef}
-            muted
-            autoPlay
-            playsInline
-            className="hidden aspect-video w-full bg-black object-cover data-[active=true]:block"
-            data-active={hasLocalVideoTrack}
-            data-testid="private-sfu-local-video"
-          />
+        <div className="grid w-full flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="flex aspect-video min-h-48 w-full items-center justify-center overflow-hidden bg-black">
+            <video
+              ref={localVideoRef}
+              muted
+              autoPlay
+              playsInline
+              className="hidden h-full w-full object-cover data-[active=true]:block"
+              data-active={hasLocalVideoTrack && localVideoEnabled}
+              data-testid="private-sfu-local-video"
+            />
+            {!hasLocalVideoTrack || !localVideoEnabled ? (
+              <div className="flex flex-col items-center gap-2 px-3 text-center text-xs text-zinc-500">
+                <VideoOff className="h-5 w-5 text-zinc-600" />
+                <span>{hasLocalVideoTrack ? 'Your camera is off' : 'Camera not available'}</span>
+              </div>
+            ) : null}
+          </div>
           {remoteVideoLayout === 'participant-grid' ? (
             remoteParticipants.map((participant) => (
               <RemoteVideoTile key={participant.participantSessionId} participant={participant} />
             ))
           ) : (
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              className="hidden aspect-video w-full bg-black object-cover data-[active=true]:block"
-              data-active={hasSingleRemoteVideoTrack}
-              data-testid="private-sfu-remote-video"
-            />
+            <div className="flex aspect-video min-h-48 w-full items-center justify-center overflow-hidden bg-black">
+              <video
+                ref={remoteVideoRef}
+                autoPlay
+                playsInline
+                className="hidden h-full w-full object-cover data-[active=true]:block"
+                data-active={hasSingleRemoteVideoTrack}
+                data-testid="private-sfu-remote-video"
+              />
+              {!hasSingleRemoteVideoTrack ? (
+                <div className="px-3 text-xs text-zinc-500" data-testid="private-sfu-remote-audio-only">
+                  {singleRemoteVideoPaused ? 'Remote participant camera off' : 'Remote participant audio-only'}
+                </div>
+              ) : null}
+            </div>
           )}
         </div>
-        <audio ref={remoteAudioRef} autoPlay controls className="h-10 w-full max-w-xl" />
+        <details className="w-full border border-zinc-900 bg-zinc-950/70 p-3 text-xs text-zinc-500">
+          <summary className="cursor-pointer text-zinc-400">Session details</summary>
+          <dl className="mt-3 grid w-full grid-cols-1 gap-3 text-left sm:grid-cols-2 lg:grid-cols-4">
+            <div className="border border-zinc-900 p-3">
+              <dt className="mb-1 text-zinc-600">Room</dt>
+              <dd className="truncate text-zinc-200" data-testid="private-sfu-room-id">
+                {sessionScope.roomId}
+              </dd>
+            </div>
+            <div className="border border-zinc-900 p-3">
+              <dt className="mb-1 text-zinc-600">Session</dt>
+              <dd className="truncate text-zinc-200" data-testid="private-sfu-session-id">
+                {sessionScope.participantSessionId}
+              </dd>
+            </div>
+            <div className="border border-zinc-900 p-3">
+              <dt className="mb-1 text-zinc-600">Producer</dt>
+              <dd className="truncate text-zinc-200" data-testid="private-sfu-producer-id">
+                {producerIds[0] ?? '-'}
+              </dd>
+            </div>
+            <div className="border border-zinc-900 p-3">
+              <dt className="mb-1 text-zinc-600">Consumer</dt>
+              <dd className="truncate text-zinc-200" data-testid="private-sfu-consumer-id">
+                {consumerIds[0] ?? '-'}
+              </dd>
+            </div>
+          </dl>
+        </details>
+        <audio ref={remoteAudioRef} autoPlay className="sr-only" />
       </div>
     </div>
   )
@@ -1545,12 +1616,14 @@ const upsertRemoteParticipant = ({
   audioProducerId,
   videoProducerId,
   videoTrack,
+  videoPaused,
 }: {
   current: RemoteParticipantMedia[]
   participantSessionId: string
   audioProducerId?: string
   videoProducerId?: string
   videoTrack?: MediaStreamTrack
+  videoPaused?: boolean
 }) => {
   const existing = current.find((participant) => participant.participantSessionId === participantSessionId)
   const nextParticipant: RemoteParticipantMedia = {
@@ -1558,6 +1631,7 @@ const upsertRemoteParticipant = ({
     audioProducerId: audioProducerId ?? existing?.audioProducerId,
     videoProducerId: videoProducerId ?? existing?.videoProducerId,
     videoTrack: videoTrack ?? existing?.videoTrack,
+    videoPaused: videoPaused ?? existing?.videoPaused,
   }
   const next = existing
     ? current.map((participant) =>
@@ -1603,6 +1677,10 @@ const removeRemoteParticipantProducer = ({
 
           return participant.videoTrack
         })(),
+        videoPaused:
+          kind === 'video' && source !== 'screen' && participant.videoProducerId === producerId
+            ? undefined
+            : participant.videoPaused,
       }
     })
     .filter((participant) => participant.audioProducerId || participant.videoProducerId)
@@ -1653,7 +1731,7 @@ const RemoteVideoTile: FC<{ participant: RemoteParticipantMedia }> = ({ particip
   useEffect(() => {
     const videoElement = videoRef.current
 
-    if (!videoElement || !participant.videoTrack) {
+    if (!videoElement || !participant.videoTrack || participant.videoPaused) {
       if (videoElement) {
         videoElement.pause()
         videoElement.srcObject = null
@@ -1669,13 +1747,13 @@ const RemoteVideoTile: FC<{ participant: RemoteParticipantMedia }> = ({ particip
       videoElement.pause()
       videoElement.srcObject = null
     }
-  }, [participant.videoTrack])
+  }, [participant.videoPaused, participant.videoTrack])
 
   return (
     <div
       className="flex aspect-video w-full items-center justify-center overflow-hidden border border-zinc-800 bg-black"
       data-testid="private-sfu-remote-video-tile">
-      {participant.videoTrack ? (
+      {participant.videoTrack && !participant.videoPaused ? (
         <video
           ref={videoRef}
           autoPlay
@@ -1685,7 +1763,7 @@ const RemoteVideoTile: FC<{ participant: RemoteParticipantMedia }> = ({ particip
         />
       ) : (
         <div className="px-3 text-xs text-zinc-500" data-testid="private-sfu-remote-audio-only">
-          Remote participant audio-only
+          {participant.videoPaused ? 'Remote participant camera off' : 'Remote participant audio-only'}
         </div>
       )}
     </div>
