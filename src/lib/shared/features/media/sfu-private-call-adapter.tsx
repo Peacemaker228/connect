@@ -1419,14 +1419,14 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
 
   return (
     <div className="flex h-full flex-col bg-zinc-950 text-zinc-50">
-      <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+      <div className="flex flex-col gap-3 border-b border-zinc-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <div className="text-sm font-medium" data-testid="private-sfu-provider">
             {roomLabel}
           </div>
           <div className="truncate text-xs text-zinc-400">{controlPlaneJoin.room.roomId}</div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           <Button
             type="button"
             size="icon"
@@ -1536,15 +1536,23 @@ export const SfuPrivateCallAdapter: FC<SfuPrivateCallAdapterProps> = ({
           </div>
         ) : null}
         <div className="grid w-full flex-1 grid-cols-1 gap-3 sm:grid-cols-2">
-          <video
-            ref={localVideoRef}
-            muted
-            autoPlay
-            playsInline
-            className="hidden aspect-video min-h-48 w-full bg-black object-cover data-[active=true]:block"
-            data-active={hasLocalVideoTrack}
-            data-testid="private-sfu-local-video"
-          />
+          <div className="flex aspect-video min-h-48 w-full items-center justify-center overflow-hidden bg-black">
+            <video
+              ref={localVideoRef}
+              muted
+              autoPlay
+              playsInline
+              className="hidden h-full w-full object-cover data-[active=true]:block"
+              data-active={hasLocalVideoTrack && localVideoEnabled}
+              data-testid="private-sfu-local-video"
+            />
+            {!hasLocalVideoTrack || !localVideoEnabled ? (
+              <div className="flex flex-col items-center gap-2 px-3 text-center text-xs text-zinc-500">
+                <VideoOff className="h-5 w-5 text-zinc-600" />
+                <span>{hasLocalVideoTrack ? 'Your camera is off' : 'Camera not available'}</span>
+              </div>
+            ) : null}
+          </div>
           {remoteVideoLayout === 'participant-grid' ? (
             remoteParticipants.map((participant) => (
               <RemoteVideoTile key={participant.participantSessionId} participant={participant} />
