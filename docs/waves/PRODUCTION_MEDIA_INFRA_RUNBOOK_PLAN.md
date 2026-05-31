@@ -40,27 +40,27 @@ Done:
 - `docs/runbooks/PRODUCTION_MEDIA_INFRA_RUNBOOK.md` exists as a self-contained planning runbook.
 - `docs/delegation/briefs/SEGMENT_BRIEF_160_PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN.md` records the segment handoff.
 - `docs/roadmap/STAGE_STATUS.md` now lists `Wave 34 / PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN`.
+- `production-media-topology-decision` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_161_PRODUCTION_MEDIA_TOPOLOGY_DECISION.md`.
+- initial topology is single VPS / single media host first for MVP/canary.
+- candidate ranges are `40000-40100/udp` for mediasoup RTC and `49160-49240` for coturn relay, with coturn listener `3478/udp` and `3478/tcp`; `5349/tcp` and mediasoup TCP fallback are deferred.
+- process direction is PM2-style continuity for `web`/`apps/api`, backend/media-owned mediasoup worker lifecycle for MVP, and separately managed coturn via systemd or Docker in a later implementation segment.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. `production-media-topology-decision`
-   - decide single-host vs split media host
-   - decide PM2 vs systemd vs Docker ownership
-   - decide bounded mediasoup RTC and coturn relay/listener ranges
-2. `production-media-env-inventory-template`
+1. `production-media-env-inventory-template`
    - map local prototype env names to production-approved names
    - record secret ownership without values
    - keep LiveKit fallback env until rollback removal is approved
-3. `production-coturn-readiness-plan`
+2. `production-coturn-readiness-plan`
    - define authenticated TURN config, no-open-relay checks, logs, and allocation smoke
-4. `production-mediasoup-process-plan`
+3. `production-mediasoup-process-plan`
    - define mediasoup worker/process lifecycle, health, restart policy, and logs
-5. `production-media-staging-smoke-run-report`
+4. `production-media-staging-smoke-run-report`
    - run direct and relay smoke in staging/non-production
-6. `production-media-canary-readiness-decision`
+5. `production-media-canary-readiness-decision`
    - decide whether a narrow production canary is allowed
-7. `production-media-rollback-drill-report`
+6. `production-media-rollback-drill-report`
    - prove LiveKit rollback/default switch before broader rollout
 
 ## Acceptance Criteria

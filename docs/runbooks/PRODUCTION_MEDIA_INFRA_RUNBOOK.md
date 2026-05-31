@@ -26,7 +26,14 @@ This runbook must not be treated as authorization to:
 
 ## Target Production Topology
 
-Initial production target is a single-host or single-media-node MVP unless a later topology decision chooses otherwise.
+Initial topology decision:
+- use a single VPS / single media host first for the production media MVP/canary, unless a later operator review finds a hard capacity, network, or isolation blocker.
+- keep `web` and `apps/api` inside the current app deploy contour for the first VPS rollout.
+- keep `apps/api` as the owner of media control-plane and signaling.
+- keep mediasoup worker lifecycle owned by the backend/media process for the MVP.
+- run coturn as a separate managed service/container/process with its own restart policy and logs.
+- keep Nginx/reverse proxy ownership limited to HTTPS/WSS app, API, and signaling traffic.
+- send mediasoup RTC and coturn relay traffic directly to the media host, not through Nginx.
 
 Logical roles:
 - `web`: serves the current web shell and client bundle.
@@ -40,17 +47,29 @@ Traffic separation:
 - mediasoup RTC UDP/TCP traffic is direct between clients and the media host. It is not proxied through Nginx.
 - coturn listener and relay traffic is direct between clients and coturn. It is not proxied through Nginx.
 
+Rejected or deferred alternatives:
+- split media host: deferred until single-host canary evidence shows CPU, network, isolation, or operational pressure.
+- full Docker migration for app + API + media: deferred because it would widen the deploy migration beyond the media topology decision.
+- separate distributed SFU cluster: rejected for the first rollout because current mediasoup/signaling state is process-local and no shared-state/session design exists yet.
+- proxying media through Nginx: rejected because WebRTC RTC packets and TURN relay traffic must use direct UDP/TCP paths.
+
 ## Process Ownership Options
 
-No final process manager decision is made by this runbook.
+The MVP direction is chosen, but exact unit/container/ecosystem files remain future implementation work.
 
-Options to decide in `production-media-topology-decision`:
+Recommended MVP direction:
+- keep `web` and `apps/api` compatible with the current PM2-style deploy for the first VPS rollout.
+- let the backend/media process own mediasoup worker lifecycle for the MVP.
+- run coturn separately through either systemd or Docker after a focused implementation decision.
+- do not introduce a full Docker migration for web/API/media unless explicitly approved in a later deploy modernization segment.
+
+Process options and tradeoffs:
 
 | Option | Fit | Tradeoffs |
 | --- | --- | --- |
-| PM2 | Matches the known current production process style. | Easier continuity for `web` and `apps/api`; weaker service isolation for coturn and native media workers unless carefully supervised. |
-| systemd | Good for OS-managed long-running services such as coturn and a backend/media process. | Requires explicit unit design, restart policy, log ownership, and deployment order. |
-| Docker | Good for repeatable coturn/SFU packaging and port mapping review. | Requires reviewed image/build/runtime policy, volume/log strategy, network mode decisions, and firewall mapping. |
+| PM2 | Best continuity for current `web` and `apps/api` deploy style. | Keep for app/API first; not preferred as the only coturn owner because service isolation, restart policy, and logs need explicit handling. |
+| systemd | Strong fit for coturn and optionally a dedicated media service. | Requires later unit design, secret source, restart policy, and log capture; no unit is added in this segment. |
+| Docker | Strong fit for repeatable coturn packaging and port exposure review. | Useful for coturn if approved; full app/API Docker migration is deferred to avoid widening rollout scope. |
 
 Decision constraints:
 - coturn must have a clear owner, restart policy, log path, and secret source.
@@ -59,25 +78,42 @@ Decision constraints:
 
 ## Ports And Firewall Model
 
-This section defines the model only. Exact port ranges must be selected and approved in a later implementation segment.
+This section defines the candidate model only. It does not apply firewall rules and does not add Nginx, PM2, systemd, or Docker configs.
 
 Required traffic classes:
 
 | Traffic | Typical endpoint | Proxy path | Firewall model |
 | --- | --- | --- | --- |
-| Web HTTPS | public `web` origin | through Nginx | allow HTTPS from users |
-| API HTTPS | public API origin | through Nginx | allow HTTPS from users |
-| Realtime/media signaling WSS | API/realtime origin | through Nginx | allow WSS over HTTPS from users |
-| mediasoup RTC UDP/TCP | media host public IP and selected RTC range | direct, no Nginx | allow selected UDP range, optional TCP fallback range if approved |
-| coturn STUN/TURN listener | media/TURN host public IP and selected listener ports | direct, no Nginx | allow selected UDP/TCP listener ports |
-| coturn relay ports | media/TURN host public IP and selected relay range | direct, no Nginx | allow selected relay UDP/TCP range |
+| Web/API/signaling HTTPS/WSS | public `web` and API origins | through Nginx | candidate public entrypoint: `443/tcp` |
+| coturn STUN/TURN listener | media/TURN host public IP | direct, no Nginx | candidate listener: `3478/udp` and `3478/tcp` |
+| coturn TLS listener | media/TURN host public IP | direct, no Nginx | defer `5349/tcp` unless restrictive-network evidence requires it |
+| coturn relay ports | media/TURN host public IP | direct, no Nginx | candidate relay range: `49160-49240` |
+| mediasoup RTC UDP | media host public IP | direct, no Nginx | candidate RTC range: `40000-40100/udp` |
+| mediasoup RTC TCP fallback | media host public IP | direct, no Nginx | explicit review/defer unless production evidence requires it |
 
 Rules:
 - Do not expose broad ephemeral port ranges by default.
-- Choose bounded mediasoup RTC and coturn relay ranges sized for the planned canary, then widen only with load evidence.
+- Keep mediasoup RTC and coturn relay ranges separate. The current candidate model intentionally has no overlap between `40000-40100/udp` and `49160-49240`.
+- Start with bounded ranges sized for a first canary, then widen only with load evidence and an operator-approved firewall update.
 - Do not rely on Nginx for media packets or TURN relay packets.
 - Confirm the public announced IP/address used by mediasoup and coturn matches the reachable production interface.
 - Capture exact firewall rules in a later implementation runbook before applying them.
+
+Range rationale:
+- `40000-40100/udp` gives mediasoup a small, explicit RTC allocation range for first canary while avoiding coturn relay overlap.
+- `49160-49240` aligns with the local TURN relay-range precedent but gives a wider first-canary relay window than the narrowest local smoke ranges.
+- `5349/tcp` and mediasoup TCP fallback are deferred to avoid widening exposed surface before restrictive-network evidence requires them.
+
+## Public Address And Announced IP
+
+Production must record the public reachable IP or FQDN for the media host before any canary.
+
+Requirements:
+- mediasoup announced address must be the address clients can reach for the selected RTC range.
+- coturn `external-ip` or equivalent must match the reachable VPS/media host address.
+- if the host has private bind addresses plus public NAT, both bind and announced/external addresses must be documented.
+- split-host future topology must revisit mediasoup announced IP, coturn external IP, firewall rules, and CORS/API origins.
+- DNS/FQDN usage is acceptable only if the implementation segment confirms WebRTC/coturn behavior and certificate/TLS needs for the selected paths.
 
 ## TURN/STUN Strategy
 
@@ -125,15 +161,27 @@ Inventory output template:
 | --- | --- | --- | --- | --- | --- |
 | TODO | TODO | TODO | yes/no | TODO | TODO |
 
+Topology decision values to carry into the env inventory segment:
+- initial topology: single VPS / single media host
+- app process ownership: current PM2-style deploy compatibility for `web` and `apps/api`
+- mediasoup ownership: backend/media process for MVP
+- coturn ownership: separate systemd or Docker managed service/container/process, final implementation later
+- HTTPS/WSS: `443/tcp` through Nginx
+- coturn listener: `3478/udp` and `3478/tcp`
+- coturn TLS listener: `5349/tcp` deferred
+- coturn relay candidate range: `49160-49240`
+- mediasoup RTC candidate range: `40000-40100/udp`
+- mediasoup TCP fallback: deferred pending explicit review
+
 ## Deploy Order
 
 This order is a rollout plan, not executed work.
 
-1. Prepare production topology decision:
-   - decide single-host vs split media host
-   - decide PM2 vs systemd vs Docker ownership
-   - decide exact mediasoup RTC range, coturn listener ports, and coturn relay range
-   - decide production env names and secret ownership
+1. Prepare production env inventory:
+   - map the chosen single-host topology to production env names
+   - record public announced IP/FQDN ownership
+   - record TURN secret ownership without values
+   - keep LiveKit fallback env available
 2. Prepare infrastructure without changing defaults:
    - provision coturn and mediasoup process ownership in a reviewed implementation segment
    - configure bounded ports/firewall in a reviewed implementation segment
@@ -156,6 +204,19 @@ This order is a rollout plan, not executed work.
    - canary a narrow cohort or explicit route/query/env gate
    - keep default LiveKit fallback
    - promote to production default only after canary, monitoring, rollback drill, and operator sign-off
+
+## State And Scaling Boundary
+
+Current limitation:
+- mediasoup/signaling state is process-local.
+- the initial topology is single-process/single-host MVP/canary only.
+- multi-process or multi-node media requires a later shared-state/session design.
+
+Scaling boundary:
+- no horizontal SFU scaling is claimed by this topology decision.
+- no Redis/pubsub/session store is introduced in this segment.
+- room pinning, participant session ownership, reconnect/resume behavior across process restarts, and shared producer/consumer discovery need a later design before multi-process rollout.
+- production readiness cannot be claimed until the blocker is resolved or explicitly accepted for a narrow canary with rollback.
 
 ## Smoke Checklist
 
@@ -276,8 +337,8 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 - no production-like soak has passed
 - no completed VPS firewall/process plan exists
 - no rollback drill has passed
-- exact production mediasoup/coturn port ranges are undecided
-- exact production process ownership is undecided
+- candidate production ranges are chosen but not implemented or load-proven
+- exact coturn systemd-vs-Docker ownership remains undecided
 - exact production env inventory and secret rotation plan are incomplete
 - production monitoring/alerting is not implemented
 - LiveKit fallback removal is not approved
@@ -285,10 +346,10 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 ## Next Segments
 
 Recommended next:
-- `production-media-topology-decision`
+- `production-media-env-inventory-template`
 
 Acceptable alternative:
-- `production-media-env-inventory-template`
+- `production-coturn-readiness-plan`
 
 Do not proceed next to:
 - production default switch
