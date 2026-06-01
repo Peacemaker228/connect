@@ -4,6 +4,10 @@ import type { types as mediasoupTypes } from 'mediasoup';
 
 import { MediaSignalingService } from './media-signaling.service';
 import { MediaParticipantSessionService } from './media-participant-session.service';
+import {
+  MediaRuntimeConfigService,
+  type MediaRuntimeConfigSnapshot,
+} from './media-runtime-config.service';
 
 type LocalMediasoupPrototypeStatus = 'disabled' | 'ready' | 'failed';
 type LocalMediasoupTransportDirection = 'send' | 'recv';
@@ -73,6 +77,7 @@ export type LocalMediasoupPrototypeHealth = {
   staleSessionTtlMs?: number;
   staleSessionSweepIntervalMs?: number;
   lastCleanup?: LocalMediasoupCleanupResult;
+  runtimeConfig?: MediaRuntimeConfigSnapshot;
   reason?: string;
 };
 
@@ -194,6 +199,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
   constructor(
     private readonly mediaSignalingService: MediaSignalingService,
     private readonly mediaParticipantSessionService: MediaParticipantSessionService,
+    private readonly mediaRuntimeConfigService: MediaRuntimeConfigService,
   ) {}
 
   private worker: mediasoupTypes.Worker | null = null;
@@ -236,6 +242,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         enabled: false,
         version: mediasoupVersion,
         workerBin,
+        runtimeConfig: this.mediaRuntimeConfigService.getPublicSnapshot(),
         reason: 'Local mediasoup prototype is disabled in production runtime',
       };
     }
@@ -303,8 +310,22 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         };
       }
 
+      const listenInfoResult = this.mediaRuntimeConfigService.getMediasoupListenInfos();
+
+      if (!listenInfoResult.enabled) {
+        this.incrementObservabilityCounter('failedTransportCreateCount');
+
+        return {
+          status: 'failed',
+          enabled: false,
+          direction,
+          requestedTransportMode,
+          reason: listenInfoResult.reason ?? 'Mediasoup listen configuration is invalid',
+        };
+      }
+
       const transport = await this.router.createWebRtcTransport({
-        listenInfos: this.getLocalListenInfos(),
+        listenInfos: listenInfoResult.listenInfos,
         enableUdp: true,
         enableTcp: true,
         preferUdp: true,
@@ -1346,24 +1367,6 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     this.router = router;
   }
 
-  private getLocalListenInfos(): mediasoupTypes.TransportListenInfo[] {
-    const ip = process.env.LOCAL_MEDIASOUP_LISTEN_IP?.trim() || '127.0.0.1';
-    const announcedAddress = process.env.LOCAL_MEDIASOUP_ANNOUNCED_ADDRESS?.trim() || undefined;
-
-    return [
-      {
-        protocol: 'udp',
-        ip,
-        announcedAddress,
-      },
-      {
-        protocol: 'tcp',
-        ip,
-        announcedAddress,
-      },
-    ];
-  }
-
   private getTransportForDirection(
     transportId: string | undefined,
     expectedDirection: LocalMediasoupTransportDirection,
@@ -1734,6 +1737,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
       staleSessionTtlMs: this.getStaleSessionTtlMs(),
       staleSessionSweepIntervalMs: this.getStaleSessionSweepIntervalMs(),
       lastCleanup: this.lastCleanup,
+      runtimeConfig: this.mediaRuntimeConfigService.getPublicSnapshot(),
       reason: status === 'failed' ? this.lastFailure ?? undefined : undefined,
     };
   }

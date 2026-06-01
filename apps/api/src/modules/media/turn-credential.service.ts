@@ -2,6 +2,8 @@ import { createHmac } from 'node:crypto';
 
 import { Injectable } from '@nestjs/common';
 
+import { MediaRuntimeConfigService } from './media-runtime-config.service';
+
 type LocalTurnCredentialStatus = 'disabled' | 'ready';
 
 export type LocalTurnCredentialResponse = {
@@ -16,15 +18,13 @@ export type LocalTurnCredentialResponse = {
   reason?: string;
 };
 
-const DEFAULT_LOCAL_TURN_TTL_SECONDS = 600;
-const MIN_LOCAL_TURN_TTL_SECONDS = 60;
-const MAX_LOCAL_TURN_TTL_SECONDS = 3600;
-
 @Injectable()
 export class TurnCredentialService {
+  constructor(private readonly mediaRuntimeConfigService: MediaRuntimeConfigService) {}
+
   issueLocalCredentials(profileId: string | undefined): LocalTurnCredentialResponse {
-    const urls = this.getLocalTurnUrls();
-    const ttlSeconds = this.getLocalTurnTtlSeconds();
+    const config = this.mediaRuntimeConfigService.getTurnCredentialConfig();
+    const { urls, ttlSeconds } = config;
 
     if (process.env.NODE_ENV === 'production') {
       return this.createDisabledResponse(urls, ttlSeconds, 'Local TURN credentials are disabled in production runtime');
@@ -34,14 +34,14 @@ export class TurnCredentialService {
       return this.createDisabledResponse(urls, ttlSeconds, 'Authenticated profile is required');
     }
 
-    const secret = process.env.LOCAL_TURN_STATIC_AUTH_SECRET?.trim();
+    const secret = config.staticAuthSecret;
 
     if (!secret) {
-      return this.createDisabledResponse(urls, ttlSeconds, 'LOCAL_TURN_STATIC_AUTH_SECRET is not configured');
+      return this.createDisabledResponse(urls, ttlSeconds, 'TURN static auth secret is not configured');
     }
 
     if (urls.length === 0) {
-      return this.createDisabledResponse(urls, ttlSeconds, 'LOCAL_TURN_URLS has no valid turn: or turns: URLs');
+      return this.createDisabledResponse(urls, ttlSeconds, 'TURN URLs have no valid turn: or turns: entries');
     }
 
     const expiresAtUnixSeconds = Math.floor(Date.now() / 1000) + ttlSeconds;
@@ -72,31 +72,5 @@ export class TurnCredentialService {
       ttlSeconds,
       reason,
     };
-  }
-
-  private getLocalTurnUrls() {
-    const value = process.env.LOCAL_TURN_URLS;
-
-    if (!value) {
-      return [];
-    }
-
-    return value
-      .split(',')
-      .map((url) => url.trim())
-      .filter((url) => url.startsWith('turn:') || url.startsWith('turns:'));
-  }
-
-  private getLocalTurnTtlSeconds() {
-    const rawTtlSeconds = Number(process.env.LOCAL_TURN_TTL_SECONDS);
-
-    if (!Number.isFinite(rawTtlSeconds)) {
-      return DEFAULT_LOCAL_TURN_TTL_SECONDS;
-    }
-
-    return Math.min(
-      Math.max(Math.trunc(rawTtlSeconds), MIN_LOCAL_TURN_TTL_SECONDS),
-      MAX_LOCAL_TURN_TTL_SECONDS,
-    );
   }
 }

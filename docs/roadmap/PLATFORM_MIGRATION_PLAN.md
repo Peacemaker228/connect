@@ -328,6 +328,7 @@ Execution update:
 - local Postgres dev switch is complete
 - production Postgres cutover is intentionally deferred to the final production migration window
 - media MVP work may continue before production DB cutover as long as it does not modify production migration/runbook scope
+- after the Stage 8 local media MVP pass, the next production media track is infrastructure/runbook planning only; production SFU/TURN rollout, LiveKit removal, and Stage 6 production Postgres cutover remain separate
 
 Late-order note:
 - deferred auth-product completeness such as `email verification` and `password reset` should happen near the end of the roadmap
@@ -582,6 +583,11 @@ Current Stage 7 decision:
 
 Результат:
 - платформа готова к росту от маленьких комнат к большим сценариям
+
+Current planning update:
+- `Wave 34 / PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN` starts the production media infrastructure/runbook planning track.
+- This is not production rollout: no production SFU/TURN deployment, no default switch, no LiveKit removal, and no Stage 6 Postgres cutover are included.
+- The next implementation decisions should be topology/process ownership and production media env inventory.
 
 ### Deferred Late-Roadmap Auth Product Work
 

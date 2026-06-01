@@ -40,6 +40,7 @@ Current wave order:
 - `Wave 31` = `PRODUCTION_POSTGRES_MIGRATION_RUNBOOK_PLAN`
 - `Wave 32` = `MEDIA_STACK_TECHNOLOGY_DECISION`
 - `Wave 33` = `MEDIA_MVP_IMPLEMENTATION_PLAN`
+- `Wave 34` = `PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN`
 
 ## Status by Stage
 
@@ -279,11 +280,11 @@ Remaining:
 
 ## Next Correct Step
 
-The active next track is `operator decision after Stage 8 / Media MVP local completion`.
+The active production media planning track has started with `Wave 34 / PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN`.
 
-There is no mandatory next Stage 8 runtime segment after the local completion pass.
+There is no mandatory next Stage 8 runtime segment after the local completion pass. Stage 8 remains `local complete / production blocked`.
 
-If production rollout becomes the next business goal, start a separate production media infrastructure/runbook planning track.
+The next production media step is coturn readiness planning or runtime config mapping; production rollout, production default switch, and LiveKit removal remain blocked.
 
 If production rollout is not next, acceptable follow-up work is limited to scoped manual product-review run reports or Stage 8 media documentation cleanup.
 
@@ -351,7 +352,7 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- decide the next business track after Stage 8 local completion; do not start Stage 6 production cutover or production media rollout by default
+- Stage 9 / production media planning has started as a runbook-only track; do not start Stage 6 production cutover or production media rollout by default
 
 ### Stage 8. Media MVP
 
@@ -861,6 +862,59 @@ Next likely work:
 - the SFU call UI now prioritizes media/screen-share surfaces over diagnostics for controlled product review
 - room/session/producer/consumer diagnostics remain available under collapsed `Session details`, while compact runtime signals and smoke selectors remain preserved
 - no media engine, signaling, production default, LiveKit fallback/removal, production media infra, or Stage 6/Postgres production migration behavior changed
+
+### Stage 9. Media Hardening / Production Media Track
+
+Status: `planning started / production blocked`
+
+Current wave:
+- `Wave 34 / PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN`
+
+Intent:
+- plan the future production `mediasoup + coturn` rollout after the Stage 8 local MVP pass
+- keep the work limited to topology, env inventory, runbook, smoke, rollback, and observability planning until production blockers are resolved
+- keep LiveKit fallback available until a later scoped rollback/removal decision
+- keep Stage 6 production Postgres migration deferred and separate
+
+Current rule:
+- do not enable production SFU default
+- do not deploy production coturn or production mediasoup in this planning wave
+- do not run Docker/PM2/systemd/Nginx/firewall implementation changes as part of the plan
+- do not change runtime behavior beyond scoped production-safe media config mapping, and do not change real secret env files
+- do not mix media rollout with Stage 6 production database cutover
+
+Done:
+- `production-media-infra-runbook-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_160_PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN.md`
+- `docs/runbooks/PRODUCTION_MEDIA_INFRA_RUNBOOK.md` now documents target topology, process ownership options, ports/firewall model, TURN/STUN strategy, production env inventory, deploy order, smoke checklist, rollback, monitoring, and production blockers
+- `docs/waves/PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN.md` defines the wave scope, forbidden items, acceptance criteria, and expected future implementation segments
+- `production-media-topology-decision` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_161_PRODUCTION_MEDIA_TOPOLOGY_DECISION.md`
+- initial production media topology is single VPS / single media host first for MVP/canary
+- process direction is PM2-style continuity for `web`/`apps/api`, backend/media-owned mediasoup worker lifecycle for MVP, and separately managed coturn through systemd or Docker in a later implementation segment
+- candidate port model is `443/tcp` through Nginx for HTTPS/WSS, coturn `3478/udp` and `3478/tcp`, coturn relay `49160-49240`, and mediasoup RTC `40000-40100/udp`; coturn `5349/tcp` and mediasoup TCP fallback are deferred pending evidence
+- `production-media-env-inventory-template` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_162_PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md`
+- `docs/runbooks/PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md` now separates public build-time env, server-only API/media env, secret env, and LiveKit rollback env, and proposes production mapping candidates for current `LOCAL_*` prototype names
+- `production-media-runtime-config-mapping` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_163_PRODUCTION_MEDIA_RUNTIME_CONFIG_MAPPING.md`
+- `apps/api` now recognizes `MEDIA_TURN_URLS`, `MEDIA_TURN_STATIC_AUTH_SECRET`, `MEDIA_TURN_TTL_SECONDS`, `MEDIA_SFU_LISTEN_IP`, `MEDIA_SFU_ANNOUNCED_ADDRESS`, and `MEDIA_SFU_RTC_MIN_PORT` / `MEDIA_SFU_RTC_MAX_PORT`, with current `LOCAL_*` names preserved as local/dev fallbacks where applicable
+- TURN relay range metadata recognizes `MEDIA_TURN_RELAY_MIN_PORT` / `MEDIA_TURN_RELAY_MAX_PORT` with local relay fallback names, without changing coturn infrastructure
+- production prototype SFU/TURN endpoints remain disabled by existing production guards, LiveKit fallback remains preserved, and no real env/secret values were changed
+
+Remaining:
+- process-local mediasoup/signaling state remains a production/multi-process blocker
+- no multi-process/shared-state design exists yet
+- no production-like soak has passed
+- no completed VPS firewall/process plan exists
+- no rollback drill has passed
+- env inventory template and runtime mapping exist, but concrete production values, owners, and secret source remain incomplete
+- coturn systemd-vs-Docker implementation remains undecided
+- candidate mediasoup/coturn ranges are chosen but not implemented or load-proven
+- production monitoring/alerting is not implemented
+- LiveKit removal remains blocked
+
+Next likely work:
+- `production-coturn-readiness-plan`
+- acceptable alternative: `production-mediasoup-process-plan`
+
+## Historical Notes
 
 Current `Wave 26` progress:
 - backend-aware API base URL/client foundation exists
