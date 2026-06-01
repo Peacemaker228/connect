@@ -50,19 +50,20 @@ Done:
 - `production-media-runtime-config-mapping` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_163_PRODUCTION_MEDIA_RUNTIME_CONFIG_MAPPING.md`.
 - `apps/api` now recognizes `MEDIA_TURN_*` and `MEDIA_SFU_*` runtime config names with `LOCAL_*` local/dev fallback compatibility.
 - production SFU/TURN endpoints remain disabled by the existing production guards, and no real env/secret values were changed.
+- `production-coturn-readiness-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_164_PRODUCTION_COTURN_READINESS_PLAN.md`.
+- `docs/runbooks/PRODUCTION_MEDIA_INFRA_RUNBOOK.md` now defines coturn readiness criteria covering no-open-relay policy, TURN REST auth through `MEDIA_TURN_STATIC_AUTH_SECRET`, listener/relay/public-address requirements, smoke/log/cleanup evidence, and rollback requirements.
+- no production coturn deploy, production env/secret change, firewall change, runtime change, or production SFU/TURN/default enablement was made.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. `production-coturn-readiness-plan`
-   - define authenticated TURN config, no-open-relay checks, logs, and allocation smoke
-2. `production-mediasoup-process-plan`
+1. `production-mediasoup-process-plan`
    - define mediasoup worker/process lifecycle, health, restart policy, and logs
-3. `production-media-staging-smoke-run-report`
+2. `production-media-staging-smoke-run-report`
    - run direct and relay smoke in staging/non-production
-4. `production-media-canary-readiness-decision`
+3. `production-media-canary-readiness-decision`
    - decide whether a narrow production canary is allowed
-5. `production-media-rollback-drill-report`
+4. `production-media-rollback-drill-report`
    - prove LiveKit rollback/default switch before broader rollout
 
 ## Acceptance Criteria
@@ -83,3 +84,5 @@ Recommended sequence:
 - [SEGMENT_BRIEF_160_PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_160_PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN.md)
 - [SEGMENT_BRIEF_161_PRODUCTION_MEDIA_TOPOLOGY_DECISION.md](../delegation/briefs/SEGMENT_BRIEF_161_PRODUCTION_MEDIA_TOPOLOGY_DECISION.md)
 - [SEGMENT_BRIEF_162_PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md](../delegation/briefs/SEGMENT_BRIEF_162_PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md)
+- [SEGMENT_BRIEF_163_PRODUCTION_MEDIA_RUNTIME_CONFIG_MAPPING.md](../delegation/briefs/SEGMENT_BRIEF_163_PRODUCTION_MEDIA_RUNTIME_CONFIG_MAPPING.md)
+- [SEGMENT_BRIEF_164_PRODUCTION_COTURN_READINESS_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_164_PRODUCTION_COTURN_READINESS_PLAN.md)

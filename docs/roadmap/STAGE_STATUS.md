@@ -897,6 +897,9 @@ Done:
 - `apps/api` now recognizes `MEDIA_TURN_URLS`, `MEDIA_TURN_STATIC_AUTH_SECRET`, `MEDIA_TURN_TTL_SECONDS`, `MEDIA_SFU_LISTEN_IP`, `MEDIA_SFU_ANNOUNCED_ADDRESS`, and `MEDIA_SFU_RTC_MIN_PORT` / `MEDIA_SFU_RTC_MAX_PORT`, with current `LOCAL_*` names preserved as local/dev fallbacks where applicable
 - TURN relay range metadata recognizes `MEDIA_TURN_RELAY_MIN_PORT` / `MEDIA_TURN_RELAY_MAX_PORT` with local relay fallback names, without changing coturn infrastructure
 - production prototype SFU/TURN endpoints remain disabled by existing production guards, LiveKit fallback remains preserved, and no real env/secret values were changed
+- `production-coturn-readiness-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_164_PRODUCTION_COTURN_READINESS_PLAN.md`
+- production coturn readiness is now defined as a planning checklist covering no-open-relay policy, short-lived TURN REST credentials through `MEDIA_TURN_STATIC_AUTH_SECRET`, listener `3478/udp+tcp`, relay range `49160-49240`, public/external IP, realm, logs, allocation/permission/channel-bind cleanup smoke, direct-vs-relay evidence, and LiveKit rollback verification
+- no production coturn deploy, production env/secret change, firewall change, runtime change, or production SFU/TURN/default enablement was made
 
 Remaining:
 - process-local mediasoup/signaling state remains a production/multi-process blocker
@@ -905,14 +908,14 @@ Remaining:
 - no completed VPS firewall/process plan exists
 - no rollback drill has passed
 - env inventory template and runtime mapping exist, but concrete production values, owners, and secret source remain incomplete
-- coturn systemd-vs-Docker implementation remains undecided
+- coturn readiness criteria are documented, but production coturn is not deployed and systemd-vs-Docker implementation remains undecided
 - candidate mediasoup/coturn ranges are chosen but not implemented or load-proven
 - production monitoring/alerting is not implemented
 - LiveKit removal remains blocked
 
 Next likely work:
-- `production-coturn-readiness-plan`
-- acceptable alternative: `production-mediasoup-process-plan`
+- `production-mediasoup-process-plan`
+- acceptable alternative: another scoped production media planning/report segment, but not production rollout
 
 ## Historical Notes
 

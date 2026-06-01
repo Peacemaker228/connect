@@ -135,6 +135,96 @@ Risk model:
 - Credential issuance endpoint must be rate-limited or otherwise protected before broad production use.
 - coturn logs can contain usernames/session metadata and must be handled as operational logs, not public artifacts.
 
+## Coturn Readiness Plan
+
+Status: `planning / review`. This section defines readiness requirements for a future production coturn implementation. It does not deploy coturn, does not add systemd or Docker production files, does not change firewall rules, and does not enable production SFU/TURN defaults.
+
+Readiness classification:
+- production coturn readiness plan: `pass / documented`
+- production coturn implementation: `blocked`
+- production media default: `blocked`
+- LiveKit rollback: `required / preserved`
+
+Required production coturn config:
+- listener: `3478/udp` and `3478/tcp` on the media/TURN host
+- relay range: `49160-49240`, with no overlap with mediasoup RTC `40000-40100/udp`
+- public address: external/public IP or FQDN recorded outside the repo and aligned with `MEDIA_HOST_PUBLIC_ADDRESS`
+- realm: explicit production realm, stable across backend-issued credentials and coturn logs
+- auth: TURN REST shared-secret auth through `MEDIA_TURN_STATIC_AUTH_SECRET`
+- urls: `MEDIA_TURN_URLS` must point at the production TURN listener without exposing secrets
+- ttl: `MEDIA_TURN_TTL_SECONDS` must be short-lived and compatible with call duration/retry behavior
+- logs: coturn auth/allocation/error logs must be captured through the selected process owner
+- admin/CLI: no public admin/CLI exposure; if enabled later, it must bind only to an operator-approved private/local interface
+- TLS listener: `5349/tcp` remains deferred unless restrictive-network evidence requires it
+
+No-open-relay policy:
+- unauthenticated TURN relay allocation must fail
+- bad credentials must fail
+- credentials generated with a stale/expired timestamp must fail
+- relay allocation, `CREATE_PERMISSION`, and `CHANNEL_BIND` must require valid short-lived credentials
+- no anonymous TURN relay, no static browser-visible password, and no committed shared secret are allowed
+- STUN binding behavior may be public if required, but relay allocation must not be public
+- coturn must not be configured with broad public admin access or permissive anonymous relay options
+
+Credential and secret ownership:
+- `MEDIA_TURN_STATIC_AUTH_SECRET` is server-side only and must match coturn `static-auth-secret`.
+- the secret source of truth must be outside the repo, with owner, rotation requirement, and last rotation date recorded in the env inventory.
+- rotation must be coordinated between coturn and `apps/api` credential issuance; until a rotation drill exists, production coturn remains blocked.
+- handoffs may record presence/source/owner, but never the secret value, generated TURN credential, auth headers, cookies, or full user identifiers from logs.
+
+Systemd vs Docker decision criteria:
+- choose systemd if the operator wants host-native service ownership, journald/logrotate integration, explicit restart policy, and package-managed coturn.
+- choose Docker if the operator wants image-pinned repeatability, isolated coturn packaging, and explicit port publishing review.
+- both options must define secret injection, restart policy, log capture, health/status command, upgrade path, and rollback procedure before implementation.
+- Docker must not hide relay range behavior behind unexpected NAT/port publishing gaps.
+- systemd must not rely on ad hoc shell exports for secrets or one-off manual starts.
+- no final systemd-vs-Docker implementation choice is made by this readiness segment.
+
+Coturn smoke plan:
+1. Credential issuance:
+   - configure non-production/staging `MEDIA_TURN_URLS`, `MEDIA_TURN_STATIC_AUTH_SECRET`, and `MEDIA_TURN_TTL_SECONDS` from the approved secret source.
+   - verify backend-issued TURN credentials are returned only to authenticated app users.
+   - verify health/debug output exposes only non-secret status/source/count metadata.
+2. No-open-relay:
+   - attempt unauthenticated relay allocation and confirm failure.
+   - attempt allocation with invalid credentials and confirm failure.
+   - attempt allocation with expired credentials and confirm failure.
+3. Authenticated allocation:
+   - use a generated short-lived credential to allocate through `3478/udp`.
+   - repeat over `3478/tcp` only if TCP listener is in canary scope.
+   - capture the selected relay candidate and coturn allocation log reference.
+4. Permission and channel binding:
+   - verify `CREATE_PERMISSION` succeeds only after authenticated allocation.
+   - verify `CHANNEL_BIND` or equivalent data flow works for the selected smoke tool/browser path.
+5. Cleanup:
+   - close the client session and confirm coturn allocation cleanup in logs.
+   - verify no lingering relay allocation after TTL/session close convergence.
+6. Direct-vs-relay evidence:
+   - run a direct-path smoke and a relay-forced smoke.
+   - record selected candidate mode, user count, commit SHA, env names without values, and pass/review/fail classification.
+7. Rollback:
+   - verify LiveKit fallback remains available through `?mediaProvider=livekit`, `?livekit=true`, or `?sfu=false`.
+   - verify disabling any future SFU/TURN canary gate leaves the LiveKit token path available.
+
+Coturn readiness pass criteria:
+- authenticated credentials issue without exposing secrets
+- unauthenticated, invalid, and expired relay attempts fail
+- authenticated allocation succeeds through the approved listener/range
+- permission/channel-bind path succeeds in the selected smoke
+- allocations clean up after close/TTL
+- direct vs relay evidence is captured
+- logs are available and redacted
+- LiveKit rollback is verified
+
+Coturn readiness fail/block criteria:
+- open relay behavior is observed
+- TURN shared secret is browser-visible, logged, or committed
+- relay range does not match firewall/process config
+- allocation works only with ad hoc local env values
+- cleanup cannot be observed
+- rollback to LiveKit cannot be verified
+- process owner, logs, secret source, or rotation owner is missing
+
 ## Required Production Env Inventory
 
 Do not paste secret values into this repository. Record only presence, owner, rotation date, and non-secret shape.
@@ -232,6 +322,8 @@ Connectivity:
 - relay path succeeds through coturn
 - direct vs relay mode is visible in client/UI or logs
 - no open relay behavior is observed
+- unauthenticated, invalid, and expired TURN relay attempts fail before any canary
+- authenticated TURN allocation, permission/channel-bind, and cleanup are recorded
 
 Product flows:
 - private call
@@ -322,6 +414,7 @@ Logs to capture:
 - mediasoup worker/router/transport lifecycle logs
 - produce/consume failure details with non-secret identifiers
 - coturn authentication/allocation/error logs
+- coturn no-open-relay smoke failures/successes without credential values
 - reverse proxy WSS/API errors
 - process manager restart/crash logs
 
@@ -343,7 +436,7 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 - no completed VPS firewall/process plan exists
 - no rollback drill has passed
 - candidate production ranges are chosen but not implemented or load-proven
-- exact coturn systemd-vs-Docker ownership remains undecided
+- coturn readiness criteria are documented, but production coturn is not deployed and systemd-vs-Docker ownership remains undecided
 - runtime env mapping exists, but concrete production values, owners, and secret rotation source are not filled
 - production monitoring/alerting is not implemented
 - LiveKit fallback removal is not approved
@@ -351,10 +444,10 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 ## Next Segments
 
 Recommended next:
-- `production-coturn-readiness-plan`
+- `production-mediasoup-process-plan`
 
 Acceptable alternative:
-- `production-mediasoup-process-plan`
+- `production-media-staging-smoke-run-report` only after coturn and mediasoup process implementation segments exist
 
 Do not proceed next to:
 - production default switch
