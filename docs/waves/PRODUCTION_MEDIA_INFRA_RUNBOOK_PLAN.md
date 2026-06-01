@@ -56,19 +56,22 @@ Done:
 - `production-mediasoup-process-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_165_PRODUCTION_MEDIASOUP_PROCESS_PLAN.md`.
 - `docs/runbooks/PRODUCTION_MEDIA_INFRA_RUNBOOK.md` now defines mediasoup process criteria covering backend/media-owned MVP process direction, PM2 vs dedicated process vs systemd/Docker criteria, worker/router lifecycle, restart/crash behavior, health/readiness signals, `MEDIA_SFU_*` env mapping, smoke/readiness checks, and the single-process boundary.
 - no production mediasoup deploy, production env/secret change, PM2/systemd/Docker/Nginx/firewall config, runtime change, or production SFU/default enablement was made.
+- `production-media-process-env-readiness-review` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_166_PRODUCTION_MEDIA_PROCESS_ENV_READINESS_REVIEW.md`.
+- `docs/runbooks/PRODUCTION_MEDIA_INFRA_RUNBOOK.md` now includes a compact Process/Env Readiness Review matrix linking media host address, web/API origins, `MEDIA_TURN_*`, `MEDIA_SFU_*`, coturn/mediasoup process ownership, logs, rollback, firewall, monitoring, and staging smoke prerequisites.
+- `docs/runbooks/PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md` now includes non-secret process/operator checklist items for ownership, logs, firewall review, monitoring, rollback, and staging smoke readiness.
+- staging smoke planning is allowed next, but staging smoke execution remains blocked until required operator inputs, owners, log paths, firewall assumptions, and rollback owner are filled outside the repo.
+- no production media deploy, real env/secret change, PM2/systemd/Docker/Nginx/firewall config, runtime change, smoke execution, LiveKit removal, or production SFU/default enablement was made.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. `production-media-process-env-readiness-review`
-   - review filled production media env/process ownership prerequisites without applying them
-2. `production-media-staging-smoke-plan`
+1. `production-media-staging-smoke-plan`
    - define staging/non-production smoke order before implementation
-3. `production-media-staging-smoke-run-report`
+2. `production-media-staging-smoke-run-report`
    - run direct and relay smoke in staging/non-production
-4. `production-media-canary-readiness-decision`
+3. `production-media-canary-readiness-decision`
    - decide whether a narrow production canary is allowed
-5. `production-media-rollback-drill-report`
+4. `production-media-rollback-drill-report`
    - prove LiveKit rollback/default switch before broader rollout
 
 ## Acceptance Criteria
@@ -92,3 +95,4 @@ Recommended sequence:
 - [SEGMENT_BRIEF_163_PRODUCTION_MEDIA_RUNTIME_CONFIG_MAPPING.md](../delegation/briefs/SEGMENT_BRIEF_163_PRODUCTION_MEDIA_RUNTIME_CONFIG_MAPPING.md)
 - [SEGMENT_BRIEF_164_PRODUCTION_COTURN_READINESS_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_164_PRODUCTION_COTURN_READINESS_PLAN.md)
 - [SEGMENT_BRIEF_165_PRODUCTION_MEDIASOUP_PROCESS_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_165_PRODUCTION_MEDIASOUP_PROCESS_PLAN.md)
+- [SEGMENT_BRIEF_166_PRODUCTION_MEDIA_PROCESS_ENV_READINESS_REVIEW.md](../delegation/briefs/SEGMENT_BRIEF_166_PRODUCTION_MEDIA_PROCESS_ENV_READINESS_REVIEW.md)

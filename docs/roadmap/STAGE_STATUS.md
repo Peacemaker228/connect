@@ -903,6 +903,12 @@ Done:
 - `production-mediasoup-process-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_165_PRODUCTION_MEDIASOUP_PROCESS_PLAN.md`
 - production mediasoup process readiness is now defined as a planning checklist covering backend/media-owned single VPS MVP process direction, PM2 vs dedicated process vs systemd/Docker criteria, worker/router lifecycle, restart/crash behavior, health/readiness signals, `MEDIA_SFU_LISTEN_IP`, `MEDIA_SFU_ANNOUNCED_ADDRESS`, `MEDIA_SFU_RTC_MIN_PORT` / `MEDIA_SFU_RTC_MAX_PORT`, produce/consume/cleanup/restart smoke, and LiveKit rollback verification
 - no production mediasoup deploy, production env/secret change, PM2/systemd/Docker/Nginx/firewall config, runtime change, or production SFU/default enablement was made
+- `production-media-process-env-readiness-review` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_166_PRODUCTION_MEDIA_PROCESS_ENV_READINESS_REVIEW.md`
+- production process/env readiness review is `pass / documented`
+- concrete production values, owner assignments, secret source/rotation metadata, log paths, firewall review owner, monitoring owner, and staging smoke operator/window are `blocked / not filled`
+- staging smoke planning is allowed next, but staging smoke execution remains blocked until required operator inputs are filled outside the repo
+- production rollout/default remains `blocked`, and LiveKit fallback remains `required / preserved`
+- no runtime code, real env/secret, production deploy, PM2/systemd/Docker/Nginx/firewall config, smoke execution, LiveKit removal, or Stage 6/Postgres production migration changed
 
 Remaining:
 - process-local mediasoup/signaling state remains a production/multi-process blocker
@@ -911,6 +917,7 @@ Remaining:
 - no completed VPS firewall/process implementation exists
 - no rollback drill has passed
 - env inventory template and runtime mapping exist, but concrete production values, owners, and secret source remain incomplete
+- process/env readiness matrix exists, but required operator inputs are not filled
 - coturn readiness criteria are documented, but production coturn is not deployed and systemd-vs-Docker implementation remains undecided
 - mediasoup process criteria are documented, but production mediasoup process ownership, restart policy, logs, and implementation remain incomplete
 - candidate mediasoup/coturn ranges are chosen but not implemented or load-proven
@@ -918,8 +925,9 @@ Remaining:
 - LiveKit removal remains blocked
 
 Next likely work:
-- `production-media-process-env-readiness-review`
-- acceptable alternative: `production-media-staging-smoke-plan`, but not production rollout
+- `production-media-staging-smoke-plan`
+- staging smoke run/report remains blocked until process/env operator inputs are filled
+- do not proceed next to production rollout, production default switch, LiveKit removal, or Stage 6 production Postgres cutover
 
 ## Historical Notes
 

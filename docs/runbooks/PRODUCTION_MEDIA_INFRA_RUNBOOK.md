@@ -11,7 +11,7 @@ Current status:
 - Channel `AUDIO`, channel `VIDEO`, private SFU, screen share, restart/rejoin, route-away/back, offline/restore, and cleanup health have local/dev evidence.
 - Local Docker coturn evidence exists for selected TURN relay smokes, but it is not production TURN readiness.
 - `apps/api` recognizes the proposed `MEDIA_*` runtime names for TURN credentials and mediasoup listen/announced/RTC range config, with current `LOCAL_*` names preserved as local/dev fallbacks.
-- Production media readiness remains blocked by process-local mediasoup/signaling state, missing production SFU/TURN infrastructure, missing production firewall/process plan, missing production-like soak, and missing rollback drill.
+- Production media readiness remains blocked by process-local mediasoup/signaling state, missing production SFU/TURN infrastructure, missing production firewall/process implementation, missing production-like soak, and missing rollback drill.
 - LiveKit fallback remains required until a later scoped removal decision.
 
 ## Non-Goals
@@ -346,6 +346,62 @@ Mediasoup process readiness fail/block criteria:
 - no rollback to LiveKit is available
 - production values, logs, or process owner are missing
 
+## Process/Env Readiness Review
+
+Status: `planning / review`. This matrix consolidates production media process and env prerequisites before any staging or production smoke run. It records what is already defined, what needs operator input, and what blocks execution. It does not fill real values, change env files, add infrastructure configs, run smoke, or enable production SFU/TURN/default behavior.
+
+Readiness classification:
+- production process/env readiness review: `pass / documented`
+- concrete production values: `blocked / not filled`
+- staging smoke plan: `allowed next`
+- staging smoke run: `blocked until required operator inputs are filled`
+- production rollout/default: `blocked`
+- LiveKit fallback: `required / preserved`
+
+Matrix:
+
+| Item | Status | Required operator input before smoke run | Notes |
+| --- | --- | --- | --- |
+| Media host public address / owner (`MEDIA_HOST_PUBLIC_ADDRESS`) | `block` | public IP/FQDN presence, owner, source of truth, validation method | Do not commit real value. Must align mediasoup announced address and coturn external/public IP. |
+| Web/API public origins | `block` | production web origin, API origin, rebuild/redeploy owner for public env | Needed for browser API/WSS and future canary gates. |
+| API internal URL / CORS relation | `review` | whether `API_INTERNAL_URL` is needed; exact CORS origin owner/check | CORS must match deployed web origins for credentialed API/WSS if staging/prod smoke uses browser flows. |
+| `MEDIA_TURN_URLS` | `block` | presence, owner, validation check using production TURN listener placeholders | URLs are non-secret, but real host values should stay in operator inventory, not this repo. |
+| `MEDIA_TURN_STATIC_AUTH_SECRET` | `block` | presence only, owner, source of truth, rotation source/cadence | Never record value. Must match coturn `static-auth-secret` or equivalent auth config. |
+| `MEDIA_TURN_TTL_SECONDS` | `review` | approved short-lived TTL and validation check | Runtime mapping exists; production TTL still needs operator approval. |
+| `MEDIA_TURN_RELAY_MIN_PORT` / `MEDIA_TURN_RELAY_MAX_PORT` | `review` | approve or replace `49160-49240`; confirm firewall/process owner | Candidate range is documented, but not implemented or load-proven. |
+| `MEDIA_SFU_LISTEN_IP` | `block` | bind/listen interface ownership and validation check | Must match selected process/network model. |
+| `MEDIA_SFU_ANNOUNCED_ADDRESS` | `block` | public reachable IP/FQDN presence, owner, validation check | Must match `MEDIA_HOST_PUBLIC_ADDRESS` for single-host MVP unless an approved split-host topology exists. |
+| `MEDIA_SFU_RTC_MIN_PORT` / `MEDIA_SFU_RTC_MAX_PORT` | `review` | approve or replace `40000-40100/udp`; confirm no TURN relay overlap | Runtime mapping exists; firewall/process implementation is still missing. |
+| Coturn process owner: systemd vs Docker | `block` | choose owner, restart policy, secret injection model, log path, status command | Criteria are documented; implementation choice is not made. |
+| Mediasoup process owner: `apps/api` MVP vs dedicated process | `review` | confirm first canary stays backend/media-owned in `apps/api` or approve dedicated process design | Current recommendation is `apps/api` MVP single-process/single-host only. |
+| App/media/coturn logs owner/path | `block` | log owner, storage/path, retention/redaction policy, operator access | Needed for smoke evidence and rollback decisions. |
+| Rollback path: LiveKit env/token/gates | `pass / drill blocked` | confirm `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `NEXT_PUBLIC_LIVEKIT_URL` presence and rollback owner without values | LiveKit path remains required; rollback drill still has not passed. |
+| Firewall plan status | `block` | exact owner and reviewed rules for `443/tcp`, `3478/udp+tcp`, coturn relay range, mediasoup RTC range | No firewall command/config is added by this runbook. |
+| Monitoring/alerting status | `block` | owner and minimum alert destinations for media failures/resource leaks/restarts | Metrics are defined, but production monitoring is not implemented. |
+| Staging smoke prerequisites | `block` | filled non-secret inventory, process owner, logs, firewall assumptions, rollback owner, smoke operator | Staging smoke plan may be written next; running it remains blocked until inputs exist. |
+
+Required operator inputs before a staging smoke run:
+- media host public address presence and owner
+- public web/API origins and CORS owner
+- `MEDIA_TURN_*` presence/owner/rotation metadata without values
+- `MEDIA_SFU_*` presence/owner/validation metadata without values
+- coturn process owner decision and log path
+- mediasoup process owner confirmation and restart policy
+- firewall owner and reviewed candidate ranges
+- LiveKit rollback env presence and rollback operator
+- monitoring/log capture owner
+- staging smoke operator and run window
+
+Staging smoke run remains blocked if any of these are missing:
+- real env source is unavailable to the operator
+- secret presence/owner/rotation source is unknown
+- media host public address is not recorded outside the repo
+- coturn or mediasoup process owner is undecided
+- firewall assumptions are not reviewed
+- logs cannot be captured and redacted
+- LiveKit rollback cannot be verified
+- staging smoke would require production default or LiveKit removal
+
 ## Required Production Env Inventory
 
 Do not paste secret values into this repository. Record only presence, owner, rotation date, and non-secret shape.
@@ -564,18 +620,20 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 - coturn readiness criteria are documented, but production coturn is not deployed and systemd-vs-Docker ownership remains undecided
 - mediasoup process criteria are documented, but production mediasoup process ownership, restart policy, logs, and implementation are not complete
 - runtime env mapping exists, but concrete production values, owners, and secret rotation source are not filled
+- process/env readiness matrix exists, but required operator inputs are not filled
 - production monitoring/alerting is not implemented
 - LiveKit fallback removal is not approved
 
 ## Next Segments
 
 Recommended next:
-- `production-media-process-env-readiness-review`
-
-Acceptable alternative:
 - `production-media-staging-smoke-plan`
 
+Acceptable alternative:
+- `production-media-process-env-fill-operator-inputs` if the next task is to prepare private operator inventory outside repo docs
+
 Do not proceed next to:
+- staging smoke run until required operator inputs exist
 - production default switch
 - LiveKit removal
 - Stage 6 production Postgres cutover

@@ -176,6 +176,23 @@ Fill one row per env/config item before canary readiness review.
 | LiveKit public URL | `NEXT_PUBLIC_LIVEKIT_URL` | existing LiveKit env | public build-time | no | no | yes | TODO | no | TODO | TODO | Requires rebuild/redeploy when changed. |
 | Future media session signing | `MEDIA_SESSION_SIGNING_SECRET` or TBD | n/a | server-only | yes | review | no | TODO | yes | TODO | TODO | Only if later design requires it. |
 
+## Process / Operator Inventory Items
+
+Fill these non-secret operational items alongside the env table before a staging smoke run.
+
+| Item | Status | Owner | Source of truth | Validation command/check | Notes |
+| --- | --- | --- | --- | --- | --- |
+| Media host public address owner | TODO | TODO | TODO | TODO | Record presence/owner only; do not commit the real IP/FQDN if sensitive. |
+| Coturn process owner | TODO | TODO | TODO | TODO | Choose systemd or Docker before smoke execution. |
+| Mediasoup process owner | TODO | TODO | TODO | TODO | Confirm `apps/api` MVP ownership or document a dedicated-process design. |
+| App/API log path and owner | TODO | TODO | TODO | TODO | Must support media control-plane and signaling evidence. |
+| Mediasoup worker/router log owner | TODO | TODO | TODO | TODO | May be app/API logs for `apps/api` MVP; dedicated process needs its own entry. |
+| Coturn log path and owner | TODO | TODO | TODO | TODO | Must capture auth/allocation/error evidence without exposing credentials. |
+| Firewall review owner | TODO | TODO | TODO | TODO | Must cover `443/tcp`, `3478/udp+tcp`, coturn relay, and mediasoup RTC ranges. |
+| Monitoring/alert owner | TODO | TODO | TODO | TODO | Minimum alerts for transport failures, TURN failures, resource leaks, and process restarts. |
+| LiveKit rollback operator | TODO | TODO | TODO | TODO | Must verify rollback queries and fallback env remain available. |
+| Staging smoke operator/window | TODO | TODO | TODO | TODO | Required before any staging smoke run/report. |
+
 ## Pre-Canary Completeness Checklist
 
 Before a production canary readiness decision:
@@ -194,6 +211,11 @@ Before a production canary readiness decision:
 - [ ] TURN TTL is approved and short-lived.
 - [ ] LiveKit rollback env remains present and validated.
 - [ ] Secret owners and rotation source are recorded without values.
+- [ ] Coturn process owner, restart policy, log path, and status check are recorded.
+- [ ] Mediasoup process owner, restart policy, log path, and health check are recorded.
+- [ ] Firewall review owner and candidate range validation are recorded.
+- [ ] Monitoring/log capture owner is recorded.
+- [ ] Staging smoke operator, run window, and rollback owner are recorded.
 - [ ] Validation checks are defined for direct path, relay path, private call, channel AUDIO, channel VIDEO, screen share, leave/rejoin, route-away, and cleanup health.
 - [ ] Stage 6 production Postgres migration remains out of scope.
 
@@ -223,7 +245,7 @@ Implementation remains blocked until these are resolved or explicitly accepted f
 - production env values, owners, and secret source are not filled
 - process-local mediasoup/signaling state remains a multi-process/multi-node blocker
 - no production-like soak has passed
-- no completed VPS firewall/process implementation plan exists
+- no completed VPS firewall/process implementation exists
 - coturn systemd-vs-Docker ownership remains undecided
 - candidate port ranges are not implemented or load-proven
 - no rollback drill has passed
@@ -234,10 +256,10 @@ Implementation remains blocked until these are resolved or explicitly accepted f
 ## Recommended Next Segment
 
 Recommended next:
-- `production-coturn-readiness-plan`
+- `production-media-staging-smoke-plan`
 
 Acceptable alternative:
-- `production-mediasoup-process-plan`
+- `production-media-process-env-fill-operator-inputs` if the next task is to prepare private operator inventory outside repo docs
 
 Do not proceed next to:
 - production default switch
