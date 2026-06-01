@@ -21,6 +21,7 @@ Allowed:
 - port/firewall model planning
 - TURN/STUN credential strategy
 - production env inventory planning
+- production-safe runtime config mapping for approved media env names
 - deploy order, smoke checklist, rollback, monitoring, and blocker documentation
 - roadmap/status updates
 
@@ -28,7 +29,7 @@ Forbidden:
 - production SFU enablement
 - coturn production deployment
 - Docker/PM2/systemd/Nginx/firewall implementation changes
-- runtime code changes
+- runtime feature changes beyond scoped media config mapping
 - real env/secret changes
 - LiveKit removal
 - Stage 6 production Postgres migration changes
@@ -46,21 +47,22 @@ Done:
 - process direction is PM2-style continuity for `web`/`apps/api`, backend/media-owned mediasoup worker lifecycle for MVP, and separately managed coturn via systemd or Docker in a later implementation segment.
 - `production-media-env-inventory-template` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_162_PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md`.
 - `docs/runbooks/PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md` now separates public build-time env, server-only API/media env, secret env, and LiveKit rollback env, and proposes production mapping candidates for current `LOCAL_*` prototype names.
+- `production-media-runtime-config-mapping` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_163_PRODUCTION_MEDIA_RUNTIME_CONFIG_MAPPING.md`.
+- `apps/api` now recognizes `MEDIA_TURN_*` and `MEDIA_SFU_*` runtime config names with `LOCAL_*` local/dev fallback compatibility.
+- production SFU/TURN endpoints remain disabled by the existing production guards, and no real env/secret values were changed.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
 1. `production-coturn-readiness-plan`
    - define authenticated TURN config, no-open-relay checks, logs, and allocation smoke
-2. `production-media-runtime-config-mapping-plan`
-   - decide whether proposed `MEDIA_*` names become runtime config names or are mapped through another approved source
-3. `production-mediasoup-process-plan`
+2. `production-mediasoup-process-plan`
    - define mediasoup worker/process lifecycle, health, restart policy, and logs
-4. `production-media-staging-smoke-run-report`
+3. `production-media-staging-smoke-run-report`
    - run direct and relay smoke in staging/non-production
-5. `production-media-canary-readiness-decision`
+4. `production-media-canary-readiness-decision`
    - decide whether a narrow production canary is allowed
-6. `production-media-rollback-drill-report`
+5. `production-media-rollback-drill-report`
    - prove LiveKit rollback/default switch before broader rollout
 
 ## Acceptance Criteria
@@ -70,7 +72,7 @@ Recommended sequence:
 - Stage 9 / production media track is planning-started only
 - LiveKit fallback remains preserved
 - Stage 6 production Postgres migration remains deferred and separate
-- no runtime code, production env, real secrets, or deploy/firewall implementation changed
+- no production SFU/TURN enablement, production env, real secrets, or deploy/firewall implementation changed
 
 ## References
 

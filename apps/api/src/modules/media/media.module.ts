@@ -8,6 +8,7 @@ import { MediaController } from './media.controller';
 import { MediaParticipantSessionService } from './media-participant-session.service';
 import { MediaPermissionService } from './media-permission.service';
 import { MEDIA_PROVIDER_ADAPTER } from './media-provider.adapter';
+import { MediaRuntimeConfigService } from './media-runtime-config.service';
 import { MediaRoomService } from './media-room.service';
 import { MediaSignalingService } from './media-signaling.service';
 import { TurnCredentialService } from './turn-credential.service';
@@ -21,6 +22,7 @@ import { TurnCredentialService } from './turn-credential.service';
     MediaRoomService,
     MediaParticipantSessionService,
     MediaPermissionService,
+    MediaRuntimeConfigService,
     MediaSignalingService,
     MediasoupPrototypeService,
     TurnCredentialService,

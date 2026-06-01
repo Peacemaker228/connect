@@ -15,7 +15,6 @@ In scope:
 - pre-canary completeness checks
 
 Out of scope:
-- runtime code changes
 - `.env`, `.env.local`, `.env.production`, or real secret file changes
 - production SFU/default enablement
 - LiveKit removal
@@ -111,7 +110,9 @@ Rule:
 
 ## Current Local Prototype Mapping
 
-The current `LOCAL_*` names are prototype/local-only names. They are not automatically production-approved.
+The current `LOCAL_*` names are prototype/local-only names. They remain supported as local/dev fallback inputs for runtime compatibility, but they are not production-approved names.
+
+`apps/api` now reads the proposed `MEDIA_*` names through a media runtime config boundary. When a `MEDIA_*` value is present it takes precedence; otherwise the matching `LOCAL_*` value is used where a local fallback exists. This mapping does not enable production SFU/TURN because production prototype guards still return disabled responses.
 
 Known local prototype names:
 
@@ -128,26 +129,26 @@ Known local prototype names:
 
 ## Proposed Production Env Mapping
 
-Recommended naming direction for future implementation review:
+Recommended naming direction implemented at the backend runtime config boundary:
 
 | Production candidate | Maps from | Public? | Secret? | Notes |
 | --- | --- | --- | --- | --- |
-| `MEDIA_TURN_URLS` | `LOCAL_TURN_URLS` | no | no | Server-side configured TURN URL list. Browser may receive URLs only through approved non-secret credential response/config path. |
-| `MEDIA_TURN_STATIC_AUTH_SECRET` | `LOCAL_TURN_STATIC_AUTH_SECRET` | no | yes | Server-side only. |
-| `MEDIA_TURN_TTL_SECONDS` | `LOCAL_TURN_TTL_SECONDS` | no | no | Short-lived credential TTL. |
+| `MEDIA_TURN_URLS` | `LOCAL_TURN_URLS` | no | no | Server-side configured TURN URL list. Empty entries are trimmed; only `turn:` and `turns:` entries are returned. |
+| `MEDIA_TURN_STATIC_AUTH_SECRET` | `LOCAL_TURN_STATIC_AUTH_SECRET` | no | yes | Server-side only. Health/debug output exposes only configured/not-configured status, not the value. |
+| `MEDIA_TURN_TTL_SECONDS` | `LOCAL_TURN_TTL_SECONDS` | no | no | Short-lived credential TTL, clamped to the current safe range. |
 | `MEDIA_TURN_LISTENER_PORT` | n/a | no | no | Candidate `3478`; implementation may instead use coturn config file source. |
-| `MEDIA_TURN_RELAY_MIN_PORT` | `LOCAL_TURN_RELAY_MIN_PORT` | no | no | Candidate `49160`. |
-| `MEDIA_TURN_RELAY_MAX_PORT` | `LOCAL_TURN_RELAY_MAX_PORT` | no | no | Candidate `49240`. |
+| `MEDIA_TURN_RELAY_MIN_PORT` | `LOCAL_TURN_RELAY_MIN_PORT` | no | no | Candidate `49160`; exposed as non-secret metadata only because backend does not allocate coturn relay ports. |
+| `MEDIA_TURN_RELAY_MAX_PORT` | `LOCAL_TURN_RELAY_MAX_PORT` | no | no | Candidate `49240`; exposed as non-secret metadata only because backend does not allocate coturn relay ports. |
 | `MEDIA_HOST_PUBLIC_ADDRESS` | `LOCAL_TURN_EXTERNAL_IP` conceptually | no | no | Public reachable IP/FQDN placeholder; do not commit real values. |
 | `MEDIA_SFU_LISTEN_IP` | `LOCAL_MEDIASOUP_LISTEN_IP` | no | no | Backend/media process env. |
 | `MEDIA_SFU_ANNOUNCED_ADDRESS` | `LOCAL_MEDIASOUP_ANNOUNCED_ADDRESS` | no | no | Public reachable address for ICE candidates. |
-| `MEDIA_SFU_RTC_MIN_PORT` | n/a | no | no | Candidate `40000`. |
-| `MEDIA_SFU_RTC_MAX_PORT` | n/a | no | no | Candidate `40100`. |
+| `MEDIA_SFU_RTC_MIN_PORT` | n/a | no | no | Candidate `40000`; used in mediasoup WebRTC transport `portRange` when paired with max. |
+| `MEDIA_SFU_RTC_MAX_PORT` | n/a | no | no | Candidate `40100`; invalid or reversed ranges disable transport creation with a non-secret reason. |
 
 Alternative:
 - Keeping current `LOCAL_*` names in production would require an explicit approval segment and clear documentation explaining why local/prototype naming is acceptable in production.
 
-No code changes are made by this template segment.
+No real env, secret, production default, LiveKit fallback, Docker, PM2, systemd, Nginx, firewall, or Stage 6/Postgres production migration changes are made by the runtime mapping segment.
 
 ## Inventory Table Template
 
@@ -178,6 +179,7 @@ Fill one row per env/config item before canary readiness review.
 ## Pre-Canary Completeness Checklist
 
 Before a production canary readiness decision:
+- [ ] `MEDIA_*` runtime mapping is reviewed against the filled production inventory.
 - [ ] `NEXT_PUBLIC_API_URL` is recorded with rebuild/redeploy owner.
 - [ ] Production SFU gates are documented as reversible and default-off unless a later decision approves otherwise.
 - [ ] `API_INTERNAL_URL` need is reviewed and recorded.
@@ -218,8 +220,7 @@ Allowed in repo docs:
 ## Blockers Before Implementation
 
 Implementation remains blocked until these are resolved or explicitly accepted for a narrow canary:
-- production-approved env names are not implemented in runtime code
-- concrete production values, owners, and secret source are not filled
+- production env values, owners, and secret source are not filled
 - process-local mediasoup/signaling state remains a multi-process/multi-node blocker
 - no production-like soak has passed
 - no completed VPS firewall/process implementation plan exists
@@ -236,7 +237,7 @@ Recommended next:
 - `production-coturn-readiness-plan`
 
 Acceptable alternative:
-- `production-media-runtime-config-mapping-plan`
+- `production-mediasoup-process-plan`
 
 Do not proceed next to:
 - production default switch

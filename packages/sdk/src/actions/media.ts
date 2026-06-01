@@ -121,6 +121,34 @@ export type MediasoupPrototypeObservabilityCounters = {
   failedStateRejoinRecoveryCount: number
 }
 
+export type MediaRuntimePortRangeSnapshot = {
+  status: 'unset' | 'ready' | 'invalid'
+  source: string
+  min?: number
+  max?: number
+  reason?: string
+}
+
+export type MediaRuntimeConfigSnapshot = {
+  turn: {
+    urlsConfigured: boolean
+    urlCount: number
+    urlsSource: string
+    staticAuthSecretConfigured: boolean
+    staticAuthSecretSource: string
+    ttlSeconds: number
+    ttlSource: string
+    relayPortRange: MediaRuntimePortRangeSnapshot
+  }
+  sfu: {
+    listenIp: string
+    listenIpSource: string
+    announcedAddressConfigured: boolean
+    announcedAddressSource: string
+    rtcPortRange: MediaRuntimePortRangeSnapshot
+  }
+}
+
 export type LocalTurnCredentialResponse = {
   status: MediasoupPrototypeStatus
   enabled: boolean
@@ -157,6 +185,7 @@ export type MediasoupPrototypeHealthResponse = {
   staleSessionTtlMs?: number
   staleSessionSweepIntervalMs?: number
   lastCleanup?: MediasoupPrototypeCleanupResult
+  runtimeConfig?: MediaRuntimeConfigSnapshot
   reason?: string
 }
 

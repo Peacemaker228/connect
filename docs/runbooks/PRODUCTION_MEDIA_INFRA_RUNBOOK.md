@@ -4,12 +4,13 @@
 
 This runbook is the operator-facing plan for a future production media rollout using `mediasoup + coturn`.
 
-It follows the Stage 8 local MVP pass and prepares the Stage 9 / production media hardening track. It is planning only. It does not deploy production SFU, does not deploy production TURN, does not change runtime code, does not change real secret files, does not remove LiveKit, and does not modify the Stage 6 production Postgres migration path.
+It follows the Stage 8 local MVP pass and prepares the Stage 9 / production media hardening track. It does not deploy production SFU, does not deploy production TURN, does not change real secret files, does not remove LiveKit, and does not modify the Stage 6 production Postgres migration path. A production-safe runtime config mapping foundation now exists for media env names, but production SFU/TURN remains disabled.
 
 Current status:
 - Stage 8 Media MVP is `local complete / production blocked`.
 - Channel `AUDIO`, channel `VIDEO`, private SFU, screen share, restart/rejoin, route-away/back, offline/restore, and cleanup health have local/dev evidence.
 - Local Docker coturn evidence exists for selected TURN relay smokes, but it is not production TURN readiness.
+- `apps/api` recognizes the proposed `MEDIA_*` runtime names for TURN credentials and mediasoup listen/announced/RTC range config, with current `LOCAL_*` names preserved as local/dev fallbacks.
 - Production media readiness remains blocked by process-local mediasoup/signaling state, missing production SFU/TURN infrastructure, missing production firewall/process plan, missing production-like soak, and missing rollback drill.
 - LiveKit fallback remains required until a later scoped removal decision.
 
@@ -140,18 +141,18 @@ Do not paste secret values into this repository. Record only presence, owner, ro
 
 The detailed operator-facing inventory template is `docs/runbooks/PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md`.
 
-Current local prototype names are not automatically production names. The env inventory template proposes reviewed production mapping candidates, but runtime code has not been changed to read those names in this segment.
+Current local prototype names remain local/dev compatibility fallbacks. Runtime config now prefers the reviewed `MEDIA_*` names when present and falls back to current `LOCAL_*` names for local/dev. This mapping is not production enablement: prototype SFU/TURN endpoints remain disabled in production until a later canary segment explicitly changes that boundary.
 
 | Group | Variables / decision | Notes |
 | --- | --- | --- |
 | Media provider/default gates | `NEXT_PUBLIC_MEDIA_CHANNEL_AUDIO_SFU_DEFAULT_CANDIDATE`, `NEXT_PUBLIC_MEDIA_CHANNEL_AUDIO_SFU_PRODUCT_DEFAULT_PILOT`, `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_DEFAULT_CANDIDATE`, `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_PRODUCT_DEFAULT_PILOT`, `NEXT_PUBLIC_MEDIA_PRIVATE_SFU_DEFAULT_CANDIDATE`, plus any future production default switch | Current gates are non-production/default-candidate oriented. Production enablement needs an explicit canary/default decision and rebuild rules for `NEXT_PUBLIC_*`. |
-| TURN URLs | production equivalent of `LOCAL_TURN_URLS` | Browser receives URLs only through backend-issued credential response or approved config path. |
-| TURN shared secret | production equivalent of `LOCAL_TURN_STATIC_AUTH_SECRET` or another coturn auth mechanism | Secret is server-side only and must match coturn auth config. |
-| TURN TTL | production equivalent of `LOCAL_TURN_TTL_SECONDS` | Must balance reliability and abuse containment. |
-| mediasoup listen IP | production equivalent of `LOCAL_MEDIASOUP_LISTEN_IP` | Bind address for media workers/transports. |
-| mediasoup announced IP/address | production equivalent of `LOCAL_MEDIASOUP_ANNOUNCED_ADDRESS` | Public address clients can reach. Required when binding differs from public IP. |
-| mediasoup RTC range | future production env/config names | Must align backend mediasoup transport config and firewall. |
-| coturn listener/relay range | future production env/config names | Must align coturn config and firewall. |
+| TURN URLs | `MEDIA_TURN_URLS`, fallback `LOCAL_TURN_URLS` | Browser receives URLs only through backend-issued credential response or approved config path. |
+| TURN shared secret | `MEDIA_TURN_STATIC_AUTH_SECRET`, fallback `LOCAL_TURN_STATIC_AUTH_SECRET` | Secret is server-side only and must match coturn auth config. Secret values are not exposed in health/debug output. |
+| TURN TTL | `MEDIA_TURN_TTL_SECONDS`, fallback `LOCAL_TURN_TTL_SECONDS` | Clamped to the current safe TTL range. |
+| mediasoup listen IP | `MEDIA_SFU_LISTEN_IP`, fallback `LOCAL_MEDIASOUP_LISTEN_IP` | Bind address for media workers/transports. Defaults to local loopback when unset. |
+| mediasoup announced IP/address | `MEDIA_SFU_ANNOUNCED_ADDRESS`, fallback `LOCAL_MEDIASOUP_ANNOUNCED_ADDRESS` | Public address clients can reach. Required when binding differs from public IP. |
+| mediasoup RTC range | `MEDIA_SFU_RTC_MIN_PORT` / `MEDIA_SFU_RTC_MAX_PORT` | Must align backend mediasoup transport config and firewall. Invalid ranges disable transport creation with a non-secret reason. |
+| coturn listener/relay range | `MEDIA_TURN_RELAY_MIN_PORT` / `MEDIA_TURN_RELAY_MAX_PORT`, fallback local relay range names for metadata only | Must align coturn config and firewall. Backend does not manage coturn relay allocation directly. |
 | API public URL | `NEXT_PUBLIC_API_URL`, optional `NEXT_PUBLIC_API_PORT`, optional `API_EXTERNAL_URL` | Must point browser to the production API origin. |
 | API internal URL | `API_INTERNAL_URL` | Used by server-side web utilities/middleware. |
 | CORS origins | `API_CORS_ALLOWED_ORIGINS` or `API_CORS_ORIGINS` | Must contain exact production web origins for credentialed API/WSS usage. |
@@ -182,6 +183,7 @@ This order is a rollout plan, not executed work.
 1. Prepare production env inventory:
    - fill `docs/runbooks/PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md`
    - map the chosen single-host topology to production env names
+   - confirm `MEDIA_*` runtime mapping inputs without committing real values
    - record public announced IP/FQDN ownership
    - record TURN secret ownership without values
    - keep LiveKit fallback env available
@@ -342,7 +344,7 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 - no rollback drill has passed
 - candidate production ranges are chosen but not implemented or load-proven
 - exact coturn systemd-vs-Docker ownership remains undecided
-- env inventory template exists, but concrete production values, owners, and secret rotation source are not filled
+- runtime env mapping exists, but concrete production values, owners, and secret rotation source are not filled
 - production monitoring/alerting is not implemented
 - LiveKit fallback removal is not approved
 
@@ -352,7 +354,7 @@ Recommended next:
 - `production-coturn-readiness-plan`
 
 Acceptable alternative:
-- `production-media-runtime-config-mapping-plan`
+- `production-mediasoup-process-plan`
 
 Do not proceed next to:
 - production default switch
