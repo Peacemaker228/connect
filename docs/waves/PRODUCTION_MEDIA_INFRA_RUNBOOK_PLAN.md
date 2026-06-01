@@ -53,17 +53,22 @@ Done:
 - `production-coturn-readiness-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_164_PRODUCTION_COTURN_READINESS_PLAN.md`.
 - `docs/runbooks/PRODUCTION_MEDIA_INFRA_RUNBOOK.md` now defines coturn readiness criteria covering no-open-relay policy, TURN REST auth through `MEDIA_TURN_STATIC_AUTH_SECRET`, listener/relay/public-address requirements, smoke/log/cleanup evidence, and rollback requirements.
 - no production coturn deploy, production env/secret change, firewall change, runtime change, or production SFU/TURN/default enablement was made.
+- `production-mediasoup-process-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_165_PRODUCTION_MEDIASOUP_PROCESS_PLAN.md`.
+- `docs/runbooks/PRODUCTION_MEDIA_INFRA_RUNBOOK.md` now defines mediasoup process criteria covering backend/media-owned MVP process direction, PM2 vs dedicated process vs systemd/Docker criteria, worker/router lifecycle, restart/crash behavior, health/readiness signals, `MEDIA_SFU_*` env mapping, smoke/readiness checks, and the single-process boundary.
+- no production mediasoup deploy, production env/secret change, PM2/systemd/Docker/Nginx/firewall config, runtime change, or production SFU/default enablement was made.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. `production-mediasoup-process-plan`
-   - define mediasoup worker/process lifecycle, health, restart policy, and logs
-2. `production-media-staging-smoke-run-report`
+1. `production-media-process-env-readiness-review`
+   - review filled production media env/process ownership prerequisites without applying them
+2. `production-media-staging-smoke-plan`
+   - define staging/non-production smoke order before implementation
+3. `production-media-staging-smoke-run-report`
    - run direct and relay smoke in staging/non-production
-3. `production-media-canary-readiness-decision`
+4. `production-media-canary-readiness-decision`
    - decide whether a narrow production canary is allowed
-4. `production-media-rollback-drill-report`
+5. `production-media-rollback-drill-report`
    - prove LiveKit rollback/default switch before broader rollout
 
 ## Acceptance Criteria
@@ -86,3 +91,4 @@ Recommended sequence:
 - [SEGMENT_BRIEF_162_PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md](../delegation/briefs/SEGMENT_BRIEF_162_PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md)
 - [SEGMENT_BRIEF_163_PRODUCTION_MEDIA_RUNTIME_CONFIG_MAPPING.md](../delegation/briefs/SEGMENT_BRIEF_163_PRODUCTION_MEDIA_RUNTIME_CONFIG_MAPPING.md)
 - [SEGMENT_BRIEF_164_PRODUCTION_COTURN_READINESS_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_164_PRODUCTION_COTURN_READINESS_PLAN.md)
+- [SEGMENT_BRIEF_165_PRODUCTION_MEDIASOUP_PROCESS_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_165_PRODUCTION_MEDIASOUP_PROCESS_PLAN.md)

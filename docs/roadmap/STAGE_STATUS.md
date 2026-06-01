@@ -900,22 +900,26 @@ Done:
 - `production-coturn-readiness-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_164_PRODUCTION_COTURN_READINESS_PLAN.md`
 - production coturn readiness is now defined as a planning checklist covering no-open-relay policy, short-lived TURN REST credentials through `MEDIA_TURN_STATIC_AUTH_SECRET`, listener `3478/udp+tcp`, relay range `49160-49240`, public/external IP, realm, logs, allocation/permission/channel-bind cleanup smoke, direct-vs-relay evidence, and LiveKit rollback verification
 - no production coturn deploy, production env/secret change, firewall change, runtime change, or production SFU/TURN/default enablement was made
+- `production-mediasoup-process-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_165_PRODUCTION_MEDIASOUP_PROCESS_PLAN.md`
+- production mediasoup process readiness is now defined as a planning checklist covering backend/media-owned single VPS MVP process direction, PM2 vs dedicated process vs systemd/Docker criteria, worker/router lifecycle, restart/crash behavior, health/readiness signals, `MEDIA_SFU_LISTEN_IP`, `MEDIA_SFU_ANNOUNCED_ADDRESS`, `MEDIA_SFU_RTC_MIN_PORT` / `MEDIA_SFU_RTC_MAX_PORT`, produce/consume/cleanup/restart smoke, and LiveKit rollback verification
+- no production mediasoup deploy, production env/secret change, PM2/systemd/Docker/Nginx/firewall config, runtime change, or production SFU/default enablement was made
 
 Remaining:
 - process-local mediasoup/signaling state remains a production/multi-process blocker
 - no multi-process/shared-state design exists yet
 - no production-like soak has passed
-- no completed VPS firewall/process plan exists
+- no completed VPS firewall/process implementation exists
 - no rollback drill has passed
 - env inventory template and runtime mapping exist, but concrete production values, owners, and secret source remain incomplete
 - coturn readiness criteria are documented, but production coturn is not deployed and systemd-vs-Docker implementation remains undecided
+- mediasoup process criteria are documented, but production mediasoup process ownership, restart policy, logs, and implementation remain incomplete
 - candidate mediasoup/coturn ranges are chosen but not implemented or load-proven
 - production monitoring/alerting is not implemented
 - LiveKit removal remains blocked
 
 Next likely work:
-- `production-mediasoup-process-plan`
-- acceptable alternative: another scoped production media planning/report segment, but not production rollout
+- `production-media-process-env-readiness-review`
+- acceptable alternative: `production-media-staging-smoke-plan`, but not production rollout
 
 ## Historical Notes
 

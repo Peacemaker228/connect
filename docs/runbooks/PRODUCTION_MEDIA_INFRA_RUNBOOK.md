@@ -225,6 +225,127 @@ Coturn readiness fail/block criteria:
 - rollback to LiveKit cannot be verified
 - process owner, logs, secret source, or rotation owner is missing
 
+## Mediasoup Process Plan
+
+Status: `planning / review`. This section defines process, lifecycle, health, restart, env, and smoke requirements for a future production mediasoup MVP/canary. It does not enable production SFU, does not add PM2/systemd/Docker/Nginx/firewall config, and does not change runtime code.
+
+Readiness classification:
+- production mediasoup process plan: `pass / documented`
+- production mediasoup implementation: `blocked`
+- production SFU availability: `blocked`
+- production media default: `blocked`
+- multi-process readiness: `blocked`
+- LiveKit rollback: `required / preserved`
+
+Process ownership direction for MVP:
+- keep mediasoup worker lifecycle owned by the backend/media runtime for the first single VPS MVP/canary.
+- keep `apps/api` as the media control-plane and signaling owner.
+- treat the first production canary as single-process/single-host only.
+- do not claim horizontal scaling, multi-process routing, or process-restart session continuity.
+- if the API/media process restarts, active SFU rooms are expected to be interrupted unless a later design adds shared state and session recovery.
+
+Process options and criteria:
+
+| Option | Fit for first canary | Criteria before implementation |
+| --- | --- | --- |
+| Existing `apps/api` process under current PM2-style deploy | Best continuity and smallest process surface for single VPS MVP. | Needs explicit env mapping, health check, restart policy, log capture, rollback plan, and acceptance that process-local state is lost on restart. |
+| Dedicated media process from the same backend codebase | Useful if SFU lifecycle needs isolation from domain API. | Needs explicit API/signaling boundary, process communication, auth/session ownership, health endpoint, deploy command, logs, and rollback path. |
+| systemd-managed media process | Useful for host-native restart/log policy if media is split from API. | Needs unit design, secret source, environment file ownership, restart limits, journald/logrotate policy, and operator status commands. |
+| Docker-managed media process | Useful for pinned repeatability and explicit port publishing. | Needs image/version ownership, host networking or exact UDP range publishing, secret injection, logs, restart policy, and rollback procedure. |
+
+MVP recommendation:
+- start with backend/media-owned mediasoup lifecycle inside the current `apps/api` process only if the canary is explicitly single-process/single-host and LiveKit rollback is verified.
+- move to a dedicated media process only after process communication, shared state, and restart semantics are designed.
+- do not split to multi-process or multi-node SFU until room/session ownership and shared producer/consumer discovery are solved.
+
+Worker/router lifecycle requirements:
+- worker startup must be observable before canary.
+- router creation must be observable before transport creation.
+- worker death must be treated as a readiness failure until a replacement worker/router is created and active sessions are handled.
+- router closure must prevent new transport creation until recreated.
+- active transports, producers, consumers, rooms, and participant sessions must be tracked per process.
+- stale session cleanup must converge resources to zero after leave/rejoin, route-away, browser close, or process recovery tests.
+- mediasoup worker version/binary path should be visible in non-secret health/readiness output.
+
+Restart and crash behavior:
+- process manager restart policy must be explicit before implementation.
+- restart loops must be bounded by process manager limits; no ad hoc infinite shell restart loops.
+- a mediasoup worker crash during canary must trigger operator-visible failure status and rollback consideration.
+- active rooms may be dropped in the first single-process canary; this is acceptable only with explicit canary scope and LiveKit rollback.
+- restart smoke must prove the process returns to a healthy empty state after active sessions are drained or interrupted.
+- rollback drill must prove disabling SFU canary/default leaves LiveKit available.
+
+Required health/readiness signals:
+- service status: disabled/ready/failed
+- production guard/canary gate status without exposing secrets
+- mediasoup version and worker binary path
+- worker pid and closed/died state
+- router id, closed state, and codec count
+- active room count
+- tracked participant session count
+- active transport count
+- active producer count
+- active consumer count
+- producer/consumer counts by source
+- direct vs relay requested transport mode counts
+- failed transport create/connect counts
+- failed produce/consume/resume counts
+- stale sweep and stale session closed counts
+- last cleanup summary
+- non-secret runtime config source/status for `MEDIA_SFU_*`
+
+Required media env/process mapping:
+- `MEDIA_SFU_LISTEN_IP`: bind/listen IP for mediasoup WebRTC transports.
+- `MEDIA_SFU_ANNOUNCED_ADDRESS`: public reachable IP/FQDN announced to clients.
+- `MEDIA_SFU_RTC_MIN_PORT` / `MEDIA_SFU_RTC_MAX_PORT`: bounded RTC port range, candidate `40000-40100/udp`.
+- range must not overlap coturn relay `49160-49240`.
+- missing or invalid values must fail readiness or transport creation with non-secret reasons.
+- real IPs/FQDNs and secret-bearing env files must not be committed.
+
+Mediasoup smoke/readiness plan:
+1. Worker/router startup:
+   - start the selected non-production/staging process with `MEDIA_SFU_*` env names.
+   - verify health reports worker pid, router id, router codec count, version, and non-secret runtime config.
+2. Transport creation:
+   - create send and receive WebRTC transports.
+   - verify ICE candidates use the intended listen/announced address and RTC port range.
+   - verify invalid/reversed port range disables transport creation with a clear non-secret reason.
+3. Produce/consume:
+   - publish microphone/camera and consume from a second participant.
+   - verify producer/consumer counts by source and per-room counts.
+   - include screen-share if canary scope includes channel/private video.
+4. Cleanup:
+   - leave/rejoin, route away/back, and close browser contexts.
+   - verify active rooms/sessions/transports/producers/consumers settle to zero after bounded cleanup convergence.
+5. Restart/crash behavior:
+   - restart the selected process in non-production/staging.
+   - verify health returns to ready or failed deterministically, without unbounded retry loops.
+   - verify active-room interruption behavior is documented and LiveKit rollback remains available.
+6. Direct/relay evidence:
+   - run direct path and TURN-assisted path after coturn readiness is implemented.
+   - record direct-vs-relay requested/selected mode evidence.
+7. Rollback:
+   - verify `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false` still force LiveKit.
+   - verify disabling a future SFU canary/default gate stops new SFU joins.
+
+Mediasoup process readiness pass criteria:
+- worker/router startup is observable
+- transport create/connect works with intended `MEDIA_SFU_*` config
+- produce/consume works for canary scope
+- cleanup converges to zero active resources
+- restart behavior is bounded and documented
+- process/log ownership is explicit
+- LiveKit rollback is verified
+
+Mediasoup process readiness fail/block criteria:
+- worker/router health is unavailable
+- RTC candidates expose wrong address or unbounded ports
+- process restart loops without bounded policy
+- active resources do not converge after cleanup
+- process-local state risk is not accepted for canary scope
+- no rollback to LiveKit is available
+- production values, logs, or process owner are missing
+
 ## Required Production Env Inventory
 
 Do not paste secret values into this repository. Record only presence, owner, rotation date, and non-secret shape.
@@ -291,6 +412,7 @@ This order is a rollout plan, not executed work.
    - verify announced IP candidates are reachable
    - verify room/session/transport/producer/consumer counters
    - verify cleanup returns active resources to zero after bounded convergence
+   - verify restart/crash behavior is bounded and documented
 5. Enable non-production or staging first:
    - use explicit gates
    - run direct and relay smokes
@@ -338,6 +460,7 @@ Product flows:
 - browser refresh or offline/restore if in canary scope
 
 Cleanup and health:
+- worker/router health is ready before SFU joins
 - active rooms settle to zero after all users leave
 - active sessions settle to zero after cleanup convergence
 - active transports settle to zero
@@ -412,6 +535,7 @@ Logs to capture:
 - app/API media control-plane logs for join/leave/restart/reconnect
 - media signaling connect/disconnect logs
 - mediasoup worker/router/transport lifecycle logs
+- mediasoup worker crash/restart and router recreation logs
 - produce/consume failure details with non-secret identifiers
 - coturn authentication/allocation/error logs
 - coturn no-open-relay smoke failures/successes without credential values
@@ -426,6 +550,7 @@ Alert candidates:
 - unexpected relay-only behavior for most users
 - bandwidth above canary budget
 - SFU process restart during active canary
+- mediasoup worker/router health unavailable or flapping
 
 ## Production Blockers
 
@@ -433,10 +558,11 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 - mediasoup/signaling state is process-local
 - no multi-process/shared-state design exists yet
 - no production-like soak has passed
-- no completed VPS firewall/process plan exists
+- no completed VPS firewall/process implementation exists
 - no rollback drill has passed
 - candidate production ranges are chosen but not implemented or load-proven
 - coturn readiness criteria are documented, but production coturn is not deployed and systemd-vs-Docker ownership remains undecided
+- mediasoup process criteria are documented, but production mediasoup process ownership, restart policy, logs, and implementation are not complete
 - runtime env mapping exists, but concrete production values, owners, and secret rotation source are not filled
 - production monitoring/alerting is not implemented
 - LiveKit fallback removal is not approved
@@ -444,10 +570,10 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 ## Next Segments
 
 Recommended next:
-- `production-mediasoup-process-plan`
+- `production-media-process-env-readiness-review`
 
 Acceptable alternative:
-- `production-media-staging-smoke-run-report` only after coturn and mediasoup process implementation segments exist
+- `production-media-staging-smoke-plan`
 
 Do not proceed next to:
 - production default switch
