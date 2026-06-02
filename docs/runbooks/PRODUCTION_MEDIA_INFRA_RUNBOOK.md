@@ -402,6 +402,122 @@ Staging smoke run remains blocked if any of these are missing:
 - LiveKit rollback cannot be verified
 - staging smoke would require production default or LiveKit removal
 
+## Staging Smoke Plan
+
+Status: `planning / documented`. This is the ordered smoke plan for a future staging or non-production run. It does not run smoke, does not fill real values, does not change runtime code, does not change real env/secrets, does not add infrastructure configs, and does not enable production SFU/TURN/default behavior.
+
+Readiness classification:
+- staging smoke plan: `pass / documented`
+- staging smoke run: `blocked until operator inputs and staging env exist`
+- production rollout/default: `blocked`
+- LiveKit fallback: `required / preserved`
+- Stage 6/Postgres production migration: `deferred / untouched`
+
+Human/operator callout:
+- no manual user check is required for this planning segment.
+- before any staging smoke run, an operator must confirm the required process/env inputs outside the repo without recording secret values here.
+- do not run a staging smoke report if operator inputs, staging env, process owner, logs, firewall assumptions, rollback owner, or run window are missing.
+
+Prerequisites gate:
+
+| Gate item | Required before run? | Evidence to record without secrets |
+| --- | --- | --- |
+| Operator inputs filled | yes | checklist complete in private operator inventory, with no real values committed |
+| Staging web/API origins | yes | origin presence, CORS owner, rebuild/deploy owner |
+| `MEDIA_TURN_*` presence | yes for TURN phases | present/not present, owner, secret source/rotation owner, no values |
+| `MEDIA_SFU_*` presence | yes | present/not present, owner, validation check, no real IP/FQDN if sensitive |
+| Coturn process owner/log/status command | yes for TURN phases | systemd or Docker decision, log reference pattern, status command name |
+| Mediasoup process owner/log/health command | yes | `apps/api` MVP or dedicated owner, health endpoint/check name |
+| Firewall assumptions | yes | reviewed ranges for `3478/udp+tcp`, `49160-49240`, `40000-40100/udp`, and `443/tcp` |
+| Rollback owner and LiveKit env presence | yes | rollback owner, LiveKit env presence, rollback query checks |
+| Staging smoke run window | yes | operator, start/end window, expected user count |
+
+Smoke phase order:
+
+| Phase | Scope | Required evidence | Pass criteria | Block/fail trigger |
+| --- | --- | --- | --- | --- |
+| 0. Preflight | operator inputs, env presence, process owner, logs, rollback owner | completed prerequisite gate, commit SHA, run id, redacted env-name list | all required inputs are present or explicitly scoped out | missing required input, missing rollback owner, or need to expose secrets |
+| 1. App/API health | staging web/API reachability and auth/session path | health endpoint or equivalent status, API/WSS origin check, CORS check | app/API reachable and authenticated smoke users can load media routes | app/API unavailable or CORS/auth prevents smoke |
+| 2. Mediasoup health | worker/router readiness before joins | health snapshot with worker/router/status/counters and non-secret `MEDIA_SFU_*` status | worker/router ready or deterministic disabled status for scoped skip | worker/router unavailable for SFU phases |
+| 3. Coturn credential/no-open-relay | credential issuance and relay abuse prevention | authenticated credential issuance, invalid/expired/unauth relay failures, coturn log refs | no open relay, valid credentials work, secret values never exposed | open relay behavior, leaked secret, or missing logs |
+| 4. Direct private SFU | two-user private video path without TURN relay | selected mode, remote audio/video, counters, logs | private audio/video works and counters match users/tracks | remote media missing or resources leak |
+| 5. Direct channel `AUDIO` | small channel audio path without TURN relay | selected mode, remote audio, producer/consumer counts | channel audio works and cleanup converges | no remote audio or stale resources |
+| 6. Direct channel `VIDEO` | small channel video path without TURN relay | selected mode, remote audio/video, producer/consumer counts | channel video works and cleanup converges | no remote audio/video or stale resources |
+| 7. Screen-share | private or channel video screen-share | latest-wins behavior, start/stop/takeover notes, counters | screen-share starts/stops, latest-wins remains true, cleanup converges | stale screen track or takeover failure |
+| 8. TURN relay private/channel | relay-forced private and at least one channel path | relay-selected evidence, coturn allocation/permission/channel-bind logs, health counters | relay path works, allocations clean up, no open relay | relay allocation failure, cleanup failure, or unexpected direct-only behavior |
+| 9. Lifecycle recovery | route away/back, Restart, Leave/rejoin, optional offline/restore | bounded attempt counts, status transitions, health snapshots | flows recover or produce explicit review/fail without loops | unbounded retry/wait, unrecoverable failed state, stale tracks |
+| 10. Cleanup convergence | all rooms closed | before/during/after health snapshots and coturn allocation cleanup | active rooms/sessions/transports/producers/consumers settle to zero | active resources do not converge in bounded window |
+| 11. LiveKit rollback query | explicit rollback controls | `?mediaProvider=livekit`, `?livekit=true`, `?sfu=false` route checks | LiveKit fallback/token path remains usable | rollback cannot be verified |
+| 12. Failure/rollback decision | final classification | pass/review/fail/block per phase, rollback trigger assessment | decision is recorded with blockers and next action | production/canary decision requested without required evidence |
+
+Direct and TURN smoke matrix:
+
+| Scenario | Direct required | TURN required | Human/operator check | Notes |
+| --- | --- | --- | --- | --- |
+| Private SFU two-user audio/video | yes | yes when coturn staging exists | yes for media quality and device UX | Direct must run before relay to separate SFU issues from TURN issues. |
+| Channel `AUDIO` two- or three-user | yes | review/yes if channel relay is in canary scope | yes for audio audibility | Channel audio proves persistent-room audio path. |
+| Channel `VIDEO` two- or three-user | yes | yes for broader media readiness | yes for audio/video visibility | Include camera off/on if practical. |
+| Screen-share start/stop or takeover | yes | review/yes if video relay is in canary scope | yes for shared content visibility | Latest-wins and stale-track cleanup must be checked. |
+| Route away/back | yes | review | yes for expected remote track count | Fixed iteration count only. |
+| Restart | yes | review | yes for status recovery | Bounded attempts only. |
+| Leave/rejoin | yes | review | yes for track restoration | Check no stale remote tracks. |
+| Offline/restore | review | review | yes if helper exists and staging allows it | Optional if not already available; otherwise classify as review. |
+| LiveKit rollback | yes | yes after relay phases | yes | Must remain available regardless of SFU result. |
+
+Evidence/output template:
+
+```text
+Run id:
+Segment:
+Commit SHA:
+Environment:
+Operator:
+Run window:
+Staging web origin present:
+Staging API origin present:
+MEDIA_TURN_* presence / owner / secret source recorded without values:
+MEDIA_SFU_* presence / owner recorded without values:
+Coturn process owner / status command / log reference:
+Mediasoup process owner / health command / log reference:
+Firewall assumptions reviewed:
+Rollback owner:
+LiveKit env presence verified without values:
+
+Preflight classification:
+App/API health classification:
+Mediasoup health classification:
+Coturn credential/no-open-relay classification:
+Direct private SFU classification:
+Direct channel AUDIO classification:
+Direct channel VIDEO classification:
+Screen-share classification:
+TURN relay private/channel classification:
+Lifecycle recovery classification:
+Cleanup convergence classification:
+LiveKit rollback classification:
+
+Health snapshot before:
+Health snapshot during:
+Health snapshot after:
+Coturn allocation/log summary:
+Failure counters:
+Human/operator notes:
+Final decision:
+Blockers:
+Recommended next:
+```
+
+Failure and rollback decision rules:
+- any open relay finding is `block` and stops the run.
+- any leaked TURN secret, generated credential, API secret, auth header, cookie, or real secret value is `block` and requires redaction/rotation review.
+- missing LiveKit rollback is `block`.
+- mediasoup/coturn health unavailable is `block` for corresponding SFU/TURN phases.
+- direct media pass with TURN fail is `review / TURN blocker`, not production readiness.
+- direct fail with TURN pass is `review / SFU or route blocker`, not production readiness.
+- cleanup non-convergence is `block` before canary.
+- bounded lifecycle recovery fail is `review` or `fail` depending on user impact; unbounded retry behavior is `block`.
+- production rollout/default must remain `blocked` after the staging smoke plan and after any first staging smoke run unless a later canary readiness segment explicitly decides otherwise.
+
 ## Required Production Env Inventory
 
 Do not paste secret values into this repository. Record only presence, owner, rotation date, and non-secret shape.
@@ -621,16 +737,17 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 - mediasoup process criteria are documented, but production mediasoup process ownership, restart policy, logs, and implementation are not complete
 - runtime env mapping exists, but concrete production values, owners, and secret rotation source are not filled
 - process/env readiness matrix exists, but required operator inputs are not filled
+- staging smoke plan exists, but staging smoke execution is blocked until operator inputs and a staging env exist
 - production monitoring/alerting is not implemented
 - LiveKit fallback removal is not approved
 
 ## Next Segments
 
 Recommended next:
-- `production-media-staging-smoke-plan`
+- `production-media-process-env-fill-operator-inputs` if required operator values, owners, logs, firewall assumptions, rollback owner, or staging run window are not filled
 
 Acceptable alternative:
-- `production-media-process-env-fill-operator-inputs` if the next task is to prepare private operator inventory outside repo docs
+- `production-media-staging-smoke-run-report` only if operator inputs are filled and staging env exists
 
 Do not proceed next to:
 - staging smoke run until required operator inputs exist

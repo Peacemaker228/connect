@@ -193,6 +193,34 @@ Fill these non-secret operational items alongside the env table before a staging
 | LiveKit rollback operator | TODO | TODO | TODO | TODO | Must verify rollback queries and fallback env remain available. |
 | Staging smoke operator/window | TODO | TODO | TODO | TODO | Required before any staging smoke run/report. |
 
+## Staging Smoke Run Output Template
+
+Use this table for a future staging/non-production smoke run report. Do not paste real secrets, generated TURN credentials, auth headers, cookies, or sensitive host values.
+
+| Output item | Value / classification | Notes |
+| --- | --- | --- |
+| Run id | TODO | Unique operator run id. |
+| Commit SHA | TODO | Code/docs revision under test. |
+| Staging web/API origins present? | TODO | Record presence and owner only if values are sensitive. |
+| `MEDIA_TURN_*` presence recorded? | TODO | No secret values. Include owner/source/rotation status only. |
+| `MEDIA_SFU_*` presence recorded? | TODO | No sensitive IP/FQDN if the report is shared broadly. |
+| Coturn process/log/status evidence | TODO | Log references must be redacted. |
+| Mediasoup process/health/log evidence | TODO | Include health snapshot references without secrets. |
+| Firewall assumptions reviewed? | TODO | Record reviewed ranges, not commands unless a later implementation segment approves them. |
+| App/API health | pass/review/fail/block | TODO |
+| Mediasoup health | pass/review/fail/block | TODO |
+| Coturn credential/no-open-relay | pass/review/fail/block | TODO |
+| Direct private SFU | pass/review/fail/block | TODO |
+| Direct channel `AUDIO` | pass/review/fail/block | TODO |
+| Direct channel `VIDEO` | pass/review/fail/block | TODO |
+| Screen-share | pass/review/fail/block | TODO |
+| TURN relay private/channel | pass/review/fail/block | TODO |
+| Route away/back, Restart, Leave/rejoin, offline/restore | pass/review/fail/block | TODO |
+| Cleanup convergence | pass/review/fail/block | TODO |
+| LiveKit rollback | pass/review/fail/block | TODO |
+| Final decision | pass/review/fail/block | TODO |
+| Recommended next | TODO | Fill only after run evidence exists. |
+
 ## Pre-Canary Completeness Checklist
 
 Before a production canary readiness decision:
@@ -256,12 +284,13 @@ Implementation remains blocked until these are resolved or explicitly accepted f
 ## Recommended Next Segment
 
 Recommended next:
-- `production-media-staging-smoke-plan`
+- `production-media-process-env-fill-operator-inputs` if required operator values, owners, logs, firewall assumptions, rollback owner, or staging run window are not filled
 
 Acceptable alternative:
-- `production-media-process-env-fill-operator-inputs` if the next task is to prepare private operator inventory outside repo docs
+- `production-media-staging-smoke-run-report` only if operator inputs are filled and staging env exists
 
 Do not proceed next to:
+- staging smoke run without operator inputs
 - production default switch
 - LiveKit removal
 - firewall implementation

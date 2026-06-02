@@ -61,18 +61,25 @@ Done:
 - `docs/runbooks/PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md` now includes non-secret process/operator checklist items for ownership, logs, firewall review, monitoring, rollback, and staging smoke readiness.
 - staging smoke planning is allowed next, but staging smoke execution remains blocked until required operator inputs, owners, log paths, firewall assumptions, and rollback owner are filled outside the repo.
 - no production media deploy, real env/secret change, PM2/systemd/Docker/Nginx/firewall config, runtime change, smoke execution, LiveKit removal, or production SFU/default enablement was made.
+- `production-media-staging-smoke-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_167_PRODUCTION_MEDIA_STAGING_SMOKE_PLAN.md`.
+- `docs/runbooks/PRODUCTION_MEDIA_INFRA_RUNBOOK.md` now defines the final planning-only staging smoke order: prerequisites gate, app/API health, mediasoup health, coturn credential/no-open-relay checks, direct private/channel smokes, screen-share, TURN relay private/channel smokes, lifecycle recovery, cleanup convergence, LiveKit rollback, and failure/rollback decision.
+- `docs/runbooks/PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md` now includes a compact staging smoke run output table for a future run report without real values.
+- staging smoke plan is `pass / documented`; staging smoke run remains blocked until operator inputs and a staging env exist.
+- no staging/prod smoke was run, and no runtime, real env/secret, PM2/systemd/Docker/Nginx/firewall, LiveKit, production default, or Stage 6/Postgres behavior changed.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. `production-media-staging-smoke-plan`
-   - define staging/non-production smoke order before implementation
+1. `production-media-process-env-fill-operator-inputs`
+   - use this if required operator values, owners, logs, firewall assumptions, rollback owner, or staging run window are not filled
 2. `production-media-staging-smoke-run-report`
    - run direct and relay smoke in staging/non-production
 3. `production-media-canary-readiness-decision`
    - decide whether a narrow production canary is allowed
 4. `production-media-rollback-drill-report`
    - prove LiveKit rollback/default switch before broader rollout
+
+If all required operator inputs and staging env already exist outside the repo, skip the fill segment and proceed directly to `production-media-staging-smoke-run-report`. Do not add another abstract planning segment by default.
 
 ## Acceptance Criteria
 
@@ -96,3 +103,4 @@ Recommended sequence:
 - [SEGMENT_BRIEF_164_PRODUCTION_COTURN_READINESS_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_164_PRODUCTION_COTURN_READINESS_PLAN.md)
 - [SEGMENT_BRIEF_165_PRODUCTION_MEDIASOUP_PROCESS_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_165_PRODUCTION_MEDIASOUP_PROCESS_PLAN.md)
 - [SEGMENT_BRIEF_166_PRODUCTION_MEDIA_PROCESS_ENV_READINESS_REVIEW.md](../delegation/briefs/SEGMENT_BRIEF_166_PRODUCTION_MEDIA_PROCESS_ENV_READINESS_REVIEW.md)
+- [SEGMENT_BRIEF_167_PRODUCTION_MEDIA_STAGING_SMOKE_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_167_PRODUCTION_MEDIA_STAGING_SMOKE_PLAN.md)
