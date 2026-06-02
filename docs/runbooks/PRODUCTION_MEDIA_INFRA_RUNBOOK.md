@@ -28,13 +28,24 @@ This runbook must not be treated as authorization to:
 ## Target Production Topology
 
 Initial topology decision:
-- use a single VPS / single media host first for the production media MVP/canary, unless a later operator review finds a hard capacity, network, or isolation blocker.
+- use a separate staging/preprod VPS before any production media canary, because the operator can provision one and it avoids risky testing on the current production VPS.
+- after staging/preprod passes, use a single production VPS / single production media host first for the production media MVP/canary, unless a later operator review finds a hard capacity, network, or isolation blocker.
 - keep `web` and `apps/api` inside the current app deploy contour for the first VPS rollout.
 - keep `apps/api` as the owner of media control-plane and signaling.
 - keep mediasoup worker lifecycle owned by the backend/media process for the MVP.
 - run coturn as a separate managed service/container/process with its own restart policy and logs.
 - keep Nginx/reverse proxy ownership limited to HTTPS/WSS app, API, and signaling traffic.
 - send mediasoup RTC and coturn relay traffic directly to the media host, not through Nginx.
+
+Staging decision:
+- staging/preprod origin target: `https://staging.ax-connect.ru`.
+- staging public IPv4 is operator-owned and must stay outside repository docs and handoffs unless a later private operator inventory explicitly allows it.
+- staging should be bootstrapped first, then used for direct/TURN media smoke, rollback checks, and runbook rehearsal.
+- staging success is not enough for production readiness by itself; the production VPS still needs a later narrow canary because IP, firewall, Nginx, env, and process ownership differ.
+
+Production domain decision:
+- canonical production web origin direction: `https://ax-connect.ru`.
+- `https://www.ax-connect.ru` should redirect to the canonical origin when the production deploy/runbook work reaches domain/Nginx implementation.
 
 Logical roles:
 - `web`: serves the current web shell and client bundle.
@@ -61,7 +72,8 @@ The MVP direction is chosen, but exact unit/container/ecosystem files remain fut
 Recommended MVP direction:
 - keep `web` and `apps/api` compatible with the current PM2-style deploy for the first VPS rollout.
 - let the backend/media process own mediasoup worker lifecycle for the MVP.
-- run coturn separately through either systemd or Docker after a focused implementation decision.
+- prefer Docker-managed coturn for staging/preprod because the operator is moving toward Docker/CI-CD and coturn benefits from repeatable packaging and explicit port publishing review.
+- keep systemd as an acceptable fallback if Docker on the VPS introduces host-networking, logging, or operations friction.
 - do not introduce a full Docker migration for web/API/media unless explicitly approved in a later deploy modernization segment.
 
 Process options and tradeoffs:
@@ -108,6 +120,11 @@ Range rationale:
 ## Public Address And Announced IP
 
 Production must record the public reachable IP or FQDN for the media host before any canary.
+
+Staging/preprod must record the same class of information before staging smoke:
+- `staging.ax-connect.ru` DNS must resolve to the staging VPS.
+- the actual staging public IPv4 must be recorded in the private operator inventory, not committed to repo docs.
+- mediasoup announced address and coturn external/public address must align with the reachable staging host.
 
 Requirements:
 - mediasoup announced address must be the address clients can reach for the selected RTC range.

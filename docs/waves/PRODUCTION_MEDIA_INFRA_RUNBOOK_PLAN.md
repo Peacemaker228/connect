@@ -66,12 +66,18 @@ Done:
 - `docs/runbooks/PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md` now includes a compact staging smoke run output table for a future run report without real values.
 - staging smoke plan is `pass / documented`; staging smoke run remains blocked until operator inputs and a staging env exist.
 - no staging/prod smoke was run, and no runtime, real env/secret, PM2/systemd/Docker/Nginx/firewall, LiveKit, production default, or Stage 6/Postgres behavior changed.
+- `production-media-staging-vps-operator-inputs` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_168_PRODUCTION_MEDIA_STAGING_VPS_OPERATOR_INPUTS.md`.
+- operator decision: provision a separate staging/preprod VPS instead of testing staging media on the current production VPS.
+- staging origin target is `https://staging.ax-connect.ru`; the real staging public IPv4 remains outside repo docs.
+- production canonical origin direction is `https://ax-connect.ru`, with `www` redirect deferred to the later production domain/Nginx segment.
+- staging process direction is PM2-style app/API continuity, `apps/api`-owned mediasoup lifecycle for MVP/staging, and Docker-preferred coturn with systemd fallback.
+- the initial root credential was exposed in chat; staging bootstrap must rotate credentials and move to SSH-key access before serious staging work.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. `production-media-process-env-fill-operator-inputs`
-   - use this if required operator values, owners, logs, firewall assumptions, rollback owner, or staging run window are not filled
+1. `production-staging-vps-bootstrap-brief`
+   - give the operator exact bootstrap steps for DNS check, SSH hardening, deploy user, base packages, firewall baseline, Docker, PM2/Bun/Nginx readiness, and log/status commands
 2. `production-media-staging-smoke-run-report`
    - run direct and relay smoke in staging/non-production
 3. `production-media-canary-readiness-decision`
@@ -79,7 +85,7 @@ Recommended sequence:
 4. `production-media-rollback-drill-report`
    - prove LiveKit rollback/default switch before broader rollout
 
-If all required operator inputs and staging env already exist outside the repo, skip the fill segment and proceed directly to `production-media-staging-smoke-run-report`. Do not add another abstract planning segment by default.
+Do not proceed directly to `production-media-staging-smoke-run-report` until the staging VPS is bootstrapped, DNS is verified, server access is hardened, required process/log/status commands exist, and staging env is created without committing secret values. Do not add another abstract planning segment by default.
 
 ## Acceptance Criteria
 

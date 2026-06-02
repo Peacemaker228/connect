@@ -916,6 +916,13 @@ Done:
 - staging smoke run/report remains `blocked until operator inputs and staging env exist`
 - production rollout/default remains `blocked`, LiveKit fallback remains `required / preserved`, and Stage 6/Postgres production migration remains `deferred / untouched`
 - no staging/prod smoke, runtime code, real env/secret, production deploy, PM2/systemd/Docker/Nginx/firewall config, LiveKit removal, production default, or Stage 6/Postgres behavior changed
+- `production-media-staging-vps-operator-inputs` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_168_PRODUCTION_MEDIA_STAGING_VPS_OPERATOR_INPUTS.md`
+- operator decision: use a separate staging/preprod VPS before production media canary instead of testing staging media on the current production VPS
+- staging origin target is `https://staging.ax-connect.ru`; the actual staging public IPv4 remains in private operator inventory and is not committed to repo docs
+- production canonical domain direction is `https://ax-connect.ru`, with `https://www.ax-connect.ru` redirected later in the production domain/Nginx implementation segment
+- staging process direction is PM2-style app/API continuity, `apps/api`-owned mediasoup lifecycle for MVP/staging, and Docker-preferred coturn with systemd fallback
+- initial staging root credential was exposed in chat; bootstrap must rotate credentials and move to SSH-key access before serious staging work
+- no staging server bootstrap, SSH login, DNS implementation, real env/secret, PM2/Docker/Nginx/firewall implementation, smoke execution, LiveKit removal, production default, or Stage 6/Postgres behavior changed
 
 Remaining:
 - process-local mediasoup/signaling state remains a production/multi-process blocker
@@ -925,7 +932,8 @@ Remaining:
 - no rollback drill has passed
 - env inventory template and runtime mapping exist, but concrete production values, owners, and secret source remain incomplete
 - process/env readiness matrix exists, but required operator inputs are not filled
-- staging smoke plan exists, but staging smoke execution is still blocked until operator inputs and a staging env exist
+- staging VPS is provisioned as an operator decision, but bootstrap/hardening/DNS verification is not done in repo work
+- staging smoke plan exists, but staging smoke execution is still blocked until staging VPS bootstrap, operator inputs, and a staging env exist
 - coturn readiness criteria are documented, but production coturn is not deployed and systemd-vs-Docker implementation remains undecided
 - mediasoup process criteria are documented, but production mediasoup process ownership, restart policy, logs, and implementation remain incomplete
 - candidate mediasoup/coturn ranges are chosen but not implemented or load-proven
@@ -933,7 +941,7 @@ Remaining:
 - LiveKit removal remains blocked
 
 Next likely work:
-- `production-media-process-env-fill-operator-inputs` if required operator values, owners, logs, firewall assumptions, rollback owner, or staging run window are not filled
+- `production-staging-vps-bootstrap-brief` to hand off exact staging server bootstrap steps to the operator/new agent
 - `production-media-staging-smoke-run-report` only if operator inputs are filled and staging env exists
 - do not proceed next to production rollout, production default switch, LiveKit removal, or Stage 6 production Postgres cutover
 

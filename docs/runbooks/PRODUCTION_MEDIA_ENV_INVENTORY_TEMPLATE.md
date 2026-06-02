@@ -182,16 +182,20 @@ Fill these non-secret operational items alongside the env table before a staging
 
 | Item | Status | Owner | Source of truth | Validation command/check | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Media host public address owner | TODO | TODO | TODO | TODO | Record presence/owner only; do not commit the real IP/FQDN if sensitive. |
-| Coturn process owner | TODO | TODO | TODO | TODO | Choose systemd or Docker before smoke execution. |
-| Mediasoup process owner | TODO | TODO | TODO | TODO | Confirm `apps/api` MVP ownership or document a dedicated-process design. |
-| App/API log path and owner | TODO | TODO | TODO | TODO | Must support media control-plane and signaling evidence. |
-| Mediasoup worker/router log owner | TODO | TODO | TODO | TODO | May be app/API logs for `apps/api` MVP; dedicated process needs its own entry. |
-| Coturn log path and owner | TODO | TODO | TODO | TODO | Must capture auth/allocation/error evidence without exposing credentials. |
-| Firewall review owner | TODO | TODO | TODO | TODO | Must cover `443/tcp`, `3478/udp+tcp`, coturn relay, and mediasoup RTC ranges. |
+| Staging VPS | selected | operator | hosting control panel / private operator inventory | DNS/SSH/bootstrap checks in next brief | Separate staging/preprod VPS is selected; actual public IPv4 stays outside repo docs. |
+| Staging origin | selected | operator | DNS provider / private operator inventory | `staging.ax-connect.ru` resolves after DNS propagation | Target: `https://staging.ax-connect.ru`. |
+| Production canonical origin | selected | operator | DNS/Nginx production runbook | redirect check in later production segment | Direction: `https://ax-connect.ru`; redirect `www` to canonical later. |
+| Media host public address owner | selected for staging | operator | private operator inventory | record presence only | Do not commit the real staging/prod IP values. |
+| Coturn process owner | selected for staging | operator | staging bootstrap/runbook | Docker status/log commands in next brief | Prefer Docker-managed coturn for staging; systemd remains fallback. |
+| Mediasoup process owner | selected for MVP/staging | operator / `apps/api` runtime | staging bootstrap/runbook | API media health endpoint | `apps/api` owns mediasoup lifecycle for MVP/staging; process-local state remains production blocker. |
+| App/API log path and owner | review | operator | staging bootstrap/runbook | PM2/log command to be filled during bootstrap | Must support media control-plane and signaling evidence. |
+| Mediasoup worker/router log owner | review | operator / `apps/api` runtime | staging bootstrap/runbook | PM2/API logs and health output | May be app/API logs for `apps/api` MVP. |
+| Coturn log path and owner | review | operator | Docker logs or systemd journal | exact command to be filled during bootstrap | Must capture auth/allocation/error evidence without exposing credentials. |
+| Firewall review owner | selected | operator | staging bootstrap/runbook | ufw/provider firewall checks | Must cover `443/tcp`, `3478/udp+tcp`, coturn relay, and mediasoup RTC ranges. |
 | Monitoring/alert owner | TODO | TODO | TODO | TODO | Minimum alerts for transport failures, TURN failures, resource leaks, and process restarts. |
-| LiveKit rollback operator | TODO | TODO | TODO | TODO | Must verify rollback queries and fallback env remain available. |
-| Staging smoke operator/window | TODO | TODO | TODO | TODO | Required before any staging smoke run/report. |
+| LiveKit rollback operator | selected | operator | staging/prod runbook | rollback query smoke | Must verify rollback queries and fallback env remain available. |
+| Staging smoke operator/window | selected / window TBD | operator | private operator schedule | run window to be chosen before smoke | Required before any staging smoke run/report. |
+| Initial staging root credential | rotate required | operator | hosting control panel / private operator inventory | password rotation + SSH key setup | Initial password was shared in chat; do not record it, rotate during bootstrap, and move to SSH-key access. |
 
 ## Staging Smoke Run Output Template
 
