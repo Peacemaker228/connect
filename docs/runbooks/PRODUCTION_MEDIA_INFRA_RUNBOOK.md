@@ -419,6 +419,232 @@ Staging smoke run remains blocked if any of these are missing:
 - LiveKit rollback cannot be verified
 - staging smoke would require production default or LiveKit removal
 
+## Staging VPS Bootstrap Plan
+
+Status: `planning / documented`. This section is the operator-facing bootstrap handoff for the separate staging/preprod VPS. It does not connect to the VPS, does not change production, does not write real env files, does not start coturn/media smoke, and does not enable SFU/TURN/default behavior.
+
+Readiness classification:
+- staging VPS bootstrap plan: `pass / documented`
+- staging VPS bootstrap execution: `blocked until operator runs commands on staging VPS`
+- staging env setup: `blocked until bootstrap run report`
+- staging smoke run: `blocked until bootstrap and staging env exist`
+- production rollout/default: `blocked`
+- LiveKit fallback: `required / preserved`
+- Stage 6/Postgres production migration: `deferred / untouched`
+
+Operator placeholders:
+- `<STAGING_HOST>` is `staging.ax-connect.ru` after DNS is correct, or the private operator-owned staging IP during first access.
+- `<DEPLOY_USER>` is the non-root staging deploy/operator user.
+- `<LOCAL_PUBLIC_KEY>` is the operator public SSH key only. Never paste a private key.
+
+DNS check from the operator workstation:
+
+```bash
+nslookup staging.ax-connect.ru
+dig +short A staging.ax-connect.ru
+```
+
+Windows PowerShell alternative:
+
+```powershell
+Resolve-DnsName staging.ax-connect.ru -Type A
+```
+
+First staging SSH login:
+
+```bash
+ssh root@<STAGING_HOST>
+hostnamectl
+lsb_release -a
+whoami
+pwd
+ip -brief addr
+```
+
+The initial root password was exposed in chat and must be rotated immediately:
+
+```bash
+passwd
+```
+
+Create a non-root deploy user:
+
+```bash
+adduser <DEPLOY_USER>
+usermod -aG sudo <DEPLOY_USER>
+id <DEPLOY_USER>
+```
+
+Create or select a local SSH key on the operator workstation:
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/ax_connect_staging_ed25519 -C "ax-connect-staging"
+cat ~/.ssh/ax_connect_staging_ed25519.pub
+```
+
+Install only the public key on the VPS:
+
+```bash
+install -d -m 700 -o <DEPLOY_USER> -g <DEPLOY_USER> /home/<DEPLOY_USER>/.ssh
+printf '%s\n' '<LOCAL_PUBLIC_KEY>' > /home/<DEPLOY_USER>/.ssh/authorized_keys
+chown <DEPLOY_USER>:<DEPLOY_USER> /home/<DEPLOY_USER>/.ssh/authorized_keys
+chmod 600 /home/<DEPLOY_USER>/.ssh/authorized_keys
+```
+
+Verify a second SSH session before hardening password access:
+
+```bash
+ssh -i ~/.ssh/ax_connect_staging_ed25519 <DEPLOY_USER>@<STAGING_HOST>
+sudo -v
+```
+
+Harden SSH only after key login works and hosting console fallback is available:
+
+```bash
+sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.pre-bootstrap.$(date +%Y%m%d%H%M%S)
+sudo sshd -T | egrep 'permitrootlogin|passwordauthentication|pubkeyauthentication'
+sudoedit /etc/ssh/sshd_config
+sudo sshd -t
+sudo systemctl reload ssh
+sudo sshd -T | egrep 'permitrootlogin|passwordauthentication|pubkeyauthentication'
+```
+
+Target SSH settings:
+
+```text
+PermitRootLogin no
+PasswordAuthentication no
+PubkeyAuthentication yes
+```
+
+Base package baseline:
+
+```bash
+sudo apt update
+sudo apt upgrade -y
+sudo apt install -y git curl unzip build-essential ca-certificates gnupg lsb-release ufw nginx
+git --version
+curl --version
+unzip -v
+gcc --version
+sudo nginx -v
+```
+
+Docker readiness for staging coturn:
+
+```bash
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+. /etc/os-release
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu ${VERSION_CODENAME} stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo usermod -aG docker <DEPLOY_USER>
+docker --version
+sudo docker compose version
+sudo systemctl status docker --no-pager
+```
+
+After re-login as `<DEPLOY_USER>`:
+
+```bash
+docker ps
+docker compose version
+```
+
+Bun, Node, and PM2 readiness for app/API:
+
+```bash
+node --version || true
+npm --version || true
+bun --version || true
+pm2 --version || true
+curl -fsSL https://bun.sh/install | bash
+~/.bun/bin/bun --version
+npm --version
+sudo npm install -g pm2
+pm2 --version
+pm2 status
+```
+
+If `npm --version` fails, stop and record a bootstrap blocker instead of improvising a Node install path in this segment.
+
+Do not clone/deploy the app, fill env, or start app/API processes in this bootstrap plan unless a later staging env setup segment explicitly instructs it.
+
+Nginx readiness:
+
+```bash
+sudo nginx -t
+sudo systemctl status nginx --no-pager
+sudo ss -lntup
+```
+
+UFW and provider firewall discovery:
+
+```bash
+sudo ufw status verbose
+sudo iptables -S
+sudo nft list ruleset
+sudo ss -lntup
+sudo ss -lnup
+```
+
+Candidate staging ports:
+- `443/tcp` for HTTPS/WSS through Nginx
+- `3478/udp` and `3478/tcp` for coturn listener
+- `49160-49240` for coturn relay candidate range
+- `40000-40100/udp` for mediasoup RTC candidate range
+
+Host UFW candidate commands after console fallback and SSH key login are verified:
+
+```bash
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow OpenSSH
+sudo ufw allow 443/tcp
+sudo ufw allow 3478/tcp
+sudo ufw allow 3478/udp
+sudo ufw allow 49160:49240/tcp
+sudo ufw allow 49160:49240/udp
+sudo ufw allow 40000:40100/udp
+sudo ufw status numbered
+sudo ufw enable
+sudo ufw status verbose
+```
+
+Status/log commands to preserve for later run reports:
+
+```bash
+pm2 status
+pm2 logs --lines 100
+pm2 describe <PROCESS_NAME>
+sudo nginx -t
+sudo systemctl status nginx --no-pager
+sudo journalctl -u nginx -n 100 --no-pager
+sudo tail -n 100 /var/log/nginx/error.log
+sudo tail -n 100 /var/log/nginx/access.log
+docker ps
+docker compose ps
+docker logs <COTURN_CONTAINER_NAME> --tail 100
+sudo systemctl status docker --no-pager
+sudo ufw status verbose
+sudo ss -lntup
+sudo ss -lnup
+```
+
+Redaction rules for operator output:
+- redact root passwords, private keys, real staging public IPv4, real production IPs, generated TURN usernames/passwords, TURN shared secrets, LiveKit secrets, `.env` values, database URLs, storage keys, cookies, JWTs, auth headers, session identifiers, and coturn usernames/session metadata.
+- allowed output includes command names, package versions, service status, non-secret port ranges, redacted listener summaries, DNS pass/fail with IP redacted, and env names without values.
+
+No-production-impact guardrails:
+- run bootstrap only on the separate staging VPS.
+- keep the current production VPS untouched.
+- keep LiveKit fallback available and do not remove the LiveKit token path.
+- do not enable production SFU/TURN/default gates.
+- do not create or edit repo `.env`, `.env.local`, `.env.production`, or real server env values.
+- do not start staging smoke until bootstrap and staging env setup are complete.
+
 ## Staging Smoke Plan
 
 Status: `planning / documented`. This is the ordered smoke plan for a future staging or non-production run. It does not run smoke, does not fill real values, does not change runtime code, does not change real env/secrets, does not add infrastructure configs, and does not enable production SFU/TURN/default behavior.
@@ -754,20 +980,22 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 - mediasoup process criteria are documented, but production mediasoup process ownership, restart policy, logs, and implementation are not complete
 - runtime env mapping exists, but concrete production values, owners, and secret rotation source are not filled
 - process/env readiness matrix exists, but required operator inputs are not filled
-- staging smoke plan exists, but staging smoke execution is blocked until operator inputs and a staging env exist
+- staging VPS bootstrap plan exists, but bootstrap execution/run report is not complete
+- staging smoke plan exists, but staging smoke execution is blocked until bootstrap, operator inputs, and a staging env exist
 - production monitoring/alerting is not implemented
 - LiveKit fallback removal is not approved
 
 ## Next Segments
 
 Recommended next:
-- `production-media-process-env-fill-operator-inputs` if required operator values, owners, logs, firewall assumptions, rollback owner, or staging run window are not filled
+- `production-staging-vps-bootstrap-run-report` after the operator runs the documented bootstrap commands and returns redacted evidence
+- `production-media-staging-env-setup-plan` after bootstrap readiness is confirmed, to plan staging app/API/media env without committing secret values
 
 Acceptable alternative:
-- `production-media-staging-smoke-run-report` only if operator inputs are filled and staging env exists
+- `production-media-staging-smoke-run-report` only if bootstrap is complete, operator inputs are filled, staging env exists, logs/status commands are available, and LiveKit rollback is verified
 
 Do not proceed next to:
-- staging smoke run until required operator inputs exist
+- staging smoke run until staging bootstrap, env setup, required operator inputs, and rollback checks exist
 - production default switch
 - LiveKit removal
 - Stage 6 production Postgres cutover

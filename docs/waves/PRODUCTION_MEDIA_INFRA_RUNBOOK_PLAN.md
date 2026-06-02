@@ -72,20 +72,26 @@ Done:
 - production canonical origin direction is `https://ax-connect.ru`, with `www` redirect deferred to the later production domain/Nginx segment.
 - staging process direction is PM2-style app/API continuity, `apps/api`-owned mediasoup lifecycle for MVP/staging, and Docker-preferred coturn with systemd fallback.
 - the initial root credential was exposed in chat; staging bootstrap must rotate credentials and move to SSH-key access before serious staging work.
+- `production-staging-vps-bootstrap-brief` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_169_PRODUCTION_STAGING_VPS_BOOTSTRAP_BRIEF.md`.
+- `docs/runbooks/PRODUCTION_MEDIA_INFRA_RUNBOOK.md` now includes the staging VPS bootstrap plan covering DNS A-record checks, first SSH login, deploy user creation, SSH-key setup, root password rotation, password-login hardening, base packages, Docker readiness for coturn, Bun/Node/PM2 readiness for app/API, Nginx readiness, UFW/provider firewall discovery, candidate ports, status/log commands, redaction rules, and rollback/no-production-impact guardrails.
+- staging VPS bootstrap plan is `pass / documented`; actual bootstrap execution remains `blocked until operator runs commands on the staging VPS` and returns redacted evidence.
+- no staging/prod SSH connection, real IP/secret/env recording, Docker/PM2/Nginx/firewall application, smoke execution, LiveKit removal, production default, or Stage 6/Postgres behavior changed.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. `production-staging-vps-bootstrap-brief`
-   - give the operator exact bootstrap steps for DNS check, SSH hardening, deploy user, base packages, firewall baseline, Docker, PM2/Bun/Nginx readiness, and log/status commands
-2. `production-media-staging-smoke-run-report`
+1. `production-staging-vps-bootstrap-run-report`
+   - operator runs the documented bootstrap commands on the separate staging VPS and returns redacted DNS/SSH/package/Docker/PM2/Bun/Nginx/firewall/status evidence
+2. `production-media-staging-env-setup-plan`
+   - plan staging app/API/media env, process names, log paths, and secret source without committing secret values
+3. `production-media-staging-smoke-run-report`
    - run direct and relay smoke in staging/non-production
-3. `production-media-canary-readiness-decision`
+4. `production-media-canary-readiness-decision`
    - decide whether a narrow production canary is allowed
-4. `production-media-rollback-drill-report`
+5. `production-media-rollback-drill-report`
    - prove LiveKit rollback/default switch before broader rollout
 
-Do not proceed directly to `production-media-staging-smoke-run-report` until the staging VPS is bootstrapped, DNS is verified, server access is hardened, required process/log/status commands exist, and staging env is created without committing secret values. Do not add another abstract planning segment by default.
+Do not proceed directly to `production-media-staging-smoke-run-report` until the staging VPS is bootstrapped, DNS is verified, server access is hardened, required process/log/status commands exist, staging env is created without committing secret values, and LiveKit rollback remains verified.
 
 ## Acceptance Criteria
 
@@ -110,3 +116,5 @@ Do not proceed directly to `production-media-staging-smoke-run-report` until the
 - [SEGMENT_BRIEF_165_PRODUCTION_MEDIASOUP_PROCESS_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_165_PRODUCTION_MEDIASOUP_PROCESS_PLAN.md)
 - [SEGMENT_BRIEF_166_PRODUCTION_MEDIA_PROCESS_ENV_READINESS_REVIEW.md](../delegation/briefs/SEGMENT_BRIEF_166_PRODUCTION_MEDIA_PROCESS_ENV_READINESS_REVIEW.md)
 - [SEGMENT_BRIEF_167_PRODUCTION_MEDIA_STAGING_SMOKE_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_167_PRODUCTION_MEDIA_STAGING_SMOKE_PLAN.md)
+- [SEGMENT_BRIEF_168_PRODUCTION_MEDIA_STAGING_VPS_OPERATOR_INPUTS.md](../delegation/briefs/SEGMENT_BRIEF_168_PRODUCTION_MEDIA_STAGING_VPS_OPERATOR_INPUTS.md)
+- [SEGMENT_BRIEF_169_PRODUCTION_STAGING_VPS_BOOTSTRAP_BRIEF.md](../delegation/briefs/SEGMENT_BRIEF_169_PRODUCTION_STAGING_VPS_BOOTSTRAP_BRIEF.md)
