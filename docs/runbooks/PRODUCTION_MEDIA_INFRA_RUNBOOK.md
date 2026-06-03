@@ -421,16 +421,31 @@ Staging smoke run remains blocked if any of these are missing:
 
 ## Staging VPS Bootstrap Plan
 
-Status: `planning / documented`. This section is the operator-facing bootstrap handoff for the separate staging/preprod VPS. It does not connect to the VPS, does not change production, does not write real env files, does not start coturn/media smoke, and does not enable SFU/TURN/default behavior.
+Status: `bootstrap completed / redacted report recorded`. This section is the operator-facing bootstrap handoff for the separate staging/preprod VPS. It does not change production, does not write real env files, does not start coturn/media smoke, and does not enable SFU/TURN/default behavior.
 
 Readiness classification:
 - staging VPS bootstrap plan: `pass / documented`
-- staging VPS bootstrap execution: `blocked until operator runs commands on staging VPS`
-- staging env setup: `blocked until bootstrap run report`
-- staging smoke run: `blocked until bootstrap and staging env exist`
+- staging VPS bootstrap execution: `pass / completed by operator`
+- staging VPS bootstrap run report: `pass / redacted evidence recorded`
+- staging env setup: `blocked until staging env/app/API/coturn plan`
+- staging smoke run: `blocked until staging env exists`
 - production rollout/default: `blocked`
 - LiveKit fallback: `required / preserved`
 - Stage 6/Postgres production migration: `deferred / untouched`
+
+Run report summary:
+- `staging.ax-connect.ru` A-record was added and observed through public DNS-over-HTTPS; the real staging public IPv4 remains outside repo docs.
+- initial exposed root credential was rotated by the operator.
+- non-root deploy user with sudo was created.
+- deploy SSH-key login passed before password/root SSH access was disabled.
+- final SSH settings are `PermitRootLogin no`, `PasswordAuthentication no`, `KbdInteractiveAuthentication no`, and `PubkeyAuthentication yes`.
+- apt/base package baseline passed by operator report.
+- Docker `29.5.2`, Docker Compose `v5.1.4`, Bun `1.3.14`, Node.js `v22.22.2`, npm `10.9.7`, and PM2 `7.0.1` are installed.
+- Nginx is active and `nginx -t` passes; no staging TLS site is configured yet.
+- UFW is active with default incoming deny and allows `22/tcp`, `443/tcp`, `3478/tcp+udp`, `49160:49240/tcp+udp`, and `40000:40100/udp`.
+- provider firewall/security group was not found by the operator.
+- post-upgrade reboot was completed; kernel is `Linux 5.15.0-179-generic`; reboot-required flag cleared.
+- no app/API deploy, coturn container, staging env fill, media smoke, production change, LiveKit removal, or Stage 6/Postgres change was performed.
 
 Operator placeholders:
 - `<STAGING_HOST>` is `staging.ax-connect.ru` after DNS is correct, or the private operator-owned staging IP during first access.
@@ -980,15 +995,14 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 - mediasoup process criteria are documented, but production mediasoup process ownership, restart policy, logs, and implementation are not complete
 - runtime env mapping exists, but concrete production values, owners, and secret rotation source are not filled
 - process/env readiness matrix exists, but required operator inputs are not filled
-- staging VPS bootstrap plan exists, but bootstrap execution/run report is not complete
-- staging smoke plan exists, but staging smoke execution is blocked until bootstrap, operator inputs, and a staging env exist
+- staging VPS bootstrap run report exists, but staging app/API/env/coturn setup is not prepared
+- staging smoke plan exists, but staging smoke execution is blocked until staging env, app/API process, coturn process, logs/status commands, and LiveKit rollback checks exist
 - production monitoring/alerting is not implemented
 - LiveKit fallback removal is not approved
 
 ## Next Segments
 
 Recommended next:
-- `production-staging-vps-bootstrap-run-report` after the operator runs the documented bootstrap commands and returns redacted evidence
 - `production-media-staging-env-setup-plan` after bootstrap readiness is confirmed, to plan staging app/API/media env without committing secret values
 
 Acceptable alternative:

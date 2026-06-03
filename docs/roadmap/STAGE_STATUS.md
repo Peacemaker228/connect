@@ -927,8 +927,12 @@ Done:
 - staging VPS bootstrap plan is `pass / documented`
 - the bootstrap plan gives the operator exact commands for DNS A-record checks, first SSH login, non-root deploy user creation, SSH key setup, exposed root password rotation, password-login hardening, apt baseline, git/curl/unzip/build-essential checks, Docker readiness for staging coturn, Bun/Node/PM2 readiness for app/API, Nginx readiness, UFW/provider firewall discovery, candidate ports, and PM2/Nginx/Docker/UFW/ss status/log checks
 - operator output redaction rules are documented for passwords, private keys, real staging public IP, secrets, generated TURN credentials, cookies, auth headers, env values, and coturn session metadata
-- bootstrap execution remains `blocked until operator runs commands on the separate staging VPS and returns redacted evidence`
-- no staging/prod SSH connection, real IP/secret/env recording, PM2/Docker/Nginx/firewall application, smoke execution, LiveKit removal, production default, or Stage 6/Postgres behavior changed
+- before the run report, bootstrap execution remained `blocked until operator runs commands on the separate staging VPS and returns redacted evidence`
+- the bootstrap brief itself did not perform staging/prod SSH connection, real IP/secret/env recording, PM2/Docker/Nginx/firewall application, smoke execution, LiveKit removal, production default, or Stage 6/Postgres behavior changes
+- `production-staging-vps-bootstrap-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_170_PRODUCTION_STAGING_VPS_BOOTSTRAP_RUN_REPORT.md`
+- staging VPS bootstrap execution is `pass / completed by operator with redacted evidence`
+- DNS A-record for `staging.ax-connect.ru` was observed, root credential was rotated, deploy user and SSH-key login passed, root/password SSH was disabled, UFW baseline is active, Docker/Bun/Node/PM2/Nginx are ready, provider firewall was not found by the operator, and the required kernel reboot completed
+- no app/API deploy, staging env fill, coturn container, media smoke, production change, LiveKit removal, production default, or Stage 6/Postgres behavior changed
 
 Remaining:
 - process-local mediasoup/signaling state remains a production/multi-process blocker
@@ -938,9 +942,9 @@ Remaining:
 - no rollback drill has passed
 - env inventory template and runtime mapping exist, but concrete production values, owners, and secret source remain incomplete
 - process/env readiness matrix exists, but required operator inputs are not filled
-- staging VPS is provisioned as an operator decision and bootstrap is documented, but bootstrap/hardening/DNS verification has not been executed by the operator
-- staging env setup is still blocked until bootstrap run evidence exists
-- staging smoke plan exists, but staging smoke execution is still blocked until staging VPS bootstrap, operator inputs, staging env, logs/status commands, and LiveKit rollback verification exist
+- staging VPS bootstrap/hardening/DNS verification is complete, but staging app/API/env/coturn setup is not prepared
+- staging env setup is the next required planning/execution boundary
+- staging smoke plan exists, but staging smoke execution is still blocked until staging env, app/API process, coturn process, logs/status commands, and LiveKit rollback verification exist
 - coturn readiness criteria are documented, but production coturn is not deployed and systemd-vs-Docker implementation remains undecided
 - mediasoup process criteria are documented, but production mediasoup process ownership, restart policy, logs, and implementation remain incomplete
 - candidate mediasoup/coturn ranges are chosen but not implemented or load-proven
@@ -948,7 +952,6 @@ Remaining:
 - LiveKit removal remains blocked
 
 Next likely work:
-- `production-staging-vps-bootstrap-run-report` after the operator runs the documented staging VPS bootstrap commands and returns redacted evidence
 - `production-media-staging-env-setup-plan` after bootstrap readiness is confirmed
 - `production-media-staging-smoke-run-report` only if bootstrap is complete, operator inputs are filled, staging env exists, logs/status commands are available, and LiveKit rollback is verified
 - do not proceed next to production rollout, production default switch, LiveKit removal, or Stage 6 production Postgres cutover

@@ -182,11 +182,11 @@ Fill these non-secret operational items alongside the env table before a staging
 
 | Item | Status | Owner | Source of truth | Validation command/check | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Staging VPS | selected / bootstrap plan documented | operator | hosting control panel / private operator inventory | DNS/SSH/bootstrap checks in `SEGMENT_BRIEF_169_PRODUCTION_STAGING_VPS_BOOTSTRAP_BRIEF.md` | Separate staging/preprod VPS is selected; actual public IPv4 stays outside repo docs. |
+| Staging VPS | selected / bootstrap completed | operator | hosting control panel / private operator inventory | redacted bootstrap run report in `SEGMENT_BRIEF_170_PRODUCTION_STAGING_VPS_BOOTSTRAP_RUN_REPORT.md` | Separate staging/preprod VPS is selected; actual public IPv4 stays outside repo docs. |
 | Staging origin | selected | operator | DNS provider / private operator inventory | `staging.ax-connect.ru` resolves after DNS propagation | Target: `https://staging.ax-connect.ru`. |
 | Production canonical origin | selected | operator | DNS/Nginx production runbook | redirect check in later production segment | Direction: `https://ax-connect.ru`; redirect `www` to canonical later. |
 | Media host public address owner | selected for staging | operator | private operator inventory | record presence only | Do not commit the real staging/prod IP values. |
-| Staging bootstrap run report | blocked / not run | operator | private operator inventory plus redacted handoff | DNS, SSH hardening, deploy user, package, Docker, PM2/Bun/Nginx, firewall, and status/log checks | Required before staging env setup or smoke. Do not include real IPs, passwords, private keys, or env values. |
+| Staging bootstrap run report | pass / redacted evidence recorded | operator | private operator inventory plus redacted handoff | DNS, SSH hardening, deploy user, package, Docker, PM2/Bun/Nginx, firewall, reboot, and status/log checks | Required before staging env setup or smoke. Real IPs, passwords, private keys, and env values are not recorded. |
 | Coturn process owner | selected for staging | operator | staging bootstrap/runbook | Docker status/log commands in bootstrap brief | Prefer Docker-managed coturn for staging; systemd remains fallback. |
 | Mediasoup process owner | selected for MVP/staging | operator / `apps/api` runtime | staging bootstrap/runbook | API media health endpoint | `apps/api` owns mediasoup lifecycle for MVP/staging; process-local state remains production blocker. |
 | App/API log path and owner | review | operator | staging bootstrap/runbook | PM2/log command to be filled during bootstrap | Must support media control-plane and signaling evidence. |
@@ -280,8 +280,7 @@ Implementation remains blocked until these are resolved or explicitly accepted f
 - production env values, owners, and secret source are not filled
 - process-local mediasoup/signaling state remains a multi-process/multi-node blocker
 - no production-like soak has passed
-- no completed VPS bootstrap/firewall/process implementation exists
-- staging bootstrap run report is not complete
+- staging VPS bootstrap/firewall baseline is complete, but app/API/env/coturn process setup is not prepared
 - coturn systemd-vs-Docker ownership remains undecided
 - candidate port ranges are not implemented or load-proven
 - no rollback drill has passed
@@ -292,7 +291,6 @@ Implementation remains blocked until these are resolved or explicitly accepted f
 ## Recommended Next Segment
 
 Recommended next:
-- `production-staging-vps-bootstrap-run-report` after the operator runs the bootstrap commands and returns redacted evidence
 - `production-media-staging-env-setup-plan` after bootstrap readiness is confirmed, to plan staging app/API/media env without secret values
 
 Acceptable alternative:
