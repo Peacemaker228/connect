@@ -687,7 +687,7 @@ Process model:
 - web candidate: `127.0.0.1:3001`
 - API candidate: `127.0.0.1:4000`
 - web command shape for later run: `bun next start -p 3001`
-- API command shape for later run: `node apps/api/dist/main.js`
+- API command shape for the current staging build: `node apps/api/dist/apps/api/src/main.js`
 - note: root `start:web` currently hardcodes `next start -p 3000`, so staging should use direct PM2 args or a staging-specific ecosystem file rather than production process settings.
 
 Process status/log commands after deploy:
@@ -783,6 +783,52 @@ Smoke readiness gates before any staging smoke run:
 - direct private/channel media smoke only in the later run-report segment
 - TURN relay private/channel media smoke only in the later run-report segment
 - cleanup health only in the later run-report segment
+
+## Staging Env / Deploy Setup Run Report
+
+Status: `partial pass / redacted report recorded`. The separate staging VPS now has the staging repo checkout, server-local env files, Docker Postgres, app/API build, PM2 web/API processes, Nginx staging site, and TLS for `staging.ax-connect.ru`. This section records only presence/status evidence and does not include real IPs, passwords, private keys, env values, database URLs, generated TURN secrets, cookies, auth headers, or LiveKit/Storage secrets.
+
+Run report:
+- `production-media-staging-env-setup-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_172_PRODUCTION_MEDIA_STAGING_ENV_SETUP_RUN_REPORT.md`.
+- deployed source: `origin/core/reborn` at `1496b4dc071e1390ea07f2738c4ca32695d0c05b`.
+- staging repo path: `/var/www/ax-connect-staging`.
+- server-local env root: `/etc/ax-connect-staging`.
+- config root: `/opt/ax-connect-staging`.
+- PM2 processes are online:
+  - `ax-connect-staging-web`
+  - `ax-connect-staging-api`
+- app/API health through HTTPS passed.
+- Nginx staging site and TLS passed; certificate expiry observed: 2026-09-02.
+- UFW includes `80/tcp` for certbot HTTP-01 renewal, `443/tcp`, SSH, coturn candidate ports, and mediasoup RTC candidate range.
+- Docker Postgres is healthy and loopback-only on `127.0.0.1:5433`.
+- coturn Docker compose config is prepared, and the TURN static-auth secret is present only in server-local env files.
+- coturn container was not started.
+- direct/TURN media smoke was not run.
+- LiveKit fallback was preserved but rollback env presence is missing on staging.
+- Stage 6/Postgres production migration remained untouched.
+
+Run-report readiness classification:
+- staging source checkout: `pass`
+- staging DB container: `pass / healthy`
+- staging DB schema/migrations: `blocked / not run`
+- app/API build: `pass`
+- PM2 web/API: `pass / online`
+- Nginx/TLS: `pass`
+- coturn config: `pass / prepared only`
+- coturn process: `blocked / not started`
+- LiveKit rollback availability: `blocked / env missing`
+- Storage upload readiness: `blocked / env missing`
+- mediasoup health: `blocked for smoke / authenticated check not run`
+- staging smoke: `blocked until remaining gates are resolved`
+- production rollout/default: `blocked`
+
+Remaining blockers before staging smoke:
+- fill staging-only LiveKit rollback env outside repo docs, or record an operator-approved blocker.
+- fill or explicitly defer staging Storage env outside repo docs.
+- decide and apply the staging PostgreSQL schema path without touching Stage 6 production migration.
+- start coturn in an approved follow-up run and verify no-open-relay behavior without exposing credentials.
+- run authenticated app/session and mediasoup health checks using staging-only cookies/secrets.
+- run direct and TURN media smoke only in a later staging smoke run-report segment.
 
 ## Staging Smoke Plan
 

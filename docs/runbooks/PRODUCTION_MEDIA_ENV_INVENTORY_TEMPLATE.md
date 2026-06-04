@@ -187,13 +187,13 @@ Fill these non-secret operational items alongside the env table before a staging
 | Production canonical origin | selected | operator | DNS/Nginx production runbook | redirect check in later production segment | Direction: `https://ax-connect.ru`; redirect `www` to canonical later. |
 | Media host public address owner | selected for staging | operator | private operator inventory | record presence only | Do not commit the real staging/prod IP values. |
 | Staging bootstrap run report | pass / redacted evidence recorded | operator | private operator inventory plus redacted handoff | DNS, SSH hardening, deploy user, package, Docker, PM2/Bun/Nginx, firewall, reboot, and status/log checks | Required before staging env setup or smoke. Real IPs, passwords, private keys, and env values are not recorded. |
-| Staging repo layout | planned | operator | staging env setup plan | path/check owner before deploy | Candidate `/var/www/ax-connect-staging`, owned by `deploy:deploy`; do not use production deploy path. |
-| Staging PM2 web process | planned | operator | staging env setup plan | `pm2 describe ax-connect-staging-web` after deploy | Candidate process name `ax-connect-staging-web`, web port `3001`. |
-| Staging PM2 API process | planned | operator / `apps/api` runtime | staging env setup plan | `pm2 describe ax-connect-staging-api` after deploy | Candidate process name `ax-connect-staging-api`, API port `4000`. |
-| Staging Nginx site/TLS | planned | operator | staging env setup plan | `nginx -t`, TLS issuance check after deploy | Candidate site `staging.ax-connect.ru`; proxy `/`, `/api/`, and Socket.IO `/socket.io/`; certbot or DNS-01 later. |
-| Staging DB source | planned / operator decision required | operator | private operator inventory | presence/source only | Must be separate PostgreSQL staging DB; production `DATABASE_URL` reuse is forbidden. |
-| Staging env source | planned / not filled | operator | server-local env source outside repo | env-name presence only | Do not commit values. Must cover API/auth/storage/LiveKit/media env names. |
-| Staging coturn Docker config | planned / not started | operator | `/opt/ax-connect-staging/coturn` plus secret source outside repo | compose config/status/log commands after implementation | Docker preferred; listener `3478/udp+tcp`, relay `49160-49240`, no open relay, no secrets in repo. |
+| Staging repo layout | pass / deployed | operator | redacted run report `SEGMENT_BRIEF_172_PRODUCTION_MEDIA_STAGING_ENV_SETUP_RUN_REPORT.md` | path/check owner after deploy | `/var/www/ax-connect-staging`, owned by `deploy:deploy`; production deploy path not used. |
+| Staging PM2 web process | pass / online | operator | PM2 status in redacted run report | `pm2 describe ax-connect-staging-web` | Process name `ax-connect-staging-web`, web port `3001`. |
+| Staging PM2 API process | pass / online | operator / `apps/api` runtime | PM2 status in redacted run report | `pm2 describe ax-connect-staging-api` | Process name `ax-connect-staging-api`, API port `4000`; current build entrypoint is `apps/api/dist/apps/api/src/main.js`. |
+| Staging Nginx site/TLS | pass / HTTPS active | operator | Nginx/certbot evidence in redacted run report | `nginx -t`, HTTPS API health, certbot certificate check | Site `staging.ax-connect.ru`; proxy `/`, `/api/`, and Socket.IO `/socket.io/`; TLS issued, `80/tcp` allowed for HTTP-01 renewal. |
+| Staging DB source | pass / Docker Postgres healthy, schema blocked | operator | server-local env plus Docker status outside repo | Postgres health and `pg_isready` | Separate Docker Postgres on staging VPS; production `DATABASE_URL` reuse is forbidden; schema/migrations not run. |
+| Staging env source | partial pass / server-local values present | operator | `/etc/ax-connect-staging` outside repo | env-name presence only | App/API/media core names present; LiveKit and Storage names are missing before smoke. Do not commit values. |
+| Staging coturn Docker config | pass / config prepared, process not started | operator | `/opt/ax-connect-staging/coturn` plus secret source outside repo | compose config passed; process start blocked until follow-up run | Docker preferred; listener `3478/udp+tcp`, relay `49160-49240`, no open relay intent, no secrets in repo. |
 | Coturn process owner | selected for staging | operator | staging bootstrap/runbook | Docker status/log commands in bootstrap brief | Prefer Docker-managed coturn for staging; systemd remains fallback. |
 | Mediasoup process owner | selected for MVP/staging | operator / `apps/api` runtime | staging bootstrap/runbook | API media health endpoint | `apps/api` owns mediasoup lifecycle for MVP/staging; process-local state remains production blocker. |
 | App/API log path and owner | review | operator | staging bootstrap/runbook | PM2/log command to be filled during bootstrap | Must support media control-plane and signaling evidence. |
@@ -287,8 +287,8 @@ Implementation remains blocked until these are resolved or explicitly accepted f
 - production env values, owners, and secret source are not filled
 - process-local mediasoup/signaling state remains a multi-process/multi-node blocker
 - no production-like soak has passed
-- staging VPS bootstrap/firewall baseline is complete, but app/API/env/coturn process setup is not prepared
-- staging env/deploy setup plan exists, but real staging env values and deploy run are not complete
+- staging VPS bootstrap/firewall baseline is complete, and staging app/API/Nginx/TLS setup is now partially executed with redacted evidence
+- staging env/deploy run is complete for app/API health, but LiveKit/Storage env, DB schema, coturn process start, and authenticated media checks remain blocked
 - coturn systemd-vs-Docker ownership remains undecided
 - candidate port ranges are not implemented or load-proven
 - no rollback drill has passed
@@ -299,14 +299,13 @@ Implementation remains blocked until these are resolved or explicitly accepted f
 ## Recommended Next Segment
 
 Recommended next:
-- `production-media-staging-env-setup-run-report` after the operator fills non-secret presence/source decisions and confirms env/deploy setup inputs
-- `production-media-staging-deploy-run-report` only if the setup plan is treated as concrete enough to execute deploy in the next segment
+- `production-media-staging-smoke-run-report` only after the operator resolves staging-only LiveKit/Storage presence, DB schema path, coturn process start/no-open-relay checks, and authenticated app/media health gates
 
 Acceptable alternative:
-- `production-media-staging-smoke-run-report` only if bootstrap is complete, operator inputs are filled, staging env exists, logs/status commands are available, and LiveKit rollback is verified
+- pause and fill staging-only LiveKit, Storage, DB schema, and coturn process blockers without changing production
 
 Do not proceed next to:
-- staging smoke run without bootstrap, env setup, operator inputs, and rollback owner
+- staging smoke run without resolving Segment 172 blockers and rollback owner
 - production default switch
 - LiveKit removal
 - firewall implementation
