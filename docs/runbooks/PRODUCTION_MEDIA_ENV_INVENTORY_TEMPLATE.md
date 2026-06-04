@@ -176,6 +176,63 @@ Fill one row per env/config item before canary readiness review.
 | LiveKit public URL | `NEXT_PUBLIC_LIVEKIT_URL` | existing LiveKit env | public build-time | no | no | yes | TODO | no | TODO | TODO | Requires rebuild/redeploy when changed. |
 | Future media session signing | `MEDIA_SESSION_SIGNING_SECRET` or TBD | n/a | server-only | yes | review | no | TODO | yes | TODO | TODO | Only if later design requires it. |
 
+## Process / Operator Inventory Items
+
+Fill these non-secret operational items alongside the env table before a staging smoke run.
+
+| Item | Status | Owner | Source of truth | Validation command/check | Notes |
+| --- | --- | --- | --- | --- | --- |
+| Staging VPS | selected / bootstrap completed | operator | hosting control panel / private operator inventory | redacted bootstrap run report in `SEGMENT_BRIEF_170_PRODUCTION_STAGING_VPS_BOOTSTRAP_RUN_REPORT.md` | Separate staging/preprod VPS is selected; actual public IPv4 stays outside repo docs. |
+| Staging origin | selected | operator | DNS provider / private operator inventory | `staging.ax-connect.ru` resolves after DNS propagation | Target: `https://staging.ax-connect.ru`. |
+| Production canonical origin | selected | operator | DNS/Nginx production runbook | redirect check in later production segment | Direction: `https://ax-connect.ru`; redirect `www` to canonical later. |
+| Media host public address owner | selected for staging | operator | private operator inventory | record presence only | Do not commit the real staging/prod IP values. |
+| Staging bootstrap run report | pass / redacted evidence recorded | operator | private operator inventory plus redacted handoff | DNS, SSH hardening, deploy user, package, Docker, PM2/Bun/Nginx, firewall, reboot, and status/log checks | Required before staging env setup or smoke. Real IPs, passwords, private keys, and env values are not recorded. |
+| Staging repo layout | planned | operator | staging env setup plan | path/check owner before deploy | Candidate `/var/www/ax-connect-staging`, owned by `deploy:deploy`; do not use production deploy path. |
+| Staging PM2 web process | planned | operator | staging env setup plan | `pm2 describe ax-connect-staging-web` after deploy | Candidate process name `ax-connect-staging-web`, web port `3001`. |
+| Staging PM2 API process | planned | operator / `apps/api` runtime | staging env setup plan | `pm2 describe ax-connect-staging-api` after deploy | Candidate process name `ax-connect-staging-api`, API port `4000`. |
+| Staging Nginx site/TLS | planned | operator | staging env setup plan | `nginx -t`, TLS issuance check after deploy | Candidate site `staging.ax-connect.ru`; proxy `/`, `/api/`, and Socket.IO `/socket.io/`; certbot or DNS-01 later. |
+| Staging DB source | planned / operator decision required | operator | private operator inventory | presence/source only | Must be separate PostgreSQL staging DB; production `DATABASE_URL` reuse is forbidden. |
+| Staging env source | planned / not filled | operator | server-local env source outside repo | env-name presence only | Do not commit values. Must cover API/auth/storage/LiveKit/media env names. |
+| Staging coturn Docker config | planned / not started | operator | `/opt/ax-connect-staging/coturn` plus secret source outside repo | compose config/status/log commands after implementation | Docker preferred; listener `3478/udp+tcp`, relay `49160-49240`, no open relay, no secrets in repo. |
+| Coturn process owner | selected for staging | operator | staging bootstrap/runbook | Docker status/log commands in bootstrap brief | Prefer Docker-managed coturn for staging; systemd remains fallback. |
+| Mediasoup process owner | selected for MVP/staging | operator / `apps/api` runtime | staging bootstrap/runbook | API media health endpoint | `apps/api` owns mediasoup lifecycle for MVP/staging; process-local state remains production blocker. |
+| App/API log path and owner | review | operator | staging bootstrap/runbook | PM2/log command to be filled during bootstrap | Must support media control-plane and signaling evidence. |
+| Mediasoup worker/router log owner | review | operator / `apps/api` runtime | staging bootstrap/runbook | PM2/API logs and health output | May be app/API logs for `apps/api` MVP. |
+| Coturn log path and owner | review | operator | Docker logs or systemd journal | exact command to be filled during bootstrap | Must capture auth/allocation/error evidence without exposing credentials. |
+| Firewall review owner | selected | operator | staging bootstrap/runbook | ufw/provider firewall checks | Must cover `443/tcp`, `3478/udp+tcp`, coturn relay, and mediasoup RTC ranges. |
+| Monitoring/alert owner | TODO | TODO | TODO | TODO | Minimum alerts for transport failures, TURN failures, resource leaks, and process restarts. |
+| LiveKit rollback operator | selected | operator | staging/prod runbook | rollback query smoke | Must verify rollback queries and fallback env remain available. |
+| Staging smoke operator/window | selected / window TBD | operator | private operator schedule | run window to be chosen before smoke | Required before any staging smoke run/report. |
+| Initial staging root credential | rotate required | operator | hosting control panel / private operator inventory | password rotation + SSH key setup | Initial password was shared in chat; do not record it, rotate during bootstrap, and move to SSH-key access. |
+
+## Staging Smoke Run Output Template
+
+Use this table for a future staging/non-production smoke run report. Do not paste real secrets, generated TURN credentials, auth headers, cookies, or sensitive host values.
+
+| Output item | Value / classification | Notes |
+| --- | --- | --- |
+| Run id | TODO | Unique operator run id. |
+| Commit SHA | TODO | Code/docs revision under test. |
+| Staging web/API origins present? | TODO | Record presence and owner only if values are sensitive. |
+| `MEDIA_TURN_*` presence recorded? | TODO | No secret values. Include owner/source/rotation status only. |
+| `MEDIA_SFU_*` presence recorded? | TODO | No sensitive IP/FQDN if the report is shared broadly. |
+| Coturn process/log/status evidence | TODO | Log references must be redacted. |
+| Mediasoup process/health/log evidence | TODO | Include health snapshot references without secrets. |
+| Firewall assumptions reviewed? | TODO | Record reviewed ranges, not commands unless a later implementation segment approves them. |
+| App/API health | pass/review/fail/block | TODO |
+| Mediasoup health | pass/review/fail/block | TODO |
+| Coturn credential/no-open-relay | pass/review/fail/block | TODO |
+| Direct private SFU | pass/review/fail/block | TODO |
+| Direct channel `AUDIO` | pass/review/fail/block | TODO |
+| Direct channel `VIDEO` | pass/review/fail/block | TODO |
+| Screen-share | pass/review/fail/block | TODO |
+| TURN relay private/channel | pass/review/fail/block | TODO |
+| Route away/back, Restart, Leave/rejoin, offline/restore | pass/review/fail/block | TODO |
+| Cleanup convergence | pass/review/fail/block | TODO |
+| LiveKit rollback | pass/review/fail/block | TODO |
+| Final decision | pass/review/fail/block | TODO |
+| Recommended next | TODO | Fill only after run evidence exists. |
+
 ## Pre-Canary Completeness Checklist
 
 Before a production canary readiness decision:
@@ -194,12 +251,19 @@ Before a production canary readiness decision:
 - [ ] TURN TTL is approved and short-lived.
 - [ ] LiveKit rollback env remains present and validated.
 - [ ] Secret owners and rotation source are recorded without values.
+- [ ] Coturn process owner, restart policy, log path, and status check are recorded.
+- [ ] Mediasoup process owner, restart policy, log path, and health check are recorded.
+- [ ] Firewall review owner and candidate range validation are recorded.
+- [ ] Monitoring/log capture owner is recorded.
+- [ ] Staging smoke operator, run window, and rollback owner are recorded.
 - [ ] Validation checks are defined for direct path, relay path, private call, channel AUDIO, channel VIDEO, screen share, leave/rejoin, route-away, and cleanup health.
 - [ ] Stage 6 production Postgres migration remains out of scope.
 
 ## Redaction Rules For Handoffs / Logs / Screenshots
 
 Redact:
+- root passwords and password prompt output
+- SSH private keys and sensitive key paths
 - TURN static auth secrets or equivalent shared secrets
 - LiveKit API key and API secret values
 - future media signing/session secrets
@@ -223,7 +287,8 @@ Implementation remains blocked until these are resolved or explicitly accepted f
 - production env values, owners, and secret source are not filled
 - process-local mediasoup/signaling state remains a multi-process/multi-node blocker
 - no production-like soak has passed
-- no completed VPS firewall/process implementation plan exists
+- staging VPS bootstrap/firewall baseline is complete, but app/API/env/coturn process setup is not prepared
+- staging env/deploy setup plan exists, but real staging env values and deploy run are not complete
 - coturn systemd-vs-Docker ownership remains undecided
 - candidate port ranges are not implemented or load-proven
 - no rollback drill has passed
@@ -234,12 +299,14 @@ Implementation remains blocked until these are resolved or explicitly accepted f
 ## Recommended Next Segment
 
 Recommended next:
-- `production-coturn-readiness-plan`
+- `production-media-staging-env-setup-run-report` after the operator fills non-secret presence/source decisions and confirms env/deploy setup inputs
+- `production-media-staging-deploy-run-report` only if the setup plan is treated as concrete enough to execute deploy in the next segment
 
 Acceptable alternative:
-- `production-mediasoup-process-plan`
+- `production-media-staging-smoke-run-report` only if bootstrap is complete, operator inputs are filled, staging env exists, logs/status commands are available, and LiveKit rollback is verified
 
 Do not proceed next to:
+- staging smoke run without bootstrap, env setup, operator inputs, and rollback owner
 - production default switch
 - LiveKit removal
 - firewall implementation

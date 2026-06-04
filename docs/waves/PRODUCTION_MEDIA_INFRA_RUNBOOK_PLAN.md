@@ -50,20 +50,54 @@ Done:
 - `production-media-runtime-config-mapping` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_163_PRODUCTION_MEDIA_RUNTIME_CONFIG_MAPPING.md`.
 - `apps/api` now recognizes `MEDIA_TURN_*` and `MEDIA_SFU_*` runtime config names with `LOCAL_*` local/dev fallback compatibility.
 - production SFU/TURN endpoints remain disabled by the existing production guards, and no real env/secret values were changed.
+- `production-coturn-readiness-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_164_PRODUCTION_COTURN_READINESS_PLAN.md`.
+- `docs/runbooks/PRODUCTION_MEDIA_INFRA_RUNBOOK.md` now defines coturn readiness criteria covering no-open-relay policy, TURN REST auth through `MEDIA_TURN_STATIC_AUTH_SECRET`, listener/relay/public-address requirements, smoke/log/cleanup evidence, and rollback requirements.
+- no production coturn deploy, production env/secret change, firewall change, runtime change, or production SFU/TURN/default enablement was made.
+- `production-mediasoup-process-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_165_PRODUCTION_MEDIASOUP_PROCESS_PLAN.md`.
+- `docs/runbooks/PRODUCTION_MEDIA_INFRA_RUNBOOK.md` now defines mediasoup process criteria covering backend/media-owned MVP process direction, PM2 vs dedicated process vs systemd/Docker criteria, worker/router lifecycle, restart/crash behavior, health/readiness signals, `MEDIA_SFU_*` env mapping, smoke/readiness checks, and the single-process boundary.
+- no production mediasoup deploy, production env/secret change, PM2/systemd/Docker/Nginx/firewall config, runtime change, or production SFU/default enablement was made.
+- `production-media-process-env-readiness-review` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_166_PRODUCTION_MEDIA_PROCESS_ENV_READINESS_REVIEW.md`.
+- `docs/runbooks/PRODUCTION_MEDIA_INFRA_RUNBOOK.md` now includes a compact Process/Env Readiness Review matrix linking media host address, web/API origins, `MEDIA_TURN_*`, `MEDIA_SFU_*`, coturn/mediasoup process ownership, logs, rollback, firewall, monitoring, and staging smoke prerequisites.
+- `docs/runbooks/PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md` now includes non-secret process/operator checklist items for ownership, logs, firewall review, monitoring, rollback, and staging smoke readiness.
+- staging smoke planning is allowed next, but staging smoke execution remains blocked until required operator inputs, owners, log paths, firewall assumptions, and rollback owner are filled outside the repo.
+- no production media deploy, real env/secret change, PM2/systemd/Docker/Nginx/firewall config, runtime change, smoke execution, LiveKit removal, or production SFU/default enablement was made.
+- `production-media-staging-smoke-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_167_PRODUCTION_MEDIA_STAGING_SMOKE_PLAN.md`.
+- `docs/runbooks/PRODUCTION_MEDIA_INFRA_RUNBOOK.md` now defines the final planning-only staging smoke order: prerequisites gate, app/API health, mediasoup health, coturn credential/no-open-relay checks, direct private/channel smokes, screen-share, TURN relay private/channel smokes, lifecycle recovery, cleanup convergence, LiveKit rollback, and failure/rollback decision.
+- `docs/runbooks/PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md` now includes a compact staging smoke run output table for a future run report without real values.
+- staging smoke plan is `pass / documented`; staging smoke run remains blocked until operator inputs and a staging env exist.
+- no staging/prod smoke was run, and no runtime, real env/secret, PM2/systemd/Docker/Nginx/firewall, LiveKit, production default, or Stage 6/Postgres behavior changed.
+- `production-media-staging-vps-operator-inputs` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_168_PRODUCTION_MEDIA_STAGING_VPS_OPERATOR_INPUTS.md`.
+- operator decision: provision a separate staging/preprod VPS instead of testing staging media on the current production VPS.
+- staging origin target is `https://staging.ax-connect.ru`; the real staging public IPv4 remains outside repo docs.
+- production canonical origin direction is `https://ax-connect.ru`, with `www` redirect deferred to the later production domain/Nginx segment.
+- staging process direction is PM2-style app/API continuity, `apps/api`-owned mediasoup lifecycle for MVP/staging, and Docker-preferred coturn with systemd fallback.
+- the initial root credential was exposed in chat; staging bootstrap must rotate credentials and move to SSH-key access before serious staging work.
+- `production-staging-vps-bootstrap-brief` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_169_PRODUCTION_STAGING_VPS_BOOTSTRAP_BRIEF.md`.
+- `docs/runbooks/PRODUCTION_MEDIA_INFRA_RUNBOOK.md` now includes the staging VPS bootstrap plan covering DNS A-record checks, first SSH login, deploy user creation, SSH-key setup, root password rotation, password-login hardening, base packages, Docker readiness for coturn, Bun/Node/PM2 readiness for app/API, Nginx readiness, UFW/provider firewall discovery, candidate ports, status/log commands, redaction rules, and rollback/no-production-impact guardrails.
+- staging VPS bootstrap plan is `pass / documented`; before the run report, actual bootstrap execution remained blocked until operator execution.
+- the bootstrap brief itself did not perform staging/prod SSH connection, real IP/secret/env recording, Docker/PM2/Nginx/firewall application, smoke execution, LiveKit removal, production default, or Stage 6/Postgres behavior changes.
+- `production-staging-vps-bootstrap-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_170_PRODUCTION_STAGING_VPS_BOOTSTRAP_RUN_REPORT.md`.
+- operator bootstrap on the separate staging VPS passed with redacted evidence: DNS A-record observed, root credential rotated, deploy user and SSH key verified, root/password SSH disabled, base packages installed, Docker/Bun/Node/PM2/Nginx ready, UFW baseline active, provider firewall not found by operator, kernel reboot completed, and no reboot-required flag remains.
+- no app/API deploy, staging env fill, coturn container, media smoke, production change, LiveKit removal, production default, or Stage 6/Postgres behavior changed.
+- `production-media-staging-env-setup-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_171_PRODUCTION_MEDIA_STAGING_ENV_SETUP_PLAN.md`.
+- staging env/deploy setup plan covers `/var/www/ax-connect-staging`, deploy-owned repo layout, PM2 process names `ax-connect-staging-web` and `ax-connect-staging-api`, web/API ports `3001` and `4000`, Nginx staging site/TLS plan for `staging.ax-connect.ru`, env inventory without values, separate staging PostgreSQL decision/options, Docker-preferred coturn config plan, `MEDIA_TURN_*` / `MEDIA_SFU_*` mapping, LiveKit rollback env/checks, and smoke readiness gates.
+- no VPS connection, deploy, real env creation, secret/IP recording, PM2/Nginx/coturn/app start, migration, smoke, production change, LiveKit removal, production default, or Stage 6/Postgres production migration change was made.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. `production-coturn-readiness-plan`
-   - define authenticated TURN config, no-open-relay checks, logs, and allocation smoke
-2. `production-mediasoup-process-plan`
-   - define mediasoup worker/process lifecycle, health, restart policy, and logs
+1. `production-media-staging-env-setup-run-report`
+   - operator fills non-secret presence/source decisions and confirms staging env/deploy inputs without values
+2. `production-media-staging-deploy-run-report`
+   - execute the reviewed staging deploy only after env/source/process/Nginx/coturn inputs are ready
 3. `production-media-staging-smoke-run-report`
    - run direct and relay smoke in staging/non-production
 4. `production-media-canary-readiness-decision`
    - decide whether a narrow production canary is allowed
 5. `production-media-rollback-drill-report`
    - prove LiveKit rollback/default switch before broader rollout
+
+Do not proceed directly to `production-media-staging-smoke-run-report` until staging env is created without committing secret values, app/API deploy is complete, coturn process/log/status commands exist, and LiveKit rollback remains verified.
 
 ## Acceptance Criteria
 
@@ -83,3 +117,12 @@ Recommended sequence:
 - [SEGMENT_BRIEF_160_PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_160_PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN.md)
 - [SEGMENT_BRIEF_161_PRODUCTION_MEDIA_TOPOLOGY_DECISION.md](../delegation/briefs/SEGMENT_BRIEF_161_PRODUCTION_MEDIA_TOPOLOGY_DECISION.md)
 - [SEGMENT_BRIEF_162_PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md](../delegation/briefs/SEGMENT_BRIEF_162_PRODUCTION_MEDIA_ENV_INVENTORY_TEMPLATE.md)
+- [SEGMENT_BRIEF_163_PRODUCTION_MEDIA_RUNTIME_CONFIG_MAPPING.md](../delegation/briefs/SEGMENT_BRIEF_163_PRODUCTION_MEDIA_RUNTIME_CONFIG_MAPPING.md)
+- [SEGMENT_BRIEF_164_PRODUCTION_COTURN_READINESS_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_164_PRODUCTION_COTURN_READINESS_PLAN.md)
+- [SEGMENT_BRIEF_165_PRODUCTION_MEDIASOUP_PROCESS_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_165_PRODUCTION_MEDIASOUP_PROCESS_PLAN.md)
+- [SEGMENT_BRIEF_166_PRODUCTION_MEDIA_PROCESS_ENV_READINESS_REVIEW.md](../delegation/briefs/SEGMENT_BRIEF_166_PRODUCTION_MEDIA_PROCESS_ENV_READINESS_REVIEW.md)
+- [SEGMENT_BRIEF_167_PRODUCTION_MEDIA_STAGING_SMOKE_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_167_PRODUCTION_MEDIA_STAGING_SMOKE_PLAN.md)
+- [SEGMENT_BRIEF_168_PRODUCTION_MEDIA_STAGING_VPS_OPERATOR_INPUTS.md](../delegation/briefs/SEGMENT_BRIEF_168_PRODUCTION_MEDIA_STAGING_VPS_OPERATOR_INPUTS.md)
+- [SEGMENT_BRIEF_169_PRODUCTION_STAGING_VPS_BOOTSTRAP_BRIEF.md](../delegation/briefs/SEGMENT_BRIEF_169_PRODUCTION_STAGING_VPS_BOOTSTRAP_BRIEF.md)
+- [SEGMENT_BRIEF_170_PRODUCTION_STAGING_VPS_BOOTSTRAP_RUN_REPORT.md](../delegation/briefs/SEGMENT_BRIEF_170_PRODUCTION_STAGING_VPS_BOOTSTRAP_RUN_REPORT.md)
+- [SEGMENT_BRIEF_171_PRODUCTION_MEDIA_STAGING_ENV_SETUP_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_171_PRODUCTION_MEDIA_STAGING_ENV_SETUP_PLAN.md)
