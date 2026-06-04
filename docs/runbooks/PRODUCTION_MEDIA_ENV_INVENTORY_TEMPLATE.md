@@ -187,6 +187,13 @@ Fill these non-secret operational items alongside the env table before a staging
 | Production canonical origin | selected | operator | DNS/Nginx production runbook | redirect check in later production segment | Direction: `https://ax-connect.ru`; redirect `www` to canonical later. |
 | Media host public address owner | selected for staging | operator | private operator inventory | record presence only | Do not commit the real staging/prod IP values. |
 | Staging bootstrap run report | pass / redacted evidence recorded | operator | private operator inventory plus redacted handoff | DNS, SSH hardening, deploy user, package, Docker, PM2/Bun/Nginx, firewall, reboot, and status/log checks | Required before staging env setup or smoke. Real IPs, passwords, private keys, and env values are not recorded. |
+| Staging repo layout | planned | operator | staging env setup plan | path/check owner before deploy | Candidate `/var/www/ax-connect-staging`, owned by `deploy:deploy`; do not use production deploy path. |
+| Staging PM2 web process | planned | operator | staging env setup plan | `pm2 describe ax-connect-staging-web` after deploy | Candidate process name `ax-connect-staging-web`, web port `3001`. |
+| Staging PM2 API process | planned | operator / `apps/api` runtime | staging env setup plan | `pm2 describe ax-connect-staging-api` after deploy | Candidate process name `ax-connect-staging-api`, API port `4000`. |
+| Staging Nginx site/TLS | planned | operator | staging env setup plan | `nginx -t`, TLS issuance check after deploy | Candidate site `staging.ax-connect.ru`; proxy `/`, `/api/`, and Socket.IO `/socket.io/`; certbot or DNS-01 later. |
+| Staging DB source | planned / operator decision required | operator | private operator inventory | presence/source only | Must be separate PostgreSQL staging DB; production `DATABASE_URL` reuse is forbidden. |
+| Staging env source | planned / not filled | operator | server-local env source outside repo | env-name presence only | Do not commit values. Must cover API/auth/storage/LiveKit/media env names. |
+| Staging coturn Docker config | planned / not started | operator | `/opt/ax-connect-staging/coturn` plus secret source outside repo | compose config/status/log commands after implementation | Docker preferred; listener `3478/udp+tcp`, relay `49160-49240`, no open relay, no secrets in repo. |
 | Coturn process owner | selected for staging | operator | staging bootstrap/runbook | Docker status/log commands in bootstrap brief | Prefer Docker-managed coturn for staging; systemd remains fallback. |
 | Mediasoup process owner | selected for MVP/staging | operator / `apps/api` runtime | staging bootstrap/runbook | API media health endpoint | `apps/api` owns mediasoup lifecycle for MVP/staging; process-local state remains production blocker. |
 | App/API log path and owner | review | operator | staging bootstrap/runbook | PM2/log command to be filled during bootstrap | Must support media control-plane and signaling evidence. |
@@ -281,6 +288,7 @@ Implementation remains blocked until these are resolved or explicitly accepted f
 - process-local mediasoup/signaling state remains a multi-process/multi-node blocker
 - no production-like soak has passed
 - staging VPS bootstrap/firewall baseline is complete, but app/API/env/coturn process setup is not prepared
+- staging env/deploy setup plan exists, but real staging env values and deploy run are not complete
 - coturn systemd-vs-Docker ownership remains undecided
 - candidate port ranges are not implemented or load-proven
 - no rollback drill has passed
@@ -291,7 +299,8 @@ Implementation remains blocked until these are resolved or explicitly accepted f
 ## Recommended Next Segment
 
 Recommended next:
-- `production-media-staging-env-setup-plan` after bootstrap readiness is confirmed, to plan staging app/API/media env without secret values
+- `production-media-staging-env-setup-run-report` after the operator fills non-secret presence/source decisions and confirms env/deploy setup inputs
+- `production-media-staging-deploy-run-report` only if the setup plan is treated as concrete enough to execute deploy in the next segment
 
 Acceptable alternative:
 - `production-media-staging-smoke-run-report` only if bootstrap is complete, operator inputs are filled, staging env exists, logs/status commands are available, and LiveKit rollback is verified

@@ -79,20 +79,25 @@ Done:
 - `production-staging-vps-bootstrap-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_170_PRODUCTION_STAGING_VPS_BOOTSTRAP_RUN_REPORT.md`.
 - operator bootstrap on the separate staging VPS passed with redacted evidence: DNS A-record observed, root credential rotated, deploy user and SSH key verified, root/password SSH disabled, base packages installed, Docker/Bun/Node/PM2/Nginx ready, UFW baseline active, provider firewall not found by operator, kernel reboot completed, and no reboot-required flag remains.
 - no app/API deploy, staging env fill, coturn container, media smoke, production change, LiveKit removal, production default, or Stage 6/Postgres behavior changed.
+- `production-media-staging-env-setup-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_171_PRODUCTION_MEDIA_STAGING_ENV_SETUP_PLAN.md`.
+- staging env/deploy setup plan covers `/var/www/ax-connect-staging`, deploy-owned repo layout, PM2 process names `ax-connect-staging-web` and `ax-connect-staging-api`, web/API ports `3001` and `4000`, Nginx staging site/TLS plan for `staging.ax-connect.ru`, env inventory without values, separate staging PostgreSQL decision/options, Docker-preferred coturn config plan, `MEDIA_TURN_*` / `MEDIA_SFU_*` mapping, LiveKit rollback env/checks, and smoke readiness gates.
+- no VPS connection, deploy, real env creation, secret/IP recording, PM2/Nginx/coturn/app start, migration, smoke, production change, LiveKit removal, production default, or Stage 6/Postgres production migration change was made.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. `production-media-staging-env-setup-plan`
-   - plan staging app/API/media env, process names, log paths, and secret source without committing secret values
-2. `production-media-staging-smoke-run-report`
+1. `production-media-staging-env-setup-run-report`
+   - operator fills non-secret presence/source decisions and confirms staging env/deploy inputs without values
+2. `production-media-staging-deploy-run-report`
+   - execute the reviewed staging deploy only after env/source/process/Nginx/coturn inputs are ready
+3. `production-media-staging-smoke-run-report`
    - run direct and relay smoke in staging/non-production
-3. `production-media-canary-readiness-decision`
+4. `production-media-canary-readiness-decision`
    - decide whether a narrow production canary is allowed
-4. `production-media-rollback-drill-report`
+5. `production-media-rollback-drill-report`
    - prove LiveKit rollback/default switch before broader rollout
 
-Do not proceed directly to `production-media-staging-smoke-run-report` until staging env is created without committing secret values, app/API and coturn process/log/status commands exist, and LiveKit rollback remains verified.
+Do not proceed directly to `production-media-staging-smoke-run-report` until staging env is created without committing secret values, app/API deploy is complete, coturn process/log/status commands exist, and LiveKit rollback remains verified.
 
 ## Acceptance Criteria
 
@@ -120,3 +125,4 @@ Do not proceed directly to `production-media-staging-smoke-run-report` until sta
 - [SEGMENT_BRIEF_168_PRODUCTION_MEDIA_STAGING_VPS_OPERATOR_INPUTS.md](../delegation/briefs/SEGMENT_BRIEF_168_PRODUCTION_MEDIA_STAGING_VPS_OPERATOR_INPUTS.md)
 - [SEGMENT_BRIEF_169_PRODUCTION_STAGING_VPS_BOOTSTRAP_BRIEF.md](../delegation/briefs/SEGMENT_BRIEF_169_PRODUCTION_STAGING_VPS_BOOTSTRAP_BRIEF.md)
 - [SEGMENT_BRIEF_170_PRODUCTION_STAGING_VPS_BOOTSTRAP_RUN_REPORT.md](../delegation/briefs/SEGMENT_BRIEF_170_PRODUCTION_STAGING_VPS_BOOTSTRAP_RUN_REPORT.md)
+- [SEGMENT_BRIEF_171_PRODUCTION_MEDIA_STAGING_ENV_SETUP_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_171_PRODUCTION_MEDIA_STAGING_ENV_SETUP_PLAN.md)

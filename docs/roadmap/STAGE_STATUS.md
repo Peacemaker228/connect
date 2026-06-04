@@ -933,6 +933,10 @@ Done:
 - staging VPS bootstrap execution is `pass / completed by operator with redacted evidence`
 - DNS A-record for `staging.ax-connect.ru` was observed, root credential was rotated, deploy user and SSH-key login passed, root/password SSH was disabled, UFW baseline is active, Docker/Bun/Node/PM2/Nginx are ready, provider firewall was not found by the operator, and the required kernel reboot completed
 - no app/API deploy, staging env fill, coturn container, media smoke, production change, LiveKit removal, production default, or Stage 6/Postgres behavior changed
+- `production-media-staging-env-setup-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_171_PRODUCTION_MEDIA_STAGING_ENV_SETUP_PLAN.md`
+- staging env/deploy setup plan is `pass / documented`
+- the plan covers staging repo path `/var/www/ax-connect-staging`, deploy ownership, staging branch/source strategy, PM2 process names `ax-connect-staging-web` and `ax-connect-staging-api`, candidate ports `3001` and `4000`, Nginx/TLS plan for `staging.ax-connect.ru`, env inventory without values, separate staging PostgreSQL decision/options, Docker-preferred coturn config plan, `MEDIA_TURN_*` / `MEDIA_SFU_*` mapping, LiveKit rollback env/checks, and smoke readiness gates
+- no VPS connection, deploy, real env creation, real IP/secret recording, PM2/Nginx/coturn/app start, migration, smoke, production change, LiveKit removal, production default, or Stage 6/Postgres production migration change was made
 
 Remaining:
 - process-local mediasoup/signaling state remains a production/multi-process blocker
@@ -942,8 +946,8 @@ Remaining:
 - no rollback drill has passed
 - env inventory template and runtime mapping exist, but concrete production values, owners, and secret source remain incomplete
 - process/env readiness matrix exists, but required operator inputs are not filled
-- staging VPS bootstrap/hardening/DNS verification is complete, but staging app/API/env/coturn setup is not prepared
-- staging env setup is the next required planning/execution boundary
+- staging VPS bootstrap/hardening/DNS verification is complete, and staging app/API/env/coturn setup is planned but not executed
+- staging env values, DB source, storage source, LiveKit rollback presence, coturn secret source, process config, Nginx site, and TLS are not filled/applied
 - staging smoke plan exists, but staging smoke execution is still blocked until staging env, app/API process, coturn process, logs/status commands, and LiveKit rollback verification exist
 - coturn readiness criteria are documented, but production coturn is not deployed and systemd-vs-Docker implementation remains undecided
 - mediasoup process criteria are documented, but production mediasoup process ownership, restart policy, logs, and implementation remain incomplete
@@ -952,8 +956,9 @@ Remaining:
 - LiveKit removal remains blocked
 
 Next likely work:
-- `production-media-staging-env-setup-plan` after bootstrap readiness is confirmed
-- `production-media-staging-smoke-run-report` only if bootstrap is complete, operator inputs are filled, staging env exists, logs/status commands are available, and LiveKit rollback is verified
+- `production-media-staging-env-setup-run-report` after the operator fills non-secret presence/source decisions and confirms env/deploy setup inputs
+- `production-media-staging-deploy-run-report` only if the setup plan is treated as concrete enough to execute deploy in the next segment
+- `production-media-staging-smoke-run-report` only if bootstrap is complete, staging deploy/env exists, coturn process exists, logs/status commands are available, and LiveKit rollback is verified
 - do not proceed next to production rollout, production default switch, LiveKit removal, or Stage 6 production Postgres cutover
 
 ## Historical Notes

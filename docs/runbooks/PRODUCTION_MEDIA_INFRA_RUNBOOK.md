@@ -660,6 +660,130 @@ No-production-impact guardrails:
 - do not create or edit repo `.env`, `.env.local`, `.env.production`, or real server env values.
 - do not start staging smoke until bootstrap and staging env setup are complete.
 
+## Staging Env / Deploy Setup Plan
+
+Status: `planning / documented`. This section defines the staging app/API/media env and deploy shape after successful staging VPS bootstrap. It does not connect to the VPS, deploy code, create real env files, run migrations, start PM2/coturn/media services, run smoke, change production, enable SFU/TURN/default gates, remove LiveKit, or touch the Stage 6/Postgres production migration path.
+
+Readiness classification:
+- staging env/deploy setup plan: `pass / documented`
+- staging deploy execution: `blocked until operator-approved run segment`
+- staging env values: `blocked / not filled`
+- staging coturn config: `blocked / planned only`
+- staging smoke run: `blocked until deploy/env/coturn/process/log readiness exists`
+- production rollout/default: `blocked`
+- LiveKit fallback: `required / preserved`
+- Stage 6/Postgres production migration: `deferred / untouched`
+
+Layout:
+- repo path candidate: `/var/www/ax-connect-staging`
+- owner: `deploy:deploy`
+- server-local env/config roots: `/etc/ax-connect-staging` and `/opt/ax-connect-staging/coturn`
+- source strategy: clone a staging-approved branch or explicit commit SHA; do not use production deploy path or production working tree.
+- no dirty local state, real secrets, or production env values should be used for staging deploy.
+
+Process model:
+- web PM2 process: `ax-connect-staging-web`
+- API PM2 process: `ax-connect-staging-api`
+- web candidate: `127.0.0.1:3001`
+- API candidate: `127.0.0.1:4000`
+- web command shape for later run: `bun next start -p 3001`
+- API command shape for later run: `node apps/api/dist/main.js`
+- note: root `start:web` currently hardcodes `next start -p 3000`, so staging should use direct PM2 args or a staging-specific ecosystem file rather than production process settings.
+
+Process status/log commands after deploy:
+
+```bash
+pm2 status
+pm2 describe ax-connect-staging-web
+pm2 describe ax-connect-staging-api
+pm2 logs ax-connect-staging-web --lines 100
+pm2 logs ax-connect-staging-api --lines 100
+curl -fsS http://127.0.0.1:3001/ >/dev/null
+curl -fsS http://127.0.0.1:4000/api/health
+curl -fsS http://127.0.0.1:4000/api/media/prototype/mediasoup/health
+```
+
+Nginx staging site plan:
+- public origin: `https://staging.ax-connect.ru`
+- site config candidate: `/etc/nginx/sites-available/ax-connect-staging`
+- enabled symlink candidate: `/etc/nginx/sites-enabled/ax-connect-staging`
+- `/` proxies to `http://127.0.0.1:3001`
+- `/api/` proxies to `http://127.0.0.1:4000`
+- Socket.IO realtime uses path `/socket.io/` and namespace `/realtime`; proxy `/socket.io/` to the API upstream with WebSocket headers.
+- if a future raw `/realtime` WSS endpoint exists, proxy it to the same API upstream.
+- TLS preferred path: certbot with Nginx plugin after web/API processes and staging site config are ready.
+- HTTP-01 issuance requires `80/tcp`; current bootstrap UFW baseline does not allow `80/tcp`, so the later run segment must either temporarily allow `80/tcp` or use DNS-01.
+- no Nginx config or certificate is applied in this segment.
+
+Env inventory without values:
+
+| Env item | Required? | Secret? | Notes |
+| --- | --- | --- | --- |
+| `NODE_ENV` | yes | no | Recommended runtime class: `production` for optimized Next/Nest behavior; staging identity comes from origin/path and optional later `APP_ENV=staging`. |
+| `NEXT_PUBLIC_API_URL` | yes | no | Staging public origin; requires web rebuild. |
+| `API_INTERNAL_URL` | yes/review | no | Local API origin shape, e.g. loopback API URL. |
+| `API_PORT` | yes | no | Candidate `4000`. |
+| `API_CORS_ALLOWED_ORIGINS` | yes | no | Must include exact staging public origin. |
+| `AUTH_TOKEN_SECRET` | yes | yes | Presence only; must not use dev default. |
+| `DATABASE_URL` | yes | yes | Presence only; must be separate staging DB, never production. |
+| `STORAGE_*` | yes for upload flows | mixed | Presence/source only; staging bucket/prefix must be separate from production. |
+| `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `NEXT_PUBLIC_LIVEKIT_URL` | yes for rollback | mixed | Presence only; LiveKit fallback remains required. |
+| `MEDIA_TURN_*` | yes for TURN phases | mixed | Presence/source only; no generated credentials or shared secret values. |
+| `MEDIA_SFU_*` | yes for SFU phases | no/sensitive | Presence/source only; real public IP remains private operator inventory. |
+
+Staging database decision:
+- staging DB must be separate from production.
+- do not use production `DATABASE_URL`.
+- active repo direction is PostgreSQL; staging media setup should use a separate staging PostgreSQL database unless a later runtime review explicitly chooses another isolated path.
+- Docker-managed Postgres on the staging VPS is acceptable for isolated staging media rehearsal if the operator accepts VPS-local storage/backup limitations.
+- managed staging Postgres is acceptable if the operator wants stronger operational isolation.
+- production DB reuse is forbidden.
+- no migrations are run in this segment.
+
+Coturn Docker plan:
+- Docker-managed coturn is preferred for staging.
+- proposed config paths: `/opt/ax-connect-staging/coturn/docker-compose.yml` and `/etc/ax-connect-staging/coturn.env`.
+- container name: `ax-connect-staging-coturn`.
+- listener: `3478/udp` and `3478/tcp`.
+- relay range: `49160-49240/udp` and `49160-49240/tcp`.
+- no open relay, no anonymous relay allocation.
+- `MEDIA_TURN_STATIC_AUTH_SECRET` / coturn `static-auth-secret` source stays outside repo.
+- realm, external/public address, relay min/max, logs, and status command must be filled in a later run segment without secret values.
+- do not start coturn in this segment.
+
+Coturn commands after later config:
+
+```bash
+docker compose -f /opt/ax-connect-staging/coturn/docker-compose.yml config
+docker compose -f /opt/ax-connect-staging/coturn/docker-compose.yml ps
+docker logs ax-connect-staging-coturn --tail 100
+docker inspect ax-connect-staging-coturn
+```
+
+Mediasoup mapping:
+- `apps/api` owns MVP/staging mediasoup lifecycle.
+- mediasoup remains process-local inside API/backend media runtime; this remains a production/multi-process blocker.
+- `MEDIA_SFU_LISTEN_IP`: bind/listen address, candidate shape `0.0.0.0` or reviewed interface bind.
+- `MEDIA_SFU_ANNOUNCED_ADDRESS`: staging reachable FQDN or public address held in private operator inventory.
+- `MEDIA_SFU_RTC_MIN_PORT`: `40000`
+- `MEDIA_SFU_RTC_MAX_PORT`: `40100`
+- do not proxy mediasoup RTC through Nginx.
+
+LiveKit rollback:
+- keep `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, and `NEXT_PUBLIC_LIVEKIT_URL` present without values.
+- rollback checks after staging deploy: `?mediaProvider=livekit`, `?livekit=true`, and `?sfu=false`.
+- missing LiveKit rollback remains a smoke blocker.
+
+Smoke readiness gates before any staging smoke run:
+- app/API health through localhost and Nginx
+- auth/session path using staging cookies/env only
+- LiveKit rollback query checks
+- mediasoup health endpoint
+- coturn credential/no-open-relay checks
+- direct private/channel media smoke only in the later run-report segment
+- TURN relay private/channel media smoke only in the later run-report segment
+- cleanup health only in the later run-report segment
+
 ## Staging Smoke Plan
 
 Status: `planning / documented`. This is the ordered smoke plan for a future staging or non-production run. It does not run smoke, does not fill real values, does not change runtime code, does not change real env/secrets, does not add infrastructure configs, and does not enable production SFU/TURN/default behavior.
@@ -995,7 +1119,7 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 - mediasoup process criteria are documented, but production mediasoup process ownership, restart policy, logs, and implementation are not complete
 - runtime env mapping exists, but concrete production values, owners, and secret rotation source are not filled
 - process/env readiness matrix exists, but required operator inputs are not filled
-- staging VPS bootstrap run report exists, but staging app/API/env/coturn setup is not prepared
+- staging VPS bootstrap run report exists, and staging app/API/env/coturn setup is planned but not executed
 - staging smoke plan exists, but staging smoke execution is blocked until staging env, app/API process, coturn process, logs/status commands, and LiveKit rollback checks exist
 - production monitoring/alerting is not implemented
 - LiveKit fallback removal is not approved
@@ -1003,7 +1127,8 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 ## Next Segments
 
 Recommended next:
-- `production-media-staging-env-setup-plan` after bootstrap readiness is confirmed, to plan staging app/API/media env without committing secret values
+- `production-media-staging-env-setup-run-report` after the operator fills non-secret presence/source decisions and confirms env/deploy setup inputs
+- `production-media-staging-deploy-run-report` only if the setup plan is treated as concrete enough to execute deploy in the next segment
 
 Acceptable alternative:
 - `production-media-staging-smoke-run-report` only if bootstrap is complete, operator inputs are filled, staging env exists, logs/status commands are available, and LiveKit rollback is verified
