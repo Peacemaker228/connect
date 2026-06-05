@@ -1001,6 +1001,7 @@ Current local prototype names remain local/dev compatibility fallbacks. Runtime 
 | mediasoup listen IP | `MEDIA_SFU_LISTEN_IP`, fallback `LOCAL_MEDIASOUP_LISTEN_IP` | Bind address for media workers/transports. Defaults to local loopback when unset. |
 | mediasoup announced IP/address | `MEDIA_SFU_ANNOUNCED_ADDRESS`, fallback `LOCAL_MEDIASOUP_ANNOUNCED_ADDRESS` | Public address clients can reach. Required when binding differs from public IP. |
 | mediasoup RTC range | `MEDIA_SFU_RTC_MIN_PORT` / `MEDIA_SFU_RTC_MAX_PORT` | Must align backend mediasoup transport config and firewall. Invalid ranges disable transport creation with a non-secret reason. |
+| staging/preprod SFU smoke gate | `MEDIA_ENABLE_STAGING_SFU` | Server-only explicit staging/preprod gate. Truthy values are `1`, `true`, `yes`. Does not enable production defaults and must not be `NEXT_PUBLIC`. |
 | coturn listener/relay range | `MEDIA_TURN_RELAY_MIN_PORT` / `MEDIA_TURN_RELAY_MAX_PORT`, fallback local relay range names for metadata only | Must align coturn config and firewall. Backend does not manage coturn relay allocation directly. |
 | API public URL | `NEXT_PUBLIC_API_URL`, optional `NEXT_PUBLIC_API_PORT`, optional `API_EXTERNAL_URL` | Must point browser to the production API origin. |
 | API internal URL | `API_INTERNAL_URL` | Used by server-side web utilities/middleware. |
@@ -1052,7 +1053,7 @@ This order is a rollout plan, not executed work.
    - verify cleanup returns active resources to zero after bounded convergence
    - verify restart/crash behavior is bounded and documented
 5. Enable non-production or staging first:
-   - use explicit gates
+   - use explicit gates, including `MEDIA_ENABLE_STAGING_SFU=1` only for staging/preprod SFU smoke when `NODE_ENV=production`
    - run direct and relay smokes
    - capture logs, health counters, and bandwidth notes
 6. Production canary only later:
@@ -1204,20 +1205,21 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 - runtime env mapping exists, but concrete production values, owners, and secret rotation source are not filled
 - process/env readiness matrix exists, but required operator inputs are not filled
 - staging VPS bootstrap run report exists, and staging app/API/env/coturn setup plus pre-smoke readiness checks are partially complete with redacted evidence
-- staging smoke plan exists, but staging smoke execution is blocked because mediasoup is disabled in production runtime on staging and no staging-safe SFU readiness path has been approved
+- staging-safe server-only SFU gate exists for staging/preprod smoke, but it is not yet deployed/restarted on the staging VPS
+- staging smoke plan exists, but staging smoke execution is blocked until the gate is deployed to staging, `MEDIA_ENABLE_STAGING_SFU=1` is set only in staging API server-local env, and authenticated mediasoup health is rerun
 - production monitoring/alerting is not implemented
 - LiveKit fallback removal is not approved
 
 ## Next Segments
 
 Recommended next:
-- `production-media-staging-smoke-readiness-decision` to resolve the staging-safe mediasoup runtime enablement decision before direct/TURN media smoke
+- `production-media-staging-pre-smoke-readiness-rerun` after deploying this gate to staging and setting `MEDIA_ENABLE_STAGING_SFU=1` only in staging API env
 
 Acceptable alternative:
-- `production-media-staging-smoke-run-report` only after the mediasoup runtime blocker is resolved or explicitly accepted with a narrower non-SFU smoke scope
+- `production-media-staging-smoke-run-report` only after authenticated mediasoup health passes on staging with the server-only gate and no production defaults
 
 Do not proceed next to:
-- staging direct/TURN media smoke while mediasoup health remains `disabled` in staging production runtime
+- staging direct/TURN media smoke before the staging API env includes `MEDIA_ENABLE_STAGING_SFU=1`, API is restarted, and authenticated mediasoup health is ready
 - production default switch
 - LiveKit removal
 - Stage 6 production Postgres cutover
