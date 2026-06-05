@@ -937,6 +937,15 @@ Done:
 - staging env/deploy setup plan is `pass / documented`
 - the plan covers staging repo path `/var/www/ax-connect-staging`, deploy ownership, staging branch/source strategy, PM2 process names `ax-connect-staging-web` and `ax-connect-staging-api`, candidate ports `3001` and `4000`, Nginx/TLS plan for `staging.ax-connect.ru`, env inventory without values, separate staging PostgreSQL decision/options, Docker-preferred coturn config plan, `MEDIA_TURN_*` / `MEDIA_SFU_*` mapping, LiveKit rollback env/checks, and smoke readiness gates
 - no VPS connection, deploy, real env creation, real IP/secret recording, PM2/Nginx/coturn/app start, migration, smoke, production change, LiveKit removal, production default, or Stage 6/Postgres production migration change was made
+- `production-media-staging-env-setup-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_172_PRODUCTION_MEDIA_STAGING_ENV_SETUP_RUN_REPORT.md`
+- staging env/deploy setup execution is `partial pass / redacted evidence recorded`
+- operator-guided staging setup completed repo checkout at the approved commit, server-local env files, Docker Postgres, app/API build, PM2 web/API, Nginx staging site, TLS for `staging.ax-connect.ru`, HTTPS API health, and coturn compose config without recording real IPs, passwords, private keys, env values, generated TURN secrets, cookies, auth headers, or database URLs
+- no coturn container, direct/TURN media smoke, LiveKit rollback query smoke, production change, production SFU/TURN/default, LiveKit removal, or Stage 6/Postgres production migration change was made
+- `production-media-staging-pre-smoke-readiness-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_173_PRODUCTION_MEDIA_STAGING_PRE_SMOKE_READINESS_RUN_REPORT.md`
+- staging pre-smoke readiness execution is `partial pass / blocked before media smoke`
+- operator-guided readiness work completed LiveKit rollback env presence, explicit Storage deferral for media-only pre-smoke, staging DB schema push to separate Docker Postgres, PM2 web/API restart, coturn Docker start/config correction, minimal no-open-relay checks, authenticated app/session, authenticated mediasoup health reachability, and LiveKit token-path check without recording secrets, cookies, auth headers, database URLs, or generated TURN credentials
+- authenticated mediasoup health is reachable but reports `disabled` because local mediasoup prototype is disabled in production runtime, so direct/TURN media smoke remains blocked
+- no direct/TURN media smoke, production change, production SFU/TURN/default, LiveKit removal, or Stage 6/Postgres production migration change was made
 
 Remaining:
 - process-local mediasoup/signaling state remains a production/multi-process blocker
@@ -946,9 +955,11 @@ Remaining:
 - no rollback drill has passed
 - env inventory template and runtime mapping exist, but concrete production values, owners, and secret source remain incomplete
 - process/env readiness matrix exists, but required operator inputs are not filled
-- staging VPS bootstrap/hardening/DNS verification is complete, and staging app/API/env/coturn setup is planned but not executed
-- staging env values, DB source, storage source, LiveKit rollback presence, coturn secret source, process config, Nginx site, and TLS are not filled/applied
-- staging smoke plan exists, but staging smoke execution is still blocked until staging env, app/API process, coturn process, logs/status commands, and LiveKit rollback verification exist
+- staging VPS bootstrap/hardening/DNS verification is complete, and staging app/API/Nginx/TLS setup plus pre-smoke readiness checks are partially executed with redacted evidence
+- staging DB source exists as Docker Postgres, and staging schema has been applied with `db push`; production DB remains untouched
+- staging LiveKit rollback env is present; Storage is explicitly deferred for media-only pre-smoke
+- staging coturn is running and minimal no-open-relay checks passed without printing credentials
+- staging smoke plan exists, but direct/TURN media smoke execution is still blocked because mediasoup health is authenticated/reachable but disabled in staging production runtime
 - coturn readiness criteria are documented, but production coturn is not deployed and systemd-vs-Docker implementation remains undecided
 - mediasoup process criteria are documented, but production mediasoup process ownership, restart policy, logs, and implementation remain incomplete
 - candidate mediasoup/coturn ranges are chosen but not implemented or load-proven
@@ -956,9 +967,8 @@ Remaining:
 - LiveKit removal remains blocked
 
 Next likely work:
-- `production-media-staging-env-setup-run-report` after the operator fills non-secret presence/source decisions and confirms env/deploy setup inputs
-- `production-media-staging-deploy-run-report` only if the setup plan is treated as concrete enough to execute deploy in the next segment
-- `production-media-staging-smoke-run-report` only if bootstrap is complete, staging deploy/env exists, coturn process exists, logs/status commands are available, and LiveKit rollback is verified
+- `production-media-staging-smoke-readiness-decision` to resolve the staging-safe mediasoup runtime enablement path before direct/TURN media smoke
+- `production-media-staging-smoke-run-report` only after the mediasoup runtime blocker is resolved or explicitly accepted with a narrower non-SFU smoke scope
 - do not proceed next to production rollout, production default switch, LiveKit removal, or Stage 6 production Postgres cutover
 
 ## Historical Notes

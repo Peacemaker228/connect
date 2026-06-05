@@ -82,22 +82,27 @@ Done:
 - `production-media-staging-env-setup-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_171_PRODUCTION_MEDIA_STAGING_ENV_SETUP_PLAN.md`.
 - staging env/deploy setup plan covers `/var/www/ax-connect-staging`, deploy-owned repo layout, PM2 process names `ax-connect-staging-web` and `ax-connect-staging-api`, web/API ports `3001` and `4000`, Nginx staging site/TLS plan for `staging.ax-connect.ru`, env inventory without values, separate staging PostgreSQL decision/options, Docker-preferred coturn config plan, `MEDIA_TURN_*` / `MEDIA_SFU_*` mapping, LiveKit rollback env/checks, and smoke readiness gates.
 - no VPS connection, deploy, real env creation, secret/IP recording, PM2/Nginx/coturn/app start, migration, smoke, production change, LiveKit removal, production default, or Stage 6/Postgres production migration change was made.
+- `production-media-staging-env-setup-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_172_PRODUCTION_MEDIA_STAGING_ENV_SETUP_RUN_REPORT.md`.
+- operator-guided staging setup on the separate staging VPS is `partial pass / redacted evidence recorded`: repo checkout at the approved commit, server-local env files, Docker Postgres, app/API build, PM2 web/API, Nginx staging site, TLS, HTTPS API health, and coturn compose config are complete without recording secret values.
+- remaining before staging smoke: staging DB schema/migrations are not run, LiveKit rollback env is missing, Storage env is missing, coturn container is not started, authenticated app/session and mediasoup health are not run, direct/TURN media smoke is not run, production remains untouched.
+- `production-media-staging-pre-smoke-readiness-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_173_PRODUCTION_MEDIA_STAGING_PRE_SMOKE_READINESS_RUN_REPORT.md`.
+- operator-guided staging pre-smoke readiness is `partial pass / blocked before media smoke`: LiveKit rollback env is present, Storage is explicitly deferred for media-only pre-smoke, staging DB schema was applied to separate Docker Postgres, PM2 web/API remained online after restart, coturn is running with config loaded, minimal no-open-relay checks passed, authenticated app/session passed, and LiveKit token path passed without recording secrets.
+- remaining before direct/TURN media smoke: authenticated mediasoup health is reachable but reports `disabled` because local mediasoup prototype is disabled in production runtime; direct/TURN media smoke was not run and must wait for a scoped staging-safe mediasoup runtime decision.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. `production-media-staging-env-setup-run-report`
-   - operator fills non-secret presence/source decisions and confirms staging env/deploy inputs without values
-2. `production-media-staging-deploy-run-report`
-   - execute the reviewed staging deploy only after env/source/process/Nginx/coturn inputs are ready
-3. `production-media-staging-smoke-run-report`
-   - run direct and relay smoke in staging/non-production
-4. `production-media-canary-readiness-decision`
+1. `production-media-staging-smoke-readiness-decision`
+   - decide the staging-safe mediasoup runtime enablement path before direct/TURN media smoke
+   - do not enable production defaults and do not remove LiveKit
+2. `production-media-staging-smoke-run-report`
+   - run direct and relay smoke in staging/non-production only after the mediasoup runtime blocker is resolved or explicitly accepted with a narrower scope
+3. `production-media-canary-readiness-decision`
    - decide whether a narrow production canary is allowed
-5. `production-media-rollback-drill-report`
+4. `production-media-rollback-drill-report`
    - prove LiveKit rollback/default switch before broader rollout
 
-Do not proceed directly to `production-media-staging-smoke-run-report` until staging env is created without committing secret values, app/API deploy is complete, coturn process/log/status commands exist, and LiveKit rollback remains verified.
+Do not proceed directly to production rollout, production default switch, LiveKit removal, or Stage 6 production Postgres cutover. Do not run direct/TURN staging media smoke while authenticated mediasoup health remains disabled in staging production runtime.
 
 ## Acceptance Criteria
 
@@ -113,6 +118,8 @@ Do not proceed directly to `production-media-staging-smoke-run-report` until sta
 - [PRODUCTION_MEDIA_INFRA_RUNBOOK.md](../runbooks/PRODUCTION_MEDIA_INFRA_RUNBOOK.md)
 - [MEDIA_MVP_IMPLEMENTATION_PLAN.md](./MEDIA_MVP_IMPLEMENTATION_PLAN.md)
 - [MEDIA_STACK_TECHNOLOGY_DECISION.md](./MEDIA_STACK_TECHNOLOGY_DECISION.md)
+- [SEGMENT_BRIEF_172_PRODUCTION_MEDIA_STAGING_ENV_SETUP_RUN_REPORT.md](../delegation/briefs/SEGMENT_BRIEF_172_PRODUCTION_MEDIA_STAGING_ENV_SETUP_RUN_REPORT.md)
+- [SEGMENT_BRIEF_173_PRODUCTION_MEDIA_STAGING_PRE_SMOKE_READINESS_RUN_REPORT.md](../delegation/briefs/SEGMENT_BRIEF_173_PRODUCTION_MEDIA_STAGING_PRE_SMOKE_READINESS_RUN_REPORT.md)
 - [STAGE_STATUS.md](../roadmap/STAGE_STATUS.md)
 - [SEGMENT_BRIEF_160_PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_160_PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN.md)
 - [SEGMENT_BRIEF_161_PRODUCTION_MEDIA_TOPOLOGY_DECISION.md](../delegation/briefs/SEGMENT_BRIEF_161_PRODUCTION_MEDIA_TOPOLOGY_DECISION.md)
