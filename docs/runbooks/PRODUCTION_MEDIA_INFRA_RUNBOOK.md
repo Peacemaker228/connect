@@ -830,6 +830,44 @@ Remaining blockers before staging smoke:
 - run authenticated app/session and mediasoup health checks using staging-only cookies/secrets.
 - run direct and TURN media smoke only in a later staging smoke run-report segment.
 
+## Staging Pre-Smoke Readiness Run Report
+
+Status: `partial pass / blocked before media smoke`. The separate staging VPS now has LiveKit rollback env presence, an explicit Storage deferral, staging Postgres schema applied to the separate Docker Postgres, restarted PM2 web/API processes, running Docker coturn, a passing minimal no-open-relay check, authenticated app/session evidence, and LiveKit token-path readiness. This section records only presence/status evidence and does not include real IPs, passwords, private keys, env values, database URLs, generated TURN credentials, cookies, auth headers, or LiveKit/Storage secrets.
+
+Run report:
+- `production-media-staging-pre-smoke-readiness-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_173_PRODUCTION_MEDIA_STAGING_PRE_SMOKE_READINESS_RUN_REPORT.md`.
+- LiveKit rollback env names are present in server-local web/API env files without values.
+- Storage upload env remains missing, with an operator-approved server-local deferral for media-only pre-smoke readiness.
+- `bun x prisma db push` applied the active schema to the separate staging Docker Postgres only; public table count is `10`.
+- PM2 web/API were rebuilt/restarted after env/schema changes and remained online.
+- HTTPS API health passed; HTTPS web returned the expected auth redirect.
+- coturn is running from Docker with an explicitly mounted config, listener `3478/udp+tcp`, relay range `49160-49240`, and no bad config-format warning.
+- minimal coturn allocation-auth checks passed: valid REST credentials allocated, no-auth and invalid credentials did not allocate, and credentials were not printed.
+- authenticated app/session check passed through the API.
+- authenticated mediasoup health returned HTTP `200`, but status is `disabled` because local mediasoup prototype is disabled in production runtime.
+- LiveKit token path returned HTTP `200` for a staging-only query, with token presence confirmed without printing the token.
+- direct/TURN media smoke was not run.
+- production VPS, production DB, production SFU/TURN/default gates, LiveKit removal, and Stage 6/Postgres production migration remained untouched.
+
+Pre-smoke readiness classification:
+- staging LiveKit rollback env: `pass / present`
+- storage gate: `deferred / accepted for media-only pre-smoke`
+- staging DB schema: `pass / separate Docker Postgres`
+- PM2 web/API: `pass / online after restart`
+- Nginx/HTTPS health: `pass`
+- coturn process: `pass / running`
+- coturn no-open-relay: `pass / minimal allocation-auth check`
+- authenticated app/session: `pass`
+- authenticated mediasoup health: `reachable but not ready`
+- LiveKit rollback token path: `pass`
+- staging direct/TURN media smoke: `blocked / not run`
+- production rollout/default: `blocked`
+
+Remaining blockers before direct/TURN media smoke:
+- mediasoup prototype is disabled in production runtime on staging; direct/TURN SFU smoke cannot proceed until a scoped staging-safe runtime decision or implementation enables mediasoup readiness without enabling production defaults.
+- web rollback query routes returned auth redirects in curl context; browser/operator route behavior should be checked if route-level UI evidence is required by the next segment.
+- Storage upload remains deferred; upload/storage smoke remains out of scope until separate staging storage env is filled or explicitly excluded.
+
 ## Staging Smoke Plan
 
 Status: `planning / documented`. This is the ordered smoke plan for a future staging or non-production run. It does not run smoke, does not fill real values, does not change runtime code, does not change real env/secrets, does not add infrastructure configs, and does not enable production SFU/TURN/default behavior.
@@ -1165,22 +1203,21 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 - mediasoup process criteria are documented, but production mediasoup process ownership, restart policy, logs, and implementation are not complete
 - runtime env mapping exists, but concrete production values, owners, and secret rotation source are not filled
 - process/env readiness matrix exists, but required operator inputs are not filled
-- staging VPS bootstrap run report exists, and staging app/API/env/coturn setup is planned but not executed
-- staging smoke plan exists, but staging smoke execution is blocked until staging env, app/API process, coturn process, logs/status commands, and LiveKit rollback checks exist
+- staging VPS bootstrap run report exists, and staging app/API/env/coturn setup plus pre-smoke readiness checks are partially complete with redacted evidence
+- staging smoke plan exists, but staging smoke execution is blocked because mediasoup is disabled in production runtime on staging and no staging-safe SFU readiness path has been approved
 - production monitoring/alerting is not implemented
 - LiveKit fallback removal is not approved
 
 ## Next Segments
 
 Recommended next:
-- `production-media-staging-env-setup-run-report` after the operator fills non-secret presence/source decisions and confirms env/deploy setup inputs
-- `production-media-staging-deploy-run-report` only if the setup plan is treated as concrete enough to execute deploy in the next segment
+- `production-media-staging-smoke-readiness-decision` to resolve the staging-safe mediasoup runtime enablement decision before direct/TURN media smoke
 
 Acceptable alternative:
-- `production-media-staging-smoke-run-report` only if bootstrap is complete, operator inputs are filled, staging env exists, logs/status commands are available, and LiveKit rollback is verified
+- `production-media-staging-smoke-run-report` only after the mediasoup runtime blocker is resolved or explicitly accepted with a narrower non-SFU smoke scope
 
 Do not proceed next to:
-- staging smoke run until staging bootstrap, env setup, required operator inputs, and rollback checks exist
+- staging direct/TURN media smoke while mediasoup health remains `disabled` in staging production runtime
 - production default switch
 - LiveKit removal
 - Stage 6 production Postgres cutover

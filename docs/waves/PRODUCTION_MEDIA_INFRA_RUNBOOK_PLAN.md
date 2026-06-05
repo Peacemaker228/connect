@@ -85,19 +85,24 @@ Done:
 - `production-media-staging-env-setup-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_172_PRODUCTION_MEDIA_STAGING_ENV_SETUP_RUN_REPORT.md`.
 - operator-guided staging setup on the separate staging VPS is `partial pass / redacted evidence recorded`: repo checkout at the approved commit, server-local env files, Docker Postgres, app/API build, PM2 web/API, Nginx staging site, TLS, HTTPS API health, and coturn compose config are complete without recording secret values.
 - remaining before staging smoke: staging DB schema/migrations are not run, LiveKit rollback env is missing, Storage env is missing, coturn container is not started, authenticated app/session and mediasoup health are not run, direct/TURN media smoke is not run, production remains untouched.
+- `production-media-staging-pre-smoke-readiness-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_173_PRODUCTION_MEDIA_STAGING_PRE_SMOKE_READINESS_RUN_REPORT.md`.
+- operator-guided staging pre-smoke readiness is `partial pass / blocked before media smoke`: LiveKit rollback env is present, Storage is explicitly deferred for media-only pre-smoke, staging DB schema was applied to separate Docker Postgres, PM2 web/API remained online after restart, coturn is running with config loaded, minimal no-open-relay checks passed, authenticated app/session passed, and LiveKit token path passed without recording secrets.
+- remaining before direct/TURN media smoke: authenticated mediasoup health is reachable but reports `disabled` because local mediasoup prototype is disabled in production runtime; direct/TURN media smoke was not run and must wait for a scoped staging-safe mediasoup runtime decision.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. `production-media-staging-smoke-run-report`
-   - first resolve staging-only LiveKit/Storage presence, DB schema path, coturn process start/no-open-relay checks, and authenticated app/media health gates
-   - run direct and relay smoke in staging/non-production
-2. `production-media-canary-readiness-decision`
+1. `production-media-staging-smoke-readiness-decision`
+   - decide the staging-safe mediasoup runtime enablement path before direct/TURN media smoke
+   - do not enable production defaults and do not remove LiveKit
+2. `production-media-staging-smoke-run-report`
+   - run direct and relay smoke in staging/non-production only after the mediasoup runtime blocker is resolved or explicitly accepted with a narrower scope
+3. `production-media-canary-readiness-decision`
    - decide whether a narrow production canary is allowed
-3. `production-media-rollback-drill-report`
+4. `production-media-rollback-drill-report`
    - prove LiveKit rollback/default switch before broader rollout
 
-Do not proceed directly to production rollout, production default switch, LiveKit removal, or Stage 6 production Postgres cutover. Do not run staging smoke until the remaining staging-only blockers from Segment 172 are resolved without committing secret values.
+Do not proceed directly to production rollout, production default switch, LiveKit removal, or Stage 6 production Postgres cutover. Do not run direct/TURN staging media smoke while authenticated mediasoup health remains disabled in staging production runtime.
 
 ## Acceptance Criteria
 
@@ -114,6 +119,7 @@ Do not proceed directly to production rollout, production default switch, LiveKi
 - [MEDIA_MVP_IMPLEMENTATION_PLAN.md](./MEDIA_MVP_IMPLEMENTATION_PLAN.md)
 - [MEDIA_STACK_TECHNOLOGY_DECISION.md](./MEDIA_STACK_TECHNOLOGY_DECISION.md)
 - [SEGMENT_BRIEF_172_PRODUCTION_MEDIA_STAGING_ENV_SETUP_RUN_REPORT.md](../delegation/briefs/SEGMENT_BRIEF_172_PRODUCTION_MEDIA_STAGING_ENV_SETUP_RUN_REPORT.md)
+- [SEGMENT_BRIEF_173_PRODUCTION_MEDIA_STAGING_PRE_SMOKE_READINESS_RUN_REPORT.md](../delegation/briefs/SEGMENT_BRIEF_173_PRODUCTION_MEDIA_STAGING_PRE_SMOKE_READINESS_RUN_REPORT.md)
 - [STAGE_STATUS.md](../roadmap/STAGE_STATUS.md)
 - [SEGMENT_BRIEF_160_PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_160_PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN.md)
 - [SEGMENT_BRIEF_161_PRODUCTION_MEDIA_TOPOLOGY_DECISION.md](../delegation/briefs/SEGMENT_BRIEF_161_PRODUCTION_MEDIA_TOPOLOGY_DECISION.md)

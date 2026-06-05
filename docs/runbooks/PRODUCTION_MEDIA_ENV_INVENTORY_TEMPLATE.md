@@ -287,8 +287,10 @@ Implementation remains blocked until these are resolved or explicitly accepted f
 - production env values, owners, and secret source are not filled
 - process-local mediasoup/signaling state remains a multi-process/multi-node blocker
 - no production-like soak has passed
-- staging VPS bootstrap/firewall baseline is complete, and staging app/API/Nginx/TLS setup is now partially executed with redacted evidence
-- staging env/deploy run is complete for app/API health, but LiveKit/Storage env, DB schema, coturn process start, and authenticated media checks remain blocked
+- staging VPS bootstrap/firewall baseline is complete, and staging app/API/Nginx/TLS setup plus pre-smoke readiness checks now have redacted evidence
+- staging LiveKit rollback env is present, staging DB schema is applied, coturn is running with a passing minimal no-open-relay check, and authenticated app/session passes
+- staging Storage is explicitly deferred for media-only pre-smoke readiness
+- staging mediasoup health is authenticated/reachable but not ready because the local mediasoup prototype is disabled in production runtime
 - coturn systemd-vs-Docker ownership remains undecided
 - candidate port ranges are not implemented or load-proven
 - no rollback drill has passed
@@ -299,13 +301,13 @@ Implementation remains blocked until these are resolved or explicitly accepted f
 ## Recommended Next Segment
 
 Recommended next:
-- `production-media-staging-smoke-run-report` only after the operator resolves staging-only LiveKit/Storage presence, DB schema path, coturn process start/no-open-relay checks, and authenticated app/media health gates
+- `production-media-staging-smoke-readiness-decision` to resolve the staging-safe mediasoup runtime enablement decision before direct/TURN media smoke
 
 Acceptable alternative:
-- pause and fill staging-only LiveKit, Storage, DB schema, and coturn process blockers without changing production
+- `production-media-staging-smoke-run-report` only after the mediasoup runtime blocker is resolved or explicitly accepted with a narrower non-SFU smoke scope
 
 Do not proceed next to:
-- staging smoke run without resolving Segment 172 blockers and rollback owner
+- staging direct/TURN media smoke while mediasoup health remains `disabled` in staging production runtime
 - production default switch
 - LiveKit removal
 - firewall implementation
