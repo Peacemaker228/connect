@@ -291,9 +291,9 @@ Implementation remains blocked until these are resolved or explicitly accepted f
 - process-local mediasoup/signaling state remains a multi-process/multi-node blocker
 - no production-like soak has passed
 - staging VPS bootstrap/firewall baseline is complete, and staging app/API/Nginx/TLS setup plus pre-smoke readiness checks now have redacted evidence
-- staging LiveKit rollback env is present, staging DB schema is applied, coturn is running with a passing minimal no-open-relay check, and authenticated app/session passes
+- staging LiveKit rollback env is present, staging DB schema is applied, coturn is running with a passing minimal no-open-relay check, authenticated app/session passes, and authenticated mediasoup health now reports ready after the staging-safe SFU gate rerun
 - staging Storage is explicitly deferred for media-only pre-smoke readiness
-- staging-safe server-only SFU gate exists, but staging must still deploy it, set `MEDIA_ENABLE_STAGING_SFU=1` only in staging API env, restart API, and rerun authenticated mediasoup health
+- staging-safe server-only SFU gate is deployed on staging and set only in staging API env; it must remain absent from browser/web env and must not be treated as production default approval
 - coturn systemd-vs-Docker ownership remains undecided
 - candidate port ranges are not implemented or load-proven
 - no rollback drill has passed
@@ -304,13 +304,9 @@ Implementation remains blocked until these are resolved or explicitly accepted f
 ## Recommended Next Segment
 
 Recommended next:
-- `production-media-staging-pre-smoke-readiness-rerun` after deploying this gate to staging and setting `MEDIA_ENABLE_STAGING_SFU=1` only in staging API env
-
-Acceptable alternative:
 - `production-media-staging-smoke-run-report` only after authenticated mediasoup health passes on staging with the server-only gate and no production defaults
 
 Do not proceed next to:
-- staging direct/TURN media smoke before the staging API env includes `MEDIA_ENABLE_STAGING_SFU=1`, API is restarted, and authenticated mediasoup health is ready
 - production default switch
 - LiveKit removal
 - firewall implementation

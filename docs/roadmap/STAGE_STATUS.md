@@ -950,6 +950,9 @@ Done:
 - `apps/api` now has server-only `MEDIA_ENABLE_STAGING_SFU` for staging/preprod SFU smoke under `NODE_ENV=production`; truthy values are `1`, `true`, and `yes`
 - mediasoup prototype health/transports/producers/consumers and local TURN credential issuance remain disabled in production runtime unless that server-only gate is explicitly enabled
 - no `NEXT_PUBLIC_*` default gate, production SFU default, LiveKit fallback removal, production VPS/env change, media smoke, or Stage 6/Postgres production migration change was made
+- `production-media-staging-pre-smoke-readiness-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_175_PRODUCTION_MEDIA_STAGING_PRE_SMOKE_READINESS_RERUN.md`
+- operator-guided staging rerun deployed commit `40dab370279a3d963c6e589201536bcfb65c09a9`, set `MEDIA_ENABLE_STAGING_SFU=1` only in staging API env, confirmed it absent from staging web env, restarted API, rebuilt the missing native mediasoup worker artifact, and reran readiness checks without printing secrets
+- authenticated mediasoup health on staging now passes with status `ready`, enabled `true`, worker/router present, staging SFU gate visible only as non-secret runtime metadata, coturn running, LiveKit token path passing, and direct/TURN media smoke still not run
 
 Remaining:
 - process-local mediasoup/signaling state remains a production/multi-process blocker
@@ -963,7 +966,7 @@ Remaining:
 - staging DB source exists as Docker Postgres, and staging schema has been applied with `db push`; production DB remains untouched
 - staging LiveKit rollback env is present; Storage is explicitly deferred for media-only pre-smoke
 - staging coturn is running and minimal no-open-relay checks passed without printing credentials
-- staging smoke plan exists, but direct/TURN media smoke execution is still blocked until the staging API deploy includes this gate, `MEDIA_ENABLE_STAGING_SFU=1` is set only in staging API server-local env, API is restarted, and authenticated mediasoup health is ready
+- staging smoke plan exists, and direct/TURN media smoke remains not run; it is now the next allowed staging-only run-report segment because authenticated mediasoup health is ready with the server-only gate
 - coturn readiness criteria are documented, but production coturn is not deployed and systemd-vs-Docker implementation remains undecided
 - mediasoup process criteria are documented, but production mediasoup process ownership, restart policy, logs, and implementation remain incomplete
 - candidate mediasoup/coturn ranges are chosen but not implemented or load-proven
@@ -971,8 +974,7 @@ Remaining:
 - LiveKit removal remains blocked
 
 Next likely work:
-- `production-media-staging-pre-smoke-readiness-rerun` to deploy the gate, set `MEDIA_ENABLE_STAGING_SFU=1` only in staging API env, restart API, and rerun authenticated mediasoup health
-- `production-media-staging-smoke-run-report` only after authenticated mediasoup health passes with the server-only gate and no production defaults
+- `production-media-staging-smoke-run-report` to run direct and relay smoke on staging/non-production only, with LiveKit fallback preserved and no production defaults
 - do not proceed next to production rollout, production default switch, LiveKit removal, or Stage 6 production Postgres cutover
 
 ## Historical Notes
