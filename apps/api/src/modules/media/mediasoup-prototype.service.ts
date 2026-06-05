@@ -235,8 +235,12 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     failedStateRejoinRecoveryCount: 0,
   };
 
+  private isPrototypeRuntimeEnabled() {
+    return this.mediaRuntimeConfigService.isLocalMediaPrototypeEnabled();
+  }
+
   async getHealth(): Promise<LocalMediasoupPrototypeHealth> {
-    if (process.env.NODE_ENV === 'production') {
+    if (!this.isPrototypeRuntimeEnabled()) {
       return {
         status: 'disabled',
         enabled: false,
@@ -285,7 +289,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
   }): Promise<LocalMediasoupTransportMetadata> {
     this.markSessionActive(scope);
 
-    if (process.env.NODE_ENV === 'production') {
+    if (!this.isPrototypeRuntimeEnabled()) {
       return {
         status: 'disabled',
         enabled: false,
@@ -404,7 +408,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
   }): Promise<LocalMediasoupTransportConnectResult> {
     this.markSessionActive(scope);
 
-    if (process.env.NODE_ENV === 'production') {
+    if (!this.isPrototypeRuntimeEnabled()) {
       return {
         status: 'disabled',
         enabled: false,
@@ -513,7 +517,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
   }): Promise<LocalMediasoupProducerMetadata> {
     this.markSessionActive(scope);
 
-    if (process.env.NODE_ENV === 'production') {
+    if (!this.isPrototypeRuntimeEnabled()) {
       return {
         status: 'disabled',
         enabled: false,
@@ -708,7 +712,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
   }): Promise<LocalMediasoupConsumerMetadata> {
     this.markSessionActive(scope);
 
-    if (process.env.NODE_ENV === 'production') {
+    if (!this.isPrototypeRuntimeEnabled()) {
       return {
         status: 'disabled',
         enabled: false,
@@ -880,7 +884,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
   }
 
   heartbeatSession(scope: LocalMediasoupSessionScope | undefined): LocalMediasoupHeartbeatResult {
-    if (process.env.NODE_ENV === 'production') {
+    if (!this.isPrototypeRuntimeEnabled()) {
       return {
         status: 'disabled',
         enabled: false,
@@ -918,7 +922,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     producerId: string | undefined;
     scope?: LocalMediasoupSessionScope;
   }): LocalMediasoupProducerMetadata {
-    if (process.env.NODE_ENV === 'production') {
+    if (!this.isPrototypeRuntimeEnabled()) {
       return {
         status: 'disabled',
         enabled: false,
@@ -991,7 +995,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     scope?: LocalMediasoupSessionScope;
     paused: boolean;
   }): Promise<LocalMediasoupProducerMetadata> {
-    if (process.env.NODE_ENV === 'production') {
+    if (!this.isPrototypeRuntimeEnabled()) {
       return {
         status: 'disabled',
         enabled: false,
@@ -1084,7 +1088,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     consumerId: string | undefined;
     scope?: LocalMediasoupSessionScope;
   }): LocalMediasoupConsumerMetadata {
-    if (process.env.NODE_ENV === 'production') {
+    if (!this.isPrototypeRuntimeEnabled()) {
       return {
         status: 'disabled',
         enabled: false,
@@ -1162,7 +1166,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     scope?: LocalMediasoupSessionScope;
     paused: boolean;
   }): Promise<LocalMediasoupConsumerMetadata> {
-    if (process.env.NODE_ENV === 'production') {
+    if (!this.isPrototypeRuntimeEnabled()) {
       return {
         status: 'disabled',
         enabled: false,
@@ -1266,7 +1270,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
   listProducers(scope: LocalMediasoupSessionScope | undefined): LocalMediasoupProducerDiscoveryResult {
     this.markSessionActive(scope);
 
-    if (process.env.NODE_ENV === 'production') {
+    if (!this.isPrototypeRuntimeEnabled()) {
       return {
         status: 'disabled',
         enabled: false,
@@ -1699,7 +1703,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
   }
 
   recordFailedStateRejoinRecovery(scope: LocalMediasoupSessionScope | undefined) {
-    if (process.env.NODE_ENV === 'production') {
+    if (!this.isPrototypeRuntimeEnabled()) {
       return;
     }
 
@@ -1907,7 +1911,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     counter: keyof LocalMediasoupObservabilityCounters,
     increment = 1,
   ) {
-    if (process.env.NODE_ENV === 'production') {
+    if (!this.isPrototypeRuntimeEnabled()) {
       return;
     }
 
@@ -1921,7 +1925,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
   }
 
   private markSessionActive(scope: LocalMediasoupSessionScope | undefined) {
-    if (!scope || process.env.NODE_ENV === 'production') {
+    if (!scope || !this.isPrototypeRuntimeEnabled()) {
       return Date.now();
     }
 
@@ -1954,7 +1958,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
   }
 
   private ensureStaleSessionSweeper() {
-    if (process.env.NODE_ENV === 'production' || this.staleSessionSweepTimer) {
+    if (!this.isPrototypeRuntimeEnabled() || this.staleSessionSweepTimer) {
       return;
     }
 
@@ -1967,7 +1971,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
   }
 
   private sweepStaleSessions(reason: LocalMediasoupCleanupResult['reason']) {
-    if (process.env.NODE_ENV === 'production') {
+    if (!this.isPrototypeRuntimeEnabled()) {
       return;
     }
 
@@ -2053,7 +2057,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
   }
 
   private logLifecycle(event: string, metadata: Record<string, unknown>) {
-    if (process.env.NODE_ENV === 'production') {
+    if (!this.isPrototypeRuntimeEnabled()) {
       return;
     }
 

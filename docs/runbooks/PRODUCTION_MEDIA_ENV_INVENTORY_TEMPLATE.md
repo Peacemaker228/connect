@@ -70,6 +70,7 @@ Required or candidate server-only items:
 | mediasoup announced address | `MEDIA_SFU_ANNOUNCED_ADDRESS` | `LOCAL_MEDIASOUP_ANNOUNCED_ADDRESS` | public reachable IP/FQDN placeholder | Must match the public media host address for single-host rollout. |
 | mediasoup RTC min port | `MEDIA_SFU_RTC_MIN_PORT` | n/a | `40000` candidate | Candidate range is `40000-40100/udp`. |
 | mediasoup RTC max port | `MEDIA_SFU_RTC_MAX_PORT` | n/a | `40100` candidate | No overlap with coturn relay range. |
+| staging/preprod SFU smoke gate | `MEDIA_ENABLE_STAGING_SFU` | n/a | boolean-like server-only value | Use only on staging/preprod when `NODE_ENV=production`. Truthy values are `1`, `true`, `yes`. Do not expose as `NEXT_PUBLIC`; do not use as production default approval. |
 | TURN URLs | `MEDIA_TURN_URLS` | `LOCAL_TURN_URLS` | `turn:<host>:3478?transport=udp,turn:<host>:3478?transport=tcp` placeholder | URLs may be returned through backend-issued credentials or an approved config path. |
 | coturn listener port | `MEDIA_TURN_LISTENER_PORT` | n/a | `3478/udp+tcp` candidate | Candidate listener is `3478` for UDP and TCP. |
 | coturn TLS listener port | `MEDIA_TURN_TLS_LISTENER_PORT` | n/a | `5349/tcp` deferred | Defer unless a later readiness segment proves it is required. |
@@ -144,6 +145,7 @@ Recommended naming direction implemented at the backend runtime config boundary:
 | `MEDIA_SFU_ANNOUNCED_ADDRESS` | `LOCAL_MEDIASOUP_ANNOUNCED_ADDRESS` | no | no | Public reachable address for ICE candidates. |
 | `MEDIA_SFU_RTC_MIN_PORT` | n/a | no | no | Candidate `40000`; used in mediasoup WebRTC transport `portRange` when paired with max. |
 | `MEDIA_SFU_RTC_MAX_PORT` | n/a | no | no | Candidate `40100`; invalid or reversed ranges disable transport creation with a non-secret reason. |
+| `MEDIA_ENABLE_STAGING_SFU` | n/a | no | no | Server-only staging/preprod smoke gate for `NODE_ENV=production`; truthy values are `1`, `true`, `yes`. Not a production default switch. |
 
 Alternative:
 - Keeping current `LOCAL_*` names in production would require an explicit approval segment and clear documentation explaining why local/prototype naming is acceptable in production.
@@ -165,6 +167,7 @@ Fill one row per env/config item before canary readiness review.
 | mediasoup announced address | `MEDIA_SFU_ANNOUNCED_ADDRESS` | `LOCAL_MEDIASOUP_ANNOUNCED_ADDRESS` | server-only | no | yes | no | TODO | no | TODO | TODO | Must be publicly reachable. |
 | mediasoup RTC min port | `MEDIA_SFU_RTC_MIN_PORT` | n/a | server-only | no | yes | no | TODO | no | TODO | TODO | Candidate `40000/udp`. |
 | mediasoup RTC max port | `MEDIA_SFU_RTC_MAX_PORT` | n/a | server-only | no | yes | no | TODO | no | TODO | TODO | Candidate `40100/udp`. |
+| Staging SFU enable gate | `MEDIA_ENABLE_STAGING_SFU` | n/a | server-only | no | staging only | no | operator | no | staging server-local API env only | authenticated mediasoup health after API restart | Set to `1` only on staging/preprod for smoke readiness; never use as production default approval. |
 | TURN URLs | `MEDIA_TURN_URLS` | `LOCAL_TURN_URLS` | server-only config, non-secret response component | no | yes | no | TODO | no | TODO | TODO | Use production host placeholder only in docs. |
 | TURN shared secret | `MEDIA_TURN_STATIC_AUTH_SECRET` | `LOCAL_TURN_STATIC_AUTH_SECRET` | server-only | yes | yes | no | TODO | yes | TODO | TODO | Store outside repo. |
 | TURN TTL | `MEDIA_TURN_TTL_SECONDS` | `LOCAL_TURN_TTL_SECONDS` | server-only | no | yes | no | TODO | no | TODO | TODO | Must be short-lived. |
@@ -290,7 +293,7 @@ Implementation remains blocked until these are resolved or explicitly accepted f
 - staging VPS bootstrap/firewall baseline is complete, and staging app/API/Nginx/TLS setup plus pre-smoke readiness checks now have redacted evidence
 - staging LiveKit rollback env is present, staging DB schema is applied, coturn is running with a passing minimal no-open-relay check, and authenticated app/session passes
 - staging Storage is explicitly deferred for media-only pre-smoke readiness
-- staging mediasoup health is authenticated/reachable but not ready because the local mediasoup prototype is disabled in production runtime
+- staging-safe server-only SFU gate exists, but staging must still deploy it, set `MEDIA_ENABLE_STAGING_SFU=1` only in staging API env, restart API, and rerun authenticated mediasoup health
 - coturn systemd-vs-Docker ownership remains undecided
 - candidate port ranges are not implemented or load-proven
 - no rollback drill has passed
@@ -301,13 +304,13 @@ Implementation remains blocked until these are resolved or explicitly accepted f
 ## Recommended Next Segment
 
 Recommended next:
-- `production-media-staging-smoke-readiness-decision` to resolve the staging-safe mediasoup runtime enablement decision before direct/TURN media smoke
+- `production-media-staging-pre-smoke-readiness-rerun` after deploying this gate to staging and setting `MEDIA_ENABLE_STAGING_SFU=1` only in staging API env
 
 Acceptable alternative:
-- `production-media-staging-smoke-run-report` only after the mediasoup runtime blocker is resolved or explicitly accepted with a narrower non-SFU smoke scope
+- `production-media-staging-smoke-run-report` only after authenticated mediasoup health passes on staging with the server-only gate and no production defaults
 
 Do not proceed next to:
-- staging direct/TURN media smoke while mediasoup health remains `disabled` in staging production runtime
+- staging direct/TURN media smoke before the staging API env includes `MEDIA_ENABLE_STAGING_SFU=1`, API is restarted, and authenticated mediasoup health is ready
 - production default switch
 - LiveKit removal
 - firewall implementation

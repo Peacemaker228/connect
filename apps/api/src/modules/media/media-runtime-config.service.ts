@@ -5,6 +5,7 @@ const DEFAULT_TURN_TTL_SECONDS = 600;
 const MIN_TURN_TTL_SECONDS = 60;
 const MAX_TURN_TTL_SECONDS = 3600;
 const DEFAULT_SFU_LISTEN_IP = '127.0.0.1';
+const STAGING_SFU_ENABLE_ENV = 'MEDIA_ENABLE_STAGING_SFU';
 
 type EnvReadResult = {
   value?: string;
@@ -36,6 +37,8 @@ export type MediaRuntimeConfigSnapshot = {
     announcedAddressConfigured: boolean;
     announcedAddressSource: string;
     rtcPortRange: MediaRuntimePortRangeSnapshot;
+    stagingSfuEnabled: boolean;
+    stagingSfuGateSource: string;
   };
 };
 
@@ -56,6 +59,14 @@ export type MediaRuntimeMediasoupListenInfoResult = {
 
 @Injectable()
 export class MediaRuntimeConfigService {
+  isLocalMediaPrototypeEnabled() {
+    return process.env.NODE_ENV !== 'production' || this.isStagingSfuEnabled();
+  }
+
+  isStagingSfuEnabled() {
+    return this.readBooleanEnv(STAGING_SFU_ENABLE_ENV);
+  }
+
   getTurnCredentialConfig(): MediaRuntimeTurnCredentialConfig {
     const urls = this.readPreferredEnv('MEDIA_TURN_URLS', 'LOCAL_TURN_URLS');
     const staticAuthSecret = this.readPreferredEnv(
@@ -144,6 +155,8 @@ export class MediaRuntimeConfigService {
         announcedAddressConfigured: Boolean(sfuConfig.announcedAddress),
         announcedAddressSource: sfuConfig.announcedAddressSource,
         rtcPortRange: sfuConfig.rtcPortRange,
+        stagingSfuEnabled: this.isStagingSfuEnabled(),
+        stagingSfuGateSource: STAGING_SFU_ENABLE_ENV,
       },
     };
   }
@@ -296,6 +309,12 @@ export class MediaRuntimeConfigService {
 
   private readTrimmedEnv(name: string) {
     return process.env[name]?.trim() || undefined;
+  }
+
+  private readBooleanEnv(name: string) {
+    const value = this.readTrimmedEnv(name)?.toLowerCase();
+
+    return value === '1' || value === 'true' || value === 'yes';
   }
 
   private isValidPort(value: number) {

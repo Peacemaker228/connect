@@ -146,6 +146,8 @@ export type MediaRuntimeConfigSnapshot = {
     announcedAddressConfigured: boolean
     announcedAddressSource: string
     rtcPortRange: MediaRuntimePortRangeSnapshot
+    stagingSfuEnabled: boolean
+    stagingSfuGateSource: string
   }
 }
 

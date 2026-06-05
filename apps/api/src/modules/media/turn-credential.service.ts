@@ -26,8 +26,12 @@ export class TurnCredentialService {
     const config = this.mediaRuntimeConfigService.getTurnCredentialConfig();
     const { urls, ttlSeconds } = config;
 
-    if (process.env.NODE_ENV === 'production') {
-      return this.createDisabledResponse(urls, ttlSeconds, 'Local TURN credentials are disabled in production runtime');
+    if (!this.mediaRuntimeConfigService.isLocalMediaPrototypeEnabled()) {
+      return this.createDisabledResponse(
+        urls,
+        ttlSeconds,
+        'Local TURN credentials are disabled in production runtime',
+      );
     }
 
     if (!profileId) {

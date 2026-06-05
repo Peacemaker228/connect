@@ -88,21 +88,23 @@ Done:
 - `production-media-staging-pre-smoke-readiness-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_173_PRODUCTION_MEDIA_STAGING_PRE_SMOKE_READINESS_RUN_REPORT.md`.
 - operator-guided staging pre-smoke readiness is `partial pass / blocked before media smoke`: LiveKit rollback env is present, Storage is explicitly deferred for media-only pre-smoke, staging DB schema was applied to separate Docker Postgres, PM2 web/API remained online after restart, coturn is running with config loaded, minimal no-open-relay checks passed, authenticated app/session passed, and LiveKit token path passed without recording secrets.
 - remaining before direct/TURN media smoke: authenticated mediasoup health is reachable but reports `disabled` because local mediasoup prototype is disabled in production runtime; direct/TURN media smoke was not run and must wait for a scoped staging-safe mediasoup runtime decision.
+- `staging-safe-media-sfu-enable-gate` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_174_STAGING_SAFE_MEDIA_SFU_ENABLE_GATE.md`.
+- `apps/api` now has a server-only staging/preprod gate, `MEDIA_ENABLE_STAGING_SFU`, that allows mediasoup prototype health/transports/producers/consumers under `NODE_ENV=production` only when explicitly set to `1`, `true`, or `yes`.
+- no `NEXT_PUBLIC_*` default gate, production SFU default, LiveKit removal, production env, production VPS change, media smoke, or Stage 6/Postgres production migration change was made.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. `production-media-staging-smoke-readiness-decision`
-   - decide the staging-safe mediasoup runtime enablement path before direct/TURN media smoke
-   - do not enable production defaults and do not remove LiveKit
+1. `production-media-staging-pre-smoke-readiness-rerun`
+   - deploy the staging-safe server gate, set `MEDIA_ENABLE_STAGING_SFU=1` only in staging API env, restart API, and rerun authenticated mediasoup health before media smoke
 2. `production-media-staging-smoke-run-report`
-   - run direct and relay smoke in staging/non-production only after the mediasoup runtime blocker is resolved or explicitly accepted with a narrower scope
+   - run direct and relay smoke in staging/non-production only after authenticated mediasoup health passes with the server-only gate and no production defaults
 3. `production-media-canary-readiness-decision`
    - decide whether a narrow production canary is allowed
 4. `production-media-rollback-drill-report`
    - prove LiveKit rollback/default switch before broader rollout
 
-Do not proceed directly to production rollout, production default switch, LiveKit removal, or Stage 6 production Postgres cutover. Do not run direct/TURN staging media smoke while authenticated mediasoup health remains disabled in staging production runtime.
+Do not proceed directly to production rollout, production default switch, LiveKit removal, or Stage 6 production Postgres cutover. Do not run direct/TURN staging media smoke until `MEDIA_ENABLE_STAGING_SFU=1` is set only on staging API env, API is restarted, and authenticated mediasoup health is ready.
 
 ## Acceptance Criteria
 
@@ -120,6 +122,7 @@ Do not proceed directly to production rollout, production default switch, LiveKi
 - [MEDIA_STACK_TECHNOLOGY_DECISION.md](./MEDIA_STACK_TECHNOLOGY_DECISION.md)
 - [SEGMENT_BRIEF_172_PRODUCTION_MEDIA_STAGING_ENV_SETUP_RUN_REPORT.md](../delegation/briefs/SEGMENT_BRIEF_172_PRODUCTION_MEDIA_STAGING_ENV_SETUP_RUN_REPORT.md)
 - [SEGMENT_BRIEF_173_PRODUCTION_MEDIA_STAGING_PRE_SMOKE_READINESS_RUN_REPORT.md](../delegation/briefs/SEGMENT_BRIEF_173_PRODUCTION_MEDIA_STAGING_PRE_SMOKE_READINESS_RUN_REPORT.md)
+- [SEGMENT_BRIEF_174_STAGING_SAFE_MEDIA_SFU_ENABLE_GATE.md](../delegation/briefs/SEGMENT_BRIEF_174_STAGING_SAFE_MEDIA_SFU_ENABLE_GATE.md)
 - [STAGE_STATUS.md](../roadmap/STAGE_STATUS.md)
 - [SEGMENT_BRIEF_160_PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN.md](../delegation/briefs/SEGMENT_BRIEF_160_PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN.md)
 - [SEGMENT_BRIEF_161_PRODUCTION_MEDIA_TOPOLOGY_DECISION.md](../delegation/briefs/SEGMENT_BRIEF_161_PRODUCTION_MEDIA_TOPOLOGY_DECISION.md)
