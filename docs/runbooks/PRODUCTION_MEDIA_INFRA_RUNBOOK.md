@@ -1244,14 +1244,15 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 - staging VPS bootstrap run report exists, and staging app/API/env/coturn setup plus pre-smoke readiness checks are complete enough for staging smoke entry with redacted evidence
 - staging-safe server-only SFU gate is deployed on staging, enabled only in staging API env, and authenticated mediasoup health now reports ready
 - staging smoke preflight passed on staging, but staging direct/TURN media smoke was not run because production-built web SFU entrypoints are still client/page production-guarded; a staging-safe web/client smoke gate is required first
-- staging-safe web/client SFU smoke gate is now implemented for production-built staging web through `NEXT_PUBLIC_MEDIA_ENABLE_STAGING_SFU_SMOKE`; it still requires staging deployment, web env update, web rebuild, and rerun before smoke evidence exists
+- staging-safe web/client SFU smoke gate was deployed to staging through `NEXT_PUBLIC_MEDIA_ENABLE_STAGING_SFU_SMOKE=1` in staging web env only; web was rebuilt and restarted
+- staging smoke rerun produced a partial pass: harness direct SFU passed, harness TURN failed because the remote track stayed muted after consume, and post-failure mediasoup cleanup did not converge to zero
 - production monitoring/alerting is not implemented
 - LiveKit fallback removal is not approved
 
 ## Next Segments
 
 Recommended next:
-- `production-media-staging-smoke-run-report-rerun` only after the staging web env has `NEXT_PUBLIC_MEDIA_ENABLE_STAGING_SFU_SMOKE=1`, the web bundle is rebuilt, API/web health pass, and no production defaults are enabled
+- focused fix segment for staging TURN relay consume and cleanup convergence before rerunning full staging smoke
 
 Do not proceed next to:
 - production default switch
