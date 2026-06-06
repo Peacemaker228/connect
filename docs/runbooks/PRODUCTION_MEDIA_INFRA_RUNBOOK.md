@@ -13,6 +13,7 @@ Current status:
 - `apps/api` recognizes the proposed `MEDIA_*` runtime names for TURN credentials and mediasoup listen/announced/RTC range config, with current `LOCAL_*` names preserved as local/dev fallbacks.
 - Production media readiness remains blocked by process-local mediasoup/signaling state, missing production SFU/TURN infrastructure, missing production firewall/process implementation, missing production-like soak, and missing rollback drill.
 - LiveKit fallback remains required until a later scoped removal decision.
+- Staging browser SFU smoke now requires two explicit staging-only gates: server-only `MEDIA_ENABLE_STAGING_SFU` for `apps/api`, and public build-time `NEXT_PUBLIC_MEDIA_ENABLE_STAGING_SFU_SMOKE` for the production-built staging web.
 
 ## Non-Goals
 
@@ -1030,6 +1031,7 @@ Current local prototype names remain local/dev compatibility fallbacks. Runtime 
 | Group | Variables / decision | Notes |
 | --- | --- | --- |
 | Media provider/default gates | `NEXT_PUBLIC_MEDIA_CHANNEL_AUDIO_SFU_DEFAULT_CANDIDATE`, `NEXT_PUBLIC_MEDIA_CHANNEL_AUDIO_SFU_PRODUCT_DEFAULT_PILOT`, `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_DEFAULT_CANDIDATE`, `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_PRODUCT_DEFAULT_PILOT`, `NEXT_PUBLIC_MEDIA_PRIVATE_SFU_DEFAULT_CANDIDATE`, plus any future production default switch | Current gates are non-production/default-candidate oriented. Production enablement needs an explicit canary/default decision and rebuild rules for `NEXT_PUBLIC_*`. |
+| Staging web SFU smoke gate | `NEXT_PUBLIC_MEDIA_ENABLE_STAGING_SFU_SMOKE` | Public build-time staging/preprod-only smoke gate for explicit browser SFU paths on production-built staging web. Truthy values are `1`, `true`, `yes`; default is off; not a production default switch. |
 | TURN URLs | `MEDIA_TURN_URLS`, fallback `LOCAL_TURN_URLS` | Browser receives URLs only through backend-issued credential response or approved config path. |
 | TURN shared secret | `MEDIA_TURN_STATIC_AUTH_SECRET`, fallback `LOCAL_TURN_STATIC_AUTH_SECRET` | Secret is server-side only and must match coturn auth config. Secret values are not exposed in health/debug output. |
 | TURN TTL | `MEDIA_TURN_TTL_SECONDS`, fallback `LOCAL_TURN_TTL_SECONDS` | Clamped to the current safe TTL range. |
@@ -1242,13 +1244,14 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 - staging VPS bootstrap run report exists, and staging app/API/env/coturn setup plus pre-smoke readiness checks are complete enough for staging smoke entry with redacted evidence
 - staging-safe server-only SFU gate is deployed on staging, enabled only in staging API env, and authenticated mediasoup health now reports ready
 - staging smoke preflight passed on staging, but staging direct/TURN media smoke was not run because production-built web SFU entrypoints are still client/page production-guarded; a staging-safe web/client smoke gate is required first
+- staging-safe web/client SFU smoke gate is now implemented for production-built staging web through `NEXT_PUBLIC_MEDIA_ENABLE_STAGING_SFU_SMOKE`; it still requires staging deployment, web env update, web rebuild, and rerun before smoke evidence exists
 - production monitoring/alerting is not implemented
 - LiveKit fallback removal is not approved
 
 ## Next Segments
 
 Recommended next:
-- `staging-safe-web-sfu-smoke-gate` to open explicit browser SFU smoke paths only for staging/preprod without enabling production defaults
+- `production-media-staging-smoke-run-report-rerun` only after the staging web env has `NEXT_PUBLIC_MEDIA_ENABLE_STAGING_SFU_SMOKE=1`, the web bundle is rebuilt, API/web health pass, and no production defaults are enabled
 
 Do not proceed next to:
 - production default switch

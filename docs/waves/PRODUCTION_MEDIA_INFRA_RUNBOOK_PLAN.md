@@ -97,17 +97,18 @@ Done:
 - `production-media-staging-smoke-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_176_PRODUCTION_MEDIA_STAGING_SMOKE_RUN_REPORT.md`.
 - staging smoke preflight passed, but full browser media smoke was blocked before start because the production-built staging web still keeps `/media/sfu-smoke` and explicit browser SFU query paths behind client/page production guards.
 - no direct/TURN media smoke ran, no production env/default changed, and LiveKit fallback remains preserved.
+- `staging-safe-web-sfu-smoke-gate` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_177_STAGING_SAFE_WEB_SFU_SMOKE_GATE.md`.
+- the production-built staging web now has a public build-time staging/preprod-only smoke gate, `NEXT_PUBLIC_MEDIA_ENABLE_STAGING_SFU_SMOKE`, that allows `/media/sfu-smoke` and explicit SFU query paths without enabling production defaults.
+- the server-only backend gate remains `MEDIA_ENABLE_STAGING_SFU`; both gates are required on staging for browser SFU smoke, and neither is production default approval.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. `staging-safe-web-sfu-smoke-gate`
-   - add a scoped staging/preprod browser smoke gate before retrying full browser SFU smoke
-2. `production-media-staging-smoke-run-report-rerun`
+1. `production-media-staging-smoke-run-report-rerun`
    - run direct and relay smoke in staging/non-production only after both server and web staging smoke gates are explicitly enabled on staging and no production defaults are enabled
-3. `production-media-canary-readiness-decision`
+2. `production-media-canary-readiness-decision`
    - decide whether a narrow production canary is allowed
-4. `production-media-rollback-drill-report`
+3. `production-media-rollback-drill-report`
    - prove LiveKit rollback/default switch before broader rollout
 
 Do not proceed directly to production rollout, production default switch, LiveKit removal, or Stage 6 production Postgres cutover. Direct/TURN staging media smoke is allowed only in the next scoped staging smoke run-report segment and must stay non-production with LiveKit fallback preserved.

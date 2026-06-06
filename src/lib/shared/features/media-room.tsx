@@ -13,6 +13,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { LiveKitClientAdapter } from './media/livekit-client-adapter'
 import type { MediaRoomEntry } from './media/media-room-entry'
 import { SfuPrivateCallAdapter } from './media/sfu-private-call-adapter'
+import { isStagingSfuSmokeGateEnabled } from './media/staging-sfu-smoke-gate'
 import { useMediaRoomController } from './media/use-media-room-controller'
 
 interface IMediaRoomProps {
@@ -42,6 +43,7 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
       displayName: profile?.name ? name : null,
     })
   const isNonProductionRuntime = process.env.NODE_ENV !== 'production'
+  const isStagingSfuSmokeGateOpen = isStagingSfuSmokeGateEnabled()
   const isLiveKitProviderRequested =
     searchParams?.get('mediaProvider') === 'livekit' ||
     searchParams?.get('livekit') === 'true' ||
@@ -116,7 +118,7 @@ export const MediaRoom: FC<IMediaRoomProps> = ({ audio, video, mediaEntry, leave
       isChannelVideoSfuProductDefaultPilotRequested)
   const isSfuGateRequested =
     isPrivateSfuGateRequested || isChannelAudioSfuGateRequested || isChannelVideoSfuGateRequested
-  const isSfuGateOpen = isSfuGateRequested && isNonProductionRuntime
+  const isSfuGateOpen = isSfuGateRequested && (isNonProductionRuntime || isStagingSfuSmokeGateOpen)
   const sfuSimulateMissingCamera = searchParams?.get('sfuSimulateMissingCamera') === 'true'
   const sfuSimulateFailedStateAfterOfflineRestore =
     isNonProductionRuntime && searchParams?.get('sfuSimulateFailedAfterOfflineRestore') === 'true'
