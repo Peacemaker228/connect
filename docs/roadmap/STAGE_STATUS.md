@@ -953,6 +953,9 @@ Done:
 - `production-media-staging-pre-smoke-readiness-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_175_PRODUCTION_MEDIA_STAGING_PRE_SMOKE_READINESS_RERUN.md`
 - operator-guided staging rerun deployed commit `40dab370279a3d963c6e589201536bcfb65c09a9`, set `MEDIA_ENABLE_STAGING_SFU=1` only in staging API env, confirmed it absent from staging web env, restarted API, rebuilt the missing native mediasoup worker artifact, and reran readiness checks without printing secrets
 - authenticated mediasoup health on staging now passes with status `ready`, enabled `true`, worker/router present, staging SFU gate visible only as non-secret runtime metadata, coturn running, LiveKit token path passing, and direct/TURN media smoke still not run
+- `production-media-staging-smoke-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_176_PRODUCTION_MEDIA_STAGING_SMOKE_RUN_REPORT.md`
+- staging smoke preflight passed, including authenticated app/session, authenticated mediasoup health, coturn running, worker artifact presence, and LiveKit token path, but full browser smoke was blocked before start because production-built staging web still keeps `/media/sfu-smoke` and explicit browser SFU query paths behind client/page production guards
+- no direct/TURN media smoke ran, no production env/default changed, and LiveKit fallback remains preserved
 
 Remaining:
 - process-local mediasoup/signaling state remains a production/multi-process blocker
@@ -966,7 +969,7 @@ Remaining:
 - staging DB source exists as Docker Postgres, and staging schema has been applied with `db push`; production DB remains untouched
 - staging LiveKit rollback env is present; Storage is explicitly deferred for media-only pre-smoke
 - staging coturn is running and minimal no-open-relay checks passed without printing credentials
-- staging smoke plan exists, and direct/TURN media smoke remains not run; it is now the next allowed staging-only run-report segment because authenticated mediasoup health is ready with the server-only gate
+- staging smoke plan exists, and direct/TURN media smoke remains not run; it is blocked until a staging-safe web/client SFU smoke gate exists for the production-built staging web
 - coturn readiness criteria are documented, but production coturn is not deployed and systemd-vs-Docker implementation remains undecided
 - mediasoup process criteria are documented, but production mediasoup process ownership, restart policy, logs, and implementation remain incomplete
 - candidate mediasoup/coturn ranges are chosen but not implemented or load-proven
@@ -974,7 +977,7 @@ Remaining:
 - LiveKit removal remains blocked
 
 Next likely work:
-- `production-media-staging-smoke-run-report` to run direct and relay smoke on staging/non-production only, with LiveKit fallback preserved and no production defaults
+- `staging-safe-web-sfu-smoke-gate` to open explicit staging browser SFU smoke paths without enabling production defaults, followed by `production-media-staging-smoke-run-report-rerun`
 - do not proceed next to production rollout, production default switch, LiveKit removal, or Stage 6 production Postgres cutover
 
 ## Historical Notes

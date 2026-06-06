@@ -1241,14 +1241,14 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 - process/env readiness matrix exists, but required operator inputs are not filled
 - staging VPS bootstrap run report exists, and staging app/API/env/coturn setup plus pre-smoke readiness checks are complete enough for staging smoke entry with redacted evidence
 - staging-safe server-only SFU gate is deployed on staging, enabled only in staging API env, and authenticated mediasoup health now reports ready
-- staging smoke plan exists, but staging direct/TURN media smoke has not run yet
+- staging smoke preflight passed on staging, but staging direct/TURN media smoke was not run because production-built web SFU entrypoints are still client/page production-guarded; a staging-safe web/client smoke gate is required first
 - production monitoring/alerting is not implemented
 - LiveKit fallback removal is not approved
 
 ## Next Segments
 
 Recommended next:
-- `production-media-staging-smoke-run-report` only after authenticated mediasoup health passes on staging with the server-only gate and no production defaults
+- `staging-safe-web-sfu-smoke-gate` to open explicit browser SFU smoke paths only for staging/preprod without enabling production defaults
 
 Do not proceed next to:
 - production default switch

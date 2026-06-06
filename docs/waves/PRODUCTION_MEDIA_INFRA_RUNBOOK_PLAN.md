@@ -94,15 +94,20 @@ Done:
 - `production-media-staging-pre-smoke-readiness-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_175_PRODUCTION_MEDIA_STAGING_PRE_SMOKE_READINESS_RERUN.md`.
 - the merged Segment 174 code was deployed to the separate staging VPS at commit `40dab370279a3d963c6e589201536bcfb65c09a9`; `MEDIA_ENABLE_STAGING_SFU=1` was added only to staging API env, confirmed absent from staging web env, and API was restarted.
 - the missing native mediasoup worker artifact was rebuilt on staging; authenticated mediasoup health then passed with status `ready`, enabled `true`, worker/router present, staging gate visible as non-secret runtime metadata, coturn running, LiveKit token path passing, and no direct/TURN media smoke run.
+- `production-media-staging-smoke-run-report` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_176_PRODUCTION_MEDIA_STAGING_SMOKE_RUN_REPORT.md`.
+- staging smoke preflight passed, but full browser media smoke was blocked before start because the production-built staging web still keeps `/media/sfu-smoke` and explicit browser SFU query paths behind client/page production guards.
+- no direct/TURN media smoke ran, no production env/default changed, and LiveKit fallback remains preserved.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. `production-media-staging-smoke-run-report`
-   - run direct and relay smoke in staging/non-production only after authenticated mediasoup health passes with the server-only gate and no production defaults
-2. `production-media-canary-readiness-decision`
+1. `staging-safe-web-sfu-smoke-gate`
+   - add a scoped staging/preprod browser smoke gate before retrying full browser SFU smoke
+2. `production-media-staging-smoke-run-report-rerun`
+   - run direct and relay smoke in staging/non-production only after both server and web staging smoke gates are explicitly enabled on staging and no production defaults are enabled
+3. `production-media-canary-readiness-decision`
    - decide whether a narrow production canary is allowed
-3. `production-media-rollback-drill-report`
+4. `production-media-rollback-drill-report`
    - prove LiveKit rollback/default switch before broader rollout
 
 Do not proceed directly to production rollout, production default switch, LiveKit removal, or Stage 6 production Postgres cutover. Direct/TURN staging media smoke is allowed only in the next scoped staging smoke run-report segment and must stay non-production with LiveKit fallback preserved.
