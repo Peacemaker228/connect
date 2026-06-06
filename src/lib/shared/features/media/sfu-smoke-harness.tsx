@@ -26,6 +26,8 @@ type SmokeSummary = {
   producerId?: string
   consumerId?: string
   remoteTrackState?: MediaStreamTrackState
+  cleanupStatus?: 'pass' | 'fail'
+  cleanupDetail?: string
   detail?: string
 }
 
@@ -65,6 +67,44 @@ const waitForRemoteTrackFlow = async (track: MediaStreamTrack) => {
   })
 }
 
+const getActiveMediaResourceCount = async () => {
+  const health = await getMediasoupPrototypeHealth()
+
+  return {
+    status: health.status,
+    enabled: health.enabled,
+    activeRoomCount: health.activeRoomCount ?? 0,
+    activeTransportCount: health.activeTransportCount ?? 0,
+    activeProducerCount: health.activeProducerCount ?? 0,
+    activeConsumerCount: health.activeConsumerCount ?? 0,
+  }
+}
+
+const toCleanupDetail = (counts: Awaited<ReturnType<typeof getActiveMediaResourceCount>>) =>
+  `rooms=${counts.activeRoomCount} transports=${counts.activeTransportCount} producers=${counts.activeProducerCount} consumers=${counts.activeConsumerCount}`
+
+const waitForCleanupConvergence = async () => {
+  let latest = await getActiveMediaResourceCount()
+
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    if (
+      latest.enabled &&
+      latest.status === 'ready' &&
+      latest.activeRoomCount === 0 &&
+      latest.activeTransportCount === 0 &&
+      latest.activeProducerCount === 0 &&
+      latest.activeConsumerCount === 0
+    ) {
+      return toCleanupDetail(latest)
+    }
+
+    await new Promise((resolve) => window.setTimeout(resolve, 500))
+    latest = await getActiveMediaResourceCount()
+  }
+
+  throw new Error(`Cleanup did not converge: ${toCleanupDetail(latest)}`)
+}
+
 export const SfuSmokeHarness = () => {
   const adapterRef = useRef<SfuClientAdapter | null>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
@@ -87,9 +127,12 @@ export const SfuSmokeHarness = () => {
     ])
   }, [])
 
-  const cleanup = useCallback(() => {
-    adapterRef.current?.close()
+  const cleanup = useCallback(async (verifyConvergence = false) => {
+    const adapter = adapterRef.current
+
     adapterRef.current = null
+
+    await adapter?.close()
 
     localTrackRef.current?.stop()
     localTrackRef.current = null
@@ -108,9 +151,71 @@ export const SfuSmokeHarness = () => {
       remoteAudioRef.current.pause()
       remoteAudioRef.current.srcObject = null
     }
+
+    if (!verifyConvergence) {
+      return undefined
+    }
+
+    return waitForCleanupConvergence()
   }, [])
 
-  useEffect(() => cleanup, [cleanup])
+  useEffect(
+    () => () => {
+      void cleanup(false)
+    },
+    [cleanup],
+  )
+
+  const runCleanupAction = useCallback(
+    async ({ reset }: { reset: boolean }) => {
+      setStatus('running')
+
+      if (reset) {
+        setLogs([])
+        setSummary(null)
+      }
+
+      addLog('cleanup', 'running')
+
+      try {
+        const detail = await cleanup(true)
+
+        addLog('cleanup', 'pass', detail)
+        setStatus('idle')
+        setSummary((current) =>
+          current
+            ? {
+                ...current,
+                cleanupStatus: 'pass',
+                cleanupDetail: detail,
+              }
+            : current,
+        )
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : 'Unknown cleanup failure'
+
+        addLog('cleanup', 'fail', detail)
+        setStatus('fail')
+        setSummary((current) =>
+          current
+            ? {
+                ...current,
+                status: 'fail',
+                cleanupStatus: 'fail',
+                cleanupDetail: detail,
+              }
+            : {
+                mode: 'direct',
+                status: 'fail',
+                cleanupStatus: 'fail',
+                cleanupDetail: detail,
+                detail,
+              },
+        )
+      }
+    },
+    [addLog, cleanup],
+  )
 
   const createSyntheticAudioTrack = async () => {
     const audioContext = new AudioContext()
@@ -154,7 +259,7 @@ export const SfuSmokeHarness = () => {
 
   const runSmoke = useCallback(
     async (mode: SmokeMode) => {
-      cleanup()
+      await cleanup(false)
       setLogs([])
       setSummary(null)
       setStatus('running')
@@ -208,6 +313,10 @@ export const SfuSmokeHarness = () => {
         producerId = produced.backendProducer.producerId
         addLog('produce local track', 'pass', producerId)
 
+        addLog('send transport connected', 'running')
+        await adapter.waitForTransportConnected(sendTransportId)
+        addLog('send transport connected', 'pass')
+
         if (!producerId) {
           throw new Error('Backend producer id is missing')
         }
@@ -224,6 +333,10 @@ export const SfuSmokeHarness = () => {
         const consumed = await adapter.consume(consumerMetadata, {
           transportId: recvTransportId,
         })
+
+        addLog('recv transport connected', 'running')
+        await adapter.waitForTransportConnected(recvTransportId)
+        addLog('recv transport connected', 'pass')
 
         if (remoteAudioRef.current) {
           remoteAudioRef.current.srcObject = new MediaStream([consumed.track])
@@ -299,10 +412,7 @@ export const SfuSmokeHarness = () => {
               size="icon"
               variant="outline"
               aria-label="Stop"
-              onClick={() => {
-                cleanup()
-                setStatus('idle')
-              }}
+              onClick={() => void runCleanupAction({ reset: false })}
               disabled={status === 'idle'}
             >
               <Square className="h-4 w-4" />
@@ -312,12 +422,7 @@ export const SfuSmokeHarness = () => {
               size="icon"
               variant="outline"
               aria-label="Reset"
-              onClick={() => {
-                cleanup()
-                setStatus('idle')
-                setLogs([])
-                setSummary(null)
-              }}
+              onClick={() => void runCleanupAction({ reset: true })}
               disabled={status === 'running'}
             >
               <RotateCcw className="h-4 w-4" />
@@ -376,8 +481,15 @@ export const SfuSmokeHarness = () => {
                 <dt>Track</dt>
                 <dd>{summary?.remoteTrackState ?? '-'}</dd>
               </div>
+              <div className="flex justify-between gap-4">
+                <dt>Cleanup</dt>
+                <dd>{summary?.cleanupStatus ?? '-'}</dd>
+              </div>
             </dl>
             {summary?.detail ? <p className="mt-4 text-xs text-red-500">{summary.detail}</p> : null}
+            {summary?.cleanupDetail ? (
+              <p className="mt-2 text-xs text-zinc-500">{summary.cleanupDetail}</p>
+            ) : null}
           </div>
         </div>
 

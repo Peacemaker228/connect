@@ -26,6 +26,7 @@ import {
   LocalMediasoupPrototypeHealth,
   LocalMediasoupSessionScope,
   LocalMediasoupTransportConnectResult,
+  LocalMediasoupTransportCloseResult,
   LocalMediasoupTransportMetadata,
   MediasoupPrototypeService,
 } from './mediasoup-prototype.service';
@@ -104,6 +105,11 @@ type CreateMediasoupTransportBody = {
 
 type ConnectMediasoupTransportBody = {
   dtlsParameters?: mediasoupTypes.DtlsParameters;
+  roomId?: string;
+  participantSessionId?: string;
+};
+
+type CloseMediasoupTransportBody = {
   roomId?: string;
   participantSessionId?: string;
 };
@@ -373,6 +379,21 @@ export class MediaController {
       transportId,
       scope,
       dtlsParameters: body?.dtlsParameters,
+    });
+  }
+
+  @Post('prototype/mediasoup/transports/:transportId/close')
+  @UseGuards(RequireAuthGuard)
+  closeMediasoupPrototypeTransport(
+    @CurrentProfileId() profileId: string | undefined,
+    @Param('transportId') transportId: string | undefined,
+    @Body() body: CloseMediasoupTransportBody | undefined,
+  ): LocalMediasoupTransportCloseResult {
+    const scope = this.resolvePrototypeSessionScope(profileId, body);
+
+    return this.mediasoupPrototypeService.closeWebRtcTransport({
+      transportId,
+      scope,
     });
   }
 

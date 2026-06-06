@@ -240,6 +240,27 @@ export type MediasoupPrototypeTransportConnectResponse = {
   reason?: string
 }
 
+export type CloseMediasoupPrototypeTransportRequest = {
+  roomId?: string
+  participantSessionId?: string
+}
+
+export type MediasoupPrototypeTransportCloseResponse = {
+  status: MediasoupPrototypeStatus
+  enabled: boolean
+  transportId?: string
+  roomId?: string
+  participantSessionId?: string
+  closedTransportCount?: number
+  closedProducerCount?: number
+  closedConsumerCount?: number
+  activeTransportCount?: number
+  activeProducerCount?: number
+  activeConsumerCount?: number
+  activeRoomCount?: number
+  reason?: string
+}
+
 export type MediasoupPrototypeMediaKind = 'audio' | 'video'
 
 export type ProduceMediasoupPrototypeRequest = {
@@ -760,6 +781,15 @@ export const connectMediasoupPrototypeTransport = async (
 ) =>
   postMediaCommand<MediasoupPrototypeTransportConnectResponse, ConnectMediasoupPrototypeTransportRequest>(
     `${MEDIA_CONTROL_PATHS.mediasoupPrototypeTransports}/${transportId}/connect`,
+    payload,
+  )
+
+export const closeMediasoupPrototypeTransport = async (
+  transportId: string,
+  payload: CloseMediasoupPrototypeTransportRequest,
+) =>
+  postMediaCommand<MediasoupPrototypeTransportCloseResponse, CloseMediasoupPrototypeTransportRequest>(
+    `${MEDIA_CONTROL_PATHS.mediasoupPrototypeTransports}/${transportId}/close`,
     payload,
   )
 

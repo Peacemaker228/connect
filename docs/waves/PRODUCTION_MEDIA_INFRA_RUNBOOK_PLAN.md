@@ -100,15 +100,23 @@ Done:
 - `staging-safe-web-sfu-smoke-gate` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_177_STAGING_SAFE_WEB_SFU_SMOKE_GATE.md`.
 - the production-built staging web now has a public build-time staging/preprod-only smoke gate, `NEXT_PUBLIC_MEDIA_ENABLE_STAGING_SFU_SMOKE`, that allows `/media/sfu-smoke` and explicit SFU query paths without enabling production defaults.
 - the server-only backend gate remains `MEDIA_ENABLE_STAGING_SFU`; both gates are required on staging for browser SFU smoke, and neither is production default approval.
+- `production-media-staging-smoke-run-report-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_178_PRODUCTION_MEDIA_STAGING_SMOKE_RUN_REPORT_RERUN.md`.
+- staging gate deploy passed, `/media/sfu-smoke` became reachable on the production-built staging web, and smoke harness direct SFU passed.
+- staging smoke rerun is blocked before full manual private/channel smoke because harness TURN failed with remote track muted after consume and mediasoup cleanup did not converge to zero after Stop/Reset.
+- `staging-media-turn-relay-consume-cleanup-fix` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_179_STAGING_MEDIA_TURN_RELAY_CONSUME_CLEANUP_FIX.md`.
+- the focused TURN/cleanup fix is implemented and locally verified: backend transport close, SDK/client backend transport cleanup, awaited harness Stop/Reset cleanup, bounded cleanup convergence proof, and transport-connected waits before remote-track flow checks.
+- staging Direct/TURN harness rerun remains pending before the full staging smoke can resume.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. `production-media-staging-smoke-run-report-rerun`
-   - run direct and relay smoke in staging/non-production only after both server and web staging smoke gates are explicitly enabled on staging and no production defaults are enabled
-2. `production-media-canary-readiness-decision`
+1. deploy and verify the focused staging TURN relay consume/cleanup fix
+   - rerun smoke harness Direct + TURN only on staging and prove cleanup convergence
+2. `production-media-staging-smoke-run-report-rerun`
+   - rerun direct and relay smoke in staging/non-production only after the focused fix
+3. `production-media-canary-readiness-decision`
    - decide whether a narrow production canary is allowed
-3. `production-media-rollback-drill-report`
+4. `production-media-rollback-drill-report`
    - prove LiveKit rollback/default switch before broader rollout
 
 Do not proceed directly to production rollout, production default switch, LiveKit removal, or Stage 6 production Postgres cutover. Direct/TURN staging media smoke is allowed only in the next scoped staging smoke run-report segment and must stay non-production with LiveKit fallback preserved.

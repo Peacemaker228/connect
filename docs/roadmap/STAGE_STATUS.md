@@ -959,6 +959,13 @@ Done:
 - `staging-safe-web-sfu-smoke-gate` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_177_STAGING_SAFE_WEB_SFU_SMOKE_GATE.md`
 - staging web/client now has `NEXT_PUBLIC_MEDIA_ENABLE_STAGING_SFU_SMOKE` as a public build-time staging/preprod-only smoke gate for `/media/sfu-smoke` and explicit SFU query paths on production-built staging web
 - existing default/pilot SFU gates remain unchanged, production defaults remain off, and LiveKit rollback queries remain preserved
+- `production-media-staging-smoke-run-report-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_178_PRODUCTION_MEDIA_STAGING_SMOKE_RUN_REPORT_RERUN.md`
+- operator-guided staging deploy of the web smoke gate passed: `NEXT_PUBLIC_MEDIA_ENABLE_STAGING_SFU_SMOKE=1` was added only to staging web env, web was rebuilt/restarted, API/web/auth/mediasoup/LiveKit/coturn preflight passed, and `/media/sfu-smoke` returned HTTP `200`
+- smoke harness direct SFU passed, but harness TURN failed because the remote track stayed muted after consume; after Stop/Reset, mediasoup cleanup did not converge to zero, so manual private/channel/video/screen-share smoke was not run
+- no production env/default, production VPS, LiveKit removal, storage upload smoke, or Stage 6/Postgres production migration change was made
+- `staging-media-turn-relay-consume-cleanup-fix` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_179_STAGING_MEDIA_TURN_RELAY_CONSUME_CLEANUP_FIX.md`
+- the focused fix is implemented and locally verified: backend transport close endpoint, transport-owned producer/consumer cleanup, SDK/client backend transport close, awaited Stop/Reset cleanup, bounded cleanup convergence proof, and transport-connected waits before TURN remote-track assertions
+- staging Direct/TURN harness rerun is still pending, so full manual private/channel/video/screen-share smoke remains blocked until direct, TURN, and cleanup convergence pass
 
 Remaining:
 - process-local mediasoup/signaling state remains a production/multi-process blocker
@@ -972,7 +979,10 @@ Remaining:
 - staging DB source exists as Docker Postgres, and staging schema has been applied with `db push`; production DB remains untouched
 - staging LiveKit rollback env is present; Storage is explicitly deferred for media-only pre-smoke
 - staging coturn is running and minimal no-open-relay checks passed without printing credentials
-- staging smoke plan exists, and direct/TURN media smoke remains not run; it now requires deploying the web/client smoke gate to staging, setting `NEXT_PUBLIC_MEDIA_ENABLE_STAGING_SFU_SMOKE=1` only in staging web env, rebuilding web, and rerunning preflight before smoke
+- staging smoke plan exists, staging web/API gates are deployed on staging, and smoke harness direct SFU passes
+- staging TURN relay smoke requires rerun after the focused consume/cleanup fix
+- staging cleanup convergence requires rerun after the focused cleanup fix
+- manual private/channel/video/screen-share smoke remains not run until the TURN/cleanup blocker is fixed
 - coturn readiness criteria are documented, but production coturn is not deployed and systemd-vs-Docker implementation remains undecided
 - mediasoup process criteria are documented, but production mediasoup process ownership, restart policy, logs, and implementation remain incomplete
 - candidate mediasoup/coturn ranges are chosen but not implemented or load-proven
@@ -980,7 +990,7 @@ Remaining:
 - LiveKit removal remains blocked
 
 Next likely work:
-- `production-media-staging-smoke-run-report-rerun` after deploying the web smoke gate to staging and rebuilding the staging web bundle
+- deploy and verify the focused staging TURN relay consume/cleanup fix with smoke harness Direct + TURN only, then rerun staging smoke
 - do not proceed next to production rollout, production default switch, LiveKit removal, or Stage 6 production Postgres cutover
 
 ## Historical Notes
