@@ -4,6 +4,7 @@ import { Device, type types as mediasoupClientTypes } from 'mediasoup-client'
 import {
   closeMediasoupPrototypeConsumer,
   closeMediasoupPrototypeProducer,
+  closeMediasoupPrototypeTransport,
   consumeMediasoupPrototypeTrack,
   connectMediasoupPrototypeTransport,
   createMediasoupPrototypeEventSource,
@@ -35,6 +36,16 @@ type SfuClientTransportAppData = {
   roomId?: string
   participantSessionId?: string
 }
+
+type SfuClientTransportConnectionState =
+  | 'new'
+  | 'checking'
+  | 'connecting'
+  | 'connected'
+  | 'completed'
+  | 'failed'
+  | 'disconnected'
+  | 'closed'
 
 export type SfuClientTransportBundle = {
   direction: MediasoupPrototypeTransportDirection
@@ -330,15 +341,64 @@ export class SfuClientAdapter {
     }
   }
 
+  async waitForTransportConnected(transportId: string | undefined, timeoutMs = 8000) {
+    if (!transportId) {
+      throw new Error('mediasoup transport id is missing')
+    }
+
+    const transport = this.transports.get(transportId)
+
+    if (!transport || transport.closed) {
+      throw new Error('mediasoup transport is not available')
+    }
+
+    const initialConnectionState = transport.connectionState as SfuClientTransportConnectionState
+
+    if (initialConnectionState === 'connected' || initialConnectionState === 'completed') {
+      return initialConnectionState
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      const timeout = window.setTimeout(() => {
+        cleanup()
+        reject(new Error(`mediasoup transport did not connect: ${transport.connectionState}`))
+      }, timeoutMs)
+
+      const handleStateChange = (state: SfuClientTransportConnectionState) => {
+        if (state === 'connected' || state === 'completed') {
+          cleanup()
+          resolve()
+          return
+        }
+
+        if (state === 'failed' || state === 'closed') {
+          cleanup()
+          reject(new Error(`mediasoup transport connection ${state}`))
+        }
+      }
+
+      const cleanup = () => {
+        window.clearTimeout(timeout)
+        transport.off('connectionstatechange', handleStateChange)
+      }
+
+      transport.on('connectionstatechange', handleStateChange)
+      handleStateChange(transport.connectionState as SfuClientTransportConnectionState)
+    })
+
+    return transport.connectionState
+  }
+
   async close() {
-    const closeRequests: Array<Promise<unknown>> = []
+    const closeResourceRequests: Array<Promise<unknown>> = []
+    const closeTransportRequests: Array<Promise<unknown>> = []
 
     for (const backendConsumer of this.backendConsumers.values()) {
       if (!backendConsumer.consumerId) {
         continue
       }
 
-      closeRequests.push(
+      closeResourceRequests.push(
         closeMediasoupPrototypeConsumer(backendConsumer.consumerId, {
           roomId: backendConsumer.roomId,
           participantSessionId: backendConsumer.participantSessionId,
@@ -351,10 +411,19 @@ export class SfuClientAdapter {
         continue
       }
 
-      closeRequests.push(
+      closeResourceRequests.push(
         closeMediasoupPrototypeProducer(backendProducer.producerId, {
           roomId: backendProducer.roomId,
           participantSessionId: backendProducer.participantSessionId,
+        }),
+      )
+    }
+
+    for (const transport of this.transports.values()) {
+      closeTransportRequests.push(
+        closeMediasoupPrototypeTransport(transport.id, {
+          roomId: transport.appData.roomId,
+          participantSessionId: transport.appData.participantSessionId,
         }),
       )
     }
@@ -378,7 +447,8 @@ export class SfuClientAdapter {
     this.transports.clear()
     this.device = null
 
-    await Promise.allSettled(closeRequests)
+    await Promise.allSettled(closeResourceRequests)
+    await Promise.allSettled(closeTransportRequests)
   }
 
   private async getLoadedDevice() {

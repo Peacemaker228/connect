@@ -1246,13 +1246,15 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 - staging smoke preflight passed on staging, but staging direct/TURN media smoke was not run because production-built web SFU entrypoints are still client/page production-guarded; a staging-safe web/client smoke gate is required first
 - staging-safe web/client SFU smoke gate was deployed to staging through `NEXT_PUBLIC_MEDIA_ENABLE_STAGING_SFU_SMOKE=1` in staging web env only; web was rebuilt and restarted
 - staging smoke rerun produced a partial pass: harness direct SFU passed, harness TURN failed because the remote track stayed muted after consume, and post-failure mediasoup cleanup did not converge to zero
+- focused staging TURN/cleanup fix is implemented locally: the mediasoup prototype now has an authenticated transport close endpoint, the SDK/client closes backend transports, the harness awaits Stop/Reset cleanup, and bounded cleanup convergence proof is added; staging Direct/TURN rerun evidence is still pending
 - production monitoring/alerting is not implemented
 - LiveKit fallback removal is not approved
 
 ## Next Segments
 
 Recommended next:
-- focused fix segment for staging TURN relay consume and cleanup convergence before rerunning full staging smoke
+- deploy the focused staging TURN relay consume/cleanup fix to staging and rerun only the smoke harness Direct + TURN plus cleanup convergence
+- after Direct, TURN, and cleanup pass, rerun the scoped staging smoke run-report segment
 
 Do not proceed next to:
 - production default switch

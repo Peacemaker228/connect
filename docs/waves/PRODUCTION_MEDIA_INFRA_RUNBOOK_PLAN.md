@@ -103,12 +103,15 @@ Done:
 - `production-media-staging-smoke-run-report-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_178_PRODUCTION_MEDIA_STAGING_SMOKE_RUN_REPORT_RERUN.md`.
 - staging gate deploy passed, `/media/sfu-smoke` became reachable on the production-built staging web, and smoke harness direct SFU passed.
 - staging smoke rerun is blocked before full manual private/channel smoke because harness TURN failed with remote track muted after consume and mediasoup cleanup did not converge to zero after Stop/Reset.
+- `staging-media-turn-relay-consume-cleanup-fix` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_179_STAGING_MEDIA_TURN_RELAY_CONSUME_CLEANUP_FIX.md`.
+- the focused TURN/cleanup fix is implemented and locally verified: backend transport close, SDK/client backend transport cleanup, awaited harness Stop/Reset cleanup, bounded cleanup convergence proof, and transport-connected waits before remote-track flow checks.
+- staging Direct/TURN harness rerun remains pending before the full staging smoke can resume.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. focused fix for staging TURN relay consume and cleanup convergence
-   - fix the TURN relay consume failure and non-converged mediasoup resources before broader smoke
+1. deploy and verify the focused staging TURN relay consume/cleanup fix
+   - rerun smoke harness Direct + TURN only on staging and prove cleanup convergence
 2. `production-media-staging-smoke-run-report-rerun`
    - rerun direct and relay smoke in staging/non-production only after the focused fix
 3. `production-media-canary-readiness-decision`

@@ -127,6 +127,22 @@ export type LocalMediasoupTransportConnectResult = {
   reason?: string;
 };
 
+export type LocalMediasoupTransportCloseResult = {
+  status: LocalMediasoupPrototypeStatus;
+  enabled: boolean;
+  transportId?: string;
+  roomId?: string;
+  participantSessionId?: string;
+  closedTransportCount?: number;
+  closedProducerCount?: number;
+  closedConsumerCount?: number;
+  activeTransportCount?: number;
+  activeProducerCount?: number;
+  activeConsumerCount?: number;
+  activeRoomCount?: number;
+  reason?: string;
+};
+
 export type LocalMediasoupProducerMetadata = {
   status: LocalMediasoupPrototypeStatus;
   enabled: boolean;
@@ -212,9 +228,11 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
   private readonly producerScopes = new Map<string, LocalMediasoupSessionScope>();
   private readonly producerCreatedAt = new Map<string, string>();
   private readonly producerSources = new Map<string, LocalMediasoupTrackSource>();
+  private readonly producerTransportIds = new Map<string, string>();
   private readonly consumers = new Map<string, mediasoupTypes.Consumer>();
   private readonly consumerScopes = new Map<string, LocalMediasoupSessionScope>();
   private readonly consumerProducerIds = new Map<string, string>();
+  private readonly consumerTransportIds = new Map<string, string>();
   private readonly sessionLastSeenAt = new Map<string, number>();
   private staleSessionSweepTimer: ReturnType<typeof setInterval> | null = null;
   private lastCleanup: LocalMediasoupCleanupResult | undefined;
@@ -352,10 +370,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
       }
 
       transport.observer.on('close', () => {
-        this.transports.delete(transport.id);
-        this.transportDirections.delete(transport.id);
-        this.transportModes.delete(transport.id);
-        this.transportScopes.delete(transport.id);
+        this.removeTransportState(transport.id);
       });
 
       this.logLifecycle('transport.created', {
@@ -500,6 +515,121 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     }
   }
 
+  closeWebRtcTransport({
+    transportId,
+    scope,
+  }: {
+    transportId: string | undefined;
+    scope?: LocalMediasoupSessionScope;
+  }): LocalMediasoupTransportCloseResult {
+    if (!this.isPrototypeRuntimeEnabled()) {
+      return {
+        status: 'disabled',
+        enabled: false,
+        transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        reason: 'Local mediasoup transport close prototype is disabled in production runtime',
+      };
+    }
+
+    if (!transportId) {
+      return {
+        status: 'failed',
+        enabled: false,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        reason: 'transportId is required',
+      };
+    }
+
+    const transport = this.transports.get(transportId);
+
+    if (!transport || transport.closed) {
+      const counts = this.createLifecycleCounts();
+
+      return {
+        status: 'ready',
+        enabled: true,
+        transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        closedTransportCount: 0,
+        closedProducerCount: 0,
+        closedConsumerCount: 0,
+        activeTransportCount: counts.activeTransportCount,
+        activeProducerCount: counts.activeProducerCount,
+        activeConsumerCount: counts.activeConsumerCount,
+        activeRoomCount: counts.activeRoomCount,
+      };
+    }
+
+    const scopeCheck = this.validateTransportScope(transportId, scope);
+
+    if (!scopeCheck.enabled) {
+      return {
+        status: 'failed',
+        enabled: false,
+        transportId,
+        roomId: scope?.roomId,
+        participantSessionId: scope?.participantSessionId,
+        reason: scopeCheck.reason,
+      };
+    }
+
+    const transportScope = this.transportScopes.get(transportId);
+    let closedConsumerCount = 0;
+    let closedProducerCount = 0;
+
+    for (const [consumerId, consumerTransportId] of [...this.consumerTransportIds.entries()]) {
+      if (consumerTransportId !== transportId) {
+        continue;
+      }
+
+      this.consumers.get(consumerId)?.close();
+      this.removeConsumerState(consumerId);
+      closedConsumerCount += 1;
+    }
+
+    for (const [producerId, producerTransportId] of [...this.producerTransportIds.entries()]) {
+      if (producerTransportId !== transportId) {
+        continue;
+      }
+
+      this.producers.get(producerId)?.close();
+      this.removeProducerState(producerId);
+      closedProducerCount += 1;
+    }
+
+    transport.close();
+    this.removeTransportState(transportId);
+
+    this.logLifecycle('transport.closed', {
+      transportId,
+      roomId: transportScope?.roomId ?? scope?.roomId,
+      participantSessionId: transportScope?.participantSessionId ?? scope?.participantSessionId,
+      closedProducerCount,
+      closedConsumerCount,
+    });
+
+    const counts = this.createLifecycleCounts();
+
+    return {
+      status: 'ready',
+      enabled: true,
+      transportId,
+      roomId: transportScope?.roomId ?? scope?.roomId,
+      participantSessionId: transportScope?.participantSessionId ?? scope?.participantSessionId,
+      closedTransportCount: 1,
+      closedProducerCount,
+      closedConsumerCount,
+      activeTransportCount: counts.activeTransportCount,
+      activeProducerCount: counts.activeProducerCount,
+      activeConsumerCount: counts.activeConsumerCount,
+      activeRoomCount: counts.activeRoomCount,
+    };
+  }
+
   async produce({
     transportId,
     scope,
@@ -621,6 +751,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
 
       this.producerCreatedAt.set(producer.id, createdAt);
       this.producerSources.set(producer.id, resolvedSource);
+      this.producerTransportIds.set(producer.id, transport.transport.id);
 
       if (scope) {
         this.producerScopes.set(producer.id, scope);
@@ -829,6 +960,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
 
       this.consumers.set(consumer.id, consumer);
       this.consumerProducerIds.set(consumer.id, producerId);
+      this.consumerTransportIds.set(consumer.id, transport.transport.id);
 
       if (scope) {
         this.consumerScopes.set(consumer.id, scope);
@@ -1572,6 +1704,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     this.producerScopes.delete(producerId);
     this.producerCreatedAt.delete(producerId);
     this.producerSources.delete(producerId);
+    this.producerTransportIds.delete(producerId);
 
     if (producerScope && producer) {
       if (source === 'screen') {
@@ -1600,6 +1733,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
     this.consumers.delete(consumerId);
     this.consumerScopes.delete(consumerId);
     this.consumerProducerIds.delete(consumerId);
+    this.consumerTransportIds.delete(consumerId);
 
     if (consumerScope) {
       this.mediaSignalingService.publishConsumerClosed({
@@ -1619,9 +1753,11 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
 
   private clearPrototypeState() {
     this.consumerProducerIds.clear();
+    this.consumerTransportIds.clear();
     this.consumerScopes.clear();
     this.consumers.clear();
     this.producerCreatedAt.clear();
+    this.producerTransportIds.clear();
     this.producerScopes.clear();
     this.producerSources.clear();
     this.producers.clear();
@@ -1667,10 +1803,7 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
         transportScope.participantSessionId === scope.participantSessionId
       ) {
         this.transports.get(transportId)?.close();
-        this.transports.delete(transportId);
-        this.transportDirections.delete(transportId);
-        this.transportModes.delete(transportId);
-        this.transportScopes.delete(transportId);
+        this.removeTransportState(transportId);
         closedTransportCount += 1;
       }
     }
@@ -1755,6 +1888,13 @@ export class MediasoupPrototypeService implements OnModuleDestroy {
       this.consumers.get(consumerId)?.close();
       this.removeConsumerState(consumerId);
     }
+  }
+
+  private removeTransportState(transportId: string) {
+    this.transports.delete(transportId);
+    this.transportDirections.delete(transportId);
+    this.transportModes.delete(transportId);
+    this.transportScopes.delete(transportId);
   }
 
   private closeActiveRoomScreenProducers(scope: LocalMediasoupSessionScope, exceptProducerId?: string) {
