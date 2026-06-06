@@ -13,6 +13,7 @@ Current status:
 - `apps/api` recognizes the proposed `MEDIA_*` runtime names for TURN credentials and mediasoup listen/announced/RTC range config, with current `LOCAL_*` names preserved as local/dev fallbacks.
 - Production media readiness remains blocked by process-local mediasoup/signaling state, missing production SFU/TURN infrastructure, missing production firewall/process implementation, missing production-like soak, and missing rollback drill.
 - LiveKit fallback remains required until a later scoped removal decision.
+- Staging browser SFU smoke now requires two explicit staging-only gates: server-only `MEDIA_ENABLE_STAGING_SFU` for `apps/api`, and public build-time `NEXT_PUBLIC_MEDIA_ENABLE_STAGING_SFU_SMOKE` for the production-built staging web.
 
 ## Non-Goals
 
@@ -868,6 +869,41 @@ Remaining blockers before direct/TURN media smoke:
 - web rollback query routes returned auth redirects in curl context; browser/operator route behavior should be checked if route-level UI evidence is required by the next segment.
 - Storage upload remains deferred; upload/storage smoke remains out of scope until separate staging storage env is filled or explicitly excluded.
 
+## Staging Pre-Smoke Readiness Rerun Report
+
+Status: `pass / ready for staging smoke entry`. Segment 174 was deployed to the separate staging VPS, `MEDIA_ENABLE_STAGING_SFU=1` was enabled only in the staging API env, API was restarted, the missing native mediasoup worker artifact was rebuilt on staging, and authenticated mediasoup health now reports `ready`. This section records only redacted presence/status evidence and does not include real IPs, passwords, private keys, env values, database URLs, generated TURN credentials, cookies, auth headers, or LiveKit/Storage secrets.
+
+Run report:
+- `production-media-staging-pre-smoke-readiness-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_175_PRODUCTION_MEDIA_STAGING_PRE_SMOKE_READINESS_RERUN.md`.
+- deployed commit: `40dab370279a3d963c6e589201536bcfb65c09a9`.
+- staging API env contains `MEDIA_ENABLE_STAGING_SFU=1`; staging web env was directly checked and does not contain the gate.
+- `bun install --frozen-lockfile`, `bun x prisma generate`, and `bun run build:api` passed on staging.
+- no schema migration was run.
+- web rebuild/restart was not required because the gate is server-only.
+- API restart with updated env passed; HTTPS API health returned `status: ok`.
+- first authenticated mediasoup health after enabling the gate showed the gate was active but the native `mediasoup-worker` artifact was missing; the package postinstall was rerun on staging to rebuild the worker artifact.
+- after the worker artifact rebuild and API restart, authenticated mediasoup health returned HTTP `200`, status `ready`, enabled `true`, worker pid present, router id present, router closed `false`, router codec count `3`, `stagingSfuEnabled=true`, TURN config present, SFU announced address present, and SFU RTC range `ready`.
+- Docker Postgres remained healthy.
+- Docker coturn remained running and not restarting.
+- LiveKit token path returned HTTP `200`; token presence was confirmed without printing token values.
+- Storage remains explicitly deferred for media-only pre-smoke readiness.
+- direct/TURN media smoke was not run.
+- production VPS, production env, production SFU/TURN/default gates, LiveKit removal, and Stage 6/Postgres production migration remained untouched.
+
+Rerun readiness classification:
+- deployed staging gate: `pass`
+- API env gate: `pass / staging only`
+- web env gate absence: `pass`
+- PM2/API health: `pass`
+- authenticated app/session: `pass`
+- authenticated mediasoup health: `pass / ready`
+- mediasoup worker artifact: `pass / rebuilt on staging`
+- coturn process: `pass / running`
+- LiveKit rollback token path: `pass`
+- storage gate: `deferred / accepted for media-only pre-smoke`
+- full direct/TURN media smoke: `not run / next segment only`
+- production rollout/default: `blocked`
+
 ## Staging Smoke Plan
 
 Status: `planning / documented`. This is the ordered smoke plan for a future staging or non-production run. It does not run smoke, does not fill real values, does not change runtime code, does not change real env/secrets, does not add infrastructure configs, and does not enable production SFU/TURN/default behavior.
@@ -995,6 +1031,7 @@ Current local prototype names remain local/dev compatibility fallbacks. Runtime 
 | Group | Variables / decision | Notes |
 | --- | --- | --- |
 | Media provider/default gates | `NEXT_PUBLIC_MEDIA_CHANNEL_AUDIO_SFU_DEFAULT_CANDIDATE`, `NEXT_PUBLIC_MEDIA_CHANNEL_AUDIO_SFU_PRODUCT_DEFAULT_PILOT`, `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_DEFAULT_CANDIDATE`, `NEXT_PUBLIC_MEDIA_CHANNEL_VIDEO_SFU_PRODUCT_DEFAULT_PILOT`, `NEXT_PUBLIC_MEDIA_PRIVATE_SFU_DEFAULT_CANDIDATE`, plus any future production default switch | Current gates are non-production/default-candidate oriented. Production enablement needs an explicit canary/default decision and rebuild rules for `NEXT_PUBLIC_*`. |
+| Staging web SFU smoke gate | `NEXT_PUBLIC_MEDIA_ENABLE_STAGING_SFU_SMOKE` | Public build-time staging/preprod-only smoke gate for explicit browser SFU paths on production-built staging web. Truthy values are `1`, `true`, `yes`; default is off; not a production default switch. |
 | TURN URLs | `MEDIA_TURN_URLS`, fallback `LOCAL_TURN_URLS` | Browser receives URLs only through backend-issued credential response or approved config path. |
 | TURN shared secret | `MEDIA_TURN_STATIC_AUTH_SECRET`, fallback `LOCAL_TURN_STATIC_AUTH_SECRET` | Secret is server-side only and must match coturn auth config. Secret values are not exposed in health/debug output. |
 | TURN TTL | `MEDIA_TURN_TTL_SECONDS`, fallback `LOCAL_TURN_TTL_SECONDS` | Clamped to the current safe TTL range. |
@@ -1204,22 +1241,19 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 - mediasoup process criteria are documented, but production mediasoup process ownership, restart policy, logs, and implementation are not complete
 - runtime env mapping exists, but concrete production values, owners, and secret rotation source are not filled
 - process/env readiness matrix exists, but required operator inputs are not filled
-- staging VPS bootstrap run report exists, and staging app/API/env/coturn setup plus pre-smoke readiness checks are partially complete with redacted evidence
-- staging-safe server-only SFU gate exists for staging/preprod smoke, but it is not yet deployed/restarted on the staging VPS
-- staging smoke plan exists, but staging smoke execution is blocked until the gate is deployed to staging, `MEDIA_ENABLE_STAGING_SFU=1` is set only in staging API server-local env, and authenticated mediasoup health is rerun
+- staging VPS bootstrap run report exists, and staging app/API/env/coturn setup plus pre-smoke readiness checks are complete enough for staging smoke entry with redacted evidence
+- staging-safe server-only SFU gate is deployed on staging, enabled only in staging API env, and authenticated mediasoup health now reports ready
+- staging smoke preflight passed on staging, but staging direct/TURN media smoke was not run because production-built web SFU entrypoints are still client/page production-guarded; a staging-safe web/client smoke gate is required first
+- staging-safe web/client SFU smoke gate is now implemented for production-built staging web through `NEXT_PUBLIC_MEDIA_ENABLE_STAGING_SFU_SMOKE`; it still requires staging deployment, web env update, web rebuild, and rerun before smoke evidence exists
 - production monitoring/alerting is not implemented
 - LiveKit fallback removal is not approved
 
 ## Next Segments
 
 Recommended next:
-- `production-media-staging-pre-smoke-readiness-rerun` after deploying this gate to staging and setting `MEDIA_ENABLE_STAGING_SFU=1` only in staging API env
-
-Acceptable alternative:
-- `production-media-staging-smoke-run-report` only after authenticated mediasoup health passes on staging with the server-only gate and no production defaults
+- `production-media-staging-smoke-run-report-rerun` only after the staging web env has `NEXT_PUBLIC_MEDIA_ENABLE_STAGING_SFU_SMOKE=1`, the web bundle is rebuilt, API/web health pass, and no production defaults are enabled
 
 Do not proceed next to:
-- staging direct/TURN media smoke before the staging API env includes `MEDIA_ENABLE_STAGING_SFU=1`, API is restarted, and authenticated mediasoup health is ready
 - production default switch
 - LiveKit removal
 - Stage 6 production Postgres cutover
