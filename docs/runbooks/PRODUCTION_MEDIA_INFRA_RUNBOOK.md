@@ -1248,13 +1248,14 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 - staging smoke rerun produced a partial pass: harness direct SFU passed, harness TURN failed because the remote track stayed muted after consume, and post-failure mediasoup cleanup did not converge to zero
 - focused staging TURN/cleanup fix deployed to staging: the mediasoup prototype now has an authenticated transport close endpoint, the SDK/client closes backend transports, the harness awaits Stop/Reset cleanup, and bounded cleanup convergence proof is added
 - staging focused rerun produced a partial pass: harness Direct passed and cleanup now converges to zero, but TURN still fails because the relay send transport remains in connection state `new`
+- focused staging TURN relay connection diagnosis is in progress through Segment 180: the smoke harness now records only sanitized transport diagnostics for TURN rerun, including relay policy, TURN URL scheme/count/hints without values, server ICE candidate protocol/type counts, connect-event/accepted status, local candidate types, and selected candidate-pair state where browser stats expose it
 - production monitoring/alerting is not implemented
 - LiveKit fallback removal is not approved
 
 ## Next Segments
 
 Recommended next:
-- focused staging TURN relay connection fix; current blocker is relay send transport not connecting, not cleanup convergence
+- focused staging TURN relay connection fix/rerun; current blocker is relay send transport not connecting, not cleanup convergence, and Segment 180 diagnostics should classify whether the cause is browser relay candidate gathering, backend DTLS connect, mediasoup announced address / RTC firewall reachability, coturn peer permission, or another verified cause
 - after Direct, TURN, and cleanup pass, rerun the scoped staging smoke run-report segment
 
 Do not proceed next to:
