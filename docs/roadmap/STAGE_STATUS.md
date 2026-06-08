@@ -964,8 +964,8 @@ Done:
 - smoke harness direct SFU passed, but harness TURN failed because the remote track stayed muted after consume; after Stop/Reset, mediasoup cleanup did not converge to zero, so manual private/channel/video/screen-share smoke was not run
 - no production env/default, production VPS, LiveKit removal, storage upload smoke, or Stage 6/Postgres production migration change was made
 - `staging-media-turn-relay-consume-cleanup-fix` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_179_STAGING_MEDIA_TURN_RELAY_CONSUME_CLEANUP_FIX.md`
-- the focused fix is implemented and locally verified: backend transport close endpoint, transport-owned producer/consumer cleanup, SDK/client backend transport close, awaited Stop/Reset cleanup, bounded cleanup convergence proof, and transport-connected waits before TURN remote-track assertions
-- staging Direct/TURN harness rerun is still pending, so full manual private/channel/video/screen-share smoke remains blocked until direct, TURN, and cleanup convergence pass
+- the focused fix is implemented, locally verified, and deployed to staging: backend transport close endpoint, transport-owned producer/consumer cleanup, SDK/client backend transport close, awaited Stop/Reset cleanup, bounded cleanup convergence proof, and transport-connected waits before TURN remote-track assertions
+- staging focused rerun is `partial pass`: Direct passed and cleanup convergence now passes, but TURN remains blocked because the relay send transport stays in connection state `new`
 
 Remaining:
 - process-local mediasoup/signaling state remains a production/multi-process blocker
@@ -980,9 +980,9 @@ Remaining:
 - staging LiveKit rollback env is present; Storage is explicitly deferred for media-only pre-smoke
 - staging coturn is running and minimal no-open-relay checks passed without printing credentials
 - staging smoke plan exists, staging web/API gates are deployed on staging, and smoke harness direct SFU passes
-- staging TURN relay smoke requires rerun after the focused consume/cleanup fix
-- staging cleanup convergence requires rerun after the focused cleanup fix
-- manual private/channel/video/screen-share smoke remains not run until the TURN/cleanup blocker is fixed
+- staging TURN relay smoke requires a focused relay connection fix; the current failure is send transport connection state `new`
+- staging cleanup convergence now passes for the harness, but must be rechecked after the next TURN relay fix
+- manual private/channel/video/screen-share smoke remains not run until the TURN relay blocker is fixed
 - coturn readiness criteria are documented, but production coturn is not deployed and systemd-vs-Docker implementation remains undecided
 - mediasoup process criteria are documented, but production mediasoup process ownership, restart policy, logs, and implementation remain incomplete
 - candidate mediasoup/coturn ranges are chosen but not implemented or load-proven
@@ -990,7 +990,7 @@ Remaining:
 - LiveKit removal remains blocked
 
 Next likely work:
-- deploy and verify the focused staging TURN relay consume/cleanup fix with smoke harness Direct + TURN only, then rerun staging smoke
+- focused staging TURN relay connection fix, then rerun smoke harness Direct + TURN only before any full staging smoke
 - do not proceed next to production rollout, production default switch, LiveKit removal, or Stage 6 production Postgres cutover
 
 ## Historical Notes

@@ -104,16 +104,16 @@ Done:
 - staging gate deploy passed, `/media/sfu-smoke` became reachable on the production-built staging web, and smoke harness direct SFU passed.
 - staging smoke rerun is blocked before full manual private/channel smoke because harness TURN failed with remote track muted after consume and mediasoup cleanup did not converge to zero after Stop/Reset.
 - `staging-media-turn-relay-consume-cleanup-fix` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_179_STAGING_MEDIA_TURN_RELAY_CONSUME_CLEANUP_FIX.md`.
-- the focused TURN/cleanup fix is implemented and locally verified: backend transport close, SDK/client backend transport cleanup, awaited harness Stop/Reset cleanup, bounded cleanup convergence proof, and transport-connected waits before remote-track flow checks.
-- staging Direct/TURN harness rerun remains pending before the full staging smoke can resume.
+- the focused TURN/cleanup fix is implemented, locally verified, and deployed to staging: backend transport close, SDK/client backend transport cleanup, awaited harness Stop/Reset cleanup, bounded cleanup convergence proof, and transport-connected waits before remote-track flow checks.
+- staging focused rerun is `partial pass`: Direct passed and cleanup converged to zero, but TURN remains blocked because the relay send transport stays in connection state `new`.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. deploy and verify the focused staging TURN relay consume/cleanup fix
-   - rerun smoke harness Direct + TURN only on staging and prove cleanup convergence
+1. focused staging TURN relay connection fix
+   - current relay blocker is send transport connection state `new`; cleanup convergence now passes
 2. `production-media-staging-smoke-run-report-rerun`
-   - rerun direct and relay smoke in staging/non-production only after the focused fix
+   - rerun direct and relay smoke in staging/non-production only after the TURN relay connection fix
 3. `production-media-canary-readiness-decision`
    - decide whether a narrow production canary is allowed
 4. `production-media-rollback-drill-report`
