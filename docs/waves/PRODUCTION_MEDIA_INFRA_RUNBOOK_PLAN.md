@@ -106,12 +106,15 @@ Done:
 - `staging-media-turn-relay-consume-cleanup-fix` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_179_STAGING_MEDIA_TURN_RELAY_CONSUME_CLEANUP_FIX.md`.
 - the focused TURN/cleanup fix is implemented, locally verified, and deployed to staging: backend transport close, SDK/client backend transport cleanup, awaited harness Stop/Reset cleanup, bounded cleanup convergence proof, and transport-connected waits before remote-track flow checks.
 - staging focused rerun is `partial pass`: Direct passed and cleanup converged to zero, but TURN remains blocked because the relay send transport stays in connection state `new`.
+- `staging-turn-relay-transport-connection-fix` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_180_STAGING_TURN_RELAY_TRANSPORT_CONNECTION_FIX.md`.
+- the first Segment 180 change adds bounded, non-secret browser transport diagnostics to the staging smoke harness: TURN URL scheme/count/hints without values, server ICE candidate protocol/type counts, relay policy, connect-event/accepted status, local candidate types, and selected candidate-pair state from WebRTC stats where available.
+- Segment 180 does not enable production defaults, does not touch production env/VPS, does not remove LiveKit, and does not run full manual private/channel smoke; staging rerun is pending after commit/deploy.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. focused staging TURN relay connection fix
-   - current relay blocker is send transport connection state `new`; cleanup convergence now passes
+1. focused staging TURN relay connection fix / rerun
+   - current relay blocker is send transport connection state `new`; cleanup convergence now passes; Segment 180 diagnostics should classify whether the blocker is browser relay candidate gathering, backend DTLS connect, mediasoup announced address / RTC firewall reachability, coturn peer permission, or another verified cause
 2. `production-media-staging-smoke-run-report-rerun`
    - rerun direct and relay smoke in staging/non-production only after the TURN relay connection fix
 3. `production-media-canary-readiness-decision`

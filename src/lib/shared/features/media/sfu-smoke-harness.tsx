@@ -6,7 +6,11 @@ import { getMediasoupPrototypeHealth } from '@sdk/actions/media'
 
 import { Button } from '@/lib/shared/ui/button'
 
-import { SfuClientAdapter, type SfuClientTransportBundle } from './sfu-client-adapter'
+import {
+  SfuClientAdapter,
+  type SfuClientTransportBundle,
+  type SfuClientTransportDiagnostics,
+} from './sfu-client-adapter'
 
 type SmokeMode = 'direct' | 'turn'
 type SmokeStatus = 'idle' | 'running' | 'pass' | 'fail' | 'blocked'
@@ -82,6 +86,60 @@ const getActiveMediaResourceCount = async () => {
 
 const toCleanupDetail = (counts: Awaited<ReturnType<typeof getActiveMediaResourceCount>>) =>
   `rooms=${counts.activeRoomCount} transports=${counts.activeTransportCount} producers=${counts.activeProducerCount} consumers=${counts.activeConsumerCount}`
+
+const joinDetailValues = (values: Array<string | undefined>) => {
+  const filteredValues = values.filter((value): value is string => Boolean(value))
+
+  return filteredValues.length > 0 ? filteredValues.join('|') : 'none'
+}
+
+const toTransportConfigDetail = (diagnostics: SfuClientTransportDiagnostics | undefined) => {
+  if (!diagnostics) {
+    return 'diagnostics=missing'
+  }
+
+  return [
+    `policy=${diagnostics.iceTransportPolicy}`,
+    `turnServers=${diagnostics.turnIceServerCount}`,
+    `turnUrls=${diagnostics.turnUrlSchemeCount}`,
+    `turnSchemes=${joinDetailValues(diagnostics.turnUrlSchemes)}`,
+    `turnTransports=${joinDetailValues(diagnostics.turnUrlTransportHints)}`,
+    `serverCandidates=${diagnostics.serverIceCandidateCount}`,
+    `serverProtocols=${joinDetailValues(diagnostics.serverIceCandidateProtocols)}`,
+    `serverTypes=${joinDetailValues(diagnostics.serverIceCandidateTypes)}`,
+  ].join(' ')
+}
+
+const toTransportConnectionDetail = (diagnostics: SfuClientTransportDiagnostics | undefined) => {
+  if (!diagnostics) {
+    return 'diagnostics=missing'
+  }
+
+  return [
+    `state=${diagnostics.connectionState}`,
+    `policy=${diagnostics.iceTransportPolicy}`,
+    `connectEvent=${diagnostics.connectEventFired ? 'yes' : 'no'}`,
+    `connectAccepted=${diagnostics.connectAccepted ? 'yes' : 'no'}`,
+    diagnostics.connectError ? `connectError=${diagnostics.connectError}` : undefined,
+    `localCandidates=${joinDetailValues(diagnostics.localCandidateTypes)}`,
+    `localProtocols=${joinDetailValues(diagnostics.localCandidateProtocols)}`,
+    diagnostics.selectedCandidatePairState ? `pairState=${diagnostics.selectedCandidatePairState}` : 'pairState=none',
+    diagnostics.selectedLocalCandidateType ? `selectedLocal=${diagnostics.selectedLocalCandidateType}` : undefined,
+    diagnostics.selectedLocalCandidateProtocol ? `selectedLocalProtocol=${diagnostics.selectedLocalCandidateProtocol}` : undefined,
+    diagnostics.selectedLocalCandidateRelayProtocol
+      ? `selectedLocalRelay=${diagnostics.selectedLocalCandidateRelayProtocol}`
+      : undefined,
+    diagnostics.selectedRemoteCandidateType ? `selectedRemote=${diagnostics.selectedRemoteCandidateType}` : undefined,
+    diagnostics.selectedRemoteCandidateProtocol
+      ? `selectedRemoteProtocol=${diagnostics.selectedRemoteCandidateProtocol}`
+      : undefined,
+    diagnostics.selectedRemoteCandidateRelayProtocol
+      ? `selectedRemoteRelay=${diagnostics.selectedRemoteCandidateRelayProtocol}`
+      : undefined,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .join(' ')
+}
 
 const waitForCleanupConvergence = async () => {
   let latest = await getActiveMediaResourceCount()
@@ -257,6 +315,20 @@ export const SfuSmokeHarness = () => {
     }
   }
 
+  const waitForTransportConnectedWithDiagnostics = async (
+    adapter: SfuClientAdapter,
+    transportId: string | undefined,
+  ) => {
+    try {
+      return await adapter.waitForTransportConnected(transportId)
+    } catch (error) {
+      const diagnostics = await adapter.getTransportDiagnostics(transportId)
+      const message = error instanceof Error ? error.message : 'mediasoup transport connection failed'
+
+      throw new Error(`${message}; ${toTransportConnectionDetail(diagnostics)}`)
+    }
+  }
+
   const runSmoke = useCallback(
     async (mode: SmokeMode) => {
       await cleanup(false)
@@ -293,6 +365,7 @@ export const SfuSmokeHarness = () => {
         assertTurnCredentials(mode, sendTransport)
         sendTransportId = sendTransport.backendTransport.transportId
         addLog('create send transport', 'pass', sendTransportId)
+        addLog('send transport config', 'pass', toTransportConfigDetail(await adapter.getTransportDiagnostics(sendTransportId)))
 
         addLog('create recv transport', 'running')
         const recvTransport = await adapter.createTransport({
@@ -303,6 +376,7 @@ export const SfuSmokeHarness = () => {
         assertTurnCredentials(mode, recvTransport)
         recvTransportId = recvTransport.backendTransport.transportId
         addLog('create recv transport', 'pass', recvTransportId)
+        addLog('recv transport config', 'pass', toTransportConfigDetail(await adapter.getTransportDiagnostics(recvTransportId)))
 
         addLog('produce local track', 'running')
         const localTrack = await createSyntheticAudioTrack()
@@ -314,8 +388,8 @@ export const SfuSmokeHarness = () => {
         addLog('produce local track', 'pass', producerId)
 
         addLog('send transport connected', 'running')
-        await adapter.waitForTransportConnected(sendTransportId)
-        addLog('send transport connected', 'pass')
+        await waitForTransportConnectedWithDiagnostics(adapter, sendTransportId)
+        addLog('send transport connected', 'pass', toTransportConnectionDetail(await adapter.getTransportDiagnostics(sendTransportId)))
 
         if (!producerId) {
           throw new Error('Backend producer id is missing')
@@ -335,8 +409,8 @@ export const SfuSmokeHarness = () => {
         })
 
         addLog('recv transport connected', 'running')
-        await adapter.waitForTransportConnected(recvTransportId)
-        addLog('recv transport connected', 'pass')
+        await waitForTransportConnectedWithDiagnostics(adapter, recvTransportId)
+        addLog('recv transport connected', 'pass', toTransportConnectionDetail(await adapter.getTransportDiagnostics(recvTransportId)))
 
         if (remoteAudioRef.current) {
           remoteAudioRef.current.srcObject = new MediaStream([consumed.track])

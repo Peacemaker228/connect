@@ -47,6 +47,34 @@ type SfuClientTransportConnectionState =
   | 'disconnected'
   | 'closed'
 
+export type SfuClientTransportDiagnostics = {
+  transportId: string
+  direction: MediasoupPrototypeTransportDirection
+  connectionState: string
+  iceTransportPolicy: RTCIceTransportPolicy | 'all'
+  serverIceCandidateCount: number
+  serverIceCandidateProtocols: string[]
+  serverIceCandidateTypes: string[]
+  turnIceServerCount: number
+  turnUrlSchemeCount: number
+  turnUrlSchemes: string[]
+  turnUrlTransportHints: string[]
+  connectEventFired: boolean
+  connectAccepted: boolean
+  connectError?: string
+  selectedCandidatePairState?: string
+  selectedLocalCandidateType?: string
+  selectedLocalCandidateProtocol?: string
+  selectedLocalCandidateRelayProtocol?: string
+  selectedRemoteCandidateType?: string
+  selectedRemoteCandidateProtocol?: string
+  selectedRemoteCandidateRelayProtocol?: string
+  localCandidateTypes: string[]
+  localCandidateProtocols: string[]
+}
+
+type MutableSfuClientTransportDiagnostics = SfuClientTransportDiagnostics
+
 export type SfuClientTransportBundle = {
   direction: MediasoupPrototypeTransportDirection
   backendTransport: MediasoupPrototypeTransportResponse
@@ -97,6 +125,7 @@ export class SfuClientAdapter {
   private readonly producers = new Map<string, mediasoupClientTypes.Producer<mediasoupClientTypes.AppData>>()
   private readonly backendConsumers = new Map<string, MediasoupPrototypeConsumerResponse>()
   private readonly consumers = new Map<string, mediasoupClientTypes.Consumer<mediasoupClientTypes.AppData>>()
+  private readonly transportDiagnostics = new Map<string, MutableSfuClientTransportDiagnostics>()
 
   async createTransport({
     direction,
@@ -114,8 +143,15 @@ export class SfuClientAdapter {
     const transportOptions = this.toTransportOptions(backendTransport, direction, iceTransportPolicy, sessionScope)
     const transport =
       direction === 'recv' ? device.createRecvTransport(transportOptions) : device.createSendTransport(transportOptions)
+    const diagnostics = this.createTransportDiagnostics(
+      backendTransport,
+      direction,
+      iceTransportPolicy,
+      transportOptions.iceServers,
+    )
 
     transport.on('connect', ({ dtlsParameters }, callback, errback) => {
+      diagnostics.connectEventFired = true
       void connectMediasoupPrototypeTransport(transport.id, {
         roomId: transport.appData.roomId,
         participantSessionId: transport.appData.participantSessionId,
@@ -126,9 +162,11 @@ export class SfuClientAdapter {
             throw new Error(result.reason ?? 'mediasoup transport connect was not accepted')
           }
 
+          diagnostics.connectAccepted = true
           callback()
         })
         .catch((error: unknown) => {
+          diagnostics.connectError = error instanceof Error ? error.message : 'mediasoup transport connect failed'
           errback(error instanceof Error ? error : new Error('mediasoup transport connect failed'))
         })
     })
@@ -139,9 +177,11 @@ export class SfuClientAdapter {
 
     transport.observer.on('close', () => {
       this.transports.delete(transport.id)
+      this.transportDiagnostics.delete(transport.id)
     })
 
     this.transports.set(transport.id, transport)
+    this.transportDiagnostics.set(transport.id, diagnostics)
 
     return {
       direction,
@@ -389,6 +429,34 @@ export class SfuClientAdapter {
     return transport.connectionState
   }
 
+  async getTransportDiagnostics(transportId: string | undefined): Promise<SfuClientTransportDiagnostics | undefined> {
+    if (!transportId) {
+      return undefined
+    }
+
+    const transport = this.transports.get(transportId)
+    const diagnostics = this.transportDiagnostics.get(transportId)
+
+    if (!diagnostics) {
+      return undefined
+    }
+
+    if (transport && !transport.closed) {
+      diagnostics.connectionState = transport.connectionState
+      await this.populateTransportStatsDiagnostics(transport, diagnostics)
+    }
+
+    return {
+      ...diagnostics,
+      serverIceCandidateProtocols: [...diagnostics.serverIceCandidateProtocols],
+      serverIceCandidateTypes: [...diagnostics.serverIceCandidateTypes],
+      turnUrlSchemes: [...diagnostics.turnUrlSchemes],
+      turnUrlTransportHints: [...diagnostics.turnUrlTransportHints],
+      localCandidateTypes: [...diagnostics.localCandidateTypes],
+      localCandidateProtocols: [...diagnostics.localCandidateProtocols],
+    }
+  }
+
   async close() {
     const closeResourceRequests: Array<Promise<unknown>> = []
     const closeTransportRequests: Array<Promise<unknown>> = []
@@ -445,6 +513,7 @@ export class SfuClientAdapter {
     this.producers.clear()
     this.backendProducers.clear()
     this.transports.clear()
+    this.transportDiagnostics.clear()
     this.device = null
 
     await Promise.allSettled(closeResourceRequests)
@@ -575,6 +644,127 @@ export class SfuClientAdapter {
         credential: credentials.credential,
       },
     ]
+  }
+
+  private createTransportDiagnostics(
+    backendTransport: MediasoupPrototypeTransportResponse,
+    direction: MediasoupPrototypeTransportDirection,
+    iceTransportPolicy: RTCIceTransportPolicy | undefined,
+    iceServers: RTCIceServer[] | undefined,
+  ): MutableSfuClientTransportDiagnostics {
+    const serverCandidates = backendTransport.iceCandidates ?? []
+    const turnUrls = iceServers?.flatMap((server) => this.normalizeIceServerUrls(server.urls)) ?? []
+
+    return {
+      transportId: backendTransport.transportId ?? 'unknown',
+      direction,
+      connectionState: 'new',
+      iceTransportPolicy: iceTransportPolicy ?? 'all',
+      serverIceCandidateCount: serverCandidates.length,
+      serverIceCandidateProtocols: this.uniqueStrings(
+        serverCandidates.map((candidate) => this.readString(candidate.protocol)),
+      ),
+      serverIceCandidateTypes: this.uniqueStrings(
+        serverCandidates.map((candidate) => this.readString(candidate.type)),
+      ),
+      turnIceServerCount: iceServers?.length ?? 0,
+      turnUrlSchemeCount: turnUrls.length,
+      turnUrlSchemes: this.uniqueStrings(turnUrls.map((url) => this.readUrlScheme(url))),
+      turnUrlTransportHints: this.uniqueStrings(turnUrls.map((url) => this.readTurnTransportHint(url))),
+      connectEventFired: false,
+      connectAccepted: false,
+      localCandidateTypes: [],
+      localCandidateProtocols: [],
+    }
+  }
+
+  private async populateTransportStatsDiagnostics(
+    transport: mediasoupClientTypes.Transport<SfuClientTransportAppData>,
+    diagnostics: MutableSfuClientTransportDiagnostics,
+  ) {
+    let stats: RTCStatsReport
+
+    try {
+      stats = await transport.getStats()
+    } catch {
+      return
+    }
+
+    const records = new Map<string, Record<string, unknown>>()
+
+    stats.forEach((value, key) => {
+      records.set(key, value as unknown as Record<string, unknown>)
+    })
+
+    const localCandidates = [...records.values()].filter((record) => record.type === 'local-candidate')
+    diagnostics.localCandidateTypes = this.uniqueStrings(
+      localCandidates.map((candidate) => this.readString(candidate.candidateType)),
+    )
+    diagnostics.localCandidateProtocols = this.uniqueStrings(
+      localCandidates.map((candidate) => this.readString(candidate.protocol)),
+    )
+
+    const selectedPair = this.findSelectedCandidatePair(records)
+
+    if (!selectedPair) {
+      return
+    }
+
+    diagnostics.selectedCandidatePairState = this.readString(selectedPair.state)
+
+    const localCandidateId = this.readString(selectedPair.localCandidateId)
+    const remoteCandidateId = this.readString(selectedPair.remoteCandidateId)
+    const localCandidate = localCandidateId ? records.get(localCandidateId) : undefined
+    const remoteCandidate = remoteCandidateId ? records.get(remoteCandidateId) : undefined
+
+    diagnostics.selectedLocalCandidateType = this.readString(localCandidate?.candidateType)
+    diagnostics.selectedLocalCandidateProtocol = this.readString(localCandidate?.protocol)
+    diagnostics.selectedLocalCandidateRelayProtocol = this.readString(localCandidate?.relayProtocol)
+    diagnostics.selectedRemoteCandidateType = this.readString(remoteCandidate?.candidateType)
+    diagnostics.selectedRemoteCandidateProtocol = this.readString(remoteCandidate?.protocol)
+    diagnostics.selectedRemoteCandidateRelayProtocol = this.readString(remoteCandidate?.relayProtocol)
+  }
+
+  private findSelectedCandidatePair(records: Map<string, Record<string, unknown>>) {
+    const pairs = [...records.values()].filter((record) => record.type === 'candidate-pair')
+
+    return (
+      pairs.find((pair) => pair.selected === true) ??
+      pairs.find((pair) => pair.nominated === true && pair.state === 'succeeded') ??
+      pairs.find((pair) => pair.state === 'succeeded') ??
+      pairs.find((pair) => pair.state === 'in-progress' || pair.state === 'inprogress')
+    )
+  }
+
+  private normalizeIceServerUrls(urls: string | string[]) {
+    return Array.isArray(urls) ? urls : [urls]
+  }
+
+  private readUrlScheme(url: string) {
+    const scheme = url.split(':')[0]?.toLowerCase()
+
+    return scheme === 'turn' || scheme === 'turns' ? scheme : 'unknown'
+  }
+
+  private readTurnTransportHint(url: string) {
+    try {
+      const parsedUrl = new URL(url)
+      const transport = parsedUrl.searchParams.get('transport')?.toLowerCase()
+
+      return transport || 'unspecified'
+    } catch {
+      const transportMatch = /[?&]transport=([^&]+)/i.exec(url)
+
+      return transportMatch?.[1]?.toLowerCase() || 'unspecified'
+    }
+  }
+
+  private uniqueStrings(values: Array<string | undefined>) {
+    return [...new Set(values.filter((value): value is string => Boolean(value)))].sort()
+  }
+
+  private readString(value: unknown) {
+    return typeof value === 'string' && value.trim() ? value.trim() : undefined
   }
 }
 
