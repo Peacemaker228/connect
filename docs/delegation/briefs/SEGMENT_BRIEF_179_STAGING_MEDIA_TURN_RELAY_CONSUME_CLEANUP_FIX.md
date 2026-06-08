@@ -80,30 +80,115 @@ Note: one initial `tsc` attempt failed while `next build` was concurrently regen
 
 ## Staging Verification
 
-Pending operator-guided staging verification.
+Operator-guided staging verification ran on 2026-06-08 on the separate staging VPS.
 
-Required staging checks after deploy:
+Deploy/update evidence:
 
-- deployed fixed commit on the separate staging VPS
-- API/web rebuilt or restarted as affected
-- authenticated mediasoup health before smoke: `ready`, counters zero
-- smoke harness direct: pass
-- smoke harness TURN: pass or clear blocker
-- `Stop` / `Reset` cleanup: active rooms/transports/producers/consumers converge to zero
-- coturn logs show authenticated relay activity, redacted
-- no secrets printed
+- Deployed commit: `aa23925bd68aae5bd5c954ce601540de5eae8242`
+- Commit summary: `aa23925 Merge pull request #132 from Peacemaker228/wave/stage9-staging-media-turn-relay-consume-cleanup-fix`
+- API build: `pass`
+- Web build: `pass`
+- PM2 restart:
+  - `ax-connect-staging-api`: online after restart
+  - `ax-connect-staging-web`: online after restart
+- HTTPS API health: `pass`
+- Schema migration: not run
+- Production VPS/env/defaults: untouched
+
+Authenticated preflight before harness:
+
+- Fresh staging-only auth session: `pass`
+- `/media/sfu-smoke` authenticated entrypoint: HTTP `200`
+- mediasoup health:
+  - status: `ready`
+  - enabled: `true`
+  - worker pid present
+  - router id present
+  - active room count: `0`
+  - active transport count: `0`
+  - active producer count: `0`
+  - active consumer count: `0`
+  - runtime staging SFU enabled: `true`
+  - TURN URLs configured: `true`
+  - TURN secret configured: `true`
+- coturn container: running and not restarting
+
+Harness direct result:
+
+- mode: `direct`
+- status: `pass`
+- health: `pass`
+- create send transport: `pass`
+- create recv transport: `pass`
+- produce local track: `pass`
+- send transport connected: `pass`
+- create consumer metadata: `pass`
+- recv transport connected: `pass`
+- consume remote track: `pass`
+- remote track: `live`
+- raw transport/producer/consumer identifiers were present in the browser UI but are not recorded here
+
+Direct cleanup:
+
+- harness cleanup: `pass`
+- browser cleanup evidence: `rooms=0 transports=0 producers=0 consumers=0`
+- server health after direct cleanup:
+  - status: `ready`
+  - enabled: `true`
+  - active room count: `0`
+  - active transport count: `0`
+  - active producer count: `0`
+  - active consumer count: `0`
+
+Harness TURN result:
+
+- mode: `turn`
+- status: `fail`
+- health: `pass`
+- create send transport: `pass`
+- create recv transport: `pass`
+- produce local track: `pass`
+- send transport connected: `fail`
+- failure: `mediasoup transport did not connect: new`
+- consumer metadata was not reached in the failed TURN run
+- raw transport/producer identifiers were present in the browser UI but are not recorded here
+
+TURN cleanup:
+
+- harness cleanup: `pass`
+- browser cleanup evidence: `rooms=0 transports=0 producers=0 consumers=0`
+- final authenticated mediasoup health:
+  - HTTP `200`
+  - status: `ready`
+  - enabled: `true`
+  - worker pid present
+  - router id present
+  - active room count: `0`
+  - active transport count: `0`
+  - active producer count: `0`
+  - active consumer count: `0`
+
+Coturn evidence:
+
+- redacted coturn logs showed relay allocation activity during the run.
+- allocation count returned to `0`.
+- old invalid/no-auth lines were present in the coturn tail and remained redacted.
+- no generated TURN credentials, cookies, auth headers, passwords, private keys, or env values were printed.
 
 ## Current Classification
 
 - implementation: `pass / local verification complete`
-- staging direct rerun: `pending`
-- staging TURN rerun: `pending`
-- cleanup convergence proof: `pending`
+- staging deploy: `pass`
+- staging direct harness rerun: `pass`
+- cleanup convergence: `pass`
+- staging TURN harness rerun: `fail / relay transport connection blocker`
 - production VPS/env/defaults: `untouched`
-- final segment classification: `pending staging evidence`
+- final segment classification: `partial pass / cleanup fixed, TURN relay connection still blocked`
 
 ## Recommended Next
 
-Deploy this focused fix to staging and rerun only the smoke harness Direct + TURN plus cleanup convergence.
+Do not proceed to full manual private/channel smoke yet.
 
-If direct, TURN, and cleanup pass, recommended next segment: `production-media-staging-smoke-run-report-rerun`.
+Recommended next: focused staging TURN relay connection fix, because relay mode now fails before consume with send transport connection state staying `new`.
+
+After that fix, rerun only the staging smoke harness Direct + TURN plus cleanup convergence. Proceed to `production-media-staging-smoke-run-report-rerun` only if Direct, TURN, and cleanup all pass.
