@@ -29,6 +29,8 @@ type AuthEntrypointFormProps = {
 type AuthEntrypointFormValues = z.infer<typeof authEntrypointSchema>
 
 const DEFAULT_REDIRECT_URL = '/'
+const AUTH_INPUT_CLASS =
+  'border-white/15 bg-neutral-950/80 text-white placeholder:text-neutral-500 ring-offset-black focus-visible:ring-orange-500'
 
 export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
   const router = useRouter()
@@ -120,6 +122,7 @@ export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
                   <FormControl>
                     <Input
                       autoComplete="name"
+                      className={AUTH_INPUT_CLASS}
                       disabled={isLoading}
                       placeholder="Your name"
                       {...field}
@@ -142,6 +145,7 @@ export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
                 <FormControl>
                   <Input
                     autoComplete="email"
+                    className={AUTH_INPUT_CLASS}
                     disabled={isLoading}
                     placeholder="name@example.com"
                     type="email"
@@ -164,6 +168,7 @@ export function AuthEntrypointForm({ mode }: AuthEntrypointFormProps) {
                 <FormControl>
                   <Input
                     autoComplete={isRegister ? 'new-password' : 'current-password'}
+                    className={AUTH_INPUT_CLASS}
                     disabled={isLoading}
                     placeholder="At least 8 characters"
                     type="password"
