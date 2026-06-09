@@ -969,6 +969,10 @@ Done:
 - `staging-turn-relay-transport-connection-fix` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_180_STAGING_TURN_RELAY_TRANSPORT_CONNECTION_FIX.md`
 - the staging smoke harness now has bounded non-secret TURN transport diagnostics for the relay connection blocker: TURN URL scheme/count/hints without values, server ICE candidate protocol/type counts, relay policy, mediasoup-client connect-event/accepted status, local candidate types, and selected candidate-pair state when browser stats expose it
 - Segment 180 staging rerun is pending; production VPS/env/defaults remain untouched and LiveKit fallback remains preserved
+- `staging-turn-relay-diagnostics-deploy-and-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_181_STAGING_TURN_RELAY_DIAGNOSTICS_RERUN.md`
+- Segment 180 diagnostics were deployed to staging at commit `e08b8f4a9b90dfa3810e61d5f172b19f6a2fedb1`; authenticated preflight passed, Direct harness passed, TURN still failed before consume, and cleanup converged to zero
+- verified TURN blocker: relay credentials and relay policy are present, browser gathers relay candidates, mediasoup-client connect fires, backend DTLS connect accepts, but no candidate pair is selected
+- staging config classification showed mediasoup candidates on expected RTC range with staging hostname class, media UFW rules present, and coturn lacking explicit `external-ip` / `relay-ip`; next work remains a focused staging relay candidate-pair fix
 
 Remaining:
 - process-local mediasoup/signaling state remains a production/multi-process blocker
@@ -983,7 +987,7 @@ Remaining:
 - staging LiveKit rollback env is present; Storage is explicitly deferred for media-only pre-smoke
 - staging coturn is running and minimal no-open-relay checks passed without printing credentials
 - staging smoke plan exists, staging web/API gates are deployed on staging, and smoke harness direct SFU passes
-- staging TURN relay smoke requires a focused relay connection fix/rerun; the current failure is send transport connection state `new`, and Segment 180 diagnostics should classify the verified blocker without secrets
+- staging TURN relay smoke requires a focused relay candidate-pair fix; the verified failure is selected candidate-pair absence after relay candidate gathering and accepted backend DTLS connect
 - staging cleanup convergence now passes for the harness, but must be rechecked after the next TURN relay fix
 - manual private/channel/video/screen-share smoke remains not run until the TURN relay blocker is fixed
 - coturn readiness criteria are documented, but production coturn is not deployed and systemd-vs-Docker implementation remains undecided

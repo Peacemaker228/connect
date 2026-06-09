@@ -109,12 +109,16 @@ Done:
 - `staging-turn-relay-transport-connection-fix` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_180_STAGING_TURN_RELAY_TRANSPORT_CONNECTION_FIX.md`.
 - the first Segment 180 change adds bounded, non-secret browser transport diagnostics to the staging smoke harness: TURN URL scheme/count/hints without values, server ICE candidate protocol/type counts, relay policy, connect-event/accepted status, local candidate types, and selected candidate-pair state from WebRTC stats where available.
 - Segment 180 does not enable production defaults, does not touch production env/VPS, does not remove LiveKit, and does not run full manual private/channel smoke; staging rerun is pending after commit/deploy.
+- `staging-turn-relay-diagnostics-deploy-and-rerun` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_181_STAGING_TURN_RELAY_DIAGNOSTICS_RERUN.md`.
+- Segment 180 diagnostics were deployed to the separate staging VPS at commit `e08b8f4a9b90dfa3810e61d5f172b19f6a2fedb1`; API/web builds and PM2 restarts passed, gates remained scoped to staging env files, and authenticated preflight passed.
+- focused staging rerun is `review / TURN relay ICE pair selection blocker`: Direct passed, cleanup converged to zero, TURN delivered credentials and relay policy, browser gathered relay candidates, mediasoup-client connect fired, backend DTLS connect accepted, but no candidate pair was selected.
+- additional staging classification showed mediasoup candidates use the expected `40000-40100` range and staging hostname class, UFW media rules are present, coturn has listener config but no explicit `external-ip` or `relay-ip`; next work must stay focused on relay/SFU reachability config.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. focused staging TURN relay connection fix / rerun
-   - current relay blocker is send transport connection state `new`; cleanup convergence now passes; Segment 180 diagnostics should classify whether the blocker is browser relay candidate gathering, backend DTLS connect, mediasoup announced address / RTC firewall reachability, coturn peer permission, or another verified cause
+1. focused staging TURN relay candidate-pair fix
+   - current relay blocker is selected candidate-pair absence after relay candidate gathering and accepted backend DTLS connect; cleanup convergence passes
 2. `production-media-staging-smoke-run-report-rerun`
    - rerun direct and relay smoke in staging/non-production only after the TURN relay connection fix
 3. `production-media-canary-readiness-decision`

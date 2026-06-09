@@ -1249,13 +1249,15 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 - focused staging TURN/cleanup fix deployed to staging: the mediasoup prototype now has an authenticated transport close endpoint, the SDK/client closes backend transports, the harness awaits Stop/Reset cleanup, and bounded cleanup convergence proof is added
 - staging focused rerun produced a partial pass: harness Direct passed and cleanup now converges to zero, but TURN still fails because the relay send transport remains in connection state `new`
 - focused staging TURN relay connection diagnosis is in progress through Segment 180: the smoke harness now records only sanitized transport diagnostics for TURN rerun, including relay policy, TURN URL scheme/count/hints without values, server ICE candidate protocol/type counts, connect-event/accepted status, local candidate types, and selected candidate-pair state where browser stats expose it
+- Segment 181 deployed the diagnostics to staging and reran only Direct + TURN + cleanup. Direct passed and cleanup converged to zero. TURN still failed before consume, but the blocker is now classified: relay credentials and relay policy are present, browser gathers relay candidates, the mediasoup-client connect event fires, backend DTLS connect accepts, and no ICE candidate pair is selected.
+- Segment 181 config classification recorded no secret values: mediasoup candidates use the expected RTC range and staging hostname class, UFW media rules are present, and coturn has listener config but no explicit `external-ip` / `relay-ip`.
 - production monitoring/alerting is not implemented
 - LiveKit fallback removal is not approved
 
 ## Next Segments
 
 Recommended next:
-- focused staging TURN relay connection fix/rerun; current blocker is relay send transport not connecting, not cleanup convergence, and Segment 180 diagnostics should classify whether the cause is browser relay candidate gathering, backend DTLS connect, mediasoup announced address / RTC firewall reachability, coturn peer permission, or another verified cause
+- focused staging TURN relay candidate-pair fix; current blocker is no selected ICE candidate pair after relay candidate gathering and accepted backend DTLS connect, not missing credentials/policy and not cleanup convergence
 - after Direct, TURN, and cleanup pass, rerun the scoped staging smoke run-report segment
 
 Do not proceed next to:
