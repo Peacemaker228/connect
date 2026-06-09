@@ -973,6 +973,10 @@ Done:
 - Segment 180 diagnostics were deployed to staging at commit `e08b8f4a9b90dfa3810e61d5f172b19f6a2fedb1`; authenticated preflight passed, Direct harness passed, TURN still failed before consume, and cleanup converged to zero
 - verified TURN blocker: relay credentials and relay policy are present, browser gathers relay candidates, mediasoup-client connect fires, backend DTLS connect accepts, but no candidate pair is selected
 - staging config classification showed mediasoup candidates on expected RTC range with staging hostname class, media UFW rules present, and coturn lacking explicit `external-ip` / `relay-ip`; next work remains a focused staging relay candidate-pair fix
+- `staging-turn-relay-network-config-fix` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_182_STAGING_TURN_RELAY_NETWORK_CONFIG_FIX.md`
+- staging-only network/config changes fixed the relay candidate-pair blocker: `MEDIA_SFU_ANNOUNCED_ADDRESS` now matches the staging public IPv4 without recording the value, coturn has explicit `external-ip` / `relay-ip`, and coturn runs with host networking instead of Docker-published relay ports
+- harness TURN relay now connects through a selected relay/host ICE pair and consumes a live remote track; coturn allocation counts return to zero
+- the result remains `review`, not pass, because TURN cleanup does not converge and leaves `rooms=0 transports=2 producers=1 consumers=1` after a second UI cleanup and bounded health recheck
 
 Remaining:
 - process-local mediasoup/signaling state remains a production/multi-process blocker
@@ -987,8 +991,7 @@ Remaining:
 - staging LiveKit rollback env is present; Storage is explicitly deferred for media-only pre-smoke
 - staging coturn is running and minimal no-open-relay checks passed without printing credentials
 - staging smoke plan exists, staging web/API gates are deployed on staging, and smoke harness direct SFU passes
-- staging TURN relay smoke requires a focused relay candidate-pair fix; the verified failure is selected candidate-pair absence after relay candidate gathering and accepted backend DTLS connect
-- staging cleanup convergence now passes for the harness, but must be rechecked after the next TURN relay fix
+- staging TURN relay network path now passes through coturn host networking, but cleanup convergence after successful TURN relay is blocked by stale mediasoup resources
 - manual private/channel/video/screen-share smoke remains not run until the TURN relay blocker is fixed
 - coturn readiness criteria are documented, but production coturn is not deployed and systemd-vs-Docker implementation remains undecided
 - mediasoup process criteria are documented, but production mediasoup process ownership, restart policy, logs, and implementation remain incomplete
@@ -997,7 +1000,7 @@ Remaining:
 - LiveKit removal remains blocked
 
 Next likely work:
-- focused staging TURN relay connection fix, then rerun smoke harness Direct + TURN only before any full staging smoke
+- focused staging TURN relay cleanup convergence fix, then rerun smoke harness Direct + TURN only before any full staging smoke
 - do not proceed next to production rollout, production default switch, LiveKit removal, or Stage 6 production Postgres cutover
 
 ## Historical Notes
