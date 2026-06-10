@@ -120,6 +120,11 @@ Done:
 
 ## Expected Future Implementation Segments
 
+Current pause:
+- `Wave 35 / CUSTOMER_PRIORITY_DELIVERY_PLAN` is active because an external team is using `staging.ax-connect.ru`.
+- Do not run disruptive staging media smoke or continue WebRTC cleanup while staging is serving active users unless an explicit operator window is approved.
+- The next WebRTC resume segment is preserved in `docs/waves/CUSTOMER_PRIORITY_DELIVERY_PLAN.md`.
+
 Recommended sequence:
 1. focused staging TURN relay cleanup convergence fix
    - current relay network blocker is fixed; remaining blocker is mediasoup resource cleanup after successful TURN relay
@@ -130,7 +135,7 @@ Recommended sequence:
 4. `production-media-rollback-drill-report`
    - prove LiveKit rollback/default switch before broader rollout
 
-Do not proceed directly to production rollout, production default switch, LiveKit removal, or Stage 6 production Postgres cutover. Direct/TURN staging media smoke is allowed only in the next scoped staging smoke run-report segment and must stay non-production with LiveKit fallback preserved.
+Do not proceed directly to production rollout, production default switch, LiveKit removal, Stage 6 production Postgres cutover, or resumed staging TURN cleanup while the customer-priority track is active. Direct/TURN staging media smoke is allowed only after the pause is lifted or during an approved operator window, and must stay non-production with LiveKit fallback preserved.
 
 ## Acceptance Criteria
 

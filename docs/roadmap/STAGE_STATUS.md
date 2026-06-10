@@ -41,6 +41,7 @@ Current wave order:
 - `Wave 32` = `MEDIA_STACK_TECHNOLOGY_DECISION`
 - `Wave 33` = `MEDIA_MVP_IMPLEMENTATION_PLAN`
 - `Wave 34` = `PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN`
+- `Wave 35` = `CUSTOMER_PRIORITY_DELIVERY_PLAN`
 
 ## Status by Stage
 
@@ -280,13 +281,18 @@ Remaining:
 
 ## Next Correct Step
 
-The active production media planning track has started with `Wave 34 / PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN`.
+The active work is now `Wave 35 / CUSTOMER_PRIORITY_DELIVERY_PLAN`.
 
-There is no mandatory next Stage 8 runtime segment after the local completion pass. Stage 8 remains `local complete / production blocked`.
+Reason:
+- an external team is actively using `https://staging.ax-connect.ru`;
+- their requests are priority one;
+- staging must be protected as a working stand, not treated as a disposable media-smoke playground.
 
-The next production media step is coturn readiness planning or runtime config mapping; production rollout, production default switch, and LiveKit removal remain blocked.
+Stage 8 remains `local complete / production blocked`.
 
-If production rollout is not next, acceptable follow-up work is limited to scoped manual product-review run reports or Stage 8 media documentation cleanup.
+Stage 9 WebRTC production/staging hardening is paused after Segment 182. The next WebRTC resume brief is preserved in `docs/waves/CUSTOMER_PRIORITY_DELIVERY_PLAN.md` as `staging-turn-success-cleanup-convergence-fix`.
+
+The next product step is `customer-priority-inventory-and-low-risk-ux-fixes`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -352,7 +358,7 @@ Remaining:
 - none for Stage 7 planning
 
 Next likely work:
-- Stage 9 / production media planning has started as a runbook-only track; do not start Stage 6 production cutover or production media rollout by default
+- customer-priority product fixes are active in `Wave 35`; do not start Stage 6 production cutover, production media rollout, or resumed WebRTC cleanup by default
 
 ### Stage 8. Media MVP
 
@@ -865,7 +871,7 @@ Next likely work:
 
 ### Stage 9. Media Hardening / Production Media Track
 
-Status: `planning started / production blocked`
+Status: `paused / production blocked / resumable`
 
 Current wave:
 - `Wave 34 / PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN`
@@ -877,6 +883,8 @@ Intent:
 - keep Stage 6 production Postgres migration deferred and separate
 
 Current rule:
+- pause WebRTC staging/prod hardening while the customer-priority track is active
+- do not run disruptive staging media smoke while the external team is using staging unless an explicit operator window is approved
 - do not enable production SFU default
 - do not deploy production coturn or production mediasoup in this planning wave
 - do not run Docker/PM2/systemd/Nginx/firewall implementation changes as part of the plan
@@ -1000,8 +1008,38 @@ Remaining:
 - LiveKit removal remains blocked
 
 Next likely work:
-- focused staging TURN relay cleanup convergence fix, then rerun smoke harness Direct + TURN only before any full staging smoke
+- paused: focused staging TURN relay cleanup convergence fix is saved in `docs/waves/CUSTOMER_PRIORITY_DELIVERY_PLAN.md`
+- active: customer-priority product fixes under `Wave 35`
 - do not proceed next to production rollout, production default switch, LiveKit removal, or Stage 6 production Postgres cutover
+
+### Wave 35. Customer Priority Delivery
+
+Status: `active / customer-priority`
+
+Current wave:
+- `Wave 35 / CUSTOMER_PRIORITY_DELIVERY_PLAN`
+
+Intent:
+- prioritize the external team's requested product improvements;
+- keep `staging.ax-connect.ru` stable as their temporary working stand;
+- preserve current staging data and avoid disruptive media/infra experiments;
+- keep WebRTC migration paused but resumable from the saved brief.
+
+Current rule:
+- branch product work from `core/reborn`;
+- do not merge new work into legacy `main` by default;
+- do not delete/recreate `main` without a separate repo-admin segment;
+- do not reset staging DB;
+- do not record real secrets in docs;
+- verify shared UI work on web first, then desktop where applicable.
+
+Done:
+- `customer-priority-track-pause-and-delivery-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_183_CUSTOMER_PRIORITY_TRACK_PAUSE_AND_DELIVERY_PLAN.md`
+- `docs/waves/CUSTOMER_PRIORITY_DELIVERY_PLAN.md` records staging strategy, branch strategy, active customer requirements, desktop-first verification, and the deferred WebRTC resume brief
+
+Next likely work:
+- `customer-priority-inventory-and-low-risk-ux-fixes`
+- keep unread indicators/mentions/storage/media fallback as separate scoped segments
 
 ## Historical Notes
 

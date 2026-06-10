@@ -14,6 +14,7 @@ Current status:
 - Production media readiness remains blocked by process-local mediasoup/signaling state, missing production SFU/TURN infrastructure, missing production firewall/process implementation, missing production-like soak, and missing rollback drill.
 - LiveKit fallback remains required until a later scoped removal decision.
 - Staging browser SFU smoke now requires two explicit staging-only gates: server-only `MEDIA_ENABLE_STAGING_SFU` for `apps/api`, and public build-time `NEXT_PUBLIC_MEDIA_ENABLE_STAGING_SFU_SMOKE` for the production-built staging web.
+- Operational pause: `staging.ax-connect.ru` is now an active working stand for an external team, so further staging WebRTC cleanup/smoke is paused unless an explicit operator window is approved. The next WebRTC resume brief is stored in `docs/waves/CUSTOMER_PRIORITY_DELIVERY_PLAN.md`.
 
 ## Non-Goals
 
@@ -1260,7 +1261,7 @@ Production rollout remains blocked until all are resolved or explicitly accepted
 ## Next Segments
 
 Recommended next:
-- focused staging TURN relay cleanup convergence fix; current blocker is stale mediasoup resources after successful TURN relay, not TURN credentials, relay policy, candidate-pair selection, or coturn allocation cleanup
+- paused until operator approval: focused staging TURN relay cleanup convergence fix; current blocker is stale mediasoup resources after successful TURN relay, not TURN credentials, relay policy, candidate-pair selection, or coturn allocation cleanup
 - after Direct, TURN, and cleanup pass together, rerun the scoped staging smoke run-report segment
 
 Do not proceed next to:
