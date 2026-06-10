@@ -28,7 +28,8 @@ The WebRTC/Stage 9 track remains paused. Staging data, production data, media in
 
 - Existing server edit/settings modal submit label now renders `Save`.
 - New server creation keeps the default `Create` label.
-- Submit behavior, mutation calls, routing, staged upload cleanup, and cache behavior were not changed.
+- Submit behavior, mutation calls, routing, and staged upload cleanup were not changed.
+- After edit success, the local React Query `['servers']` list cache and current `['server', serverId]` cache are updated and invalidated so changed server names show without a page reload.
 
 ### Chat Input Multiline Behavior
 
@@ -37,14 +38,24 @@ The WebRTC/Stage 9 track remains paused. Staging data, production data, media in
 - `Shift+Enter` inserts a newline.
 - `Ctrl+Enter` and `Cmd+Enter` were not existing dedicated shortcuts; because `Enter` submits, they continue to submit through the same Enter path unless `Shift` is held.
 - Message content is sent through the existing SDK mutation unchanged; no new client trim was added.
-- The composer auto-sizes up to a bounded height and then scrolls.
+- The composer auto-sizes up to roughly 20 visible lines and then scrolls internally.
+- The composer scrollbar uses a thin local style so it does not visually dominate the input.
 - Text message rendering now preserves intentional newlines with `whitespace-pre-wrap`.
 
 ### Chat Input Autofocus After Send
 
 - After a successful send initiated from the chat input, focus returns to the composer.
-- Autofocus is cancelled if focus or pointer interaction moves away during the pending send, which avoids stealing focus from file upload, emoji/menu interactions, media controls, or navigation.
+- Autofocus is retried briefly after `router.refresh()` so the composer stays focused after the refreshed chat tree settles.
+- Autofocus is cancelled if pointer interaction moves away during the pending send, which avoids stealing focus from file upload, emoji/menu interactions, media controls, or navigation.
 - Existing loading and error behavior is preserved: failed sends do not reset the form and do not force focus.
+
+### Local Storage Diagnostic
+
+- Local `.env.local` was inspected with secret values redacted from handoff.
+- Storage env is present and loaded for the API path.
+- A read-only S3 diagnostic using the same `.env.local` credentials successfully listed the target bucket.
+- The reported upload failure is therefore classified as external Object Storage write authorization failure: the key/bucket can be read/listed, but `PutObject` is denied by service account role, bucket policy, bucket ACL, KMS/object-lock policy, or an equivalent Yandex Object Storage access rule.
+- No storage code, env values, bucket policy, production, or staging configuration was changed.
 
 ## Files Changed
 
@@ -55,9 +66,11 @@ The WebRTC/Stage 9 track remains paused. Staging data, production data, media in
   - passes `type="edit"` into `ServerModal`.
 - `src/lib/chat/features/chat-input.tsx`
   - replaced the single-line composer input with a compact textarea;
-  - added Enter submit, Shift+Enter newline, bounded auto-height, and guarded refocus after successful send.
+  - added Enter submit, Shift+Enter newline, 20-line bounded auto-height, and guarded refocus after successful send.
 - `src/lib/chat/features/chat-item.tsx`
   - preserves newline formatting in rendered text messages.
+- `src/app/globals.css`
+  - added a local scrollbar style for the chat composer textarea.
 - `docs/waves/CUSTOMER_PRIORITY_DELIVERY_PLAN.md`
   - recorded this segment result and next recommended segment.
 - `docs/roadmap/STAGE_STATUS.md`
@@ -77,6 +90,13 @@ bun.cmd x next lint
 bun.cmd run build:web
 bun.cmd run check:desktop:config
 ```
+
+Additional local storage diagnostic:
+
+- `.env.local` storage keys are present; shell-level `STORAGE_*` overrides are absent.
+- bucket/public URL shape is internally consistent.
+- `ListObjectsV2` with `.env.local` credentials passed.
+- app upload still returns `S3-compatible upload failed: Access Denied`, which points at missing/denied write permission outside the app code.
 
 Local web smoke:
 
@@ -106,6 +126,7 @@ Not run:
 - customer-priority low-risk UX fixes: `pass / implemented`
 - web verification: `pass for static/type/build and local unauthenticated smoke; authenticated manual smoke not run`
 - desktop verification: `partial / safe config check passed; packaged desktop build not run`
+- storage upload: `blocked by local Object Storage PutObject AccessDenied outside app code`
 - staging: `untouched`
 - production: `untouched`
 

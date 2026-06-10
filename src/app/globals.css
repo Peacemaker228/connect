@@ -16,6 +16,31 @@ body,
     .overflow-wrap-anywhere {
         overflow-wrap: anywhere;
     }
+
+    .chat-message-input {
+        scrollbar-color: hsl(var(--muted-foreground) / 0.45) transparent;
+        scrollbar-gutter: stable;
+        scrollbar-width: thin;
+    }
+
+    .chat-message-input::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .chat-message-input::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .chat-message-input::-webkit-scrollbar-thumb {
+        background-color: hsl(var(--muted-foreground) / 0.35);
+        border: 2px solid transparent;
+        border-radius: 9999px;
+        background-clip: content-box;
+    }
+
+    .chat-message-input::-webkit-scrollbar-thumb:hover {
+        background-color: hsl(var(--muted-foreground) / 0.55);
+    }
 }
 
 @layer base {

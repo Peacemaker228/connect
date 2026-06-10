@@ -13,6 +13,11 @@ import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { chatInputSchema, IChatInputSchema } from '@app-core/schemas/chat-input-schema'
 import { useCreateMessage } from '@sdk/mutations/message'
 
+const CHAT_INPUT_LINE_HEIGHT = 20
+const CHAT_INPUT_VERTICAL_PADDING = 28
+const CHAT_INPUT_MAX_VISIBLE_LINES = 20
+const CHAT_INPUT_MAX_HEIGHT = CHAT_INPUT_LINE_HEIGHT * CHAT_INPUT_MAX_VISIBLE_LINES + CHAT_INPUT_VERTICAL_PADDING
+
 interface IChatInputProps {
   messageApiUrl: string
   //может быть любое значение
@@ -45,7 +50,8 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
     }
 
     element.style.height = '0px'
-    element.style.height = `${Math.min(element.scrollHeight, 128)}px`
+    element.style.height = `${Math.min(element.scrollHeight, CHAT_INPUT_MAX_HEIGHT)}px`
+    element.style.overflowY = element.scrollHeight > CHAT_INPUT_MAX_HEIGHT ? 'auto' : 'hidden'
   }, [])
 
   useEffect(() => {
@@ -60,16 +66,14 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
     }
 
     window.addEventListener('pointerdown', stopAutofocus, true)
-    window.addEventListener('focusin', stopAutofocus, true)
 
     return () => {
       window.removeEventListener('pointerdown', stopAutofocus, true)
-      window.removeEventListener('focusin', stopAutofocus, true)
     }
   }, [])
 
   const focusInputAfterSend = useCallback(() => {
-    requestAnimationFrame(() => {
+    const focusInput = (isLastAttempt = false) => {
       const element = inputRef.current
 
       if (!element || !shouldFocusAfterSendRef.current) {
@@ -83,8 +87,14 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
         resizeInput(element)
       }
 
-      shouldFocusAfterSendRef.current = false
-    })
+      if (isLastAttempt) {
+        shouldFocusAfterSendRef.current = false
+      }
+    }
+
+    requestAnimationFrame(() => focusInput())
+    window.setTimeout(() => focusInput(), 50)
+    window.setTimeout(() => focusInput(true), 150)
   }, [resizeInput])
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -158,7 +168,7 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
                     placeholder={`${t('message')} ${type === 'conversation' ? name : '#' + name}`}
                     disabled={isLoading}
                     className={
-                      'min-h-[48px] max-h-32 w-full resize-none rounded-md px-14 py-3.5 text-sm leading-5 bg-zinc-200/90 dark:bg-zinc-700/75 border-none border-0 outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-600 dark:text-zinc-200 placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50'
+                      'chat-message-input min-h-[48px] w-full resize-none rounded-md px-14 py-3.5 text-sm leading-5 bg-zinc-200/90 dark:bg-zinc-700/75 border-none border-0 outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-600 dark:text-zinc-200 placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50'
                     }
                   />
                   <div className="absolute top-7 right-8">

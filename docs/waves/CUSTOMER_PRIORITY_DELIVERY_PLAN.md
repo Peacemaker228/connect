@@ -389,9 +389,17 @@ Brief:
 Delivered:
 - server edit/settings submit label now says `Save`;
 - server creation still says `Create`;
+- server edit success updates and invalidates the local React Query server caches so the changed name appears without a page reload;
 - main chat composer supports `Enter` to send and `Shift+Enter` to insert a newline;
+- main chat composer grows to roughly 20 visible lines, then scrolls internally with a thinner scrollbar;
 - multiline message rendering preserves intentional newlines;
-- after successful send from the composer, focus returns to the input unless the user moved focus or pointer interaction elsewhere during the pending send.
+- after successful send from the composer, focus returns to the input after the refreshed chat tree settles unless the user moved pointer interaction elsewhere during the pending send.
+
+Local storage diagnostic:
+- `.env.local` contains the expected S3-compatible storage settings and no shell-level `STORAGE_*` override was present;
+- read-only `ListObjectsV2` with the local credentials passed;
+- local upload failure remains `S3-compatible upload failed: Access Denied`, classified as Object Storage write authorization/bucket policy/KMS/object-lock configuration outside app code;
+- no storage code, env values, bucket policy, staging, or production configuration was changed.
 
 Verification:
 - `git diff --check`: pass;
@@ -400,6 +408,7 @@ Verification:
 - `bun.cmd x next lint`: pass;
 - `bun.cmd run build:web`: pass;
 - `bun.cmd run check:desktop:config`: pass;
+- local S3 read-only diagnostic: pass for bucket list, blocked for app upload write by `AccessDenied`;
 - local unauthenticated dev smoke reached `/sign-in` successfully.
 
 Not run:
