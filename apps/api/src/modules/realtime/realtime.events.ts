@@ -7,6 +7,8 @@ export const getServerChannelsRealtimeKey = (serverId: string) => `server:${serv
 
 export const getServerMembersRealtimeKey = (serverId: string) => `server:${serverId}:members`;
 
+export const getServerProfileRealtimeKey = (serverId: string) => `server:${serverId}:profile`;
+
 export const getChatMessagesRealtimeKey = (chatId: string) => `chat:${chatId}:messages`;
 
 export const getChatMessagesUpdateRealtimeKey = (chatId: string) => `chat:${chatId}:messages:update`;
@@ -84,6 +86,17 @@ export const createMemberAddedRealtimeEvent = (
   payload: {
     action: 'member_added',
     serverId,
+  },
+});
+
+export const createServerUpdatedRealtimeEvent = (
+  serverId: string,
+  server: { id: string; name?: string; imageUrl?: string },
+): RealtimeEvent<{ action: 'server_updated'; server: { id: string; name?: string; imageUrl?: string } }> => ({
+  key: getServerProfileRealtimeKey(serverId),
+  payload: {
+    action: 'server_updated',
+    server,
   },
 });
 

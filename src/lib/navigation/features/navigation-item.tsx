@@ -90,7 +90,7 @@ export const NavigationItem: FC<INavigationItemProps> = ({ id, imageUrl, initial
             'relative group flex mx-3 h-[48px] w-[48px] rounded-[24px] overflow-hidden group-hover:rounded-[16px] transition-all',
           )}>
           {shouldShowImage ? (
-            <Image src={fileAccessPath} fill alt={name} onError={() => setHasImageError(true)} />
+            <Image src={fileAccessPath} fill alt={name} unoptimized onError={() => setHasImageError(true)} />
           ) : (
             <div
               className={cn(

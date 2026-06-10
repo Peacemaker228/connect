@@ -292,7 +292,7 @@ Stage 8 remains `local complete / production blocked`.
 
 Stage 9 WebRTC production/staging hardening is paused after Segment 182. The next WebRTC resume brief is preserved in `docs/waves/CUSTOMER_PRIORITY_DELIVERY_PLAN.md` as `staging-turn-success-cleanup-convergence-fix`.
 
-The next product step is `customer-unread-message-badges-and-sound-plan`.
+The next product step is `customer-server-edit-realtime-propagation-fix`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -1036,11 +1036,15 @@ Current rule:
 Done:
 - `customer-priority-track-pause-and-delivery-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_183_CUSTOMER_PRIORITY_TRACK_PAUSE_AND_DELIVERY_PLAN.md`
 - `docs/waves/CUSTOMER_PRIORITY_DELIVERY_PLAN.md` records staging strategy, branch strategy, active customer requirements, desktop-first verification, and the deferred WebRTC resume brief
-- `customer-priority-inventory-and-low-risk-ux-fixes` is implemented in `docs/delegation/briefs/SEGMENT_BRIEF_184_CUSTOMER_PRIORITY_LOW_RISK_UX_FIXES.md`: server edit/settings label now says `Save`, server creation still says `Create`, server edit updates local server caches without requiring page reload, chat composer supports `Enter` send and `Shift+Enter` newline with roughly 20 visible lines before internal scroll, whitespace-only messages are rejected with edge-trim normalization, multiline message rendering preserves internal newlines, guarded post-send input autofocus is in place, and desktop/mobile chat scroll-to-bottom after current-user send is handled through immediate cache update plus a local per-chat scroll event
+- dev/preview stand creation is intentionally ordered after the current colleague-requirements batch stabilizes, then before risky WebRTC/media infrastructure work resumes
+- `customer-priority-inventory-and-low-risk-ux-fixes` is implemented in `docs/delegation/briefs/SEGMENT_BRIEF_184_CUSTOMER_PRIORITY_LOW_RISK_UX_FIXES.md`: server edit/settings label now says `Save`, server creation still says `Create`, server edit updates the editing user's local server caches without requiring page reload, chat composer supports `Enter` send and `Shift+Enter` newline with roughly 20 visible lines before internal scroll, whitespace-only messages are rejected with edge-trim normalization, multiline message rendering preserves internal newlines, guarded post-send input autofocus is in place, and desktop/mobile chat scroll-to-bottom after current-user send is handled through immediate cache update plus a local per-chat scroll event
+- `customer-server-edit-realtime-propagation-fix` is implemented in `docs/delegation/briefs/SEGMENT_BRIEF_185_CUSTOMER_SERVER_EDIT_REALTIME_PROPAGATION_FIX.md`: backend emits `server_updated` on `server:${serverId}:profile` after successful server edit, and connected clients reconcile server list/sidebar/header caches from the event
+- `customer-staging-storage-write-permission-fix` is diagnosed and partially closed in `docs/delegation/briefs/SEGMENT_BRIEF_186_CUSTOMER_STAGING_STORAGE_WRITE_PERMISSION_FIX.md`: the active upload path is backend-owned `POST /api/storage/upload` through the S3-compatible provider, accidental Yandex Cloud deletion was cancelled by the operator and staging `messageFile` upload now returns `200 OK` by browser evidence, and the remaining inline image display issue is fixed locally by bypassing the failing `next/image` optimizer path for backend-redirect storage images
 
 Next likely work:
-- `customer-unread-message-badges-and-sound-plan`
-- keep unread indicators/mentions/storage/media fallback as separate scoped segments
+- `customer-staging-storage-display-deploy-and-smoke`
+- after staging upload and inline display are green, return to `customer-unread-message-badges-and-sound-plan`
+- keep unread indicators/mentions/link preview/copy/reply/media fallback as separate scoped segments
 
 ## Historical Notes
 

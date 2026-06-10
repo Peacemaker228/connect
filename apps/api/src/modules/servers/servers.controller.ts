@@ -3,7 +3,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@n
 import { CurrentProfileId } from '../auth/decorators/current-profile-id.decorator';
 import { RequireAuthGuard } from '../auth/guards/require-auth.guard';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
-import { createMemberLeftRealtimeEvent } from '../realtime/realtime.events';
+import { createMemberLeftRealtimeEvent, createServerUpdatedRealtimeEvent } from '../realtime/realtime.events';
 import { ServersService } from './servers.service';
 
 type ServerMutationBody = {
@@ -41,12 +41,22 @@ export class ServersController {
   }
 
   @Patch(':serverId')
-  updateServer(
+  async updateServer(
     @CurrentProfileId() profileId: string,
     @Param('serverId') serverId: string,
     @Body() body: ServerMutationBody,
   ) {
-    return this.serversService.updateServer(profileId, serverId, body);
+    const server = await this.serversService.updateServer(profileId, serverId, body);
+
+    this.realtimeGateway.emit(
+      createServerUpdatedRealtimeEvent(serverId, {
+        id: server.id,
+        name: server.name,
+        imageUrl: server.imageUrl,
+      }),
+    );
+
+    return server;
   }
 
   @Delete(':serverId')

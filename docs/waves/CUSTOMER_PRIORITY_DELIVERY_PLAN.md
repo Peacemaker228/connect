@@ -50,6 +50,11 @@ Until that exists:
 - use local development and guarded browser tests for risky changes;
 - deploy to staging only for scoped product fixes needed by the team.
 
+Ordering decision:
+- do not interrupt the current customer-priority feature work to build the new dev/preview stand immediately;
+- first finish the current batch of colleague requirements that affect active staging usage;
+- after that batch stabilizes, create a separate dev/preview stand before resuming risky WebRTC/media infrastructure work or broad experiments.
+
 ## Branch Strategy
 
 Current active source branch:
@@ -118,14 +123,19 @@ Out of scope for first slice:
 
 Problem:
 - an existing server settings/edit modal shows a create-style button at the bottom.
+- a cache-only local update is not enough: other connected participants must see server name/settings changes without manual reload or unrelated refetch.
 
 Required:
 - for existing server edit/settings flow, the button label should be `Save` or equivalent;
 - create flow should remain `Create` where it creates a new server.
+- server edits should emit/update through the existing realtime/socket/event path.
+- connected participants should reconcile server list/header/sidebar state from the event.
 
 Acceptance:
 - no behavior regression in server create/edit;
 - label matches action.
+- when user A edits a server name, user B sees the updated name without manual reload.
+- local cache update and remote realtime update stay consistent.
 
 ### P1. Staging Storage Readiness
 
@@ -203,6 +213,53 @@ Acceptance:
 - link click works in web and desktop-safe flow;
 - malformed URLs do not become unsafe links;
 - preview support, if implemented, is safe and does not block message rendering.
+
+### P1. Message Copy Action
+
+Problem:
+- users need to copy message content quickly.
+- media/file messages must not copy broken values like `[object Object]`.
+
+Required behavior:
+- message UI exposes a copy action;
+- text copy preserves the full message text, including multiline content;
+- link messages copy usable text/URLs;
+- image/file messages copy a useful representation.
+
+Implementation direction:
+- first implementation should reliably copy text plus attachment/file URLs;
+- binary image copy should be attempted only if browser/desktop clipboard APIs and file access make it reliable;
+- if binary image copy is not safe, fallback to copying the image/file URL rather than `[object Object]`;
+- desktop clipboard behavior must be checked because the product is desktop-first.
+
+Acceptance:
+- copying a text message pastes the same text;
+- copying a multiline message preserves line breaks;
+- copying a message with image/file never pastes `[object Object]`;
+- fallback behavior is predictable and useful.
+
+### P1. Reply To Message
+
+Problem:
+- users need contextual replies like Discord or Telegram.
+
+Required behavior:
+- user can choose Reply on a channel or direct message;
+- composer shows the replied-to message context;
+- sending persists a message linked to the original message;
+- rendered message shows a compact reply preview;
+- clicking the reply preview should navigate or scroll to the original message where practical.
+
+Implementation direction:
+- this should be backend/schema/SDK/UI work, not UI-only state;
+- support channel and direct messages if the data model allows it;
+- reply target must be scoped to the same channel/conversation and permission-checked;
+- deleted or inaccessible originals need a safe fallback label.
+
+Acceptance:
+- replies survive reload;
+- replies render for other connected participants through realtime;
+- unsupported edge cases are explicit, not silent failures.
 
 ### P1. Chat Input Autofocus After Send
 
@@ -367,14 +424,18 @@ Handoff:
    - server settings `Save` label;
    - chat input autofocus;
    - multiline input behavior.
-3. Implement unread message indicators with persisted read state.
-4. Add notification sound and mute setting.
-5. Implement mentions and `@all`.
-6. Implement safe link rendering, then optional backend-owned link previews.
-7. Restore staging storage readiness for avatars.
-8. Improve media provider/fallback UI and screen-share fullscreen.
-9. Run web checks, then desktop checks for shared UI changes.
-10. Resume WebRTC cleanup only after customer-priority work stabilizes or moves to a separate dev stand.
+3. Fix server edit realtime propagation so other connected participants see changes without manual reload.
+4. Implement unread message indicators with persisted read state.
+5. Add notification sound and mute setting.
+6. Implement mentions and `@all`.
+7. Implement safe link rendering, then optional backend-owned link previews.
+8. Implement message copy action.
+9. Implement reply-to-message.
+10. Restore staging storage readiness for avatars.
+11. Improve media provider/fallback UI and screen-share fullscreen.
+12. Run web checks, then desktop checks for shared UI changes.
+13. Create a separate dev/preview stand after the current colleague-requirements batch stabilizes.
+14. Resume WebRTC cleanup only after customer-priority work stabilizes or moves to a separate dev stand.
 
 ## Low-Risk UX Fixes Result
 
@@ -390,6 +451,7 @@ Delivered:
 - server edit/settings submit label now says `Save`;
 - server creation still says `Create`;
 - server edit success updates and invalidates the local React Query server caches so the changed name appears without a page reload;
+- server edit realtime propagation to other connected participants is not covered by Segment 184 and remains the next follow-up before this server-edit item is fully complete;
 - main chat composer supports `Enter` to send and `Shift+Enter` to insert a newline;
 - main chat composer grows to roughly 20 visible lines, then scrolls internally with a thinner scrollbar;
 - whitespace-only chat messages are rejected, leading/trailing blank lines are trimmed, and internal multiline content is preserved;
@@ -425,3 +487,87 @@ Next recommended segment:
 - `customer-unread-message-badges-and-sound-plan`
 
 Keep unread notifications and mentions as separate segments because they touch backend/realtime/data model and need more design than a label/input fix.
+
+## Server Edit Realtime Propagation Result
+
+Segment:
+- `customer-server-edit-realtime-propagation-fix`
+
+Status: `pass / implemented`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_185_CUSTOMER_SERVER_EDIT_REALTIME_PROPAGATION_FIX.md`
+
+Delivered:
+- added shared/backend server update realtime event `server_updated`;
+- event key is `server:${serverId}:profile`;
+- payload carries `{ id, name, imageUrl }`;
+- backend emits the event after successful `PATCH /api/servers/:serverId`;
+- current server sidebar/header cache reconciles from the event;
+- server list/sidebar cache reconciles from events for server ids already present in the accessible `['servers']` cache;
+- repeated events update by server id and do not create duplicate list entries.
+
+Verification:
+- `git diff --check`: pass;
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass;
+- `bun.cmd run typecheck:api`: pass;
+- `bun.cmd x next lint`: pass;
+- `bun.cmd run build:web`: pass;
+- `bun.cmd run check:desktop:config`: pass.
+
+Not run:
+- authenticated two-session local smoke, because no two authenticated local user sessions/workspace were available in this shell;
+- existing Playwright specs, because available specs are SFU/media tests and this segment forbids media/WebRTC work;
+- packaged desktop build.
+
+Next recommended segment:
+- `customer-unread-message-badges-and-sound-plan`
+
+## Staging Storage Write Permission Diagnostic Result
+
+Segment:
+- `customer-staging-storage-write-permission-fix`
+
+Status: `partial pass / storage write recovered externally; backend-redirect image display fixed locally`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_186_CUSTOMER_STAGING_STORAGE_WRITE_PERMISSION_FIX.md`
+
+Delivered:
+- confirmed the active app upload path remains backend-owned through `POST /api/storage/upload`;
+- confirmed server avatars use `endpoint=serverImage`, folder `server-images`, and `PutObjectCommand`;
+- confirmed message files use `endpoint=messageFile`, folder `message-files`, and `PutObjectCommand`;
+- checked the real staging API runtime without printing values: `ax-connect-staging-api` is online but has no `STORAGE_*` variables in PM2 runtime;
+- confirmed `/etc/ax-connect-staging/api.env` is readable but currently contains no storage env names;
+- confirmed `yc` CLI is not installed/configured locally or on staging, so this shell cannot change Yandex Cloud IAM or bucket policy;
+- reran a redacted local candidate credential diagnostic: `.env.local` storage shape is present, `ListObjectsV2` passes, app-like `PutObject` under `server-images/__diagnostics__` fails with `AccessDenied`, and no temp object was left behind;
+- checked available bucket metadata with the same local candidate credentials without printing policy/ACL values: bucket policy and object-lock reads are denied, bucket encryption config is not present/readable as active, and bucket ACL metadata is readable.
+- recorded the operator finding that accidental Yandex Cloud deletion caused the original write failure and local S3 writes recovered after deletion was cancelled;
+- recorded staging browser evidence that `POST /api/storage/upload` now returns `200 OK` for `messageFile`;
+- fixed uploaded storage images to render with `next/image` `unoptimized` when using backend-owned `/api/storage/access`, avoiding the failing `/_next/image?.../api/storage/access...` optimizer path;
+- changed image attachment alt text so serialized `storage://v1?...` values are not shown as broken-image fallback text.
+
+Required operator fix:
+- deploy the local image display fix to staging;
+- confirm the chat attachment no longer requests `/_next/image` for backend-redirect storage images;
+- confirm the browser requests `/api/storage/access` directly and renders the uploaded image inline;
+- keep public write disabled and keep production storage untouched.
+
+Verification:
+- `git diff --check`: pass;
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass;
+- `bun.cmd run typecheck:api`: pass;
+- `bun.cmd x next lint`: pass;
+- staging upload: pass by operator/browser report for `messageFile`;
+- staging inline image display after local fix: pending deploy/browser confirmation.
+
+Not touched:
+- production storage/env/data;
+- storage architecture/provider;
+- DB schema or migrations;
+- unread notifications, mentions, media, WebRTC, coturn, mediasoup, or LiveKit.
+
+Next recommended segment:
+- `customer-staging-storage-display-deploy-and-smoke`
+
+Return to `customer-unread-message-badges-and-sound-plan` only after staging upload and inline display are green.

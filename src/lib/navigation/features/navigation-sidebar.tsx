@@ -19,7 +19,7 @@ export const NavigationSidebar = () => {
 
   const { data: servers } = useGetServers()
 
-  useServersSocket(serverId)
+  useServersSocket(serverId, servers)
 
   useEffect(() => {
     if (!serverId || !servers) {

@@ -74,10 +74,13 @@ Priority items:
 - unread message indicators for channels and direct messages;
 - optional notification sound and mute/disable sound setting;
 - server settings/edit submit label should say `Save`, not `Create`;
+- server settings/edit changes should propagate to other connected participants through realtime, not only local cache update;
 - staging storage readiness for server avatars;
 - multiline chat input behavior;
 - mentions with `@user` and `@all`;
 - clickable link rendering and optional safe link previews;
+- message copy action, including safe text/media copy fallback;
+- reply-to-message like Discord/Telegram;
 - chat input autofocus after send;
 - media provider/fallback UI and explanation;
 - remote screen share fullscreen/focused view;
@@ -89,19 +92,25 @@ Priority items:
    - server settings `Save` label;
    - chat input autofocus after send;
    - multiline input behavior.
-2. `customer-unread-message-badges-and-sound-plan`
+2. `customer-server-edit-realtime-propagation-fix`
+   - server update socket/event propagation for connected participants.
+3. `customer-unread-message-badges-and-sound-plan`
    - backend/read-state/realtime design.
-3. `customer-unread-message-badges-implementation`
+4. `customer-unread-message-badges-implementation`
    - persisted unread/read state, realtime badges, sound preference.
-4. `customer-mentions-user-and-all`
+5. `customer-mentions-user-and-all`
    - mention parsing, UI picker, rendering, notifications.
-5. `customer-message-link-rendering-and-preview`
+6. `customer-message-link-rendering-and-preview`
    - safe clickable links first, then backend-owned link previews if approved.
-6. `customer-staging-storage-readiness`
+7. `customer-message-copy-action`
+   - copy text/multiline/link/media messages with safe media fallback.
+8. `customer-reply-to-message`
+   - persisted reply target, reply preview rendering, realtime support.
+9. `customer-staging-storage-readiness`
    - configure staging storage outside repo and smoke avatar upload.
-7. `customer-media-fallback-ui-and-screen-share-fullscreen`
+10. `customer-media-fallback-ui-and-screen-share-fullscreen`
    - explicit fallback/provider UI and screen-share fullscreen.
-8. `customer-desktop-parity-smoke`
+11. `customer-desktop-parity-smoke`
    - desktop checks for all shared UI changes.
 
 ## Resume WebRTC Brief

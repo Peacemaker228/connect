@@ -103,7 +103,7 @@ export const FileUpload: FC<IFileUploadProps> = ({
     if (fileType.startsWith('image')) {
       return (
         <div className="relative h-20 w-20">
-          <Image fill src={fileAccessPath} alt="Upload" className="rounded-full object-cover" />
+          <Image fill src={fileAccessPath} alt="Upload" unoptimized className="rounded-full object-cover" />
           <button
             type="button"
             onClick={handleRemoveFile}
