@@ -30,6 +30,7 @@ The WebRTC/Stage 9 track remains paused. Staging data, production data, media in
 - New server creation keeps the default `Create` label.
 - Submit behavior, mutation calls, routing, and staged upload cleanup were not changed.
 - After edit success, the local React Query `['servers']` list cache and current `['server', serverId]` cache are updated and invalidated so changed server names show without a page reload.
+- Realtime propagation to other connected participants was not implemented in this segment. Other clients can still require a later refetch unless a follow-up adds server update socket/event handling.
 
 ### Chat Input Multiline Behavior
 
@@ -134,6 +135,9 @@ Not run:
 - unread badges or read state;
 - notification sound;
 - mentions;
+- server edit realtime propagation to other participants;
+- message copy action;
+- reply-to-message;
 - storage/S3/env configuration;
 - media provider, LiveKit, SFU, TURN, WebRTC, coturn, mediasoup;
 - production or staging server commands;
@@ -151,7 +155,7 @@ Not run:
 
 ## Recommended Next Segment
 
-`customer-unread-message-badges-and-sound-plan`
+`customer-server-edit-realtime-propagation-fix`
 
 Rationale:
-- unread indicators and sound touch backend-owned read state, realtime events, and preference behavior, so they should be planned separately before implementation.
+- Segment 184 made the editing user's cache update immediately, but connected participants still need realtime/socket propagation before the server edit item can be considered fully complete.

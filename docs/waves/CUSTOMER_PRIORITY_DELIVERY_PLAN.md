@@ -118,14 +118,19 @@ Out of scope for first slice:
 
 Problem:
 - an existing server settings/edit modal shows a create-style button at the bottom.
+- a cache-only local update is not enough: other connected participants must see server name/settings changes without manual reload or unrelated refetch.
 
 Required:
 - for existing server edit/settings flow, the button label should be `Save` or equivalent;
 - create flow should remain `Create` where it creates a new server.
+- server edits should emit/update through the existing realtime/socket/event path.
+- connected participants should reconcile server list/header/sidebar state from the event.
 
 Acceptance:
 - no behavior regression in server create/edit;
 - label matches action.
+- when user A edits a server name, user B sees the updated name without manual reload.
+- local cache update and remote realtime update stay consistent.
 
 ### P1. Staging Storage Readiness
 
@@ -203,6 +208,53 @@ Acceptance:
 - link click works in web and desktop-safe flow;
 - malformed URLs do not become unsafe links;
 - preview support, if implemented, is safe and does not block message rendering.
+
+### P1. Message Copy Action
+
+Problem:
+- users need to copy message content quickly.
+- media/file messages must not copy broken values like `[object Object]`.
+
+Required behavior:
+- message UI exposes a copy action;
+- text copy preserves the full message text, including multiline content;
+- link messages copy usable text/URLs;
+- image/file messages copy a useful representation.
+
+Implementation direction:
+- first implementation should reliably copy text plus attachment/file URLs;
+- binary image copy should be attempted only if browser/desktop clipboard APIs and file access make it reliable;
+- if binary image copy is not safe, fallback to copying the image/file URL rather than `[object Object]`;
+- desktop clipboard behavior must be checked because the product is desktop-first.
+
+Acceptance:
+- copying a text message pastes the same text;
+- copying a multiline message preserves line breaks;
+- copying a message with image/file never pastes `[object Object]`;
+- fallback behavior is predictable and useful.
+
+### P1. Reply To Message
+
+Problem:
+- users need contextual replies like Discord or Telegram.
+
+Required behavior:
+- user can choose Reply on a channel or direct message;
+- composer shows the replied-to message context;
+- sending persists a message linked to the original message;
+- rendered message shows a compact reply preview;
+- clicking the reply preview should navigate or scroll to the original message where practical.
+
+Implementation direction:
+- this should be backend/schema/SDK/UI work, not UI-only state;
+- support channel and direct messages if the data model allows it;
+- reply target must be scoped to the same channel/conversation and permission-checked;
+- deleted or inaccessible originals need a safe fallback label.
+
+Acceptance:
+- replies survive reload;
+- replies render for other connected participants through realtime;
+- unsupported edge cases are explicit, not silent failures.
 
 ### P1. Chat Input Autofocus After Send
 
@@ -367,14 +419,17 @@ Handoff:
    - server settings `Save` label;
    - chat input autofocus;
    - multiline input behavior.
-3. Implement unread message indicators with persisted read state.
-4. Add notification sound and mute setting.
-5. Implement mentions and `@all`.
-6. Implement safe link rendering, then optional backend-owned link previews.
-7. Restore staging storage readiness for avatars.
-8. Improve media provider/fallback UI and screen-share fullscreen.
-9. Run web checks, then desktop checks for shared UI changes.
-10. Resume WebRTC cleanup only after customer-priority work stabilizes or moves to a separate dev stand.
+3. Fix server edit realtime propagation so other connected participants see changes without manual reload.
+4. Implement unread message indicators with persisted read state.
+5. Add notification sound and mute setting.
+6. Implement mentions and `@all`.
+7. Implement safe link rendering, then optional backend-owned link previews.
+8. Implement message copy action.
+9. Implement reply-to-message.
+10. Restore staging storage readiness for avatars.
+11. Improve media provider/fallback UI and screen-share fullscreen.
+12. Run web checks, then desktop checks for shared UI changes.
+13. Resume WebRTC cleanup only after customer-priority work stabilizes or moves to a separate dev stand.
 
 ## Low-Risk UX Fixes Result
 
@@ -390,6 +445,7 @@ Delivered:
 - server edit/settings submit label now says `Save`;
 - server creation still says `Create`;
 - server edit success updates and invalidates the local React Query server caches so the changed name appears without a page reload;
+- server edit realtime propagation to other connected participants is not covered by Segment 184 and remains the next follow-up before this server-edit item is fully complete;
 - main chat composer supports `Enter` to send and `Shift+Enter` to insert a newline;
 - main chat composer grows to roughly 20 visible lines, then scrolls internally with a thinner scrollbar;
 - whitespace-only chat messages are rejected, leading/trailing blank lines are trimmed, and internal multiline content is preserved;
