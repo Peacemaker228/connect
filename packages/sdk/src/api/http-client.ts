@@ -1,4 +1,4 @@
-import axios, { type InternalAxiosRequestConfig } from 'axios'
+import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
 import {
   getBrowserDevelopmentBackendApiBaseUrl,
   getConfiguredBackendApiBaseUrl,
@@ -36,7 +36,7 @@ type AuthRetryRequestConfig = InternalAxiosRequestConfig & {
   _authRetry?: boolean
 }
 
-let authRefreshRequest: Promise<unknown> | null = null
+let authRefreshRequest: Promise<AxiosResponse<unknown>> | null = null
 
 const isAuthRefreshEligibleRequest = (config: InternalAxiosRequestConfig | undefined) => {
   const url = config?.url
@@ -51,6 +51,14 @@ const isAuthRefreshEligibleRequest = (config: InternalAxiosRequestConfig | undef
     !url.includes('/api/auth/session/logout') &&
     !url.includes('/api/auth/session/refresh')
   )
+}
+
+export const refreshBackendSession = () => {
+  authRefreshRequest ??= authRefreshApiInstance.post('/api/auth/session/refresh').finally(() => {
+    authRefreshRequest = null
+  })
+
+  return authRefreshRequest
 }
 
 publicApiInstance.interceptors.request.use((config) => applyBackendApiBaseUrl(config, false))
@@ -73,11 +81,7 @@ privateApiInstance.interceptors.response.use(
     }
 
     originalConfig._authRetry = true
-    authRefreshRequest ??= authRefreshApiInstance.post('/api/auth/session/refresh').finally(() => {
-      authRefreshRequest = null
-    })
-
-    await authRefreshRequest
+    await refreshBackendSession()
 
     return privateApiInstance(originalConfig)
   },

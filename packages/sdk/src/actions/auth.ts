@@ -1,6 +1,6 @@
-import axios, { type AxiosResponse } from 'axios'
+import axios from 'axios'
 
-import { privateApiInstance } from '../api/http-client'
+import { privateApiInstance, refreshBackendSession } from '../api/http-client'
 
 export type AuthLoginPayload = {
   email: string
@@ -88,15 +88,9 @@ export const logoutSession = async () => {
   }
 }
 
-let refreshSessionRequest: Promise<AxiosResponse> | null = null
-
 export const refreshSession = async () => {
   try {
-    refreshSessionRequest ??= privateApiInstance.post('/api/auth/session/refresh').finally(() => {
-      refreshSessionRequest = null
-    })
-
-    const response = await refreshSessionRequest
+    const response = await refreshBackendSession()
 
     return response.data
   } catch (error) {
