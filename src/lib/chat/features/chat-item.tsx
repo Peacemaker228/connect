@@ -5,7 +5,6 @@ import { FC, useEffect, useState } from 'react'
 import { UserAvatar } from '@/lib/shared/features/user-avatar'
 import { ActionTooltip } from '@/lib/shared/features/action-tooltip'
 import { roleIconMap } from '@/lib/shared/utils/role-icon-map'
-import Link from 'next/link'
 import Image from 'next/image'
 import { Edit, FileIcon, Trash } from 'lucide-react'
 import { cn } from '@/lib/shared/utils/utils'
@@ -136,7 +135,7 @@ export const ChatItem: FC<IChatItemProps> = ({
             <span className={'text-xs text-zinc-500 dark:text-zinc-400'}>{timestamp}</span>
           </div>
           {isImage && (
-            <Link
+            <a
               href={fileAccessPath}
               target={'_blank'}
               rel={'noopener noreferrer'}
@@ -144,18 +143,18 @@ export const ChatItem: FC<IChatItemProps> = ({
                 'relative aspect-square rounded-md mt-2 overflow-hidden border flex items-center bg-secondary h-48 w-48'
               }>
               <Image src={fileAccessPath} alt={imageAlt} fill unoptimized className={'object-cover'} />
-            </Link>
+            </a>
           )}
           {isPDF && (
             <div className="relative flex items-center p-2 mt-2 rounded-md bg-background/10">
               <FileIcon className="h-10 w-10 fill-indigo-200 stroke-indigo-400" />
-              <Link
+              <a
                 href={fileAccessPath}
                 target={'_blank'}
                 rel={'noopener noreferrer'}
                 className="ml-2 text-sm text-indigo-500 dark:text-indigo-400 hover:underline overflow-wrap-anywhere">
                 {resolvedFileUrl}
-              </Link>
+              </a>
             </div>
           )}
           {!fileUrl && !isEditing && (

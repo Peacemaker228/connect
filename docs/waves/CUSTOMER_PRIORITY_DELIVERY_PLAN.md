@@ -587,3 +587,25 @@ Next recommended segment:
 - `customer-staging-storage-display-deploy-and-smoke`
 
 Return to `customer-unread-message-badges-and-sound-plan` only after staging upload and inline display are green.
+
+## Storage Link CORS Prefetch Follow-up
+
+Segment:
+- `customer-storage-link-cors-prefetch-fix`
+
+Status: `pass / local code fix`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_188_CUSTOMER_STORAGE_LINK_CORS_PREFETCH_FIX.md`
+
+Delivered:
+- fixed production/staging console noise where storage file links triggered browser fetch/prefetch-style requests that followed `/api/storage/access` redirects to Yandex Object Storage and received `OPTIONS 403`;
+- replaced `next/link` with plain `<a>` for chat image attachment links, chat PDF links, and upload-preview PDF links;
+- kept `next/image unoptimized` for backend-redirect storage images;
+- did not change storage upload API, provider, bucket policy, CORS settings, env values, DB, media, or production infra.
+
+Staging smoke after deploy:
+- open a chat with storage image/PDF attachments;
+- confirm image display still works;
+- confirm clicking image/PDF opens the file in a new tab;
+- confirm Network no longer shows storage-link prefetch `OPTIONS 403` to Yandex for those assets.
