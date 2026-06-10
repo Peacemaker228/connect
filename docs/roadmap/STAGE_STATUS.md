@@ -1031,15 +1031,18 @@ Current rule:
 - do not delete/recreate `main` without a separate repo-admin segment;
 - do not reset staging DB;
 - do not record real secrets in docs;
+- do not treat agent handoff text as proof by itself; inspect the actual `git diff`/changed code and verification output before recommending merge, deploy, or operator action;
 - verify shared UI work on web first, then desktop where applicable.
 
 Done:
 - `customer-priority-track-pause-and-delivery-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_183_CUSTOMER_PRIORITY_TRACK_PAUSE_AND_DELIVERY_PLAN.md`
 - `docs/waves/CUSTOMER_PRIORITY_DELIVERY_PLAN.md` records staging strategy, branch strategy, active customer requirements, desktop-first verification, and the deferred WebRTC resume brief
+- `customer-agent-code-review-control-rule` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_187_CUSTOMER_AGENT_CODE_REVIEW_CONTROL_RULE.md`: handoffs are inputs, not proof, and supervising agents must inspect real repository state, code diffs, scope, and verification before recommending merge/deploy/operator action
 - dev/preview stand creation is intentionally ordered after the current colleague-requirements batch stabilizes, then before risky WebRTC/media infrastructure work resumes
 - `customer-priority-inventory-and-low-risk-ux-fixes` is implemented in `docs/delegation/briefs/SEGMENT_BRIEF_184_CUSTOMER_PRIORITY_LOW_RISK_UX_FIXES.md`: server edit/settings label now says `Save`, server creation still says `Create`, server edit updates the editing user's local server caches without requiring page reload, chat composer supports `Enter` send and `Shift+Enter` newline with roughly 20 visible lines before internal scroll, whitespace-only messages are rejected with edge-trim normalization, multiline message rendering preserves internal newlines, guarded post-send input autofocus is in place, and desktop/mobile chat scroll-to-bottom after current-user send is handled through immediate cache update plus a local per-chat scroll event
 - `customer-server-edit-realtime-propagation-fix` is implemented in `docs/delegation/briefs/SEGMENT_BRIEF_185_CUSTOMER_SERVER_EDIT_REALTIME_PROPAGATION_FIX.md`: backend emits `server_updated` on `server:${serverId}:profile` after successful server edit, and connected clients reconcile server list/sidebar/header caches from the event
 - `customer-staging-storage-write-permission-fix` is diagnosed and partially closed in `docs/delegation/briefs/SEGMENT_BRIEF_186_CUSTOMER_STAGING_STORAGE_WRITE_PERMISSION_FIX.md`: the active upload path is backend-owned `POST /api/storage/upload` through the S3-compatible provider, accidental Yandex Cloud deletion was cancelled by the operator and staging `messageFile` upload now returns `200 OK` by browser evidence, and the remaining inline image display issue is fixed locally by bypassing the failing `next/image` optimizer path for backend-redirect storage images
+- `customer-storage-link-cors-prefetch-fix` is implemented in `docs/delegation/briefs/SEGMENT_BRIEF_188_CUSTOMER_STORAGE_LINK_CORS_PREFETCH_FIX.md`: storage asset links now use plain `<a>` instead of `next/link`, avoiding Next route prefetch/fetch behavior against `/api/storage/access` redirects that caused Yandex `OPTIONS 403` CORS noise
 
 Next likely work:
 - `customer-staging-storage-display-deploy-and-smoke`

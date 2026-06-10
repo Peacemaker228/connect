@@ -73,6 +73,22 @@ Rules:
 - do not use `main` for new work unless a separate repo-admin segment explicitly changes branch policy;
 - do not rewrite `main` while staging is being used unless there is a reviewed backup/branch-protection plan.
 
+## Agent Handoff And Code Review Control
+
+Agent handoff text is not sufficient proof by itself.
+
+For every customer-priority code segment, the supervising agent must inspect the actual repository state before recommending merge, deploy, or operator action:
+
+- read `git status --short --branch` and confirm whether the worktree is clean or which files are pending;
+- inspect the real code diff with `git diff`, `git show`, or targeted file reads, not only the handoff summary;
+- verify that changed files match the claimed scope and do not touch unrelated runtime, env, DB, media, migration, or production paths;
+- call out mismatches between the handoff and the code, even if verification commands pass;
+- run or require the relevant verification commands for the touched surface;
+- for frontend/runtime changes, require a concrete smoke target or explicitly record why authenticated/manual smoke is still pending;
+- for deploy advice, first confirm the target commit is present in the branch that will be deployed.
+
+If this review is not performed, the result must be classified as `review / unverified handoff`, not `pass`.
+
 ## Priority Requirements
 
 ### P0. Staging Reliability
@@ -571,3 +587,25 @@ Next recommended segment:
 - `customer-staging-storage-display-deploy-and-smoke`
 
 Return to `customer-unread-message-badges-and-sound-plan` only after staging upload and inline display are green.
+
+## Storage Link CORS Prefetch Follow-up
+
+Segment:
+- `customer-storage-link-cors-prefetch-fix`
+
+Status: `pass / local code fix`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_188_CUSTOMER_STORAGE_LINK_CORS_PREFETCH_FIX.md`
+
+Delivered:
+- fixed production/staging console noise where storage file links triggered browser fetch/prefetch-style requests that followed `/api/storage/access` redirects to Yandex Object Storage and received `OPTIONS 403`;
+- replaced `next/link` with plain `<a>` for chat image attachment links, chat PDF links, and upload-preview PDF links;
+- kept `next/image unoptimized` for backend-redirect storage images;
+- did not change storage upload API, provider, bucket policy, CORS settings, env values, DB, media, or production infra.
+
+Staging smoke after deploy:
+- open a chat with storage image/PDF attachments;
+- confirm image display still works;
+- confirm clicking image/PDF opens the file in a new tab;
+- confirm Network no longer shows storage-link prefetch `OPTIONS 403` to Yandex for those assets.
