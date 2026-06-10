@@ -90,7 +90,43 @@ A good brief must include:
 
 Do not combine unrelated streams in one brief. Prefer one coherent product/runtime slice.
 
-## 6. Briefs For Customer-Priority Work
+## 6. Shell-Safe Commands
+
+When giving git, deploy, migration, or operator commands, match the user's current shell.
+
+Current default shell for this workspace is PowerShell.
+
+Rules:
+
+- do not use Bash line continuations (`\`) in PowerShell commands;
+- prefer a single-line `git add ...` command when practical;
+- for multiline PowerShell commands, use PowerShell backtick continuations or an array variable;
+- quote paths that contain special PowerShell characters such as parentheses;
+- for deploy/server commands, state whether they are for local PowerShell, VPS Bash, or another shell;
+- if unsure which shell will run the command, provide both PowerShell and Bash variants instead of one ambiguous command.
+
+Bad PowerShell example:
+
+```powershell
+git add file-a \
+  file-b
+```
+
+Good PowerShell examples:
+
+```powershell
+git add file-a file-b
+```
+
+```powershell
+$files = @(
+  'file-a',
+  'file-b'
+)
+git add -- $files
+```
+
+## 7. Briefs For Customer-Priority Work
 
 For current customer-priority tasks, always consider:
 
@@ -105,7 +141,7 @@ For current customer-priority tasks, always consider:
 
 For unread/notification work specifically, keep normal unread separate from attention signals such as mentions, `@all`, and replies unless the segment explicitly owns attention metadata.
 
-## 7. Output Discipline
+## 8. Output Discipline
 
 Before presenting the brief, state briefly:
 
