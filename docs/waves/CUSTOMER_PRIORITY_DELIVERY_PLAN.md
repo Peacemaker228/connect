@@ -695,8 +695,41 @@ Pending:
 - WebRTC/media changes;
 - production Postgres migration or staging DB reset.
 
+## Unread Notification System Plan
+
+Segment:
+- `customer-unread-notification-system-plan`
+
+Status: `pass / planned`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_192_CUSTOMER_UNREAD_NOTIFICATION_SYSTEM_PLAN.md`
+
+Decision:
+- continue from persisted normal unread counts into a layered notification system instead of implementing isolated badge/sound/mention behavior;
+- keep normal unread separate from direct attention signals such as `@user`, `@all`, and replies;
+- keep Socket.IO as the realtime transport for this track;
+- verify desktop behavior explicitly when a segment touches browser/desktop notification surfaces.
+
+Planned order:
+1. `customer-global-unread-summary-and-server-badges`
+   - backend global unread summary across accessible servers;
+   - server-list badges when unread arrives on another server;
+   - channel/direct row emphasis plus count badges.
+2. `customer-new-message-divider`
+   - `New` / `Новое` divider in the chat at the first unread message;
+   - preserve the pre-open read anchor before mark-read clears unread.
+3. `customer-notification-sound-browser-desktop-badges`
+   - browser title unread count and optional favicon marker;
+   - sound plus mute preference;
+   - desktop native notification/app badge verification.
+4. `customer-mentions-replies-attention`
+   - `@user`, `@all`, and reply attention as stronger metadata-backed signals.
+
 Next recommended segment:
-- `customer-unread-message-sound-toggle`
+- `customer-global-unread-summary-and-server-badges`
 
 Then continue to:
-- `customer-mentions-user-and-all`
+- `customer-new-message-divider`
+- `customer-notification-sound-browser-desktop-badges`
+- `customer-mentions-replies-attention`

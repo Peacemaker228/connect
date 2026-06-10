@@ -1045,12 +1045,13 @@ Done:
 - `customer-storage-link-cors-prefetch-fix` is implemented in `docs/delegation/briefs/SEGMENT_BRIEF_188_CUSTOMER_STORAGE_LINK_CORS_PREFETCH_FIX.md`: storage asset links now use plain `<a>` instead of `next/link`, avoiding Next route prefetch/fetch behavior against `/api/storage/access` redirects that caused Yandex `OPTIONS 403` CORS noise
 - `customer-unread-message-badges-foundation` is implemented locally in `docs/delegation/briefs/SEGMENT_BRIEF_189_CUSTOMER_UNREAD_MESSAGE_BADGES_FOUNDATION.md`: additive persisted channel/conversation read-state models and migration were added, backend unread summary and mark-read endpoints exist, channel unread uses `server:${serverId}:unread`, direct unread uses recipient-only `member:${memberId}:direct-unread`, direct-message history now requires conversation membership, compact red channel/member badges render normal unread counts, and the API shape keeps `mentionCount`, `replyCount`, and `attentionLevel` ready for future metadata-backed mention/reply attention
 - `customer-prisma-active-postgres-migration-chain-repair` is implemented locally in `docs/delegation/briefs/SEGMENT_BRIEF_191_CUSTOMER_PRISMA_ACTIVE_POSTGRES_MIGRATION_CHAIN_REPAIR.md`: the unread deploy path was blocked by an active MySQL-only migration in a PostgreSQL migration chain, so the active chain now starts with `00000000000000_clean_baseline`, the invalid MySQL cleanup migration is retired, unread remains after the baseline, local existing-DB handling was verified with baseline resolve plus `migrate dev`, a fresh temporary local Postgres DB applied baseline plus unread through `migrate deploy` without reset, and a disposable local unread DB/business smoke passed for channel/direct recipient counts, sender negative cases, mark-read clearing, and cleanup
+- `customer-unread-notification-system-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_192_CUSTOMER_UNREAD_NOTIFICATION_SYSTEM_PLAN.md`: next unread work is split into global unread/server badges, `New` divider, browser/desktop notification surfaces, and later mention/reply/`@all` attention; normal unread stays separate from attention signals
 
 Next likely work:
 - staging operator migration-state inspection and unread two-user smoke
-- `customer-unread-message-sound-toggle`
-- after sound, continue to `customer-mentions-user-and-all`
-- keep mention/reply attention, link preview, copy/reply, and media fallback as separate scoped segments
+- `customer-global-unread-summary-and-server-badges`
+- after global unread, continue to `customer-new-message-divider`, then `customer-notification-sound-browser-desktop-badges`, then `customer-mentions-replies-attention`
+- keep link preview, copy/reply, and media fallback as separate scoped segments
 
 ## Historical Notes
 
