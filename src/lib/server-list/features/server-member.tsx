@@ -39,12 +39,12 @@ export const ServerMember: FC<IServerMemberProps> = ({ member, unreadCount = 0 }
         )}>
         {member.profile.name}
       </p>
+      {icon}
       {unreadCount > 0 && (
         <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-rose-500 text-[10px] leading-5 text-white font-semibold text-center">
           {unreadCount > 99 ? '99+' : unreadCount}
         </span>
       )}
-      {icon}
     </button>
   )
 }
