@@ -100,6 +100,7 @@ export const ChatItem: FC<IChatItemProps> = ({
   const canDeleteMessage = !deleted && (isAdmin || isModerator || isOwner)
   const canEditMessage = !deleted && isOwner && !fileUrl
 
+  const imageAlt = resolvedFileUrl || 'Image attachment'
   const isPDF = fileType === 'application/pdf' && fileAccessPath
   const isImage = Boolean(fileAccessPath) && fileType?.startsWith('image')
 
@@ -142,7 +143,7 @@ export const ChatItem: FC<IChatItemProps> = ({
               className={
                 'relative aspect-square rounded-md mt-2 overflow-hidden border flex items-center bg-secondary h-48 w-48'
               }>
-              <Image src={fileAccessPath} alt={content} fill className={'object-cover'} />
+              <Image src={fileAccessPath} alt={imageAlt} fill unoptimized className={'object-cover'} />
             </Link>
           )}
           {isPDF && (

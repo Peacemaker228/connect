@@ -522,3 +522,52 @@ Not run:
 
 Next recommended segment:
 - `customer-unread-message-badges-and-sound-plan`
+
+## Staging Storage Write Permission Diagnostic Result
+
+Segment:
+- `customer-staging-storage-write-permission-fix`
+
+Status: `partial pass / storage write recovered externally; backend-redirect image display fixed locally`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_186_CUSTOMER_STAGING_STORAGE_WRITE_PERMISSION_FIX.md`
+
+Delivered:
+- confirmed the active app upload path remains backend-owned through `POST /api/storage/upload`;
+- confirmed server avatars use `endpoint=serverImage`, folder `server-images`, and `PutObjectCommand`;
+- confirmed message files use `endpoint=messageFile`, folder `message-files`, and `PutObjectCommand`;
+- checked the real staging API runtime without printing values: `ax-connect-staging-api` is online but has no `STORAGE_*` variables in PM2 runtime;
+- confirmed `/etc/ax-connect-staging/api.env` is readable but currently contains no storage env names;
+- confirmed `yc` CLI is not installed/configured locally or on staging, so this shell cannot change Yandex Cloud IAM or bucket policy;
+- reran a redacted local candidate credential diagnostic: `.env.local` storage shape is present, `ListObjectsV2` passes, app-like `PutObject` under `server-images/__diagnostics__` fails with `AccessDenied`, and no temp object was left behind;
+- checked available bucket metadata with the same local candidate credentials without printing policy/ACL values: bucket policy and object-lock reads are denied, bucket encryption config is not present/readable as active, and bucket ACL metadata is readable.
+- recorded the operator finding that accidental Yandex Cloud deletion caused the original write failure and local S3 writes recovered after deletion was cancelled;
+- recorded staging browser evidence that `POST /api/storage/upload` now returns `200 OK` for `messageFile`;
+- fixed uploaded storage images to render with `next/image` `unoptimized` when using backend-owned `/api/storage/access`, avoiding the failing `/_next/image?.../api/storage/access...` optimizer path;
+- changed image attachment alt text so serialized `storage://v1?...` values are not shown as broken-image fallback text.
+
+Required operator fix:
+- deploy the local image display fix to staging;
+- confirm the chat attachment no longer requests `/_next/image` for backend-redirect storage images;
+- confirm the browser requests `/api/storage/access` directly and renders the uploaded image inline;
+- keep public write disabled and keep production storage untouched.
+
+Verification:
+- `git diff --check`: pass;
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass;
+- `bun.cmd run typecheck:api`: pass;
+- `bun.cmd x next lint`: pass;
+- staging upload: pass by operator/browser report for `messageFile`;
+- staging inline image display after local fix: pending deploy/browser confirmation.
+
+Not touched:
+- production storage/env/data;
+- storage architecture/provider;
+- DB schema or migrations;
+- unread notifications, mentions, media, WebRTC, coturn, mediasoup, or LiveKit.
+
+Next recommended segment:
+- `customer-staging-storage-display-deploy-and-smoke`
+
+Return to `customer-unread-message-badges-and-sound-plan` only after staging upload and inline display are green.
