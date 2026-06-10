@@ -11,8 +11,11 @@ export const SERVER_MEMBER_REALTIME_ACTIONS = [
   'member_added',
 ] as const
 
+export const SERVER_PROFILE_REALTIME_ACTIONS = ['server_updated'] as const
+
 export type ServerChannelRealtimeAction = (typeof SERVER_CHANNEL_REALTIME_ACTIONS)[number]
 export type ServerMemberRealtimeAction = (typeof SERVER_MEMBER_REALTIME_ACTIONS)[number]
+export type ServerProfileRealtimeAction = (typeof SERVER_PROFILE_REALTIME_ACTIONS)[number]
 
 export type ServerChannelsRealtimePayload =
   | {
@@ -53,6 +56,15 @@ export type ServerMembersRealtimePayload =
       serverId: string
     }
 
+export type ServerProfileRealtimePayload = {
+  action: 'server_updated'
+  server: {
+    id: string
+    name?: string
+    imageUrl?: string
+  }
+}
+
 export type ServerSliceRealtimeEvent =
   | {
       key: string
@@ -62,10 +74,16 @@ export type ServerSliceRealtimeEvent =
       key: string
       payload: ServerMembersRealtimePayload
     }
+  | {
+      key: string
+      payload: ServerProfileRealtimePayload
+    }
 
 export const getServerChannelsRealtimeKey = (serverId: string) => `server:${serverId}:channels`
 
 export const getServerMembersRealtimeKey = (serverId: string) => `server:${serverId}:members`
+
+export const getServerProfileRealtimeKey = (serverId: string) => `server:${serverId}:profile`
 
 export const createChannelCreatedRealtimeEvent = (
   serverId: string,
@@ -140,5 +158,16 @@ export const createMemberAddedRealtimeEvent = (
   payload: {
     action: 'member_added',
     serverId,
+  },
+})
+
+export const createServerUpdatedRealtimeEvent = (
+  serverId: string,
+  server: { id: string; name?: string; imageUrl?: string },
+): ServerSliceRealtimeEvent => ({
+  key: getServerProfileRealtimeKey(serverId),
+  payload: {
+    action: 'server_updated',
+    server,
   },
 })

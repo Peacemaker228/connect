@@ -1037,10 +1037,10 @@ Done:
 - `customer-priority-track-pause-and-delivery-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_183_CUSTOMER_PRIORITY_TRACK_PAUSE_AND_DELIVERY_PLAN.md`
 - `docs/waves/CUSTOMER_PRIORITY_DELIVERY_PLAN.md` records staging strategy, branch strategy, active customer requirements, desktop-first verification, and the deferred WebRTC resume brief
 - `customer-priority-inventory-and-low-risk-ux-fixes` is implemented in `docs/delegation/briefs/SEGMENT_BRIEF_184_CUSTOMER_PRIORITY_LOW_RISK_UX_FIXES.md`: server edit/settings label now says `Save`, server creation still says `Create`, server edit updates the editing user's local server caches without requiring page reload, chat composer supports `Enter` send and `Shift+Enter` newline with roughly 20 visible lines before internal scroll, whitespace-only messages are rejected with edge-trim normalization, multiline message rendering preserves internal newlines, guarded post-send input autofocus is in place, and desktop/mobile chat scroll-to-bottom after current-user send is handled through immediate cache update plus a local per-chat scroll event
-- server edit propagation to other connected participants is not complete yet; a realtime/socket follow-up is required before the server-edit item is considered fully done
+- `customer-server-edit-realtime-propagation-fix` is implemented in `docs/delegation/briefs/SEGMENT_BRIEF_185_CUSTOMER_SERVER_EDIT_REALTIME_PROPAGATION_FIX.md`: backend emits `server_updated` on `server:${serverId}:profile` after successful server edit, and connected clients reconcile server list/sidebar/header caches from the event
 
 Next likely work:
-- `customer-server-edit-realtime-propagation-fix`
+- `customer-unread-message-badges-and-sound-plan`
 - keep unread indicators/mentions/link preview/copy/reply/storage/media fallback as separate scoped segments
 
 ## Historical Notes

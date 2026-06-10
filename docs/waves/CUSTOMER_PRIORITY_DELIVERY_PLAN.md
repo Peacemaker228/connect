@@ -481,3 +481,38 @@ Next recommended segment:
 - `customer-unread-message-badges-and-sound-plan`
 
 Keep unread notifications and mentions as separate segments because they touch backend/realtime/data model and need more design than a label/input fix.
+
+## Server Edit Realtime Propagation Result
+
+Segment:
+- `customer-server-edit-realtime-propagation-fix`
+
+Status: `pass / implemented`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_185_CUSTOMER_SERVER_EDIT_REALTIME_PROPAGATION_FIX.md`
+
+Delivered:
+- added shared/backend server update realtime event `server_updated`;
+- event key is `server:${serverId}:profile`;
+- payload carries `{ id, name, imageUrl }`;
+- backend emits the event after successful `PATCH /api/servers/:serverId`;
+- current server sidebar/header cache reconciles from the event;
+- server list/sidebar cache reconciles from events for server ids already present in the accessible `['servers']` cache;
+- repeated events update by server id and do not create duplicate list entries.
+
+Verification:
+- `git diff --check`: pass;
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass;
+- `bun.cmd run typecheck:api`: pass;
+- `bun.cmd x next lint`: pass;
+- `bun.cmd run build:web`: pass;
+- `bun.cmd run check:desktop:config`: pass.
+
+Not run:
+- authenticated two-session local smoke, because no two authenticated local user sessions/workspace were available in this shell;
+- existing Playwright specs, because available specs are SFU/media tests and this segment forbids media/WebRTC work;
+- packaged desktop build.
+
+Next recommended segment:
+- `customer-unread-message-badges-and-sound-plan`
