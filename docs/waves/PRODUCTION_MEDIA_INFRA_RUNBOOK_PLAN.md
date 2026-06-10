@@ -113,14 +113,18 @@ Done:
 - Segment 180 diagnostics were deployed to the separate staging VPS at commit `e08b8f4a9b90dfa3810e61d5f172b19f6a2fedb1`; API/web builds and PM2 restarts passed, gates remained scoped to staging env files, and authenticated preflight passed.
 - focused staging rerun is `review / TURN relay ICE pair selection blocker`: Direct passed, cleanup converged to zero, TURN delivered credentials and relay policy, browser gathered relay candidates, mediasoup-client connect fired, backend DTLS connect accepted, but no candidate pair was selected.
 - additional staging classification showed mediasoup candidates use the expected `40000-40100` range and staging hostname class, UFW media rules are present, coturn has listener config but no explicit `external-ip` or `relay-ip`; next work must stay focused on relay/SFU reachability config.
+- `staging-turn-relay-network-config-fix` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_182_STAGING_TURN_RELAY_NETWORK_CONFIG_FIX.md`.
+- the focused staging network/config fix updated only staging server-local config: `MEDIA_SFU_ANNOUNCED_ADDRESS` now matches the staging public IPv4 without recording the value, coturn has explicit `external-ip` and `relay-ip`, and coturn now runs with Docker host networking instead of Docker relay-port publishing.
+- staging TURN relay media path now passes: relay-only ICE selected a succeeded relay/host pair and consumed a live remote track; coturn allocation counts returned to zero.
+- the segment remains `review`, not pass, because mediasoup cleanup after successful TURN relay did not converge in a bounded recheck and remained at `rooms=0 transports=2 producers=1 consumers=1`.
 
 ## Expected Future Implementation Segments
 
 Recommended sequence:
-1. focused staging TURN relay candidate-pair fix
-   - current relay blocker is selected candidate-pair absence after relay candidate gathering and accepted backend DTLS connect; cleanup convergence passes
+1. focused staging TURN relay cleanup convergence fix
+   - current relay network blocker is fixed; remaining blocker is mediasoup resource cleanup after successful TURN relay
 2. `production-media-staging-smoke-run-report-rerun`
-   - rerun direct and relay smoke in staging/non-production only after the TURN relay connection fix
+   - rerun direct and relay smoke in staging/non-production only after TURN cleanup convergence passes
 3. `production-media-canary-readiness-decision`
    - decide whether a narrow production canary is allowed
 4. `production-media-rollback-drill-report`
