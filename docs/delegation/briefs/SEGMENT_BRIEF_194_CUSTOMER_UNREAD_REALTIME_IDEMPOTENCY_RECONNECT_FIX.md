@@ -6,7 +6,7 @@
 - Base: latest `core/reborn`
 - Segment: `customer-unread-realtime-idempotency-reconnect-fix`
 - Type: customer-priority unread realtime correctness fix
-- Status: `pass / implemented locally; manual two-browser smoke pending`
+- Status: `pass-with-review / implemented locally; local two-browser duplicate smoke passed, first-event-after-idle watch item recorded`
 
 ## Goal
 
@@ -91,12 +91,29 @@ Note:
 - the first `tsc` run was started in parallel with `next build` and failed because `.next/types` was being regenerated;
 - rerunning `tsc` after `build:web` completed passed.
 
-Manual smoke still required:
+Local manual smoke result:
 
 - channel A -> B unread increments exactly by `1`;
+- duplicate increments were no longer reproduced;
+- reload matched backend unread summary;
+- after one idle/local-dev interval, one first channel event did not show immediately for the other browser, but the correct badge appeared after reload/focus/reconcile and later events worked normally.
+
+Review note:
+
+- This remaining observation points to a possible first-event-after-idle/socket-readiness gap or local dev/HMR/reconnect artifact.
+- Backend read-state still appears correct because reload/focus reconciliation restored the expected unread count.
+- Do not expand into global server badges until this is monitored through staging/manual use.
+- If the same symptom appears on staging/production, run a focused follow-up to harden initial readiness reconciliation, for example forcing targeted `refetchQueries` when `socket + currentMemberId + serverId` become ready and after reconnect/focus.
+
+Still expected in future manual/staging use:
+
 - channel B -> A unread increments exactly by `1`;
 - direct A -> B unread increments exactly by `1`;
 - direct B -> A unread increments exactly by `1`;
+- own messages do not create own unread;
+- opening channel/DM clears badge;
+- idle/reconnect/focus does not double-increment;
+- reload matches live UI state.
 - own messages do not create own unread;
 - opening channel/DM clears badge;
 - idle/reconnect/focus does not double-increment;

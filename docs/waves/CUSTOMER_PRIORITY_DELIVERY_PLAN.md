@@ -739,7 +739,7 @@ Then continue to:
 Segment:
 - `customer-unread-realtime-idempotency-reconnect-fix`
 
-Status: `pass / implemented locally; manual two-browser smoke pending`
+Status: `pass-with-review / implemented locally; local duplicate smoke passed, first-event-after-idle watch item recorded`
 
 Brief:
 - `docs/delegation/briefs/SEGMENT_BRIEF_193_CUSTOMER_UNREAD_REALTIME_IDEMPOTENCY_RECONNECT_FIX.md`
@@ -773,5 +773,11 @@ Delivered:
 - kept direct unread private on `member:${memberId}:direct-unread`;
 - did not add global unread, server badges, sound, browser tab badges, desktop notifications, mentions, replies, migrations, storage, or WebRTC changes.
 
+Manual review:
+- local two-browser duplicate unread increments were no longer reproduced;
+- reload/focus reconciliation restored correct backend summary state;
+- one first-event-after-idle/local-dev observation did not show immediately, then reconciled and later events worked normally;
+- keep this as a watch item for staging/production rather than blocking this scoped fix forever.
+
 Next recommended segment:
-- `customer-global-unread-summary-and-server-badges` after manual two-browser idempotency smoke passes
+- `customer-global-unread-summary-and-server-badges`, with first-event-after-idle monitored as a known review item
