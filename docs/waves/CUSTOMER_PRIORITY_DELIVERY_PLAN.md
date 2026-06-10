@@ -772,6 +772,42 @@ Review follow-ups:
 - global `attentionLevel` is normal-unread only until mention/reply/`@all` metadata exists;
 - do not claim deploy/product pass until a two-user / two-server manual smoke confirms inactive-server badge behavior, clear-on-open, reload restore, and no duplicate increment regression.
 
+## Unread Tab Badge And New Divider Result
+
+Segment:
+- `customer-unread-tab-badge-new-divider`
+
+Status: `pass / implemented locally; manual two-user smoke pending`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_196_CUSTOMER_UNREAD_TAB_BADGE_AND_NEW_DIVIDER.md`
+
+Delivered:
+- extended server-scoped unread summary channel/direct items with `lastReadAt` as the backend-owned read anchor;
+- mark-read responses now return the written `lastReadAt`;
+- chat captures the unread anchor before the existing mark-read flow clears unread;
+- chat renders `Новое` above the earliest loaded unread message after the captured anchor for channels and direct conversations;
+- divider placement ignores own and deleted messages;
+- browser tab title uses global unread `totalUnreadCount`, renders `(N)` / `(99+)`, and restores the normal title at zero;
+- kept global/server/channel/direct badge behavior on the existing unread query and realtime reconciliation path;
+- did not add sound, Notification API, favicon/native badges, mentions, replies, storage, WebRTC, or migrations.
+
+Verification:
+- `git diff --check`: pass;
+- `bun.cmd x prisma validate`: pass;
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass;
+- `bun.cmd run typecheck:api`: pass;
+- `bun.cmd run build:api`: pass;
+- `bun.cmd x next lint`: pass;
+- `bun.cmd run build:web`: pass;
+- `bun.cmd run check:desktop:config`: pass.
+
+Manual smoke:
+- pending two-user local smoke; not run in this shell because no ready authenticated two-user local sessions were available.
+
+Known limitation:
+- if the real first unread message is outside the currently loaded pagination window, the divider is placed above the first unread message available in the loaded range; the client does not fetch full history for this segment.
+
 ## Unread Realtime Idempotency / Reconnect Fix Plan
 
 Segment:

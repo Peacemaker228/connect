@@ -186,6 +186,7 @@ export const useUnreadSocket = ({
               {
                 conversationId: payload.conversationId,
                 memberId: payload.senderMemberId,
+                lastReadAt: new Date(new Date(payload.createdAt).getTime() - 1),
                 unreadCount: payload.unreadCount,
                 mentionCount: payload.mentionCount,
                 replyCount: payload.replyCount,

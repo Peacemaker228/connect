@@ -2,7 +2,7 @@
 
 import type { ChatMessageDto, MemberDto } from '@app-core/contracts'
 import { getChatMessagesRealtimeKey, getChatMessagesUpdateRealtimeKey } from '@app-core/contracts/message-slice-realtime'
-import { ElementRef, FC, Fragment, useRef } from 'react'
+import { ElementRef, FC, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { TChannelConversation } from '@/types'
 import { Loader2, ServerCrash } from 'lucide-react'
 import { ChatItem, ChatWelcome } from '@/lib/chat/features/index'
@@ -13,8 +13,26 @@ import { useChatSocket } from '@/lib/shared/data-access/chat/use-chat-socket'
 import { useChatQuery } from '@/lib/shared/data-access/chat/use-chat-query'
 import { useChatScroll } from '@/lib/shared/utils/hooks/use-chat-scroll'
 import { useMarkChatRead } from '@/lib/shared/data-access/unread/use-mark-chat-read'
+import { useUnreadSummary } from '@sdk/queries/unread'
 
 type MessageWithMemberWithProfile = ChatMessageDto
+
+type UnreadAnchor = {
+  chatKey: string
+  lastReadAt: Date | string
+}
+
+const getTimestampValue = (value: Date | string) => new Date(value).getTime()
+
+const NewMessagesDivider = () => (
+  <div className="flex items-center gap-x-3 px-4 py-2 select-none" aria-label="Новые сообщения">
+    <div className="h-px flex-1 bg-rose-500/70" />
+    <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-normal text-white">
+      Новое
+    </span>
+    <div className="h-px flex-1 bg-rose-500/70" />
+  </div>
+)
 
 interface IChatMessagesProps {
   name: string
@@ -45,6 +63,8 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
 
   const chatRef = useRef<ElementRef<'div'>>(null)
   const bottomRef = useRef<ElementRef<'div'>>(null)
+  const capturedChatKeyRef = useRef<string | null>(null)
+  const [unreadAnchor, setUnreadAnchor] = useState<UnreadAnchor | null>(null)
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useChatQuery({
     queryKey,
@@ -52,8 +72,46 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     paramKey,
     paramValue,
   })
+  const { data: unreadSummary, status: unreadSummaryStatus } = useUnreadSummary(serverId)
+  const chatReadKey = `${serverId}:${paramKey}:${paramValue}`
+  const currentUnreadItem = useMemo(() => {
+    if (paramKey === 'channelId') {
+      return unreadSummary?.channels.find((channel) => channel.channelId === paramValue)
+    }
+
+    return unreadSummary?.conversations.find((conversation) => conversation.conversationId === paramValue)
+  }, [paramKey, paramValue, unreadSummary])
+  const captureUnreadAnchor = useCallback(() => {
+    if (capturedChatKeyRef.current === chatReadKey) {
+      return
+    }
+
+    capturedChatKeyRef.current = chatReadKey
+
+    if (!currentUnreadItem || currentUnreadItem.unreadCount <= 0) {
+      setUnreadAnchor(null)
+      return
+    }
+
+    setUnreadAnchor({
+      chatKey: chatReadKey,
+      lastReadAt: currentUnreadItem.lastReadAt,
+    })
+  }, [chatReadKey, currentUnreadItem])
+
+  useEffect(() => {
+    capturedChatKeyRef.current = null
+    setUnreadAnchor(null)
+  }, [chatReadKey])
+
   useChatSocket({ queryKey, addKey, updateKey })
-  useMarkChatRead({ serverId, paramKey, paramValue })
+  useMarkChatRead({
+    beforeMarkRead: captureUnreadAnchor,
+    enabled: unreadSummaryStatus !== 'pending',
+    serverId,
+    paramKey,
+    paramValue,
+  })
   useChatScroll({
     chatId,
     chatRef,
@@ -65,6 +123,41 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
 
   const t = useTranslations('ChannelPage')
   const commonTranslation = useTranslations('Common')
+  const unreadDividerMessageId = useMemo(() => {
+    if (!unreadAnchor || unreadAnchor.chatKey !== chatReadKey) {
+      return null
+    }
+
+    const anchorTime = getTimestampValue(unreadAnchor.lastReadAt)
+
+    if (!Number.isFinite(anchorTime)) {
+      return null
+    }
+
+    const unreadMessages =
+      data?.pages
+        ?.flatMap((page) => page.items)
+        .filter((message) => {
+          const messageTime = getTimestampValue(message.createdAt)
+
+          return (
+            !message.deleted &&
+            message.memberId !== member.id &&
+            Number.isFinite(messageTime) &&
+            messageTime > anchorTime
+          )
+        }) ?? []
+
+    if (unreadMessages.length === 0) {
+      return null
+    }
+
+    return unreadMessages.reduce((oldestUnreadMessage, message) =>
+      getTimestampValue(message.createdAt) < getTimestampValue(oldestUnreadMessage.createdAt)
+        ? message
+        : oldestUnreadMessage,
+    ).id
+  }, [chatReadKey, data?.pages, member.id, unreadAnchor])
 
   if (status === 'pending') {
     return (
@@ -107,19 +200,21 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         {data?.pages?.map((page, i) => (
           <Fragment key={i}>
             {page.items.map((m: MessageWithMemberWithProfile) => (
-              <ChatItem
-                fileUrl={m.fileUrl}
-                messageApiUrl={messageApiUrl}
-                messageQuery={messageQuery}
-                currentMember={member}
-                id={m.id}
-                member={m.member}
-                content={m.content}
-                deleted={m.deleted}
-                isUpdated={m.updatedAt !== m.createdAt}
-                timestamp={format(new Date(m.createdAt), EDateFormat.MESSAGE_ITEM)}
-                key={m.id}
-              />
+              <Fragment key={m.id}>
+                <ChatItem
+                  fileUrl={m.fileUrl}
+                  messageApiUrl={messageApiUrl}
+                  messageQuery={messageQuery}
+                  currentMember={member}
+                  id={m.id}
+                  member={m.member}
+                  content={m.content}
+                  deleted={m.deleted}
+                  isUpdated={m.updatedAt !== m.createdAt}
+                  timestamp={format(new Date(m.createdAt), EDateFormat.MESSAGE_ITEM)}
+                />
+                {unreadDividerMessageId === m.id && <NewMessagesDivider />}
+              </Fragment>
             ))}
           </Fragment>
         ))}

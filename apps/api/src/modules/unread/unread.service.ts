@@ -6,6 +6,7 @@ type UnreadAttentionLevel = 'none' | 'unread' | 'mention' | 'reply';
 
 type ChannelUnreadSummaryItem = {
   channelId: string;
+  lastReadAt: Date;
   unreadCount: number;
   mentionCount: number;
   replyCount: number;
@@ -15,6 +16,7 @@ type ChannelUnreadSummaryItem = {
 type ConversationUnreadSummaryItem = {
   conversationId: string;
   memberId: string;
+  lastReadAt: Date;
   unreadCount: number;
   mentionCount: number;
   replyCount: number;
@@ -113,6 +115,7 @@ export class UnreadService {
   ) {
     const { currentMember } = await this.resolveChannelMember(profileId, serverId, channelId);
     const resolvedChannelId = this.requireValue(channelId, 'Channel ID Missing');
+    const lastReadAt = new Date();
 
     await this.prisma.channelReadState.upsert({
       where: {
@@ -124,15 +127,16 @@ export class UnreadService {
       create: {
         memberId: currentMember.id,
         channelId: resolvedChannelId,
-        lastReadAt: new Date(),
+        lastReadAt,
       },
       update: {
-        lastReadAt: new Date(),
+        lastReadAt,
       },
     });
 
     return {
       channelId: resolvedChannelId,
+      lastReadAt,
       unreadCount: 0,
       mentionCount: 0,
       replyCount: 0,
@@ -142,6 +146,7 @@ export class UnreadService {
 
   async markConversationRead(profileId: string | undefined, conversationId: string | undefined) {
     const { conversation, currentMember } = await this.resolveConversationMember(profileId, conversationId);
+    const lastReadAt = new Date();
 
     await this.prisma.conversationReadState.upsert({
       where: {
@@ -153,10 +158,10 @@ export class UnreadService {
       create: {
         memberId: currentMember.id,
         conversationId: conversation.id,
-        lastReadAt: new Date(),
+        lastReadAt,
       },
       update: {
-        lastReadAt: new Date(),
+        lastReadAt,
       },
     });
 
@@ -166,6 +171,7 @@ export class UnreadService {
     return {
       conversationId: conversation.id,
       memberId: otherMemberId,
+      lastReadAt,
       unreadCount: 0,
       mentionCount: 0,
       replyCount: 0,
@@ -209,6 +215,7 @@ export class UnreadService {
 
     const channels: ChannelUnreadSummaryItem[] = await Promise.all(
       server.channels.map(async (channel) => {
+        const lastReadAt = channelReadStateByChannelId.get(channel.id) ?? defaultReadAt;
         const unreadCount = await this.prisma.message.count({
           where: {
             channelId: channel.id,
@@ -217,17 +224,18 @@ export class UnreadService {
               not: currentMember.id,
             },
             createdAt: {
-              gt: channelReadStateByChannelId.get(channel.id) ?? defaultReadAt,
+              gt: lastReadAt,
             },
           },
         });
 
-        return this.createChannelUnreadSummaryItem(channel.id, unreadCount);
+        return this.createChannelUnreadSummaryItem(channel.id, unreadCount, lastReadAt);
       }),
     );
 
     const conversations: ConversationUnreadSummaryItem[] = await Promise.all(
       server.conversations.map(async (conversation) => {
+        const lastReadAt = conversationReadStateByConversationId.get(conversation.id) ?? defaultReadAt;
         const unreadCount = await this.prisma.directMessage.count({
           where: {
             conversationId: conversation.id,
@@ -236,14 +244,14 @@ export class UnreadService {
               not: currentMember.id,
             },
             createdAt: {
-              gt: conversationReadStateByConversationId.get(conversation.id) ?? defaultReadAt,
+              gt: lastReadAt,
             },
           },
         });
         const otherMemberId =
           conversation.memberOneId === currentMember.id ? conversation.memberTwoId : conversation.memberOneId;
 
-        return this.createConversationUnreadSummaryItem(conversation.id, otherMemberId, unreadCount);
+        return this.createConversationUnreadSummaryItem(conversation.id, otherMemberId, unreadCount, lastReadAt);
       }),
     );
 
@@ -392,9 +400,14 @@ export class UnreadService {
     };
   }
 
-  private createChannelUnreadSummaryItem(channelId: string, unreadCount: number): ChannelUnreadSummaryItem {
+  private createChannelUnreadSummaryItem(
+    channelId: string,
+    unreadCount: number,
+    lastReadAt: Date,
+  ): ChannelUnreadSummaryItem {
     return {
       channelId,
+      lastReadAt,
       unreadCount,
       mentionCount: 0,
       replyCount: 0,
@@ -406,10 +419,12 @@ export class UnreadService {
     conversationId: string,
     memberId: string,
     unreadCount: number,
+    lastReadAt: Date,
   ): ConversationUnreadSummaryItem {
     return {
       conversationId,
       memberId,
+      lastReadAt,
       unreadCount,
       mentionCount: 0,
       replyCount: 0,

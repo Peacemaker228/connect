@@ -1048,13 +1048,14 @@ Done:
 - `customer-unread-notification-system-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_192_CUSTOMER_UNREAD_NOTIFICATION_SYSTEM_PLAN.md`: next unread work is split into global unread/server badges, `New` divider, browser/desktop notification surfaces, and later mention/reply/`@all` attention; normal unread stays separate from attention signals
 - `customer-unread-realtime-idempotency-reconnect-fix` is implemented locally in `docs/delegation/briefs/SEGMENT_BRIEF_194_CUSTOMER_UNREAD_REALTIME_IDEMPOTENCY_RECONNECT_FIX.md`: unread realtime now dedupes processed events by current member, server, scope, and `messageId`, reconciles targeted unread summary after events, socket connect/reconnect, browser focus, and visibility return, preserves active-chat mark-read and own-message negative behavior, keeps direct unread private on `member:${memberId}:direct-unread`, and is classified pass-with-review because duplicate increments are fixed while first-event-after-idle remains a staging/production watch item
 - `customer-global-unread-summary-and-server-badges` is implemented locally in `docs/delegation/briefs/SEGMENT_BRIEF_195_CUSTOMER_GLOBAL_UNREAD_SUMMARY_AND_SERVER_BADGES.md`: backend global unread summary aggregates normal unread counts per accessible server, SDK exposes the global summary query, server rail subscribes to accessible server unread keys plus per-server current member direct-unread keys, server icons show compact unread counts, and channel/direct rows use stronger unread emphasis while keeping numeric badges
+- `customer-unread-tab-badge-new-divider` is implemented locally with command verification passing in `docs/delegation/briefs/SEGMENT_BRIEF_196_CUSTOMER_UNREAD_TAB_BADGE_AND_NEW_DIVIDER.md`: server-scoped unread summary items now expose `lastReadAt`, chat captures that anchor before mark-read and renders `Новое` above the earliest loaded unread non-own message, and the authenticated web shell title shows global unread count as `(N)` / `(99+)` without adding polling, sound, Notification API, WebRTC/media, storage, or migrations
 
 Next likely work:
 - staging operator migration-state inspection and unread two-user smoke
 - monitor first-event-after-idle behavior for `customer-unread-realtime-idempotency-reconnect-fix`
 - manual two-user / two-server smoke for `customer-global-unread-summary-and-server-badges`
 - keep Segment 195 review follow-ups visible during smoke: global summary query shape is acceptable for the current slice but may need later optimization, and `attentionLevel` remains normal-unread-only until mention/reply metadata exists
-- after global unread smoke, continue to `customer-new-message-divider`, then `customer-notification-sound-browser-desktop-badges`, then `customer-mentions-replies-attention`
+- manually smoke `customer-unread-tab-badge-new-divider`; then continue to `customer-unread-sound-and-notification-settings`, then `customer-mentions-replies-attention`
 - keep link preview, copy/reply, and media fallback as separate scoped segments
 
 ## Historical Notes

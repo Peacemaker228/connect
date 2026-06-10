@@ -104,6 +104,7 @@ export type UnreadAttentionLevel = 'none' | 'unread' | 'mention' | 'reply'
 
 export interface ChannelUnreadSummaryItemDto {
   channelId: string
+  lastReadAt: DomainTimestamp
   unreadCount: number
   mentionCount: number
   replyCount: number
@@ -113,6 +114,7 @@ export interface ChannelUnreadSummaryItemDto {
 export interface ConversationUnreadSummaryItemDto {
   conversationId: string
   memberId: string
+  lastReadAt: DomainTimestamp
   unreadCount: number
   mentionCount: number
   replyCount: number
