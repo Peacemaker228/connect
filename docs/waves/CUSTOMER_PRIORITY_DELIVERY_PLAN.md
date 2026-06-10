@@ -808,6 +808,33 @@ Manual smoke:
 Known limitation:
 - if the real first unread message is outside the currently loaded pagination window, the divider is placed above the first unread message available in the loaded range; the client does not fetch full history for this segment.
 
+## Idle Profile/Reconnection Sidebar State Incident
+
+Segment:
+- `customer-idle-profile-reconnect-sidebar-state-fix`
+
+Status: `planned / blocking next notification work`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_197_CUSTOMER_IDLE_PROFILE_RECONNECT_SIDEBAR_STATE_FIX.md`
+
+Observed staging incident:
+- after several hours idle with two authenticated browser windows open, the account area temporarily showed fallback `AX` / missing user identity;
+- the current user temporarily appeared in the member list;
+- server rail unread badges incremented, but channel/member row badges did not update until a later blink/refetch;
+- after the UI recovered, profile/user identity and row unread indicators appeared again.
+
+Working diagnosis:
+- this points to client auth/profile readiness after idle/reconnect, not to a staging DB migration failure;
+- `ServerSidebar` currently derives member filtering and `currentMember` from `useGetProfile`;
+- while `profile` is missing, self is not filtered out and `useUnreadSocket` cannot subscribe with `currentMemberId`;
+- global unread/server rail can still update separately, which matches the observed split behavior.
+
+Decision:
+- do not continue to sound/native notifications until this core profile/current-member recovery issue is fixed or disproven;
+- fix the authenticated shell so it does not render misleading member/user state while profile is loading or recovering;
+- preserve staging data and avoid unrelated auth rewrites, DB migrations, storage work, media/WebRTC work, and production changes.
+
 ## Unread Realtime Idempotency / Reconnect Fix Plan
 
 Segment:
