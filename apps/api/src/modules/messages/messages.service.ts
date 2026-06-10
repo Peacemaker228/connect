@@ -75,7 +75,9 @@ export class MessagesService {
       throw new HttpException('Channel ID Missing', HttpStatus.BAD_REQUEST);
     }
 
-    if (!body.content) {
+    const content = this.normalizeMessageContent(body.content);
+
+    if (!content) {
       throw new HttpException('Content Missing', HttpStatus.BAD_REQUEST);
     }
 
@@ -121,7 +123,7 @@ export class MessagesService {
 
     return this.prisma.message.create({
       data: {
-        content: body.content,
+        content,
         fileUrl: finalizedFileUrl,
         channelId,
         memberId: member.id,
@@ -145,7 +147,9 @@ export class MessagesService {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
 
-    if (!body.content) {
+    const content = this.normalizeMessageContent(body.content);
+
+    if (!content) {
       throw new HttpException('Content Missing', HttpStatus.BAD_REQUEST);
     }
 
@@ -154,7 +158,7 @@ export class MessagesService {
         id: messageId,
       },
       data: {
-        content: body.content,
+        content,
       },
       include: MESSAGE_INCLUDE,
     });
@@ -268,5 +272,9 @@ export class MessagesService {
     }
 
     return profileId;
+  }
+
+  private normalizeMessageContent(content: string | undefined) {
+    return content?.trim() ?? '';
   }
 }

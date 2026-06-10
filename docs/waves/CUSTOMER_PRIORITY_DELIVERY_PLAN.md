@@ -392,8 +392,11 @@ Delivered:
 - server edit success updates and invalidates the local React Query server caches so the changed name appears without a page reload;
 - main chat composer supports `Enter` to send and `Shift+Enter` to insert a newline;
 - main chat composer grows to roughly 20 visible lines, then scrolls internally with a thinner scrollbar;
+- whitespace-only chat messages are rejected, leading/trailing blank lines are trimmed, and internal multiline content is preserved;
+- backend channel/direct message create/update paths apply the same trim guard;
 - multiline message rendering preserves intentional newlines;
-- after successful send from the composer, focus returns to the input after the refreshed chat tree settles unless the user moved pointer interaction elsewhere during the pending send.
+- after successful send from the composer, focus returns to the input after the refreshed chat tree settles unless the user moved pointer interaction elsewhere during the pending send;
+- after successful send, the chat query cache is updated immediately and mobile browsers scroll the chat container to the bottom when the user was already near the bottom.
 
 Local storage diagnostic:
 - `.env.local` contains the expected S3-compatible storage settings and no shell-level `STORAGE_*` override was present;

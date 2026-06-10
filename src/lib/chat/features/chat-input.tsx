@@ -3,6 +3,8 @@
 import { FC, KeyboardEvent, useCallback, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useQueryClient } from '@tanstack/react-query'
+import type { InfiniteData } from '@tanstack/react-query'
 import { Form, FormControl, FormField, FormItem } from '@/lib/shared/ui/form'
 import { Plus } from 'lucide-react'
 import { EmojiPickerCustom } from '@/lib/shared/features/emoji-picker-custom'
@@ -12,6 +14,7 @@ import { useTranslations } from 'next-intl'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { chatInputSchema, IChatInputSchema } from '@app-core/schemas/chat-input-schema'
 import { useCreateMessage } from '@sdk/mutations/message'
+import type { ChatMessagesPage } from '@sdk/queries/chat'
 
 const CHAT_INPUT_LINE_HEIGHT = 20
 const CHAT_INPUT_VERTICAL_PADDING = 28
@@ -30,6 +33,7 @@ interface IChatInputProps {
 export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, name, type }) => {
   const { onOpen } = useModal()
   const router = useRouter()
+  const queryClient = useQueryClient()
   const t = useTranslations('ChannelPage')
   const { mutateAsync: createMessage } = useCreateMessage()
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
@@ -116,7 +120,34 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
     shouldFocusAfterSendRef.current = document.activeElement === inputRef.current || shouldFocusAfterSendRef.current
 
     try {
-      await createMessage({ apiUrl: messageApiUrl, query: messageQuery, payload: data })
+      const createdMessage = await createMessage({ apiUrl: messageApiUrl, query: messageQuery, payload: data })
+      const chatId =
+        typeof messageQuery.channelId === 'string'
+          ? messageQuery.channelId
+          : typeof messageQuery.conversationId === 'string'
+            ? messageQuery.conversationId
+            : null
+
+      if (chatId) {
+        const chatQueryKey = [`chat:${chatId}`]
+
+        queryClient.setQueryData<InfiniteData<ChatMessagesPage>>(chatQueryKey, (oldData) => {
+          if (!oldData || oldData.pages.length === 0) {
+            return oldData
+          }
+
+          if (oldData.pages.some((page) => page.items.some((message) => message.id === createdMessage.id))) {
+            return oldData
+          }
+
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page, index) =>
+              index === 0 ? { ...page, items: [createdMessage, ...page.items] } : page,
+            ),
+          }
+        })
+      }
 
       form.reset()
       router.refresh()

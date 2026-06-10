@@ -1036,7 +1036,7 @@ Current rule:
 Done:
 - `customer-priority-track-pause-and-delivery-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_183_CUSTOMER_PRIORITY_TRACK_PAUSE_AND_DELIVERY_PLAN.md`
 - `docs/waves/CUSTOMER_PRIORITY_DELIVERY_PLAN.md` records staging strategy, branch strategy, active customer requirements, desktop-first verification, and the deferred WebRTC resume brief
-- `customer-priority-inventory-and-low-risk-ux-fixes` is implemented in `docs/delegation/briefs/SEGMENT_BRIEF_184_CUSTOMER_PRIORITY_LOW_RISK_UX_FIXES.md`: server edit/settings label now says `Save`, server creation still says `Create`, server edit updates local server caches without requiring page reload, chat composer supports `Enter` send and `Shift+Enter` newline with roughly 20 visible lines before internal scroll, multiline message rendering preserves newlines, and guarded post-send input autofocus is in place
+- `customer-priority-inventory-and-low-risk-ux-fixes` is implemented in `docs/delegation/briefs/SEGMENT_BRIEF_184_CUSTOMER_PRIORITY_LOW_RISK_UX_FIXES.md`: server edit/settings label now says `Save`, server creation still says `Create`, server edit updates local server caches without requiring page reload, chat composer supports `Enter` send and `Shift+Enter` newline with roughly 20 visible lines before internal scroll, whitespace-only messages are rejected with edge-trim normalization, multiline message rendering preserves internal newlines, guarded post-send input autofocus is in place, and mobile chat scroll-to-bottom after send is handled through immediate cache update plus container scroll settling
 
 Next likely work:
 - `customer-unread-message-badges-and-sound-plan`

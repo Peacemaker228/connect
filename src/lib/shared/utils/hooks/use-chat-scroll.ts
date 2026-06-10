@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useState } from 'react'
+import { RefObject, useEffect, useRef, useState } from 'react'
 
 interface IUseChatScroll {
   chatRef: RefObject<HTMLDivElement>
@@ -10,12 +10,25 @@ interface IUseChatScroll {
 
 export const useChatScroll = ({ chatRef, bottomRef, shouldLoadMore, loadMore, count }: IUseChatScroll) => {
   const [hasInitialized, setHasInitialized] = useState(false)
+  const isNearBottomRef = useRef(true)
 
   useEffect(() => {
     const topDiv = chatRef?.current
 
+    const updateIsNearBottom = () => {
+      if (!topDiv) {
+        return
+      }
+
+      const distanceFromBottom = topDiv.scrollHeight - topDiv.scrollTop - topDiv.clientHeight
+
+      isNearBottomRef.current = distanceFromBottom <= 160
+    }
+
     const handleScroll = () => {
       const scrollTop = topDiv?.scrollTop
+
+      updateIsNearBottom()
 
       if (scrollTop === 0 && shouldLoadMore) {
         loadMore()
@@ -23,6 +36,7 @@ export const useChatScroll = ({ chatRef, bottomRef, shouldLoadMore, loadMore, co
     }
 
     topDiv?.addEventListener('scroll', handleScroll)
+    updateIsNearBottom()
 
     return () => {
       topDiv?.removeEventListener('scroll', handleScroll)
@@ -30,28 +44,37 @@ export const useChatScroll = ({ chatRef, bottomRef, shouldLoadMore, loadMore, co
   }, [chatRef, loadMore, shouldLoadMore])
 
   useEffect(() => {
-    const bottomDiv = bottomRef?.current
     const topDiv = chatRef?.current
 
     const shouldAutoScroll = () => {
-      if (!hasInitialized && bottomDiv) {
+      if (!hasInitialized) {
         setHasInitialized(true)
         return true
       }
 
-      if (!topDiv) {
-        return false
+      return isNearBottomRef.current
+    }
+
+    if (!topDiv || !shouldAutoScroll()) {
+      return
+    }
+
+    const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
+      const container = chatRef.current
+
+      if (!container) {
+        return
       }
 
-      const distanceFromBottom = topDiv.scrollHeight - topDiv.scrollTop - topDiv.clientHeight
-
-      return distanceFromBottom <= 100
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior,
+      })
+      bottomRef.current?.scrollIntoView({ block: 'end', behavior })
     }
 
-    if (shouldAutoScroll()) {
-      setTimeout(() => {
-        bottomRef?.current?.scrollIntoView({ behavior: 'smooth' })
-      }, 100)
-    }
+    requestAnimationFrame(() => scrollToBottom())
+    window.setTimeout(() => scrollToBottom(), 50)
+    window.setTimeout(() => scrollToBottom('smooth'), 150)
   }, [bottomRef, chatRef, count, hasInitialized])
 }
