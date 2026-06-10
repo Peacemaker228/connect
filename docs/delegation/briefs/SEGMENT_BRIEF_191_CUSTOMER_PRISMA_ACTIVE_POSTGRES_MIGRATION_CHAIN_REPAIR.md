@@ -137,6 +137,19 @@ Current local `connect_validation` migration table now contains:
 - `00000000000000_clean_baseline`
 - `20260610120000_add_unread_read_state`
 
+Local migration-backed unread smoke:
+
+- ran a disposable local smoke against `localhost:5433/connect_validation`;
+- confirmed baseline and unread migrations are recorded in `_prisma_migrations`;
+- created temporary local profiles, server, text channel, members, and direct conversation;
+- confirmed channel unread count is `1` for the recipient and `0` for the sender;
+- confirmed direct unread count is `1` for the recipient and `0` for the sender;
+- confirmed channel and direct mark-read state clears unread counts back to `0`;
+- confirmed own messages do not create own unread;
+- deleted the smoke rows after the run and verified no `unread-smoke-*` profiles, servers, messages, or direct messages remain.
+
+This was a local DB/business-path smoke, not a full authenticated browser/realtime UI smoke.
+
 ## Not Touched
 
 - staging data;

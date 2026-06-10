@@ -669,6 +669,8 @@ Delivered:
 - kept unread migration after the baseline;
 - verified an existing local pre-unread DB through `migrate resolve --applied 00000000000000_clean_baseline` followed by `prisma migrate dev`;
 - verified a fresh temporary local Postgres DB can apply baseline plus unread through `prisma migrate deploy`;
+- verified local migration-backed unread behavior with disposable rows: channel unread recipient/sender counts, direct unread recipient/sender counts, mark-read clearing, and own-message negative cases;
+- verified the disposable local smoke rows were cleaned up after the run;
 - documented safe existing-DB handling: baseline resolve, then `migrate deploy`, without reset.
 
 Verification:
@@ -681,6 +683,7 @@ Verification:
 - `bun.cmd run typecheck:api`: pass;
 - `bun.cmd x next lint`: pass;
 - `bun.cmd run build:web`: pass.
+- local disposable unread DB/business smoke: pass.
 
 Pending:
 - staging operator should inspect `_prisma_migrations`;
