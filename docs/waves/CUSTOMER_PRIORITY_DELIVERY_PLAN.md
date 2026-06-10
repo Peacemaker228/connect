@@ -73,6 +73,22 @@ Rules:
 - do not use `main` for new work unless a separate repo-admin segment explicitly changes branch policy;
 - do not rewrite `main` while staging is being used unless there is a reviewed backup/branch-protection plan.
 
+## Agent Handoff And Code Review Control
+
+Agent handoff text is not sufficient proof by itself.
+
+For every customer-priority code segment, the supervising agent must inspect the actual repository state before recommending merge, deploy, or operator action:
+
+- read `git status --short --branch` and confirm whether the worktree is clean or which files are pending;
+- inspect the real code diff with `git diff`, `git show`, or targeted file reads, not only the handoff summary;
+- verify that changed files match the claimed scope and do not touch unrelated runtime, env, DB, media, migration, or production paths;
+- call out mismatches between the handoff and the code, even if verification commands pass;
+- run or require the relevant verification commands for the touched surface;
+- for frontend/runtime changes, require a concrete smoke target or explicitly record why authenticated/manual smoke is still pending;
+- for deploy advice, first confirm the target commit is present in the branch that will be deployed.
+
+If this review is not performed, the result must be classified as `review / unverified handoff`, not `pass`.
+
 ## Priority Requirements
 
 ### P0. Staging Reliability
