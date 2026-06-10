@@ -4,6 +4,8 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
+import type { ServerListItemDto, ServerMembersProfilesDto } from '@app-core/contracts'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { serverFormSchema } from '@app-core/schemas/server-form-schema'
 import { ServerModal } from '@/lib/shared/features/modals/common/server-modal'
@@ -11,9 +13,11 @@ import { useCallback, useEffect } from 'react'
 import { deleteUploadedFile } from '@/lib/shared/utils/delete-upload'
 import { useStagedUpload } from '@/lib/shared/utils/hooks/use-staged-upload'
 import { useUpdateServer } from '@sdk/mutations/server'
+import { getServerQueryKey } from '@sdk/queries/server'
 
 export const EditServerModal = () => {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { cleanupStagedValue, isStagedValue, markCommitted, registerUploadedValue, reset } =
     useStagedUpload('serverImage')
   const { mutateAsync: updateServer } = useUpdateServer()
@@ -40,7 +44,16 @@ export const EditServerModal = () => {
     }
 
     try {
-      await updateServer({ serverId: server.id, payload: data })
+      const updatedServer = await updateServer({ serverId: server.id, payload: data })
+
+      queryClient.setQueryData<ServerListItemDto[]>(['servers'], (servers = []) =>
+        servers.map((candidate) =>
+          candidate.id === updatedServer.id ? { ...candidate, ...updatedServer } : candidate,
+        ),
+      )
+      queryClient.setQueryData<ServerMembersProfilesDto>(getServerQueryKey(updatedServer.id), (currentServer) =>
+        currentServer ? { ...currentServer, ...updatedServer } : currentServer,
+      )
 
       markCommitted(data.imageUrl)
       reset()
@@ -56,6 +69,8 @@ export const EditServerModal = () => {
       form.reset()
       onClose()
       router.refresh()
+      queryClient.invalidateQueries({ queryKey: ['servers'] })
+      queryClient.invalidateQueries({ queryKey: getServerQueryKey(updatedServer.id) })
     } catch (err) {
       console.log(err)
     }
@@ -94,6 +109,7 @@ export const EditServerModal = () => {
       isLoading={isLoading}
       isModalOpen={isModalOpen}
       onClose={handleClose}
+      type="edit"
       isStagedImageValueAction={isStagedValue}
       onCleanupStagedImageAction={cleanupStagedValue}
       onImageUploadCompleteAction={registerUploadedValue}

@@ -58,6 +58,13 @@ export const useChatSocket = ({ addKey, updateKey, queryKey }: IChatSocket) => {
         }
 
         const newData = [...oldData.pages]
+        const alreadyExists = newData.some((page) =>
+          page.items?.some((item: TMessageMemberProfile) => item.id === message.id),
+        )
+
+        if (alreadyExists) {
+          return oldData
+        }
 
         newData[0] = {
           ...newData[0],

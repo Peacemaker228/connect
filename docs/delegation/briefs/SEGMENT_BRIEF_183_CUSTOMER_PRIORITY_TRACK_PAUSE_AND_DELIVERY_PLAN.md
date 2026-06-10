@@ -77,6 +77,7 @@ Priority items:
 - staging storage readiness for server avatars;
 - multiline chat input behavior;
 - mentions with `@user` and `@all`;
+- clickable link rendering and optional safe link previews;
 - chat input autofocus after send;
 - media provider/fallback UI and explanation;
 - remote screen share fullscreen/focused view;
@@ -94,11 +95,13 @@ Priority items:
    - persisted unread/read state, realtime badges, sound preference.
 4. `customer-mentions-user-and-all`
    - mention parsing, UI picker, rendering, notifications.
-5. `customer-staging-storage-readiness`
+5. `customer-message-link-rendering-and-preview`
+   - safe clickable links first, then backend-owned link previews if approved.
+6. `customer-staging-storage-readiness`
    - configure staging storage outside repo and smoke avatar upload.
-6. `customer-media-fallback-ui-and-screen-share-fullscreen`
+7. `customer-media-fallback-ui-and-screen-share-fullscreen`
    - explicit fallback/provider UI and screen-share fullscreen.
-7. `customer-desktop-parity-smoke`
+8. `customer-desktop-parity-smoke`
    - desktop checks for all shared UI changes.
 
 ## Resume WebRTC Brief

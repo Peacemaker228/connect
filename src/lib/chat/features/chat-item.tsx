@@ -160,7 +160,7 @@ export const ChatItem: FC<IChatItemProps> = ({
           {!fileUrl && !isEditing && (
             <p
               className={cn(
-                'text-accent text-zinc-600 dark:text-zinc-300',
+                'text-accent text-zinc-600 dark:text-zinc-300 whitespace-pre-wrap break-words',
                 deleted && 'italic text-zinc-500 dark:text-zinc-400 text-xs mt-1',
               )}>
               {content}

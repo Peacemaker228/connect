@@ -144,7 +144,9 @@ export class DirectMessagesService {
       throw new HttpException('Conversation ID Missing', HttpStatus.BAD_REQUEST);
     }
 
-    if (!body.content) {
+    const content = this.normalizeMessageContent(body.content);
+
+    if (!content) {
       throw new HttpException('Content Missing', HttpStatus.BAD_REQUEST);
     }
 
@@ -185,7 +187,7 @@ export class DirectMessagesService {
 
     return this.prisma.directMessage.create({
       data: {
-        content: body.content,
+        content,
         fileUrl: finalizedFileUrl,
         conversationId,
         memberId: member.id,
@@ -212,7 +214,9 @@ export class DirectMessagesService {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
 
-    if (!body.content) {
+    const content = this.normalizeMessageContent(body.content);
+
+    if (!content) {
       throw new HttpException('Content Missing', HttpStatus.BAD_REQUEST);
     }
 
@@ -221,7 +225,7 @@ export class DirectMessagesService {
         id: directMessageId,
       },
       data: {
-        content: body.content,
+        content,
       },
       include: DIRECT_MESSAGE_INCLUDE,
     });
@@ -342,5 +346,9 @@ export class DirectMessagesService {
     }
 
     return profileId;
+  }
+
+  private normalizeMessageContent(content: string | undefined) {
+    return content?.trim() ?? '';
   }
 }
