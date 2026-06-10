@@ -50,6 +50,11 @@ Until that exists:
 - use local development and guarded browser tests for risky changes;
 - deploy to staging only for scoped product fixes needed by the team.
 
+Ordering decision:
+- do not interrupt the current customer-priority feature work to build the new dev/preview stand immediately;
+- first finish the current batch of colleague requirements that affect active staging usage;
+- after that batch stabilizes, create a separate dev/preview stand before resuming risky WebRTC/media infrastructure work or broad experiments.
+
 ## Branch Strategy
 
 Current active source branch:
@@ -429,7 +434,8 @@ Handoff:
 10. Restore staging storage readiness for avatars.
 11. Improve media provider/fallback UI and screen-share fullscreen.
 12. Run web checks, then desktop checks for shared UI changes.
-13. Resume WebRTC cleanup only after customer-priority work stabilizes or moves to a separate dev stand.
+13. Create a separate dev/preview stand after the current colleague-requirements batch stabilizes.
+14. Resume WebRTC cleanup only after customer-priority work stabilizes or moves to a separate dev stand.
 
 ## Low-Risk UX Fixes Result
 
