@@ -739,10 +739,11 @@ Then continue to:
 Segment:
 - `customer-unread-realtime-idempotency-reconnect-fix`
 
-Status: `ready for implementation / blocker before global unread expansion`
+Status: `pass / implemented locally; manual two-browser smoke pending`
 
 Brief:
 - `docs/delegation/briefs/SEGMENT_BRIEF_193_CUSTOMER_UNREAD_REALTIME_IDEMPOTENCY_RECONNECT_FIX.md`
+- `docs/delegation/briefs/SEGMENT_BRIEF_194_CUSTOMER_UNREAD_REALTIME_IDEMPOTENCY_RECONNECT_FIX.md`
 
 Observed local issue:
 - two-browser local testing can drift after idle/reconnect;
@@ -762,5 +763,15 @@ Expected fix direction:
 - preserve private direct unread on `member:${memberId}:direct-unread`;
 - preserve active-chat mark-read and sender/own-message negative behavior.
 
+Delivered:
+- added bounded module-level dedupe for unread realtime events using current member id, server id, event scope, and `messageId`;
+- duplicate unread events no longer increment the same browser-session unread cache twice;
+- added targeted unread summary reconciliation after processed/duplicate realtime events;
+- added targeted unread summary reconciliation on socket `connect`, Socket.IO manager `reconnect`, browser `focus`, and `visibilitychange` back to visible;
+- kept active chat mark-read behavior;
+- kept own-message negative behavior;
+- kept direct unread private on `member:${memberId}:direct-unread`;
+- did not add global unread, server badges, sound, browser tab badges, desktop notifications, mentions, replies, migrations, storage, or WebRTC changes.
+
 Next recommended segment:
-- `customer-unread-realtime-idempotency-reconnect-fix`
+- `customer-global-unread-summary-and-server-badges` after manual two-browser idempotency smoke passes
