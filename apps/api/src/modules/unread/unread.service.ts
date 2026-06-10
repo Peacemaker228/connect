@@ -21,82 +21,88 @@ type ConversationUnreadSummaryItem = {
   attentionLevel: UnreadAttentionLevel;
 };
 
+type GlobalServerUnreadSummaryItem = {
+  serverId: string;
+  memberId: string;
+  unreadCount: number;
+  mentionCount: number;
+  replyCount: number;
+  attentionLevel: UnreadAttentionLevel;
+};
+
 @Injectable()
 export class UnreadService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getServerUnreadSummary(profileId: string | undefined, serverId: string | undefined) {
-    const { currentMember, server } = await this.resolveServerMember(profileId, serverId);
-    const defaultReadAt = currentMember.createdAt;
+  async getGlobalUnreadSummary(profileId: string | undefined) {
+    const resolvedProfileId = this.requireProfileId(profileId);
 
-    const channelReadStates = await this.prisma.channelReadState.findMany({
+    const servers = await this.prisma.server.findMany({
       where: {
-        memberId: currentMember.id,
-        channelId: {
-          in: server.channels.map((channel) => channel.id),
+        members: {
+          some: {
+            profileId: resolvedProfileId,
+          },
+        },
+      },
+      include: {
+        channels: {
+          where: {
+            type: 'TEXT',
+          },
+          select: {
+            id: true,
+          },
+        },
+        members: {
+          where: {
+            profileId: resolvedProfileId,
+          },
+          select: {
+            id: true,
+            createdAt: true,
+          },
         },
       },
     });
-    const conversationReadStates = await this.prisma.conversationReadState.findMany({
-      where: {
-        memberId: currentMember.id,
-        conversationId: {
-          in: server.conversations.map((conversation) => conversation.id),
-        },
-      },
-    });
 
-    const channelReadStateByChannelId = new Map(
-      channelReadStates.map((readState) => [readState.channelId, readState.lastReadAt]),
-    );
-    const conversationReadStateByConversationId = new Map(
-      conversationReadStates.map((readState) => [readState.conversationId, readState.lastReadAt]),
-    );
+    const serverSummaries = await Promise.all(
+      servers.map(async (server) => {
+        const currentMember = server.members[0];
 
-    const channels: ChannelUnreadSummaryItem[] = await Promise.all(
-      server.channels.map(async (channel) => {
-        const unreadCount = await this.prisma.message.count({
-          where: {
-            channelId: channel.id,
-            deleted: false,
-            memberId: {
-              not: currentMember.id,
-            },
-            createdAt: {
-              gt: channelReadStateByChannelId.get(channel.id) ?? defaultReadAt,
-            },
+        if (!currentMember) {
+          return null;
+        }
+
+        const conversations = await this.findConversationsForMember(currentMember.id, server.id);
+        const unreadSummary = await this.createUnreadSummaryForServerMember(
+          {
+            ...server,
+            conversations,
           },
-        });
+          currentMember,
+        );
 
-        return this.createChannelUnreadSummaryItem(channel.id, unreadCount);
+        return this.createGlobalServerUnreadSummaryItem(server.id, currentMember.id, unreadSummary);
       }),
     );
-
-    const conversations: ConversationUnreadSummaryItem[] = await Promise.all(
-      server.conversations.map(async (conversation) => {
-        const unreadCount = await this.prisma.directMessage.count({
-          where: {
-            conversationId: conversation.id,
-            deleted: false,
-            memberId: {
-              not: currentMember.id,
-            },
-            createdAt: {
-              gt: conversationReadStateByConversationId.get(conversation.id) ?? defaultReadAt,
-            },
-          },
-        });
-        const otherMemberId =
-          conversation.memberOneId === currentMember.id ? conversation.memberTwoId : conversation.memberOneId;
-
-        return this.createConversationUnreadSummaryItem(conversation.id, otherMemberId, unreadCount);
-      }),
+    const serversWithUnread = serverSummaries.filter((summary): summary is GlobalServerUnreadSummaryItem =>
+      Boolean(summary),
     );
 
     return {
+      totalUnreadCount: serversWithUnread.reduce((total, server) => total + server.unreadCount, 0),
+      servers: serversWithUnread,
+    };
+  }
+
+  async getServerUnreadSummary(profileId: string | undefined, serverId: string | undefined) {
+    const { currentMember, server } = await this.resolveServerMember(profileId, serverId);
+    const unreadSummary = await this.createUnreadSummaryForServerMember(server, currentMember);
+
+    return {
       serverId: server.id,
-      channels,
-      conversations,
+      ...unreadSummary,
     };
   }
 
@@ -167,6 +173,86 @@ export class UnreadService {
     };
   }
 
+  private async createUnreadSummaryForServerMember(
+    server: {
+      id: string;
+      channels: { id: string }[];
+      conversations: { id: string; memberOneId: string; memberTwoId: string }[];
+    },
+    currentMember: { id: string; createdAt: Date },
+  ) {
+    const defaultReadAt = currentMember.createdAt;
+
+    const channelReadStates = await this.prisma.channelReadState.findMany({
+      where: {
+        memberId: currentMember.id,
+        channelId: {
+          in: server.channels.map((channel) => channel.id),
+        },
+      },
+    });
+    const conversationReadStates = await this.prisma.conversationReadState.findMany({
+      where: {
+        memberId: currentMember.id,
+        conversationId: {
+          in: server.conversations.map((conversation) => conversation.id),
+        },
+      },
+    });
+
+    const channelReadStateByChannelId = new Map(
+      channelReadStates.map((readState) => [readState.channelId, readState.lastReadAt]),
+    );
+    const conversationReadStateByConversationId = new Map(
+      conversationReadStates.map((readState) => [readState.conversationId, readState.lastReadAt]),
+    );
+
+    const channels: ChannelUnreadSummaryItem[] = await Promise.all(
+      server.channels.map(async (channel) => {
+        const unreadCount = await this.prisma.message.count({
+          where: {
+            channelId: channel.id,
+            deleted: false,
+            memberId: {
+              not: currentMember.id,
+            },
+            createdAt: {
+              gt: channelReadStateByChannelId.get(channel.id) ?? defaultReadAt,
+            },
+          },
+        });
+
+        return this.createChannelUnreadSummaryItem(channel.id, unreadCount);
+      }),
+    );
+
+    const conversations: ConversationUnreadSummaryItem[] = await Promise.all(
+      server.conversations.map(async (conversation) => {
+        const unreadCount = await this.prisma.directMessage.count({
+          where: {
+            conversationId: conversation.id,
+            deleted: false,
+            memberId: {
+              not: currentMember.id,
+            },
+            createdAt: {
+              gt: conversationReadStateByConversationId.get(conversation.id) ?? defaultReadAt,
+            },
+          },
+        });
+        const otherMemberId =
+          conversation.memberOneId === currentMember.id ? conversation.memberTwoId : conversation.memberOneId;
+
+        return this.createConversationUnreadSummaryItem(conversation.id, otherMemberId, unreadCount);
+      }),
+    );
+
+    return {
+      channels,
+      conversations,
+    };
+  }
+
   private async resolveServerMember(profileId: string | undefined, serverId: string | undefined) {
     const resolvedProfileId = this.requireProfileId(profileId);
     const resolvedServerId = this.requireValue(serverId, 'Server ID Missing');
@@ -211,14 +297,32 @@ export class UnreadService {
       throw new HttpException('Member Not Found', HttpStatus.NOT_FOUND);
     }
 
-    const conversations = await this.prisma.conversation.findMany({
+    const conversations = await this.findConversationsForMember(currentMember.id, server.id);
+
+    return {
+      currentMember,
+      server: {
+        ...server,
+        conversations,
+      },
+    };
+  }
+
+  private findConversationsForMember(memberId: string, serverId: string) {
+    return this.prisma.conversation.findMany({
       where: {
+        memberOne: {
+          serverId,
+        },
+        memberTwo: {
+          serverId,
+        },
         OR: [
           {
-            memberOneId: currentMember.id,
+            memberOneId: memberId,
           },
           {
-            memberTwoId: currentMember.id,
+            memberTwoId: memberId,
           },
         ],
       },
@@ -228,14 +332,6 @@ export class UnreadService {
         memberTwoId: true,
       },
     });
-
-    return {
-      currentMember,
-      server: {
-        ...server,
-        conversations,
-      },
-    };
   }
 
   private async resolveChannelMember(
@@ -317,6 +413,34 @@ export class UnreadService {
       unreadCount,
       mentionCount: 0,
       replyCount: 0,
+      attentionLevel: unreadCount > 0 ? 'unread' : 'none',
+    };
+  }
+
+  private createGlobalServerUnreadSummaryItem(
+    serverId: string,
+    memberId: string,
+    summary: { channels: ChannelUnreadSummaryItem[]; conversations: ConversationUnreadSummaryItem[] },
+  ): GlobalServerUnreadSummaryItem {
+    const unreadCount = [...summary.channels, ...summary.conversations].reduce(
+      (total, item) => total + item.unreadCount,
+      0,
+    );
+    const mentionCount = [...summary.channels, ...summary.conversations].reduce(
+      (total, item) => total + item.mentionCount,
+      0,
+    );
+    const replyCount = [...summary.channels, ...summary.conversations].reduce(
+      (total, item) => total + item.replyCount,
+      0,
+    );
+
+    return {
+      serverId,
+      memberId,
+      unreadCount,
+      mentionCount,
+      replyCount,
       attentionLevel: unreadCount > 0 ? 'unread' : 'none',
     };
   }

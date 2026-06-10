@@ -9,17 +9,26 @@ import { useParams, useRouter } from 'next/navigation'
 import { LocaleToggle } from '@/lib/shared/ui/locale-toggle'
 import { useServersSocket } from '@/lib/shared/data-access/server-list-sidebar/use-servers-socket'
 import { useGetServers } from '@sdk/queries/server'
+import { useGlobalUnreadSummary } from '@sdk/queries/unread'
 import { NavigationItem, NavigationAction } from '@/lib/navigation/features'
 import { ERoutes } from '@app-core/routing/routes'
+import { useGlobalUnreadSocket } from '@/lib/shared/data-access/unread/use-global-unread-socket'
 
 export const NavigationSidebar = () => {
   const router = useRouter()
-  const params = useParams<{ serverId: string }>()
+  const params = useParams<{ channelId?: string; memberId?: string; serverId: string }>()
   const serverId = params?.serverId
 
   const { data: servers } = useGetServers()
+  const { data: globalUnreadSummary } = useGlobalUnreadSummary()
 
   useServersSocket(serverId, servers)
+  useGlobalUnreadSocket({
+    activeChannelId: params?.channelId,
+    activeMemberId: params?.memberId,
+    activeServerId: serverId,
+    servers: globalUnreadSummary?.servers,
+  })
 
   useEffect(() => {
     if (!serverId || !servers) {
@@ -33,6 +42,10 @@ export const NavigationSidebar = () => {
     }
   }, [router, serverId, servers])
 
+  const unreadCountByServerId = new Map(
+    globalUnreadSummary?.servers.map((server) => [server.serverId, server.unreadCount]) ?? [],
+  )
+
   return (
     <div className="space-y-4 flex flex-col items-center h-full text-primary dark:bg-[#2B2D31] bg-[#E3E5E8] py-3 border-r-2 border-neutral-200 dark:border-neutral-800">
       <NavigationAction />
@@ -45,6 +58,7 @@ export const NavigationSidebar = () => {
               initialChannelId={server.initialChannelId}
               name={server.name}
               imageUrl={server.imageUrl}
+              unreadCount={unreadCountByServerId.get(server.id) ?? 0}
             />
           </div>
         ))}

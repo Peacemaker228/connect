@@ -45,9 +45,10 @@ interface INavigationItemProps {
   imageUrl: string
   initialChannelId?: string | null
   name: string
+  unreadCount?: number
 }
 
-export const NavigationItem: FC<INavigationItemProps> = ({ id, imageUrl, initialChannelId, name }) => {
+export const NavigationItem: FC<INavigationItemProps> = ({ id, imageUrl, initialChannelId, name, unreadCount = 0 }) => {
   const params = useParams<{ serverId?: string }>()
   const router = useRouter()
   const currentServerId = params?.serverId
@@ -61,6 +62,7 @@ export const NavigationItem: FC<INavigationItemProps> = ({ id, imageUrl, initial
     initialChannelId,
     serverId: id,
   })
+  const hasUnread = unreadCount > 0
 
   useEffect(() => {
     setHasImageError(false)
@@ -82,7 +84,7 @@ export const NavigationItem: FC<INavigationItemProps> = ({ id, imageUrl, initial
           className={cn(
             'absolute left-0 bg-mainOrange rounded-r-full transition-all w-[4px]',
             params?.serverId !== id && 'group-hover:h-[20px]',
-            params?.serverId === id ? 'h-[36px]' : 'h-[8px]',
+            params?.serverId === id ? 'h-[36px]' : hasUnread ? 'h-[16px]' : 'h-[8px]',
           )}
         />
         <div
@@ -101,6 +103,11 @@ export const NavigationItem: FC<INavigationItemProps> = ({ id, imageUrl, initial
             </div>
           )}
         </div>
+        {hasUnread && (
+          <span className="absolute right-2 top-0 min-w-5 h-5 px-1 rounded-full border-2 border-[#E3E5E8] dark:border-[#2B2D31] bg-rose-500 text-[10px] leading-4 text-white font-bold text-center">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
       </button>
     </ActionTooltip>
   )

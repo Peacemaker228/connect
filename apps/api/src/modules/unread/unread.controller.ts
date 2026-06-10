@@ -9,6 +9,11 @@ import { UnreadService } from './unread.service';
 export class UnreadController {
   constructor(private readonly unreadService: UnreadService) {}
 
+  @Get('servers/summary')
+  getGlobalUnreadSummary(@CurrentProfileId() profileId: string) {
+    return this.unreadService.getGlobalUnreadSummary(profileId);
+  }
+
   @Get('servers/:serverId/summary')
   getServerUnreadSummary(
     @CurrentProfileId() profileId: string,

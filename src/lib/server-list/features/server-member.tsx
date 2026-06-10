@@ -19,6 +19,7 @@ export const ServerMember: FC<IServerMemberProps> = ({ member, unreadCount = 0 }
   const router = useRouter()
 
   const icon = roleIconMap()[member.role]
+  const hasUnread = unreadCount > 0
 
   const handleClick = () => {
     router.push(`${ERoutes.SERVERS}/${params?.serverId}${ERoutes.CONVERSATIONS}/${member.id}`)
@@ -35,6 +36,7 @@ export const ServerMember: FC<IServerMemberProps> = ({ member, unreadCount = 0 }
       <p
         className={cn(
           'font-semibold text-sm text-zinc-500 group-hover:text-zinc-600 dark:text-zinc-400 dark:group-hover:text-zinc-300 transition line-clamp-1',
+          hasUnread && 'font-bold text-zinc-900 group-hover:text-zinc-900 dark:text-zinc-100 dark:group-hover:text-white',
           params?.memberId === member.id && 'text-primary dark:text-zinc-200 dark:group-hover:text-white',
         )}>
         {member.profile.name}

@@ -124,3 +124,17 @@ export interface ServerUnreadSummaryDto {
   channels: ChannelUnreadSummaryItemDto[]
   conversations: ConversationUnreadSummaryItemDto[]
 }
+
+export interface GlobalServerUnreadSummaryItemDto {
+  serverId: string
+  memberId: string
+  unreadCount: number
+  mentionCount: number
+  replyCount: number
+  attentionLevel: UnreadAttentionLevel
+}
+
+export interface GlobalUnreadSummaryDto {
+  totalUnreadCount: number
+  servers: GlobalServerUnreadSummaryItemDto[]
+}

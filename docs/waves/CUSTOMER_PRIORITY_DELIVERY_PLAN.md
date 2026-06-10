@@ -734,6 +734,44 @@ Then continue to:
 - `customer-notification-sound-browser-desktop-badges`
 - `customer-mentions-replies-attention`
 
+## Global Unread Summary And Server Badges Result
+
+Segment:
+- `customer-global-unread-summary-and-server-badges`
+
+Status: `pass / implemented locally; manual two-user smoke pending`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_195_CUSTOMER_GLOBAL_UNREAD_SUMMARY_AND_SERVER_BADGES.md`
+
+Delivered:
+- added backend global unread endpoint `GET /api/unread/servers/summary`;
+- global summary returns per-server normal unread totals and current member id per server;
+- kept existing per-server channel/direct detail endpoint unchanged;
+- added SDK global unread query and global unread query key;
+- successful channel/direct mark-read invalidates the global unread summary;
+- server rail subscribes to all accessible server unread keys and all current member direct-unread keys from global summary;
+- server rail shows compact red count badges for servers with unread;
+- global unread cache reconciles after unread events, duplicates, socket connect/reconnect, focus, and visibility return;
+- channel/member rows get stronger unread text emphasis while keeping numeric badges;
+- did not add sound, browser tab badge, desktop notifications, `New` divider, mentions, replies, storage, WebRTC, or migrations.
+
+Verification:
+- `git diff --check`: pass;
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass;
+- `bun.cmd run typecheck:api`: pass;
+- `bun.cmd x next lint`: pass;
+- `bun.cmd run build:web`: pass;
+- `bun.cmd run check:desktop:config`: pass.
+
+Manual smoke:
+- pending two-user / two-server local smoke; not run in this shell because no ready authenticated two-user local sessions were available.
+
+Review follow-ups:
+- global unread summary currently uses per-server/per-channel/per-conversation count queries; acceptable for the current customer slice, but should be monitored and optimized before larger-scale server/channel usage;
+- global `attentionLevel` is normal-unread only until mention/reply/`@all` metadata exists;
+- do not claim deploy/product pass until a two-user / two-server manual smoke confirms inactive-server badge behavior, clear-on-open, reload restore, and no duplicate increment regression.
+
 ## Unread Realtime Idempotency / Reconnect Fix Plan
 
 Segment:
