@@ -1,22 +1,22 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { MemberRole } from '@prisma/client';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
+import { MemberRole } from '@prisma/client'
 
-import { PrismaService } from '../../common/database/prisma.service';
-import { StorageService } from '../storage/storage.service';
+import { PrismaService } from '../../common/database/prisma.service'
+import { StorageService } from '../storage/storage.service'
 
 type DirectMessageMutationBody = {
-  content?: string;
-  fileUrl?: string | null;
-};
+  content?: string
+  fileUrl?: string | null
+}
 
-const MESSAGE_BATCH_SIZE = 10;
+const MESSAGE_BATCH_SIZE = 10
 const DIRECT_MESSAGE_INCLUDE = {
   member: {
     include: {
       profile: true,
     },
   },
-} as const;
+} as const
 const CONVERSATION_INCLUDE = {
   memberOne: {
     include: {
@@ -28,7 +28,7 @@ const CONVERSATION_INCLUDE = {
       profile: true,
     },
   },
-} as const;
+} as const
 
 @Injectable()
 export class DirectMessagesService {
@@ -37,16 +37,8 @@ export class DirectMessagesService {
     private readonly storageService: StorageService,
   ) {}
 
-  async getMessages(
-    profileId: string | undefined,
-    conversationId: string | undefined,
-    cursor: string | undefined,
-  ) {
-    this.requireProfileId(profileId);
-
-    if (!conversationId) {
-      throw new HttpException('Conversation ID Missing', HttpStatus.BAD_REQUEST);
-    }
+  async getMessages(profileId: string | undefined, conversationId: string | undefined, cursor: string | undefined) {
+    const { conversation } = await this.resolveConversationMember(profileId, conversationId)
 
     const messages = await this.prisma.directMessage.findMany({
       take: MESSAGE_BATCH_SIZE,
@@ -57,18 +49,18 @@ export class DirectMessagesService {
           }
         : undefined,
       where: {
-        conversationId,
+        conversationId: conversation.id,
       },
       include: DIRECT_MESSAGE_INCLUDE,
       orderBy: {
         createdAt: 'desc',
       },
-    });
+    })
 
     return {
       items: messages,
       nextCursor: messages.length === MESSAGE_BATCH_SIZE ? messages[MESSAGE_BATCH_SIZE - 1].id : null,
-    };
+    }
   }
 
   async getOrCreateConversation(
@@ -76,14 +68,14 @@ export class DirectMessagesService {
     serverId: string | undefined,
     memberId: string | undefined,
   ) {
-    const resolvedProfileId = this.requireProfileId(profileId);
+    const resolvedProfileId = this.requireProfileId(profileId)
 
     if (!serverId) {
-      throw new HttpException('Server ID Missing', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Server ID Missing', HttpStatus.BAD_REQUEST)
     }
 
     if (!memberId) {
-      throw new HttpException('Member ID Missing', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Member ID Missing', HttpStatus.BAD_REQUEST)
     }
 
     const currentMember = await this.prisma.member.findFirst({
@@ -94,10 +86,10 @@ export class DirectMessagesService {
       include: {
         profile: true,
       },
-    });
+    })
 
     if (!currentMember) {
-      throw new HttpException('Current Member Not Found', HttpStatus.NOT_FOUND);
+      throw new HttpException('Current Member Not Found', HttpStatus.NOT_FOUND)
     }
 
     const targetMember = await this.prisma.member.findFirst({
@@ -108,20 +100,20 @@ export class DirectMessagesService {
       include: {
         profile: true,
       },
-    });
+    })
 
     if (!targetMember) {
-      throw new HttpException('Member Not Found', HttpStatus.NOT_FOUND);
+      throw new HttpException('Member Not Found', HttpStatus.NOT_FOUND)
     }
 
     if (targetMember.id === currentMember.id) {
-      throw new HttpException('Self Conversation Not Allowed', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Self Conversation Not Allowed', HttpStatus.BAD_REQUEST)
     }
 
-    const existingConversation = await this.findConversation(currentMember.id, targetMember.id);
+    const existingConversation = await this.findConversation(currentMember.id, targetMember.id)
 
     if (existingConversation) {
-      return existingConversation;
+      return existingConversation
     }
 
     return this.prisma.conversation.create({
@@ -130,7 +122,7 @@ export class DirectMessagesService {
         memberTwoId: targetMember.id,
       },
       include: CONVERSATION_INCLUDE,
-    });
+    })
   }
 
   async createMessage(
@@ -138,16 +130,16 @@ export class DirectMessagesService {
     conversationId: string | undefined,
     body: DirectMessageMutationBody,
   ) {
-    const resolvedProfileId = this.requireProfileId(profileId);
+    const resolvedProfileId = this.requireProfileId(profileId)
 
     if (!conversationId) {
-      throw new HttpException('Conversation ID Missing', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Conversation ID Missing', HttpStatus.BAD_REQUEST)
     }
 
-    const content = this.normalizeMessageContent(body.content);
+    const content = this.normalizeMessageContent(body.content)
 
     if (!content) {
-      throw new HttpException('Content Missing', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Content Missing', HttpStatus.BAD_REQUEST)
     }
 
     const conversation = await this.prisma.conversation.findFirst({
@@ -167,23 +159,23 @@ export class DirectMessagesService {
         ],
       },
       include: CONVERSATION_INCLUDE,
-    });
+    })
 
     if (!conversation) {
-      throw new HttpException('Conversation Not Found', HttpStatus.NOT_FOUND);
+      throw new HttpException('Conversation Not Found', HttpStatus.NOT_FOUND)
     }
 
     const member =
-      conversation.memberOne.profileId === resolvedProfileId ? conversation.memberOne : conversation.memberTwo;
+      conversation.memberOne.profileId === resolvedProfileId ? conversation.memberOne : conversation.memberTwo
 
     if (!member) {
-      throw new HttpException('Member Not Found', HttpStatus.NOT_FOUND);
+      throw new HttpException('Member Not Found', HttpStatus.NOT_FOUND)
     }
 
     const finalizedFileUrl =
       typeof body.fileUrl === 'string'
         ? await this.storageService.finalizeStoredValue(resolvedProfileId, 'messageFile', body.fileUrl)
-        : body.fileUrl;
+        : body.fileUrl
 
     return this.prisma.directMessage.create({
       data: {
@@ -193,7 +185,17 @@ export class DirectMessagesService {
         memberId: member.id,
       },
       include: DIRECT_MESSAGE_INCLUDE,
-    });
+    })
+  }
+
+  async getConversationRealtimeContext(profileId: string | undefined, conversationId: string | undefined) {
+    const { conversation, member } = await this.resolveConversationMember(profileId, conversationId)
+    const recipientMemberId = conversation.memberOneId === member.id ? conversation.memberTwoId : conversation.memberOneId
+
+    return {
+      serverId: conversation.memberOne.serverId,
+      recipientMemberId,
+    }
   }
 
   async updateMessage(
@@ -206,18 +208,18 @@ export class DirectMessagesService {
       profileId,
       conversationId,
       directMessageId,
-    );
+    )
 
-    const isMessageOwner = directMessage.memberId === member.id;
+    const isMessageOwner = directMessage.memberId === member.id
 
     if (!isMessageOwner) {
-      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED)
     }
 
-    const content = this.normalizeMessageContent(body.content);
+    const content = this.normalizeMessageContent(body.content)
 
     if (!content) {
-      throw new HttpException('Content Missing', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Content Missing', HttpStatus.BAD_REQUEST)
     }
 
     return this.prisma.directMessage.update({
@@ -228,15 +230,11 @@ export class DirectMessagesService {
         content,
       },
       include: DIRECT_MESSAGE_INCLUDE,
-    });
+    })
   }
 
-  async deleteMessage(
-    profileId: string | undefined,
-    conversationId: string | undefined,
-    directMessageId: string,
-  ) {
-    await this.resolveMessageMutationAccess(profileId, conversationId, directMessageId);
+  async deleteMessage(profileId: string | undefined, conversationId: string | undefined, directMessageId: string) {
+    await this.resolveMessageMutationAccess(profileId, conversationId, directMessageId)
 
     return this.prisma.directMessage.update({
       where: {
@@ -248,7 +246,7 @@ export class DirectMessagesService {
         deleted: true,
       },
       include: DIRECT_MESSAGE_INCLUDE,
-    });
+    })
   }
 
   private async resolveMessageMutationAccess(
@@ -256,14 +254,14 @@ export class DirectMessagesService {
     conversationId: string | undefined,
     directMessageId: string,
   ) {
-    const resolvedProfileId = this.requireProfileId(profileId);
+    const resolvedProfileId = this.requireProfileId(profileId)
 
     if (!directMessageId) {
-      throw new HttpException('Direct Message ID Missing', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Direct Message ID Missing', HttpStatus.BAD_REQUEST)
     }
 
     if (!conversationId) {
-      throw new HttpException('Conversation ID Missing', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Conversation ID Missing', HttpStatus.BAD_REQUEST)
     }
 
     const conversation = await this.prisma.conversation.findFirst({
@@ -283,17 +281,17 @@ export class DirectMessagesService {
         ],
       },
       include: CONVERSATION_INCLUDE,
-    });
+    })
 
     if (!conversation) {
-      throw new HttpException('Conversation Not Found', HttpStatus.NOT_FOUND);
+      throw new HttpException('Conversation Not Found', HttpStatus.NOT_FOUND)
     }
 
     const member =
-      conversation.memberOne.profileId === resolvedProfileId ? conversation.memberOne : conversation.memberTwo;
+      conversation.memberOne.profileId === resolvedProfileId ? conversation.memberOne : conversation.memberTwo
 
     if (!member) {
-      throw new HttpException('Member Not Found', HttpStatus.NOT_FOUND);
+      throw new HttpException('Member Not Found', HttpStatus.NOT_FOUND)
     }
 
     const directMessage = await this.prisma.directMessage.findFirst({
@@ -302,24 +300,67 @@ export class DirectMessagesService {
         conversationId,
       },
       include: DIRECT_MESSAGE_INCLUDE,
-    });
+    })
 
     if (!directMessage || directMessage.deleted) {
-      throw new HttpException('Message Not Found', HttpStatus.NOT_FOUND);
+      throw new HttpException('Message Not Found', HttpStatus.NOT_FOUND)
     }
 
-    const isMessageOwner = directMessage.memberId === member.id;
-    const isAdmin = member.role === MemberRole.ADMIN;
-    const isModerator = member.role === MemberRole.MODERATOR;
+    const isMessageOwner = directMessage.memberId === member.id
+    const isAdmin = member.role === MemberRole.ADMIN
+    const isModerator = member.role === MemberRole.MODERATOR
 
     if (!isMessageOwner && !isAdmin && !isModerator) {
-      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED)
     }
 
     return {
       directMessage,
       member,
-    };
+    }
+  }
+
+  private async resolveConversationMember(profileId: string | undefined, conversationId: string | undefined) {
+    const resolvedProfileId = this.requireProfileId(profileId)
+
+    if (!conversationId) {
+      throw new HttpException('Conversation ID Missing', HttpStatus.BAD_REQUEST)
+    }
+
+    const conversation = await this.prisma.conversation.findFirst({
+      where: {
+        id: conversationId,
+        OR: [
+          {
+            memberOne: {
+              profileId: resolvedProfileId,
+            },
+          },
+          {
+            memberTwo: {
+              profileId: resolvedProfileId,
+            },
+          },
+        ],
+      },
+      include: CONVERSATION_INCLUDE,
+    })
+
+    if (!conversation) {
+      throw new HttpException('Conversation Not Found', HttpStatus.NOT_FOUND)
+    }
+
+    const member =
+      conversation.memberOne.profileId === resolvedProfileId ? conversation.memberOne : conversation.memberTwo
+
+    if (!member) {
+      throw new HttpException('Member Not Found', HttpStatus.NOT_FOUND)
+    }
+
+    return {
+      conversation,
+      member,
+    }
   }
 
   private async findConversation(memberOneId: string, memberTwoId: string) {
@@ -337,18 +378,18 @@ export class DirectMessagesService {
         ],
       },
       include: CONVERSATION_INCLUDE,
-    });
+    })
   }
 
   private requireProfileId(profileId: string | undefined) {
     if (!profileId) {
-      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED)
     }
 
-    return profileId;
+    return profileId
   }
 
   private normalizeMessageContent(content: string | undefined) {
-    return content?.trim() ?? '';
+    return content?.trim() ?? ''
   }
 }

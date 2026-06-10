@@ -609,3 +609,158 @@ Staging smoke after deploy:
 - confirm image display still works;
 - confirm clicking image/PDF opens the file in a new tab;
 - confirm Network no longer shows storage-link prefetch `OPTIONS 403` to Yandex for those assets.
+
+## Unread Message Badges Foundation Result
+
+Segment:
+- `customer-unread-message-badges-foundation`
+
+Status: `pass / implemented locally; manual two-user smoke pending`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_189_CUSTOMER_UNREAD_MESSAGE_BADGES_FOUNDATION.md`
+
+Delivered:
+- added additive persisted read-state models for channels and direct conversations;
+- added a migration that creates read-state tables, indexes unread count paths, and baselines existing chats at migration time so historical messages do not become unread on first deploy;
+- added backend unread summary endpoint for accessible server channels and visible direct conversations;
+- added idempotent mark-read endpoints for channels and direct conversations;
+- preserved existing active chat realtime events;
+- added unread realtime events: `server:${serverId}:unread` for channel unread and `member:${memberId}:direct-unread` for recipient-only direct unread;
+- updated sidebar client cache from unread realtime events while ignoring own messages and active chat messages;
+- fixed direct-message access by requiring conversation membership before returning `GET /api/direct-messages` history;
+- active incoming realtime messages also mark the current channel/conversation read so reload does not bring back badges for messages already seen in the open chat;
+- added compact red count badges for channel and direct/member list entries;
+- opening a channel or direct conversation marks that scope read;
+- API/client shapes include `mentionCount`, `replyCount`, and `attentionLevel` so future mention/reply attention can plug in without pretending normal unread is a direct mention.
+
+Verification:
+- `bun.cmd x prisma generate`: pass;
+- `bun.cmd x prisma validate`: pass;
+- `git diff --check`: pass;
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass;
+- `bun.cmd run typecheck:api`: pass;
+- `bun.cmd x next lint`: pass;
+- `bun.cmd run build:web`: pass;
+- `bun.cmd run check:desktop:config`: pass.
+
+Pending:
+- authenticated two-user browser smoke.
+
+Not included:
+- notification sound / mute setting;
+
+## Prisma Active Postgres Migration Chain Repair Result
+
+Segment:
+- `customer-prisma-active-postgres-migration-chain-repair`
+
+Status: `pass / implemented locally; staging operator action pending`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_191_CUSTOMER_PRISMA_ACTIVE_POSTGRES_MIGRATION_CHAIN_REPAIR.md`
+
+Delivered:
+- confirmed active Prisma datasource is PostgreSQL;
+- confirmed active local DB points to `localhost:5433/connect_validation`, not staging/prod;
+- confirmed local `_prisma_migrations` was missing before repair and the invalid MySQL cleanup migration was not applied locally;
+- added active clean PostgreSQL baseline `00000000000000_clean_baseline` from the existing `prisma/postgres-validation` baseline;
+- retired the invalid active MySQL-only migration `20260501120000_remove_clerk_identity_provider`;
+- kept unread migration after the baseline;
+- verified an existing local pre-unread DB through `migrate resolve --applied 00000000000000_clean_baseline` followed by `prisma migrate dev`;
+- verified a fresh temporary local Postgres DB can apply baseline plus unread through `prisma migrate deploy`;
+- verified local migration-backed unread behavior with disposable rows: channel unread recipient/sender counts, direct unread recipient/sender counts, mark-read clearing, and own-message negative cases;
+- verified the disposable local smoke rows were cleaned up after the run;
+- documented safe existing-DB handling: baseline resolve, then `migrate deploy`, without reset.
+
+Verification:
+- `bun.cmd x prisma validate`: pass;
+- `bun.cmd x prisma migrate dev`: pass after local baseline resolve;
+- fresh temporary local Postgres `bun.cmd x prisma migrate deploy`: pass;
+- `bun.cmd x prisma migrate status`: pass / up to date locally;
+- `git diff --check`: pass;
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass;
+- `bun.cmd run typecheck:api`: pass;
+- `bun.cmd x next lint`: pass;
+- `bun.cmd run build:web`: pass.
+- local disposable unread DB/business smoke: pass.
+
+Pending:
+- staging operator should inspect `_prisma_migrations`;
+- if staging has the pre-unread schema without migration history, run `prisma migrate resolve --applied 00000000000000_clean_baseline`, then `prisma migrate deploy`;
+- authenticated two-user unread smoke after staging/local migration application.
+- mentions and `@all`;
+- reply attention;
+- raw text mention/reply detection;
+- WebRTC/media changes;
+- production Postgres migration or staging DB reset.
+
+## Unread Notification System Plan
+
+Segment:
+- `customer-unread-notification-system-plan`
+
+Status: `pass / planned`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_192_CUSTOMER_UNREAD_NOTIFICATION_SYSTEM_PLAN.md`
+
+Decision:
+- continue from persisted normal unread counts into a layered notification system instead of implementing isolated badge/sound/mention behavior;
+- keep normal unread separate from direct attention signals such as `@user`, `@all`, and replies;
+- keep Socket.IO as the realtime transport for this track;
+- verify desktop behavior explicitly when a segment touches browser/desktop notification surfaces.
+
+Planned order:
+1. `customer-global-unread-summary-and-server-badges`
+   - backend global unread summary across accessible servers;
+   - server-list badges when unread arrives on another server;
+   - channel/direct row emphasis plus count badges.
+2. `customer-new-message-divider`
+   - `New` / `Новое` divider in the chat at the first unread message;
+   - preserve the pre-open read anchor before mark-read clears unread.
+3. `customer-notification-sound-browser-desktop-badges`
+   - browser title unread count and optional favicon marker;
+   - sound plus mute preference;
+   - desktop native notification/app badge verification.
+4. `customer-mentions-replies-attention`
+   - `@user`, `@all`, and reply attention as stronger metadata-backed signals.
+
+Next recommended segment:
+- `customer-global-unread-summary-and-server-badges`
+
+Then continue to:
+- `customer-new-message-divider`
+- `customer-notification-sound-browser-desktop-badges`
+- `customer-mentions-replies-attention`
+
+## Unread Realtime Idempotency / Reconnect Fix Plan
+
+Segment:
+- `customer-unread-realtime-idempotency-reconnect-fix`
+
+Status: `ready for implementation / blocker before global unread expansion`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_193_CUSTOMER_UNREAD_REALTIME_IDEMPOTENCY_RECONNECT_FIX.md`
+
+Observed local issue:
+- two-browser local testing can drift after idle/reconnect;
+- one unread direction can stop updating until reload;
+- one incoming message can sometimes increment unread as if two events were processed;
+- full page reload restores correct state, which points to client realtime/cache drift rather than a migration/read-state DB failure.
+
+Decision:
+- do not expand unread into global server badges, browser tab indicators, sounds, or desktop notifications until the current per-server/direct unread realtime path is idempotent and reconnect-safe.
+
+Expected fix direction:
+- dedupe unread realtime events by `messageId`;
+- refetch/invalidate unread summary after Socket.IO reconnect/connect recovery;
+- refetch/invalidate unread summary after browser focus following idle;
+- keep backend unread summary as source of truth;
+- keep optimistic cache increment only as a fast path;
+- preserve private direct unread on `member:${memberId}:direct-unread`;
+- preserve active-chat mark-read and sender/own-message negative behavior.
+
+Next recommended segment:
+- `customer-unread-realtime-idempotency-reconnect-fix`

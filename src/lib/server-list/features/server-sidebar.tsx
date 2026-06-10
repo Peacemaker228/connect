@@ -20,9 +20,11 @@ import { useTranslations } from 'next-intl'
 import { useGetServer, useGetServers } from '@sdk/queries/server'
 import { useSidebarSocket } from '@/lib/shared/data-access/navigation-sidebar/use-sidebar-socket'
 import { useGetProfile } from '@sdk/queries/profile'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { ERoutes } from '@app-core/routing/routes'
 import { BackendUserMenu } from '@/lib/shared/features/backend-user-menu'
+import { useUnreadSummary } from '@sdk/queries/unread'
+import { useUnreadSocket } from '@/lib/shared/data-access/unread/use-unread-socket'
 
 interface IServerSidebarProps {
   serverId: string
@@ -36,8 +38,10 @@ const iconMap = {
 
 export const ServerSidebar: FC<IServerSidebarProps> = ({ serverId }) => {
   const router = useRouter()
+  const params = useParams<{ channelId?: string; memberId?: string }>()
   const { data: server, isLoading, isError } = useGetServer(serverId)
   const { data: servers, isLoading: isServersLoading } = useGetServers()
+  const { data: unreadSummary } = useUnreadSummary(serverId)
   const t = useTranslations('ServerSidebar')
 
   useSidebarSocket(serverId)
@@ -64,7 +68,22 @@ export const ServerSidebar: FC<IServerSidebarProps> = ({ serverId }) => {
   const videoChannels = server?.channels.filter(({ type }) => type === ChannelType.VIDEO)
 
   const members = server?.members.filter(({ profileId }) => profileId !== profile?.id)
-  const role = server?.members.find(({ profileId }) => profileId === profile?.id)?.role
+  const currentMember = server?.members.find(({ profileId }) => profileId === profile?.id)
+  const role = currentMember?.role
+
+  useUnreadSocket({
+    activeChannelId: params?.channelId,
+    activeMemberId: params?.memberId,
+    currentMemberId: currentMember?.id,
+    serverId,
+  })
+
+  const unreadCountByChannelId = new Map(
+    unreadSummary?.channels.map((channel) => [channel.channelId, channel.unreadCount]) ?? [],
+  )
+  const unreadCountByMemberId = new Map(
+    unreadSummary?.conversations.map((conversation) => [conversation.memberId, conversation.unreadCount]) ?? [],
+  )
 
   const searchData: IServerData[] = [
     {
@@ -112,7 +131,13 @@ export const ServerSidebar: FC<IServerSidebarProps> = ({ serverId }) => {
                     server={server}
                   />
                   {textChannels.map((c) => (
-                    <ServerChannel key={c.id} channel={c} role={role} server={server} />
+                    <ServerChannel
+                      key={c.id}
+                      channel={c}
+                      role={role}
+                      server={server}
+                      unreadCount={params?.channelId === c.id ? 0 : (unreadCountByChannelId.get(c.id) ?? 0)}
+                    />
                   ))}
                 </div>
               )}
@@ -126,7 +151,7 @@ export const ServerSidebar: FC<IServerSidebarProps> = ({ serverId }) => {
                     server={server}
                   />
                   {audioChannels.map((c) => (
-                    <ServerChannel key={c.id} channel={c} role={role} server={server} />
+                    <ServerChannel key={c.id} channel={c} role={role} server={server} unreadCount={0} />
                   ))}
                 </div>
               )}
@@ -140,7 +165,7 @@ export const ServerSidebar: FC<IServerSidebarProps> = ({ serverId }) => {
                     server={server}
                   />
                   {videoChannels.map((c) => (
-                    <ServerChannel key={c.id} channel={c} role={role} server={server} />
+                    <ServerChannel key={c.id} channel={c} role={role} server={server} unreadCount={0} />
                   ))}
                 </div>
               )}
@@ -148,7 +173,12 @@ export const ServerSidebar: FC<IServerSidebarProps> = ({ serverId }) => {
                 <div className="mb-2">
                   <ServerSection sectionType={'member'} role={role} label={t('Members')} server={server} />
                   {members.map((m) => (
-                    <ServerMember key={m.id} member={m} server={server} />
+                    <ServerMember
+                      key={m.id}
+                      member={m}
+                      server={server}
+                      unreadCount={params?.memberId === m.id ? 0 : (unreadCountByMemberId.get(m.id) ?? 0)}
+                    />
                   ))}
                 </div>
               )}

@@ -68,6 +68,7 @@ const ChannelIdPage: FC<IChannelIdPageProps> = async ({ params }) => {
             paramKey={'channelId'}
             paramValue={channel.id}
             messageQuery={messageQuery}
+            serverId={serverId}
           />
           <ChatInput
             messageApiUrl={messageApiUrl}

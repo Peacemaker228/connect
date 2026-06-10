@@ -11,9 +11,10 @@ import { ERoutes } from '@app-core/routing/routes'
 interface IServerMemberProps {
   member: MemberWithProfileDto
   server: ServerDto
+  unreadCount?: number
 }
 
-export const ServerMember: FC<IServerMemberProps> = ({ member }) => {
+export const ServerMember: FC<IServerMemberProps> = ({ member, unreadCount = 0 }) => {
   const params = useParams()
   const router = useRouter()
 
@@ -33,11 +34,16 @@ export const ServerMember: FC<IServerMemberProps> = ({ member }) => {
       <UserAvatar name={member.profile.name} src={member.profile.imageUrl} className="h-8 w-8 md:h-8 md:w-8" />
       <p
         className={cn(
-          'font-semibold text-sm text-zinc-500 group-hover:text-zinc-600 dark:text-zinc-400 dark:group-hover:text-zinc-300 transition',
+          'font-semibold text-sm text-zinc-500 group-hover:text-zinc-600 dark:text-zinc-400 dark:group-hover:text-zinc-300 transition line-clamp-1',
           params?.memberId === member.id && 'text-primary dark:text-zinc-200 dark:group-hover:text-white',
         )}>
         {member.profile.name}
       </p>
+      {unreadCount > 0 && (
+        <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-rose-500 text-[10px] leading-5 text-white font-semibold text-center">
+          {unreadCount > 99 ? '99+' : unreadCount}
+        </span>
+      )}
       {icon}
     </button>
   )

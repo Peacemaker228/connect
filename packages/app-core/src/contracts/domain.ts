@@ -99,3 +99,28 @@ export type ConversationWithMembersDto = ConversationDto & {
   memberOne: MemberWithProfileDto
   memberTwo: MemberWithProfileDto
 }
+
+export type UnreadAttentionLevel = 'none' | 'unread' | 'mention' | 'reply'
+
+export interface ChannelUnreadSummaryItemDto {
+  channelId: string
+  unreadCount: number
+  mentionCount: number
+  replyCount: number
+  attentionLevel: UnreadAttentionLevel
+}
+
+export interface ConversationUnreadSummaryItemDto {
+  conversationId: string
+  memberId: string
+  unreadCount: number
+  mentionCount: number
+  replyCount: number
+  attentionLevel: UnreadAttentionLevel
+}
+
+export interface ServerUnreadSummaryDto {
+  serverId: string
+  channels: ChannelUnreadSummaryItemDto[]
+  conversations: ConversationUnreadSummaryItemDto[]
+}

@@ -122,6 +122,8 @@ model Member {
 
   messages       Message[]
   directMessages DirectMessage[]
+  channelReadStates ChannelReadState[]
+  conversationReadStates ConversationReadState[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -155,6 +157,7 @@ model Channel {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   messages  Message[]
+  readStates ChannelReadState[]
 
   @@index([profileId])
   @@index([serverId])
@@ -179,6 +182,7 @@ model Message {
   updatedAt DateTime @updatedAt
 
   @@index([channelId])
+  @@index([channelId, createdAt])
   @@index([memberId])
   @@map("message")
 }
@@ -193,6 +197,7 @@ model Conversation {
   memberTwo   Member @relation("MemberTwo", fields: [memberTwoId], references: [id], onDelete: Cascade)
 
   directMessages DirectMessage[]
+  readStates ConversationReadState[]
 
   @@unique([memberOneId, memberTwoId])
   @@index([memberTwoId])
@@ -218,5 +223,36 @@ model DirectMessage {
 
   @@index([memberId])
   @@index([conversationId])
+  @@index([conversationId, createdAt])
   @@map("directmessage")
+}
+
+model ChannelReadState {
+  id         String   @id @default(uuid())
+  memberId   String
+  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  channelId  String
+  channel    Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  lastReadAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([memberId, channelId])
+  @@index([channelId])
+  @@map("channelreadstate")
+}
+
+model ConversationReadState {
+  id             String       @id @default(uuid())
+  memberId       String
+  member         Member       @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  lastReadAt     DateTime     @default(now())
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([memberId, conversationId])
+  @@index([conversationId])
+  @@map("conversationreadstate")
 }

@@ -13,6 +13,7 @@ import { ProfilesModule } from './modules/profiles/profiles.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { ServersModule } from './modules/servers/servers.module';
 import { StorageModule } from './modules/storage/storage.module';
+import { UnreadModule } from './modules/unread/unread.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -31,6 +32,7 @@ import { UsersModule } from './modules/users/users.module';
     RealtimeModule,
     MediaModule,
     StorageModule,
+    UnreadModule,
   ],
 })
 export class AppModule {}

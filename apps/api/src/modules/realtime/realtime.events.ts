@@ -13,6 +13,10 @@ export const getChatMessagesRealtimeKey = (chatId: string) => `chat:${chatId}:me
 
 export const getChatMessagesUpdateRealtimeKey = (chatId: string) => `chat:${chatId}:messages:update`;
 
+export const getServerUnreadRealtimeKey = (serverId: string) => `server:${serverId}:unread`;
+
+export const getMemberDirectUnreadRealtimeKey = (memberId: string) => `member:${memberId}:direct-unread`;
+
 export const createChannelCreatedRealtimeEvent = (
   serverId: string,
   channel: { name?: string; type?: string },
@@ -113,5 +117,49 @@ export const createChatMessageUpdatedRealtimeEvent = <TPayload>(
   payload: TPayload,
 ): RealtimeEvent<TPayload> => ({
   key: getChatMessagesUpdateRealtimeKey(chatId),
+  payload,
+});
+
+type UnreadMessageCreatedRealtimePayload =
+  | {
+      action: 'message_created';
+      scope: 'channel';
+      serverId: string;
+      channelId: string;
+      messageId: string;
+      senderMemberId: string;
+      createdAt: string;
+      unreadCount: number;
+      mentionCount: number;
+      replyCount: number;
+      attentionLevel: 'unread';
+    }
+  | {
+      action: 'message_created';
+      scope: 'conversation';
+      serverId: string;
+      conversationId: string;
+      messageId: string;
+      senderMemberId: string;
+      createdAt: string;
+      unreadCount: number;
+      mentionCount: number;
+      replyCount: number;
+      attentionLevel: 'unread';
+    };
+
+export const createUnreadMessageCreatedRealtimeEvent = (
+  serverId: string,
+  payload: Extract<UnreadMessageCreatedRealtimePayload, { scope: 'channel' }>,
+): RealtimeEvent<Extract<UnreadMessageCreatedRealtimePayload, { scope: 'channel' }>> => ({
+  key: getServerUnreadRealtimeKey(serverId),
+  payload,
+});
+
+export const createDirectUnreadMessageCreatedRealtimeEvent = (
+  recipientMemberId: string,
+  payload: Extract<UnreadMessageCreatedRealtimePayload, { scope: 'conversation' }>,
+): RealtimeEvent<Extract<UnreadMessageCreatedRealtimePayload, { scope: 'conversation' }>> => ({
+  key: getMemberDirectUnreadRealtimeKey(recipientMemberId),
   payload,
 });

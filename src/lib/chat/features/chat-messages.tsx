@@ -12,6 +12,7 @@ import { useTranslations } from 'next-intl'
 import { useChatSocket } from '@/lib/shared/data-access/chat/use-chat-socket'
 import { useChatQuery } from '@/lib/shared/data-access/chat/use-chat-query'
 import { useChatScroll } from '@/lib/shared/utils/hooks/use-chat-scroll'
+import { useMarkChatRead } from '@/lib/shared/data-access/unread/use-mark-chat-read'
 
 type MessageWithMemberWithProfile = ChatMessageDto
 
@@ -23,6 +24,7 @@ interface IChatMessagesProps {
   messageQuery: Record<string, string>
   paramKey: 'channelId' | 'conversationId'
   paramValue: string
+  serverId: string
   type: TChannelConversation
 }
 
@@ -32,6 +34,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   messageQuery,
   paramKey,
   paramValue,
+  serverId,
   type,
   member,
   name,
@@ -50,6 +53,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     paramValue,
   })
   useChatSocket({ queryKey, addKey, updateKey })
+  useMarkChatRead({ serverId, paramKey, paramValue })
   useChatScroll({
     chatId,
     chatRef,
