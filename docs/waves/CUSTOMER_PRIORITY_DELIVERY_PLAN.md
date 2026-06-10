@@ -733,3 +733,34 @@ Then continue to:
 - `customer-new-message-divider`
 - `customer-notification-sound-browser-desktop-badges`
 - `customer-mentions-replies-attention`
+
+## Unread Realtime Idempotency / Reconnect Fix Plan
+
+Segment:
+- `customer-unread-realtime-idempotency-reconnect-fix`
+
+Status: `ready for implementation / blocker before global unread expansion`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_193_CUSTOMER_UNREAD_REALTIME_IDEMPOTENCY_RECONNECT_FIX.md`
+
+Observed local issue:
+- two-browser local testing can drift after idle/reconnect;
+- one unread direction can stop updating until reload;
+- one incoming message can sometimes increment unread as if two events were processed;
+- full page reload restores correct state, which points to client realtime/cache drift rather than a migration/read-state DB failure.
+
+Decision:
+- do not expand unread into global server badges, browser tab indicators, sounds, or desktop notifications until the current per-server/direct unread realtime path is idempotent and reconnect-safe.
+
+Expected fix direction:
+- dedupe unread realtime events by `messageId`;
+- refetch/invalidate unread summary after Socket.IO reconnect/connect recovery;
+- refetch/invalidate unread summary after browser focus following idle;
+- keep backend unread summary as source of truth;
+- keep optimistic cache increment only as a fast path;
+- preserve private direct unread on `member:${memberId}:direct-unread`;
+- preserve active-chat mark-read and sender/own-message negative behavior.
+
+Next recommended segment:
+- `customer-unread-realtime-idempotency-reconnect-fix`
