@@ -292,7 +292,7 @@ Stage 8 remains `local complete / production blocked`.
 
 Stage 9 WebRTC production/staging hardening is paused after Segment 182. The next WebRTC resume brief is preserved in `docs/waves/CUSTOMER_PRIORITY_DELIVERY_PLAN.md` as `staging-turn-success-cleanup-convergence-fix`.
 
-The next product step is `customer-priority-inventory-and-low-risk-ux-fixes`.
+The next product step is `customer-unread-message-badges-and-sound-plan`.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -1036,9 +1036,10 @@ Current rule:
 Done:
 - `customer-priority-track-pause-and-delivery-plan` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_183_CUSTOMER_PRIORITY_TRACK_PAUSE_AND_DELIVERY_PLAN.md`
 - `docs/waves/CUSTOMER_PRIORITY_DELIVERY_PLAN.md` records staging strategy, branch strategy, active customer requirements, desktop-first verification, and the deferred WebRTC resume brief
+- `customer-priority-inventory-and-low-risk-ux-fixes` is implemented in `docs/delegation/briefs/SEGMENT_BRIEF_184_CUSTOMER_PRIORITY_LOW_RISK_UX_FIXES.md`: server edit/settings label now says `Save`, server creation still says `Create`, chat composer supports `Enter` send and `Shift+Enter` newline, multiline message rendering preserves newlines, and guarded post-send input autofocus is in place
 
 Next likely work:
-- `customer-priority-inventory-and-low-risk-ux-fixes`
+- `customer-unread-message-badges-and-sound-plan`
 - keep unread indicators/mentions/storage/media fallback as separate scoped segments
 
 ## Historical Notes

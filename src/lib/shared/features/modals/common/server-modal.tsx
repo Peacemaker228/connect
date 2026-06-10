@@ -17,6 +17,7 @@ interface IServerModalProps {
   onClose?: () => void
   onSubmitAction: (data: z.infer<typeof serverFormSchema>) => Promise<void>
   form: UseFormReturn<{ name: string; imageUrl: string }>
+  type?: 'create' | 'edit'
   isStagedImageValueAction?: (value: string) => boolean
   onCleanupStagedImageAction?: (value: string) => Promise<unknown>
   onImageUploadCompleteAction?: (value: string) => void
@@ -28,6 +29,7 @@ export const ServerModal: FC<IServerModalProps> = ({
   onClose,
   onSubmitAction,
   form,
+  type = 'create',
   isStagedImageValueAction,
   onCleanupStagedImageAction,
   onImageUploadCompleteAction,
@@ -90,7 +92,7 @@ export const ServerModal: FC<IServerModalProps> = ({
             </div>
             <DialogFooter className="bg-gray-100 dark:bg-[#1E1E1E] px-6 py-4">
               <Button type="submit" variant="primary" disabled={isLoading} className="w-full">
-                {commonTrans('Create')}
+                {type === 'create' ? commonTrans('Create') : commonTrans('Save')}
               </Button>
             </DialogFooter>
           </form>

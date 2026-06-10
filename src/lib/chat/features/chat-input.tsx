@@ -1,11 +1,10 @@
 'use client'
 
-import { FC } from 'react'
+import { FC, KeyboardEvent, useCallback, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Form, FormControl, FormField, FormItem } from '@/lib/shared/ui/form'
 import { Plus } from 'lucide-react'
-import { Input } from '@/lib/shared/ui/input'
 import { EmojiPickerCustom } from '@/lib/shared/features/emoji-picker-custom'
 import { useRouter } from 'next/navigation'
 import { TChannelConversation } from '@/types'
@@ -28,6 +27,8 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
   const router = useRouter()
   const t = useTranslations('ChannelPage')
   const { mutateAsync: createMessage } = useCreateMessage()
+  const inputRef = useRef<HTMLTextAreaElement | null>(null)
+  const shouldFocusAfterSendRef = useRef(false)
 
   const form = useForm<IChatInputSchema>({
     resolver: zodResolver(chatInputSchema),
@@ -38,20 +39,90 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
 
   const isLoading = form.formState.isSubmitting
 
+  const resizeInput = useCallback((element: HTMLTextAreaElement | null) => {
+    if (!element) {
+      return
+    }
+
+    element.style.height = '0px'
+    element.style.height = `${Math.min(element.scrollHeight, 128)}px`
+  }, [])
+
+  useEffect(() => {
+    const stopAutofocus = (event: Event) => {
+      if (!shouldFocusAfterSendRef.current) {
+        return
+      }
+
+      if (event.target !== inputRef.current) {
+        shouldFocusAfterSendRef.current = false
+      }
+    }
+
+    window.addEventListener('pointerdown', stopAutofocus, true)
+    window.addEventListener('focusin', stopAutofocus, true)
+
+    return () => {
+      window.removeEventListener('pointerdown', stopAutofocus, true)
+      window.removeEventListener('focusin', stopAutofocus, true)
+    }
+  }, [])
+
+  const focusInputAfterSend = useCallback(() => {
+    requestAnimationFrame(() => {
+      const element = inputRef.current
+
+      if (!element || !shouldFocusAfterSendRef.current) {
+        return
+      }
+
+      const activeElement = document.activeElement
+
+      if (!activeElement || activeElement === element || activeElement === document.body) {
+        element.focus()
+        resizeInput(element)
+      }
+
+      shouldFocusAfterSendRef.current = false
+    })
+  }, [resizeInput])
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) {
+      return
+    }
+
+    event.preventDefault()
+
+    if (isLoading) {
+      return
+    }
+
+    shouldFocusAfterSendRef.current = true
+    event.currentTarget.form?.requestSubmit()
+  }
+
   const handleSubmit = async (data: IChatInputSchema) => {
+    shouldFocusAfterSendRef.current = document.activeElement === inputRef.current || shouldFocusAfterSendRef.current
+
     try {
       await createMessage({ apiUrl: messageApiUrl, query: messageQuery, payload: data })
 
       form.reset()
       router.refresh()
+      focusInputAfterSend()
     } catch (err) {
+      shouldFocusAfterSendRef.current = false
       console.log(err)
     }
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)}>
+      <form
+        onSubmit={form.handleSubmit(handleSubmit, () => {
+          shouldFocusAfterSendRef.current = false
+        })}>
         <FormField
           control={form.control}
           name={'content'}
@@ -69,16 +140,34 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
                     }>
                     <Plus className="text-white dark:text-[#313338]" />
                   </button>
-                  <Input
-                    {...field}
+                  <textarea
+                    name={field.name}
+                    value={field.value}
+                    onBlur={field.onBlur}
+                    onChange={(event) => {
+                      field.onChange(event)
+                      resizeInput(event.currentTarget)
+                    }}
+                    onKeyDown={handleKeyDown}
+                    ref={(element) => {
+                      field.ref(element)
+                      inputRef.current = element
+                      resizeInput(element)
+                    }}
+                    rows={1}
                     placeholder={`${t('message')} ${type === 'conversation' ? name : '#' + name}`}
                     disabled={isLoading}
                     className={
-                      'px-14 py-6 bg-zinc-200/90 dark:bg-zinc-700/75 border-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-600 dark:text-zinc-200'
+                      'min-h-[48px] max-h-32 w-full resize-none rounded-md px-14 py-3.5 text-sm leading-5 bg-zinc-200/90 dark:bg-zinc-700/75 border-none border-0 outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-600 dark:text-zinc-200 placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50'
                     }
                   />
                   <div className="absolute top-7 right-8">
-                    <EmojiPickerCustom onChangeAction={(e: string) => field.onChange(`${field.value}${e}`)} />
+                    <EmojiPickerCustom
+                      onChangeAction={(e: string) => {
+                        field.onChange(`${field.value}${e}`)
+                        requestAnimationFrame(() => resizeInput(inputRef.current))
+                      }}
+                    />
                   </div>
                 </div>
               </FormControl>

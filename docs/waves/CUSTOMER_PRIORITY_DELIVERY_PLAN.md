@@ -178,6 +178,32 @@ Acceptance:
 - mentioned users get visible unread/notification indication;
 - behavior works in web and desktop where the same UI is used.
 
+### P1. Link Rendering And Link Preview
+
+Problem:
+- pasted URLs are not clearly rendered as clickable links.
+- users expect shared links to be easy to open and, when possible, to show a useful preview.
+
+Required behavior:
+- URLs in messages render as clickable links;
+- links open safely in a new browser tab/window or desktop-safe external browser flow;
+- link text is visually distinguishable from normal message text;
+- long URLs should wrap/truncate without breaking chat layout;
+- optional preview/unfurl should show basic metadata when available: title, description, site name, and image if safe;
+- preview fetching must not expose secrets, auth cookies, or server-private network access.
+
+Implementation direction:
+- first slice can render detected URLs as safe links without preview;
+- preview/unfurl should be a separate scoped segment with backend-owned metadata fetching and SSRF protections;
+- do not fetch arbitrary link previews directly from the browser if that creates CORS, privacy, or inconsistent behavior;
+- store or cache preview metadata only if a clear invalidation and safety policy exists.
+
+Acceptance:
+- sending a message with `https://example.com` renders a clickable link;
+- link click works in web and desktop-safe flow;
+- malformed URLs do not become unsafe links;
+- preview support, if implemented, is safe and does not block message rendering.
+
 ### P1. Chat Input Autofocus After Send
 
 Problem:
@@ -344,22 +370,44 @@ Handoff:
 3. Implement unread message indicators with persisted read state.
 4. Add notification sound and mute setting.
 5. Implement mentions and `@all`.
-6. Restore staging storage readiness for avatars.
-7. Improve media provider/fallback UI and screen-share fullscreen.
-8. Run web checks, then desktop checks for shared UI changes.
-9. Resume WebRTC cleanup only after customer-priority work stabilizes or moves to a separate dev stand.
+6. Implement safe link rendering, then optional backend-owned link previews.
+7. Restore staging storage readiness for avatars.
+8. Improve media provider/fallback UI and screen-share fullscreen.
+9. Run web checks, then desktop checks for shared UI changes.
+10. Resume WebRTC cleanup only after customer-priority work stabilizes or moves to a separate dev stand.
 
-## First Recommended Segment
+## Low-Risk UX Fixes Result
 
-Recommended next segment:
+Segment:
 - `customer-priority-inventory-and-low-risk-ux-fixes`
 
-Reason:
-- it gives immediate user-visible improvements without touching staging data or media infrastructure.
+Status: `pass / implemented`
 
-Suggested first implementation scope:
-- server settings button label;
-- chat input autofocus after send;
-- chat input multiline behavior.
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_184_CUSTOMER_PRIORITY_LOW_RISK_UX_FIXES.md`
+
+Delivered:
+- server edit/settings submit label now says `Save`;
+- server creation still says `Create`;
+- main chat composer supports `Enter` to send and `Shift+Enter` to insert a newline;
+- multiline message rendering preserves intentional newlines;
+- after successful send from the composer, focus returns to the input unless the user moved focus or pointer interaction elsewhere during the pending send.
+
+Verification:
+- `git diff --check`: pass;
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass;
+- `bun.cmd run typecheck:api`: pass;
+- `bun.cmd x next lint`: pass;
+- `bun.cmd run build:web`: pass;
+- `bun.cmd run check:desktop:config`: pass;
+- local unauthenticated dev smoke reached `/sign-in` successfully.
+
+Not run:
+- existing Playwright browser specs, because available specs are SFU/media tests and this segment forbids media/WebRTC work;
+- authenticated manual smoke, because no local authenticated test workspace was available;
+- packaged desktop build, because this slice changes shared Next UI and the safe desktop config check was the clear low-risk desktop command.
+
+Next recommended segment:
+- `customer-unread-message-badges-and-sound-plan`
 
 Keep unread notifications and mentions as separate segments because they touch backend/realtime/data model and need more design than a label/input fix.

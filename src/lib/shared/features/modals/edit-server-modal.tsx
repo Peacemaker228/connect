@@ -94,6 +94,7 @@ export const EditServerModal = () => {
       isLoading={isLoading}
       isModalOpen={isModalOpen}
       onClose={handleClose}
+      type="edit"
       isStagedImageValueAction={isStagedValue}
       onCleanupStagedImageAction={cleanupStagedValue}
       onImageUploadCompleteAction={registerUploadedValue}
