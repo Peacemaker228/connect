@@ -51,6 +51,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   })
   useChatSocket({ queryKey, addKey, updateKey })
   useChatScroll({
+    chatId,
     chatRef,
     bottomRef,
     loadMore: fetchNextPage,

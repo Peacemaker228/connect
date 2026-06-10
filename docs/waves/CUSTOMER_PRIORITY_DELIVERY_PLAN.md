@@ -396,7 +396,9 @@ Delivered:
 - backend channel/direct message create/update paths apply the same trim guard;
 - multiline message rendering preserves intentional newlines;
 - after successful send from the composer, focus returns to the input after the refreshed chat tree settles unless the user moved pointer interaction elsewhere during the pending send;
-- after successful send, the chat query cache is updated immediately and mobile browsers scroll the chat container to the bottom when the user was already near the bottom.
+- after successful send, the chat query cache is updated immediately;
+- when the current user sends a message, desktop and mobile chat views force-scroll to the new message even if the user was reading older messages higher in the list;
+- ordinary new-message scroll still respects near-bottom state.
 
 Local storage diagnostic:
 - `.env.local` contains the expected S3-compatible storage settings and no shell-level `STORAGE_*` override was present;

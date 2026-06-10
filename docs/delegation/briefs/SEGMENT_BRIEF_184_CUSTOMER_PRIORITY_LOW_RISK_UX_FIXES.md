@@ -50,7 +50,8 @@ The WebRTC/Stage 9 track remains paused. Staging data, production data, media in
 - Autofocus is retried briefly after `router.refresh()` so the composer stays focused after the refreshed chat tree settles.
 - Autofocus is cancelled if pointer interaction moves away during the pending send, which avoids stealing focus from file upload, emoji/menu interactions, media controls, or navigation.
 - Existing loading and error behavior is preserved: failed sends do not reset the form and do not force focus.
-- After successful send, the chat query cache is updated immediately with the created message and realtime add handling ignores duplicate message ids. This keeps mobile layouts from waiting on a later refresh/socket pass before scrolling.
+- After successful send, the chat query cache is updated immediately with the created message and realtime add handling ignores duplicate message ids. This keeps desktop and mobile layouts from waiting on a later refresh/socket pass before scrolling.
+- Messages sent by the current user dispatch a local per-chat scroll-to-bottom event, so the chat moves down to the newly sent message even if the user was reading older messages higher in the list.
 - The chat scroll hook tracks whether the user is near the bottom and, when appropriate, scrolls the message container itself to the bottom across a few short layout-settle attempts. This fixes mobile browsers that did not show the newly sent message until manual scroll.
 
 ### Local Storage Diagnostic
@@ -70,13 +71,17 @@ The WebRTC/Stage 9 track remains paused. Staging data, production data, media in
   - passes `type="edit"` into `ServerModal`.
 - `src/lib/chat/features/chat-input.tsx`
   - replaced the single-line composer input with a compact textarea;
-  - added Enter submit, Shift+Enter newline, 20-line bounded auto-height, guarded refocus after successful send, and immediate chat cache update after create.
+  - added Enter submit, Shift+Enter newline, 20-line bounded auto-height, guarded refocus after successful send, immediate chat cache update after create, and own-send scroll-to-bottom dispatch.
+- `src/lib/chat/features/chat-events.ts`
+  - added the local chat scroll-to-bottom event name.
+- `src/lib/chat/features/chat-messages.tsx`
+  - passes `chatId` into chat scroll handling so own-send scroll events target only the active chat.
 - `src/lib/chat/features/chat-item.tsx`
   - preserves newline formatting in rendered text messages.
 - `src/lib/shared/data-access/chat/use-chat-socket.ts`
   - ignores duplicate realtime add events for messages already inserted into the chat cache.
 - `src/lib/shared/utils/hooks/use-chat-scroll.ts`
-  - tracks near-bottom state and scrolls the chat container to bottom after new messages across mobile layout settle.
+  - tracks near-bottom state, scrolls the chat container to bottom after ordinary near-bottom new messages, and force-scrolls for current-user send events across desktop/mobile layout settle.
 - `src/app/globals.css`
   - added a local scrollbar style for the chat composer textarea.
 - `packages/app-core/src/schemas/chat-input-schema.ts`

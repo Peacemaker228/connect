@@ -15,6 +15,7 @@ import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { chatInputSchema, IChatInputSchema } from '@app-core/schemas/chat-input-schema'
 import { useCreateMessage } from '@sdk/mutations/message'
 import type { ChatMessagesPage } from '@sdk/queries/chat'
+import { CHAT_SCROLL_TO_BOTTOM_EVENT } from './chat-events'
 
 const CHAT_INPUT_LINE_HEIGHT = 20
 const CHAT_INPUT_VERTICAL_PADDING = 28
@@ -147,6 +148,7 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
             ),
           }
         })
+        window.dispatchEvent(new CustomEvent(CHAT_SCROLL_TO_BOTTOM_EVENT, { detail: { chatId } }))
       }
 
       form.reset()
