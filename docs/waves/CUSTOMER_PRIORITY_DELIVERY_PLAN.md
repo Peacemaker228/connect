@@ -649,6 +649,43 @@ Pending:
 
 Not included:
 - notification sound / mute setting;
+
+## Prisma Active Postgres Migration Chain Repair Result
+
+Segment:
+- `customer-prisma-active-postgres-migration-chain-repair`
+
+Status: `pass / implemented locally; staging operator action pending`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_191_CUSTOMER_PRISMA_ACTIVE_POSTGRES_MIGRATION_CHAIN_REPAIR.md`
+
+Delivered:
+- confirmed active Prisma datasource is PostgreSQL;
+- confirmed active local DB points to `localhost:5433/connect_validation`, not staging/prod;
+- confirmed local `_prisma_migrations` was missing before repair and the invalid MySQL cleanup migration was not applied locally;
+- added active clean PostgreSQL baseline `00000000000000_clean_baseline` from the existing `prisma/postgres-validation` baseline;
+- retired the invalid active MySQL-only migration `20260501120000_remove_clerk_identity_provider`;
+- kept unread migration after the baseline;
+- verified an existing local pre-unread DB through `migrate resolve --applied 00000000000000_clean_baseline` followed by `prisma migrate dev`;
+- verified a fresh temporary local Postgres DB can apply baseline plus unread through `prisma migrate deploy`;
+- documented safe existing-DB handling: baseline resolve, then `migrate deploy`, without reset.
+
+Verification:
+- `bun.cmd x prisma validate`: pass;
+- `bun.cmd x prisma migrate dev`: pass after local baseline resolve;
+- fresh temporary local Postgres `bun.cmd x prisma migrate deploy`: pass;
+- `bun.cmd x prisma migrate status`: pass / up to date locally;
+- `git diff --check`: pass;
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass;
+- `bun.cmd run typecheck:api`: pass;
+- `bun.cmd x next lint`: pass;
+- `bun.cmd run build:web`: pass.
+
+Pending:
+- staging operator should inspect `_prisma_migrations`;
+- if staging has the pre-unread schema without migration history, run `prisma migrate resolve --applied 00000000000000_clean_baseline`, then `prisma migrate deploy`;
+- authenticated two-user unread smoke after staging/local migration application.
 - mentions and `@all`;
 - reply attention;
 - raw text mention/reply detection;
