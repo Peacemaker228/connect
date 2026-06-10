@@ -609,3 +609,54 @@ Staging smoke after deploy:
 - confirm image display still works;
 - confirm clicking image/PDF opens the file in a new tab;
 - confirm Network no longer shows storage-link prefetch `OPTIONS 403` to Yandex for those assets.
+
+## Unread Message Badges Foundation Result
+
+Segment:
+- `customer-unread-message-badges-foundation`
+
+Status: `pass / implemented locally; manual two-user smoke pending`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_189_CUSTOMER_UNREAD_MESSAGE_BADGES_FOUNDATION.md`
+
+Delivered:
+- added additive persisted read-state models for channels and direct conversations;
+- added a migration that creates read-state tables, indexes unread count paths, and baselines existing chats at migration time so historical messages do not become unread on first deploy;
+- added backend unread summary endpoint for accessible server channels and visible direct conversations;
+- added idempotent mark-read endpoints for channels and direct conversations;
+- preserved existing active chat realtime events;
+- added unread realtime events: `server:${serverId}:unread` for channel unread and `member:${memberId}:direct-unread` for recipient-only direct unread;
+- updated sidebar client cache from unread realtime events while ignoring own messages and active chat messages;
+- fixed direct-message access by requiring conversation membership before returning `GET /api/direct-messages` history;
+- active incoming realtime messages also mark the current channel/conversation read so reload does not bring back badges for messages already seen in the open chat;
+- added compact red count badges for channel and direct/member list entries;
+- opening a channel or direct conversation marks that scope read;
+- API/client shapes include `mentionCount`, `replyCount`, and `attentionLevel` so future mention/reply attention can plug in without pretending normal unread is a direct mention.
+
+Verification:
+- `bun.cmd x prisma generate`: pass;
+- `bun.cmd x prisma validate`: pass;
+- `git diff --check`: pass;
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass;
+- `bun.cmd run typecheck:api`: pass;
+- `bun.cmd x next lint`: pass;
+- `bun.cmd run build:web`: pass;
+- `bun.cmd run check:desktop:config`: pass.
+
+Pending:
+- authenticated two-user browser smoke.
+
+Not included:
+- notification sound / mute setting;
+- mentions and `@all`;
+- reply attention;
+- raw text mention/reply detection;
+- WebRTC/media changes;
+- production Postgres migration or staging DB reset.
+
+Next recommended segment:
+- `customer-unread-message-sound-toggle`
+
+Then continue to:
+- `customer-mentions-user-and-all`

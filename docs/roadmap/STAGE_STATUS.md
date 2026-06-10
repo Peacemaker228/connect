@@ -1043,11 +1043,12 @@ Done:
 - `customer-server-edit-realtime-propagation-fix` is implemented in `docs/delegation/briefs/SEGMENT_BRIEF_185_CUSTOMER_SERVER_EDIT_REALTIME_PROPAGATION_FIX.md`: backend emits `server_updated` on `server:${serverId}:profile` after successful server edit, and connected clients reconcile server list/sidebar/header caches from the event
 - `customer-staging-storage-write-permission-fix` is diagnosed and partially closed in `docs/delegation/briefs/SEGMENT_BRIEF_186_CUSTOMER_STAGING_STORAGE_WRITE_PERMISSION_FIX.md`: the active upload path is backend-owned `POST /api/storage/upload` through the S3-compatible provider, accidental Yandex Cloud deletion was cancelled by the operator and staging `messageFile` upload now returns `200 OK` by browser evidence, and the remaining inline image display issue is fixed locally by bypassing the failing `next/image` optimizer path for backend-redirect storage images
 - `customer-storage-link-cors-prefetch-fix` is implemented in `docs/delegation/briefs/SEGMENT_BRIEF_188_CUSTOMER_STORAGE_LINK_CORS_PREFETCH_FIX.md`: storage asset links now use plain `<a>` instead of `next/link`, avoiding Next route prefetch/fetch behavior against `/api/storage/access` redirects that caused Yandex `OPTIONS 403` CORS noise
+- `customer-unread-message-badges-foundation` is implemented locally in `docs/delegation/briefs/SEGMENT_BRIEF_189_CUSTOMER_UNREAD_MESSAGE_BADGES_FOUNDATION.md`: additive persisted channel/conversation read-state models and migration were added, backend unread summary and mark-read endpoints exist, channel unread uses `server:${serverId}:unread`, direct unread uses recipient-only `member:${memberId}:direct-unread`, direct-message history now requires conversation membership, compact red channel/member badges render normal unread counts, and the API shape keeps `mentionCount`, `replyCount`, and `attentionLevel` ready for future metadata-backed mention/reply attention
 
 Next likely work:
-- `customer-staging-storage-display-deploy-and-smoke`
-- after staging upload and inline display are green, return to `customer-unread-message-badges-and-sound-plan`
-- keep unread indicators/mentions/link preview/copy/reply/media fallback as separate scoped segments
+- `customer-unread-message-sound-toggle`
+- after sound, continue to `customer-mentions-user-and-all`
+- keep mention/reply attention, link preview, copy/reply, and media fallback as separate scoped segments
 
 ## Historical Notes
 

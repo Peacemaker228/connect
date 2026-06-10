@@ -6,6 +6,7 @@ import { RealtimeGateway } from '../realtime/realtime.gateway';
 import {
   createChatMessageCreatedRealtimeEvent,
   createChatMessageUpdatedRealtimeEvent,
+  createDirectUnreadMessageCreatedRealtimeEvent,
 } from '../realtime/realtime.events';
 import { DirectMessagesService } from './direct-messages.service';
 
@@ -51,6 +52,23 @@ export class DirectMessagesController {
 
     if (conversationId) {
       this.realtimeGateway.emit(createChatMessageCreatedRealtimeEvent(conversationId, message));
+      const realtimeContext = await this.directMessagesService.getConversationRealtimeContext(profileId, conversationId);
+
+      this.realtimeGateway.emit(
+        createDirectUnreadMessageCreatedRealtimeEvent(realtimeContext.recipientMemberId, {
+          action: 'message_created',
+          scope: 'conversation',
+          serverId: realtimeContext.serverId,
+          conversationId,
+          messageId: message.id,
+          senderMemberId: message.memberId,
+          createdAt: message.createdAt.toISOString(),
+          unreadCount: 1,
+          mentionCount: 0,
+          replyCount: 0,
+          attentionLevel: 'unread',
+        }),
+      );
     }
 
     return message;

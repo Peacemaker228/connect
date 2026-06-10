@@ -107,6 +107,7 @@ const MemberIdPage: FC<IMemberIdPageProps> = async ({ params, searchParams }) =>
             messageQuery={messageQuery}
             paramKey={'conversationId'}
             paramValue={conversation.id}
+            serverId={serverId}
             type={'conversation'}
           />
           <ChatInput

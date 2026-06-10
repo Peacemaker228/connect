@@ -15,6 +15,7 @@ interface IServerChannelProps {
   channel: ChannelDto
   server: ServerDto
   role?: MemberRole
+  unreadCount?: number
 }
 
 const iconMap = {
@@ -23,7 +24,7 @@ const iconMap = {
   [ChannelType.VIDEO]: Video,
 }
 
-export const ServerChannel: FC<IServerChannelProps> = ({ channel, server, role }) => {
+export const ServerChannel: FC<IServerChannelProps> = ({ channel, server, role, unreadCount = 0 }) => {
   const { onOpen } = useModal()
   const params = useParams()
   const router = useRouter()
@@ -56,8 +57,13 @@ export const ServerChannel: FC<IServerChannelProps> = ({ channel, server, role }
         )}>
         {channel.name}
       </p>
+      {unreadCount > 0 && (
+        <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-rose-500 text-[10px] leading-5 text-white font-semibold text-center">
+          {unreadCount > 99 ? '99+' : unreadCount}
+        </span>
+      )}
       {channel.name !== EGeneral.GENERAL && role !== 'GUEST' && (
-        <div className="ml-auto flex items-center gap-x-2">
+        <div className={cn('flex items-center gap-x-2', unreadCount === 0 && 'ml-auto')}>
           <ActionTooltip label={t('Channels.edit')}>
             <Edit
               onClick={(e) => {
@@ -76,7 +82,9 @@ export const ServerChannel: FC<IServerChannelProps> = ({ channel, server, role }
           </ActionTooltip>
         </div>
       )}
-      {channel.name === EGeneral.GENERAL && <Lock className="ml-auto h-4 w-4 text-zinc-500 dark:text-zinc-400 " />}
+      {channel.name === EGeneral.GENERAL && (
+        <Lock className={cn('h-4 w-4 text-zinc-500 dark:text-zinc-400', unreadCount === 0 && 'ml-auto')} />
+      )}
     </button>
   )
 }

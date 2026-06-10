@@ -6,6 +6,7 @@ import { RealtimeGateway } from '../realtime/realtime.gateway';
 import {
   createChatMessageCreatedRealtimeEvent,
   createChatMessageUpdatedRealtimeEvent,
+  createUnreadMessageCreatedRealtimeEvent,
 } from '../realtime/realtime.events';
 import { MessagesService } from './messages.service';
 
@@ -43,6 +44,24 @@ export class MessagesController {
 
     if (channelId) {
       this.realtimeGateway.emit(createChatMessageCreatedRealtimeEvent(channelId, message));
+    }
+
+    if (serverId && channelId) {
+      this.realtimeGateway.emit(
+        createUnreadMessageCreatedRealtimeEvent(serverId, {
+          action: 'message_created',
+          scope: 'channel',
+          serverId,
+          channelId,
+          messageId: message.id,
+          senderMemberId: message.memberId,
+          createdAt: message.createdAt.toISOString(),
+          unreadCount: 1,
+          mentionCount: 0,
+          replyCount: 0,
+          attentionLevel: 'unread',
+        }),
+      );
     }
 
     return message;
