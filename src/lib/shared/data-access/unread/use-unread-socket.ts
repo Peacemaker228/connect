@@ -9,6 +9,8 @@ import {
 } from '@app-core/contracts'
 import { useSocket } from '@/lib/shared/providers'
 import { getChatVisibilitySnapshot } from '@/lib/shared/data-access/unread/unread-notification-visibility'
+import { isUnreadPayloadAtActiveChatReadBoundary } from '@/lib/shared/data-access/unread/active-chat-read-state'
+import { recordUnreadNotificationDecision } from '@/lib/shared/data-access/unread/unread-notification-diagnostics'
 
 const PROCESSED_UNREAD_EVENT_TTL_MS = 5 * 60 * 1000
 const PROCESSED_UNREAD_EVENT_MAX_SIZE = 500
@@ -124,10 +126,28 @@ export const useUnreadSocket = ({
           return summary
         }
 
-        if (payload.channelId === activeChannelId && getChatVisibilitySnapshot().isActuallyVisible) {
+        const visibility = getChatVisibilitySnapshot()
+        const isActiveChannel = payload.channelId === activeChannelId
+
+        if (isActiveChannel && visibility.isPageVisible && isUnreadPayloadAtActiveChatReadBoundary(payload)) {
+          recordUnreadNotificationDecision({
+            isActiveRoute: true,
+            payload,
+            reason: 'active_visible_auto_read',
+            visibility,
+          })
           markChannelRead({ serverId, channelId: payload.channelId })
           scheduleUnreadSummaryReconcile(1000)
           return summary
+        }
+
+        if (isActiveChannel && visibility.isPageVisible) {
+          recordUnreadNotificationDecision({
+            isActiveRoute: true,
+            payload,
+            reason: 'read_deferred_not_near_bottom',
+            visibility,
+          })
         }
 
         scheduleUnreadSummaryReconcile()
@@ -167,10 +187,28 @@ export const useUnreadSocket = ({
           return summary
         }
 
-        if (payload.senderMemberId === activeMemberId && getChatVisibilitySnapshot().isActuallyVisible) {
+        const visibility = getChatVisibilitySnapshot()
+        const isActiveConversation = payload.senderMemberId === activeMemberId
+
+        if (isActiveConversation && visibility.isPageVisible && isUnreadPayloadAtActiveChatReadBoundary(payload)) {
+          recordUnreadNotificationDecision({
+            isActiveRoute: true,
+            payload,
+            reason: 'active_visible_auto_read',
+            visibility,
+          })
           markConversationRead({ serverId, conversationId: payload.conversationId })
           scheduleUnreadSummaryReconcile(1000)
           return summary
+        }
+
+        if (isActiveConversation && visibility.isPageVisible) {
+          recordUnreadNotificationDecision({
+            isActiveRoute: true,
+            payload,
+            reason: 'read_deferred_not_near_bottom',
+            visibility,
+          })
         }
 
         const existingConversation = summary.conversations.find(

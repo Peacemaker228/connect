@@ -7,10 +7,14 @@ const UNREAD_NOTIFICATION_DEBUG_STORAGE_KEY = 'ax-connect:debug-unread-notificat
 const DEBUG_BUFFER_LIMIT = 100
 
 export type UnreadNotificationDecisionReason =
+  | 'active_visible_auto_read'
+  | 'active_visible_scrolled_up_unread'
   | 'active_visible_suppressed'
+  | 'hidden_active_unread_sound_eligible'
   | 'ignored_duplicate'
   | 'ignored_inaccessible_context'
   | 'ignored_own_message'
+  | 'read_deferred_not_near_bottom'
   | 'sound_blocked_global'
   | 'sound_blocked_scope'
   | 'sound_deduped'
@@ -73,7 +77,7 @@ const getActiveContext = (params: {
     return 'inactive'
   }
 
-  return params.visibility.isActuallyVisible ? 'active-visible' : 'active-hidden'
+  return params.visibility.isPageVisible ? 'active-visible' : 'active-hidden'
 }
 
 export const recordUnreadNotificationDecision = (params: {

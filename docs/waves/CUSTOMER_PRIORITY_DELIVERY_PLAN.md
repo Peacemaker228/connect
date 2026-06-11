@@ -1016,6 +1016,44 @@ Verification:
 Manual smoke:
 - pending two-user browser smoke for channel/DM visible-active, hidden-active, muted, duplicate, reload/focus, and debug reason-code cases.
 
+## Unread Active Visible Read Semantics Fix Result
+
+Segment:
+- `customer-unread-active-visible-read-semantics-fix`
+
+Status: `pass / implemented locally; manual smoke pending`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_203_CUSTOMER_UNREAD_ACTIVE_VISIBLE_READ_SEMANTICS_FIX.md`
+
+Root cause:
+- Segment 201 correctly made hidden/minimized active chats unread/sound eligible, but it also used `document.hasFocus()` as part of the read gate;
+- a visible active chat could therefore stay unread until a click/focus event even when the user was already at the bottom and looking at the chat;
+- the active row badge was hidden by route equality, which could mask unread that should remain visible while the user is scrolled up.
+
+Delivered:
+- read/seen semantics are now based on active route, `document.visibilityState === 'visible'`, and the chat near-bottom state rather than `document.hasFocus()`;
+- active visible near-bottom channel/DM events auto mark-read and suppress server rail unread, row unread, and sound;
+- active visible scrolled-up channel/DM events keep visual unread and `New` state without playing sound or force-scrolling;
+- active hidden/minimized events remain visual-unread and sound eligible unless globally or per-chat muted;
+- server sidebar hides active channel/member row badges only when the active chat is at the read boundary;
+- global/scoped unread caches still reconcile from backend summaries after events, connect/reconnect, focus, and visibility return;
+- direct unread remains private on `member:${memberId}:direct-unread`;
+- unread backend/API contracts, DB schema, auth/session, storage, media/WebRTC, and staging/prod infra are unchanged.
+
+Verification:
+- `git diff --check`: pass;
+- `bun.cmd x prisma validate`: pass;
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass;
+- `bun.cmd run typecheck:api`: pass;
+- `bun.cmd run build:api`: pass;
+- `bun.cmd x next lint`: pass;
+- `bun.cmd run build:web`: pass;
+- `bun.cmd run check:desktop:config`: pass.
+
+Manual smoke:
+- pending two-user browser smoke for active visible channel/DM near-bottom, active visible scrolled-up, hidden/minimized active chat, different channel, different server, muted channel/DM, reload/reconnect, and desktop runtime review.
+
 ## Unread Realtime Idempotency / Reconnect Fix Plan
 
 Segment:

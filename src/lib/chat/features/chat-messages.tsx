@@ -14,6 +14,10 @@ import { useChatQuery } from '@/lib/shared/data-access/chat/use-chat-query'
 import { useChatScroll } from '@/lib/shared/utils/hooks/use-chat-scroll'
 import { useMarkChatRead } from '@/lib/shared/data-access/unread/use-mark-chat-read'
 import { useUnreadSummary } from '@sdk/queries/unread'
+import {
+  clearActiveChatReadState,
+  setActiveChatReadState,
+} from '@/lib/shared/data-access/unread/active-chat-read-state'
 
 type MessageWithMemberWithProfile = ChatMessageDto
 
@@ -105,14 +109,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   }, [chatReadKey])
 
   useChatSocket({ queryKey, addKey, updateKey })
-  useMarkChatRead({
-    beforeMarkRead: captureUnreadAnchor,
-    enabled: unreadSummaryStatus !== 'pending',
-    serverId,
-    paramKey,
-    paramValue,
-  })
-  useChatScroll({
+  const { isNearBottom } = useChatScroll({
     chatId,
     chatRef,
     bottomRef,
@@ -120,6 +117,42 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     shouldLoadMore: !isFetchingNextPage && hasNextPage,
     count: data?.pages?.[0]?.items?.length ?? 0,
   })
+  useMarkChatRead({
+    beforeMarkRead: captureUnreadAnchor,
+    enabled: unreadSummaryStatus !== 'pending',
+    isNearBottom,
+    serverId,
+    paramKey,
+    paramValue,
+  })
+
+  useEffect(() => {
+    setActiveChatReadState({
+      isNearBottom,
+      paramKey,
+      paramValue,
+      serverId,
+    })
+
+    return () => {
+      clearActiveChatReadState({
+        paramKey,
+        paramValue,
+        serverId,
+      })
+    }
+  }, [isNearBottom, paramKey, paramValue, serverId])
+
+  useEffect(() => {
+    if (isNearBottom || unreadAnchor?.chatKey === chatReadKey || !currentUnreadItem || currentUnreadItem.unreadCount <= 0) {
+      return
+    }
+
+    setUnreadAnchor({
+      chatKey: chatReadKey,
+      lastReadAt: currentUnreadItem.lastReadAt,
+    })
+  }, [chatReadKey, currentUnreadItem, isNearBottom, unreadAnchor?.chatKey])
 
   const t = useTranslations('ChannelPage')
   const commonTranslation = useTranslations('Common')

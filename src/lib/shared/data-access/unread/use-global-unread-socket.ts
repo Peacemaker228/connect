@@ -20,6 +20,7 @@ import {
   type UnreadNotificationDecisionReason,
 } from '@/lib/shared/data-access/unread/unread-notification-diagnostics'
 import { getChatVisibilitySnapshot } from '@/lib/shared/data-access/unread/unread-notification-visibility'
+import { isUnreadPayloadAtActiveChatReadBoundary } from '@/lib/shared/data-access/unread/active-chat-read-state'
 
 const PROCESSED_GLOBAL_UNREAD_EVENT_TTL_MS = 5 * 60 * 1000
 const PROCESSED_GLOBAL_UNREAD_EVENT_MAX_SIZE = 500
@@ -235,22 +236,47 @@ export const useGlobalUnreadSocket = ({
         return
       }
 
-      if (isActiveRoute && visibility.isActuallyVisible) {
+      if (isActiveRoute && visibility.isPageVisible && isUnreadPayloadAtActiveChatReadBoundary(payload)) {
         recordUnreadNotificationDecision({
           globalSoundEnabled: soundEnabledRef.current,
           isActiveRoute,
           mutedScope: false,
           payload,
-          reason: 'active_visible_suppressed',
+          reason: 'active_visible_auto_read',
           visibility,
         })
         scheduleGlobalUnreadReconcile(1000)
         return
       }
 
+      if (isActiveRoute && visibility.isPageVisible) {
+        recordUnreadNotificationDecision({
+          globalSoundEnabled: soundEnabledRef.current,
+          isActiveRoute,
+          mutedScope: false,
+          payload,
+          reason: 'active_visible_scrolled_up_unread',
+          visibility,
+        })
+        incrementGlobalUnreadCache(payload)
+        scheduleGlobalUnreadReconcile()
+        return
+      }
+
       const muteScope = getUnreadNotificationMuteScopeForPayload(payload)
       const isScopeMuted = isUnreadNotificationScopeMuted(muteScope)
       const isSoundEnabled = soundEnabledRef.current
+
+      if (isActiveRoute) {
+        recordUnreadNotificationDecision({
+          globalSoundEnabled: isSoundEnabled,
+          isActiveRoute,
+          mutedScope: isScopeMuted,
+          payload,
+          reason: 'hidden_active_unread_sound_eligible',
+          visibility,
+        })
+      }
 
       void playUnreadNotificationSoundOnce(payload.messageId, isSoundEnabled && !isScopeMuted).then((result) => {
         const reason =
