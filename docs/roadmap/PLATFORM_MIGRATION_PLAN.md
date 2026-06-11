@@ -950,6 +950,22 @@ Future hardening scope:
 
 Do not start this while customer-priority product work is active, while Stage 6 production Postgres migration is deferred, or while WebRTC/media production hardening is paused, unless there is a concrete incident.
 
+## 15B. Future Mention / Attention Model Split Backlog
+
+This item is intentionally deferred until the current customer-priority mention/unread slices are stable in real use.
+
+Current product decision:
+- `@user` / `@all` mention tokens may render as highlighted/clickable entities for every viewer, including the message author;
+- explicit self-mentions and `@all` self-target rows are acceptable for current Discord-like rendering/highlight behavior;
+- own messages must still never create own unread counts, browser title unread, server/channel/member badges, or notification sounds.
+
+Future hardening scope:
+- split mention rendering entities from notification/attention recipients so the data model does not rely on one `MessageMention` row shape for both UI rendering and unread attention;
+- preserve backend-authoritative mention parsing and membership validation;
+- keep sender/own-message unread and sound suppression as a hard invariant;
+- add smoke coverage for self-mentions, `@all`, sender negative unread/sound behavior, inactive recipients, active-visible auto-read, hidden/scrolled-up attention, and reload/reconnect restore;
+- investigate any idle/reconnect case where a self-mention such as `@alek` produces yellow mention badges for other users until refresh; classify it as realtime/cache reconciliation drift unless backend summaries reproduce the same false mention state.
+
 ## 16. Final Recommendation
 
 Проекту нужен не ещё один rewrite, а управляемый переход к:
