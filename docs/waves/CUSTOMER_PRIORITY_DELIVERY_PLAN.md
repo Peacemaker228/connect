@@ -940,6 +940,45 @@ Verification:
 Manual smoke:
 - pending two-user local smoke.
 
+## Auth Session Idle Boundary Hardening Result
+
+Segment:
+- `customer-auth-session-idle-boundary-hardening`
+
+Status: `pass / implemented locally; manual idle smoke pending`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_200_CUSTOMER_AUTH_SESSION_IDLE_BOUNDARY_HARDENING.md`
+
+Root cause:
+- after access-token cookie expiry, backend auth context swallowed the expired-cookie `UnauthorizedException` and could fall through to anonymous context;
+- `GET /api/auth/session` then returned `200` with `profile: null` instead of using the still-valid refresh cookie;
+- SDK refresh-on-401 did not deterministically run because the session read was not a `401`;
+- Segment 197 client gating prevented misleading shell rendering, but the backend session read still needed deterministic cookie recovery.
+
+Delivered:
+- `GET /api/auth/session` now uses a backend service path that returns the current authenticated snapshot when access auth is valid;
+- when access auth is anonymous but a refresh cookie exists, the same session read calls existing `AuthService.refreshSession()`, rotates cookies through `AuthCookiesService`, and returns the refreshed authenticated session snapshot;
+- if refresh-cookie recovery fails with `UnauthorizedException`, the response returns an explicit anonymous session snapshot without clearing cookies, avoiding cross-tab refresh-token rotation races where a late failed response could erase a session already recovered by another tab;
+- `/api/auth/session/refresh` and SDK refresh-on-401 behavior remain unchanged;
+- client profile/current-member shell gating remains unchanged, and current-member recovery now invalidates server-scoped unread, global unread, current server, and server list caches;
+- unread realtime event contracts, direct unread privacy key, active chat mark-read, own-message negative behavior, DB schema, storage, media/WebRTC, and staging/prod infra are unchanged.
+
+Verification:
+- `git diff --check`: pass;
+- `bun.cmd x prisma validate`: pass;
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass;
+- `bun.cmd run typecheck:api`: pass;
+- `bun.cmd run build:api`: pass;
+- `bun.cmd x next lint`: pass;
+- `bun.cmd run build:web`: pass;
+- `bun.cmd run check:desktop:config`: pass.
+- focused auth/session endpoint smoke against changed code was not completed because this shell has no safe local `DATABASE_URL` in process env; a temporary API with `AUTH_ACCESS_TOKEN_TTL_SECONDS=1` failed before listening, and the already-running local API was not used as proof because it likely predated this code change.
+
+Manual smoke:
+- pending two-user idle/reconnect smoke with valid refresh cookie;
+- pending truly expired refresh-session smoke.
+
 ## Unread Realtime Idempotency / Reconnect Fix Plan
 
 Segment:

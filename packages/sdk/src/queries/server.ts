@@ -5,6 +5,7 @@ import { privateApiInstance } from '../api/http-client'
 
 export type ServerListItem = ServerListItemDto
 
+export const getServersQueryKey = () => ['servers'] as const
 export const getServerQueryKey = (serverId: string) => ['server', serverId] as const
 
 export const fetchServer = (serverId: string) =>
@@ -28,7 +29,7 @@ export const useGetServer = (serverId: string) => {
 
 export const useGetServers = () => {
   return useQuery({
-    queryKey: ['servers'],
+    queryKey: getServersQueryKey(),
     queryFn: () => privateApiInstance.get<ServerListItem[]>(`/api/servers`).then((res) => res.data),
   })
 }
