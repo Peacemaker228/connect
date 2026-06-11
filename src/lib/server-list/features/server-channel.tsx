@@ -79,11 +79,11 @@ export const ServerChannel: FC<IServerChannelProps> = ({ channel, server, role, 
         {channel.name}
       </p>
       {unreadCount > 0 && (
-        <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-rose-500 text-[10px] leading-5 text-white font-semibold text-center">
+        <span className="min-w-5 h-5 px-1.5 rounded-full bg-rose-500 text-[10px] leading-5 text-white font-semibold text-center">
           {unreadCount > 99 ? '99+' : unreadCount}
         </span>
       )}
-      <div className={cn('flex items-center gap-x-2', unreadCount === 0 && 'ml-auto')}>
+      <div className={cn('ml-auto flex items-center gap-x-2', unreadCount === 0 && 'ml-auto')}>
         <UnreadSoundMuteControl isMuted={isSoundMuted} onToggle={toggleSoundMuted} />
         {channel.name !== EGeneral.GENERAL && role !== 'GUEST' && (
           <>
