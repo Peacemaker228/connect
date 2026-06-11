@@ -28,7 +28,8 @@ Delivered:
 - Added additive channel-message mention metadata through `MessageMentionKind` and `MessageMention`.
 - Resolved channel-message mentions server-side from stable `<@memberId>` / `<@all>` tokens and current raw `@DisplayName` / `@all` text.
 - Excluded the sender from mention attention and skipped ambiguous raw display-name matches.
-- Returned mention metadata with chat messages and rendered mention chips in existing message text.
+- Returned mention metadata with chat messages and rendered mention chips in existing message text; raw `@name` / `@all` tokens render as fallback chips only when a client temporarily lacks the `mentions` metadata field.
+- Highlighted the whole message only for the current member when backend mention metadata targets that member directly or through `@all`.
 - Counted mention rows per recipient in server-scoped and global unread summaries.
 - Added channel realtime `mentionedMemberIds` so only the mentioned recipient promotes a normal unread event to mention attention.
 - Kept direct unread on recipient-private `member:${memberId}:direct-unread`.
@@ -38,6 +39,7 @@ Known limitations:
 
 - Mention autocomplete/picker UX is deferred; users can currently type supported tokens/text directly.
 - Raw `@DisplayName` parsing intentionally skips duplicate display names; stable member tokens are the safer future picker output.
+- UI/dev note: the stable supported member token is `<@memberId>`, not `@memberId`.
 - Edit-time mention metadata is recomputed and rendering updates through the existing message update event, but edit-created mention attention is not separately replayed as a new unread event in this foundation slice.
 - Historical messages are not backfilled into mention rows.
 
@@ -58,7 +60,8 @@ Verification:
 
 Manual smoke:
 
-- Pending two/three-user authenticated browser smoke for plain unread, `@user`, `@all`, sender negative case, read clearing, reload restore, hidden/scrolled-up Segment 203 behavior, muted channel visual attention, and desktop runtime review.
+- Initial smoke stopped on rendering/attention findings: mention chips could differ between clients when one client lacked the `mentions` metadata field, `@all` remained unproven, stable syntax needed explicit documentation, and target-user whole-message highlight was missing.
+- Pending repeat two/three-user authenticated browser smoke for plain unread, `@user`, `@all`, sender negative case, non-target normal unread, active-visible auto-read, scrolled-up/hidden attention, read clearing, reload restore, muted channel visual attention, and desktop runtime review.
 
 ## Goal
 

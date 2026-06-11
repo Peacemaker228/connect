@@ -9,6 +9,8 @@ type MentionRenderToken = {
   targetLower: string
 }
 
+const FALLBACK_MENTION_PATTERN = /(^|[\s.,!?;:()[\]{}"'`])(@all|@[^\s.,!?;:()[\]{}"'`<>]+)/gi
+
 const getMentionLabel = (mention: MessageMentionDto) => {
   if (mention.kind === 'ALL') {
     return 'all'
@@ -57,6 +59,29 @@ const getMentionRenderTokens = (mentions: MessageMentionDto[] = []) => {
   return Array.from(tokenByTarget.values()).sort((a, b) => b.target.length - a.target.length)
 }
 
+const findFallbackMentionMatch = (content: string, cursor: number) => {
+  FALLBACK_MENTION_PATTERN.lastIndex = cursor
+
+  const match = FALLBACK_MENTION_PATTERN.exec(content)
+
+  if (!match) {
+    return null
+  }
+
+  const prefix = match[1] ?? ''
+  const target = match[2]
+  const index = match.index + prefix.length
+
+  return {
+    index,
+    token: {
+      label: target.slice(1),
+      target,
+      targetLower: target.toLowerCase(),
+    },
+  }
+}
+
 interface MessageContentProps {
   content: string
   mentions?: MessageMentionDto[]
@@ -64,20 +89,23 @@ interface MessageContentProps {
 
 export const MessageContent = ({ content, mentions }: MessageContentProps) => {
   const tokens = getMentionRenderTokens(mentions)
-
-  if (tokens.length === 0) {
-    return <>{content}</>
-  }
-
+  const canUseRawFallback = mentions === undefined
   const contentLower = content.toLowerCase()
   const parts: Array<string | MentionRenderToken> = []
   let cursor = 0
 
   while (cursor < content.length) {
-    const match = tokens
+    const metadataMatch = tokens
       .map((token) => ({ token, index: contentLower.indexOf(token.targetLower, cursor) }))
       .filter(({ index }) => index >= 0)
       .sort((a, b) => a.index - b.index || b.token.target.length - a.token.target.length)[0]
+    const fallbackMatch = canUseRawFallback ? findFallbackMentionMatch(content, cursor) : null
+    const match =
+      metadataMatch && fallbackMatch
+        ? metadataMatch.index <= fallbackMatch.index
+          ? metadataMatch
+          : fallbackMatch
+        : (metadataMatch ?? fallbackMatch)
 
     if (!match) {
       parts.push(content.slice(cursor))

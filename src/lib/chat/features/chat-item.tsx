@@ -105,6 +105,7 @@ export const ChatItem: FC<IChatItemProps> = ({
   const imageAlt = resolvedFileUrl || 'Image attachment'
   const isPDF = fileType === 'application/pdf' && fileAccessPath
   const isImage = Boolean(fileAccessPath) && fileType?.startsWith('image')
+  const isCurrentMemberMentioned = !deleted && mentions?.some((mention) => mention.memberId === currentMember.id)
 
   const isLoading = form.formState.isSubmitting
 
@@ -120,7 +121,12 @@ export const ChatItem: FC<IChatItemProps> = ({
   }
 
   return (
-    <div className="relative group flex items-center hover:bg-black/5 p-4 transition w-full">
+    <div
+      className={cn(
+        'relative group flex items-center hover:bg-black/5 p-4 transition w-full',
+        isCurrentMemberMentioned &&
+          'border-l-4 border-amber-500 bg-amber-500/10 hover:bg-amber-500/15 dark:bg-amber-400/10 dark:hover:bg-amber-400/15',
+      )}>
       <div className={'group flex gap-x-2 items-start w-full'}>
         <div onClick={onMemberClick} className={'cursor-pointer hover:drop-shadow-md transition'}>
           <UserAvatar name={member.profile.name} src={member.profile.imageUrl} />
