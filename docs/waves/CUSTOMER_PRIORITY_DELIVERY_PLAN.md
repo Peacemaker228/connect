@@ -1092,6 +1092,28 @@ Verification:
 Manual smoke:
 - pending two-user browser smoke for active visible channel/DM near-bottom, active visible scrolled-up, hidden/minimized active chat, different channel, different server, muted channel/DM, reload/reconnect, and desktop runtime review.
 
+## Mentions Attention Foundation Plan
+
+Segment:
+- `customer-mentions-attention-foundation`
+
+Status: `planned / brief ready`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_204_CUSTOMER_MENTIONS_ATTENTION_FOUNDATION.md`
+
+Planned scope:
+- first mentions slice is metadata-backed `@user` / `@all` attention for channel messages;
+- normal unread must stay separate from mention attention;
+- unread summaries/realtime already expose `mentionCount`, `replyCount`, and `attentionLevel`, but current controllers and summary queries still use placeholder mention counts;
+- this segment should add persisted mention metadata, server-side target resolution, mention rendering, and correct per-recipient mention attention;
+- full reply-to-message, reply attention, link rendering, message copy, notification API, native desktop popups, storage/auth/media changes, and broad realtime transport hardening stay out of scope.
+
+Next split after this:
+- mention autocomplete/picker UX if it does not fit safely inside the foundation slice;
+- reply-to-message as a separate backend/schema/SDK/UI segment;
+- safe link rendering and message copy as separate segments.
+
 ## Unread Realtime Idempotency / Reconnect Fix Plan
 
 Segment:
