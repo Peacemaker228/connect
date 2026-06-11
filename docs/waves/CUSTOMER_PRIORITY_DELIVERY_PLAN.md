@@ -979,6 +979,43 @@ Manual smoke:
 - pending two-user idle/reconnect smoke with valid refresh cookie;
 - pending truly expired refresh-session smoke.
 
+## Unread Notification Pipeline Reliability Result
+
+Segment:
+- `customer-unread-notification-pipeline-reliability`
+
+Status: `pass / implemented locally; manual notification smoke pending`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_201_CUSTOMER_UNREAD_NOTIFICATION_PIPELINE_RELIABILITY.md`
+
+Root cause / narrowed diagnosis:
+- unread sound decisions were coupled to route-active checks instead of actual page visibility/focus;
+- an open active chat suppressed global unread/sound and could mark incoming events read even when the tab/window was hidden, minimized, or unfocused;
+- audio playback failures were intentionally silent, so browser policy failure, mute, dedupe, and route suppression were not easy to distinguish.
+
+Delivered:
+- active chat is considered visibly seen only when `document.visibilityState === 'visible'` and `document.hasFocus()` is true;
+- visible/focused active chat still suppresses sound and mark-reads through the existing unread read endpoints;
+- hidden/minimized/unfocused active chat remains eligible for unread/title/server badge and sound unless globally or per-chat muted;
+- global/per-chat mute still blocks only sound while visual unread remains;
+- sound playback now reports `played`, `failed`, `deduped`, `disabled`, or `not_available`;
+- optional non-secret diagnostics can be enabled with `localStorage.setItem('ax-connect:debug-unread-notifications', '1')`, and recent entries are available through `window.__axUnreadNotificationDebug.getEntries()`;
+- unread realtime contracts, backend/API, DB, storage, auth/session, media/WebRTC, and staging/prod infra are unchanged.
+
+Verification:
+- `git diff --check`: pass;
+- `bun.cmd x prisma validate`: pass;
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass;
+- `bun.cmd run typecheck:api`: pass;
+- `bun.cmd run build:api`: pass;
+- `bun.cmd x next lint`: pass;
+- `bun.cmd run build:web`: pass;
+- `bun.cmd run check:desktop:config`: pass.
+
+Manual smoke:
+- pending two-user browser smoke for channel/DM visible-active, hidden-active, muted, duplicate, reload/focus, and debug reason-code cases.
+
 ## Unread Realtime Idempotency / Reconnect Fix Plan
 
 Segment:

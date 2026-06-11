@@ -8,6 +8,7 @@ import {
   type UnreadMessageCreatedRealtimePayload,
 } from '@app-core/contracts'
 import { useSocket } from '@/lib/shared/providers'
+import { getChatVisibilitySnapshot } from '@/lib/shared/data-access/unread/unread-notification-visibility'
 
 const PROCESSED_UNREAD_EVENT_TTL_MS = 5 * 60 * 1000
 const PROCESSED_UNREAD_EVENT_MAX_SIZE = 500
@@ -123,7 +124,7 @@ export const useUnreadSocket = ({
           return summary
         }
 
-        if (payload.channelId === activeChannelId) {
+        if (payload.channelId === activeChannelId && getChatVisibilitySnapshot().isActuallyVisible) {
           markChannelRead({ serverId, channelId: payload.channelId })
           scheduleUnreadSummaryReconcile(1000)
           return summary
@@ -166,7 +167,7 @@ export const useUnreadSocket = ({
           return summary
         }
 
-        if (payload.senderMemberId === activeMemberId) {
+        if (payload.senderMemberId === activeMemberId && getChatVisibilitySnapshot().isActuallyVisible) {
           markConversationRead({ serverId, conversationId: payload.conversationId })
           scheduleUnreadSummaryReconcile(1000)
           return summary

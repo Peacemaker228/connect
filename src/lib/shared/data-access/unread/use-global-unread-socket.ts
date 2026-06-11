@@ -12,8 +12,14 @@ import {
   getUnreadNotificationMuteScopeForPayload,
   isUnreadNotificationScopeMuted,
   playUnreadNotificationSoundOnce,
+  type UnreadNotificationSoundResult,
   useUnreadNotificationSoundPreference,
 } from '@/lib/shared/data-access/unread/unread-notification-sound'
+import {
+  recordUnreadNotificationDecision,
+  type UnreadNotificationDecisionReason,
+} from '@/lib/shared/data-access/unread/unread-notification-diagnostics'
+import { getChatVisibilitySnapshot } from '@/lib/shared/data-access/unread/unread-notification-visibility'
 
 const PROCESSED_GLOBAL_UNREAD_EVENT_TTL_MS = 5 * 60 * 1000
 const PROCESSED_GLOBAL_UNREAD_EVENT_MAX_SIZE = 500
@@ -62,6 +68,47 @@ const shouldProcessGlobalUnreadEvent = (eventId: string) => {
 
 const getGlobalUnreadEventId = (payload: UnreadMessageCreatedRealtimePayload) =>
   `${payload.serverId}:${payload.scope}:${payload.messageId}`
+
+const isPayloadForActiveRoute = (
+  payload: UnreadMessageCreatedRealtimePayload,
+  params: {
+    activeChannelId?: string
+    activeMemberId?: string
+    activeServerId?: string
+  },
+) => {
+  if (payload.serverId !== params.activeServerId) {
+    return false
+  }
+
+  if (payload.scope === 'channel') {
+    return payload.channelId === params.activeChannelId
+  }
+
+  return payload.senderMemberId === params.activeMemberId
+}
+
+const getSoundResultDecisionReason = (
+  result: UnreadNotificationSoundResult,
+): UnreadNotificationDecisionReason => {
+  if (result.status === 'deduped') {
+    return 'sound_deduped'
+  }
+
+  if (result.status === 'failed') {
+    return 'sound_failed'
+  }
+
+  if (result.status === 'not_available') {
+    return 'sound_not_available'
+  }
+
+  if (result.status === 'disabled') {
+    return 'sound_blocked_global'
+  }
+
+  return 'sound_played'
+}
 
 export const useGlobalUnreadSocket = ({
   activeChannelId,
@@ -148,44 +195,77 @@ export const useGlobalUnreadSocket = ({
         return
       }
 
+      const visibility = getChatVisibilitySnapshot()
+      const isActiveRoute = isPayloadForActiveRoute(payload, {
+        activeChannelId,
+        activeMemberId,
+        activeServerId,
+      })
       const targetServer = servers?.find((server) => server.serverId === payload.serverId)
 
       if (!targetServer) {
+        recordUnreadNotificationDecision({
+          isActiveRoute,
+          payload,
+          reason: 'ignored_inaccessible_context',
+          visibility,
+        })
         scheduleGlobalUnreadReconcile()
         return
       }
 
       if (payload.senderMemberId === targetServer.memberId) {
+        recordUnreadNotificationDecision({
+          isActiveRoute,
+          payload,
+          reason: 'ignored_own_message',
+          visibility,
+        })
         return
       }
 
       if (!shouldProcessGlobalUnreadEvent(getGlobalUnreadEventId(payload))) {
+        recordUnreadNotificationDecision({
+          isActiveRoute,
+          payload,
+          reason: 'ignored_duplicate',
+          visibility,
+        })
         scheduleGlobalUnreadReconcile()
         return
       }
 
-      if (
-        payload.scope === 'channel' &&
-        payload.serverId === activeServerId &&
-        payload.channelId === activeChannelId
-      ) {
+      if (isActiveRoute && visibility.isActuallyVisible) {
+        recordUnreadNotificationDecision({
+          globalSoundEnabled: soundEnabledRef.current,
+          isActiveRoute,
+          mutedScope: false,
+          payload,
+          reason: 'active_visible_suppressed',
+          visibility,
+        })
         scheduleGlobalUnreadReconcile(1000)
         return
       }
 
-      if (
-        payload.scope === 'conversation' &&
-        payload.serverId === activeServerId &&
-        payload.senderMemberId === activeMemberId
-      ) {
-        scheduleGlobalUnreadReconcile(1000)
-        return
-      }
+      const muteScope = getUnreadNotificationMuteScopeForPayload(payload)
+      const isScopeMuted = isUnreadNotificationScopeMuted(muteScope)
+      const isSoundEnabled = soundEnabledRef.current
 
-      playUnreadNotificationSoundOnce(
-        payload.messageId,
-        soundEnabledRef.current && !isUnreadNotificationScopeMuted(getUnreadNotificationMuteScopeForPayload(payload)),
-      )
+      void playUnreadNotificationSoundOnce(payload.messageId, isSoundEnabled && !isScopeMuted).then((result) => {
+        const reason =
+          !isSoundEnabled ? 'sound_blocked_global' : isScopeMuted ? 'sound_blocked_scope' : getSoundResultDecisionReason(result)
+
+        recordUnreadNotificationDecision({
+          globalSoundEnabled: isSoundEnabled,
+          isActiveRoute,
+          mutedScope: isScopeMuted,
+          payload,
+          reason,
+          soundError: result.status === 'failed' ? result.error : undefined,
+          visibility,
+        })
+      })
 
       incrementGlobalUnreadCache(payload)
       scheduleGlobalUnreadReconcile()

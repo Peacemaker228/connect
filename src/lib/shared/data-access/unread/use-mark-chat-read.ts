@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useMarkChannelRead, useMarkConversationRead } from '@sdk/queries/unread'
+import { isPageActuallyVisibleForChat } from '@/lib/shared/data-access/unread/unread-notification-visibility'
 
 type UseMarkChatReadParams = {
   beforeMarkRead?: () => void
@@ -24,8 +25,12 @@ export const useMarkChatRead = ({
     beforeMarkReadRef.current = beforeMarkRead
   }, [beforeMarkRead])
 
-  useEffect(() => {
+  const markActiveChatRead = useCallback(() => {
     if (!enabled || !serverId || !paramValue) {
+      return
+    }
+
+    if (!isPageActuallyVisibleForChat()) {
       return
     }
 
@@ -38,4 +43,20 @@ export const useMarkChatRead = ({
 
     markConversationRead({ serverId, conversationId: paramValue })
   }, [enabled, markChannelRead, markConversationRead, paramKey, paramValue, serverId])
+
+  useEffect(() => {
+    markActiveChatRead()
+
+    const handleVisibleFocus = () => {
+      markActiveChatRead()
+    }
+
+    window.addEventListener('focus', handleVisibleFocus)
+    document.addEventListener('visibilitychange', handleVisibleFocus)
+
+    return () => {
+      window.removeEventListener('focus', handleVisibleFocus)
+      document.removeEventListener('visibilitychange', handleVisibleFocus)
+    }
+  }, [markActiveChatRead])
 }
