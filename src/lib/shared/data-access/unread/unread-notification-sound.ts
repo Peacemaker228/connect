@@ -1,8 +1,10 @@
 'use client'
 
 import { useSyncExternalStore } from 'react'
+import type { UnreadMessageCreatedRealtimePayload } from '@app-core/contracts'
 
 const UNREAD_NOTIFICATION_SOUND_STORAGE_KEY = 'ax-connect:unread-notification-sound-enabled'
+const UNREAD_NOTIFICATION_MUTED_SCOPES_STORAGE_KEY = 'ax-connect:unread-notification-muted-scopes'
 const UNREAD_NOTIFICATION_SOUND_SRC = '/sounds/that-was-quick-606.mp3'
 const UNREAD_NOTIFICATION_SOUND_VOLUME = 0.4
 const DEFAULT_UNREAD_NOTIFICATION_SOUND_ENABLED = true
@@ -29,6 +31,28 @@ const readUnreadNotificationSoundEnabled = () => {
   return storedValue === 'true'
 }
 
+const readMutedScopesSnapshot = () => {
+  if (!isBrowser()) {
+    return '[]'
+  }
+
+  return window.localStorage.getItem(UNREAD_NOTIFICATION_MUTED_SCOPES_STORAGE_KEY) ?? '[]'
+}
+
+const parseMutedScopes = (snapshot: string) => {
+  try {
+    const parsed = JSON.parse(snapshot)
+
+    if (!Array.isArray(parsed)) {
+      return new Set<string>()
+    }
+
+    return new Set(parsed.filter((scope): scope is string => typeof scope === 'string' && scope.length > 0))
+  } catch {
+    return new Set<string>()
+  }
+}
+
 const notifySubscribers = () => {
   subscribers.forEach((subscriber) => subscriber())
 }
@@ -43,7 +67,10 @@ const subscribeToUnreadNotificationSoundPreference = (subscriber: () => void) =>
   }
 
   const handleStorage = (event: StorageEvent) => {
-    if (event.key === UNREAD_NOTIFICATION_SOUND_STORAGE_KEY) {
+    if (
+      event.key === UNREAD_NOTIFICATION_SOUND_STORAGE_KEY ||
+      event.key === UNREAD_NOTIFICATION_MUTED_SCOPES_STORAGE_KEY
+    ) {
       subscriber()
     }
   }
@@ -65,6 +92,46 @@ export const setUnreadNotificationSoundEnabled = (enabled: boolean) => {
   notifySubscribers()
 }
 
+const writeMutedScopes = (mutedScopes: Set<string>) => {
+  if (!isBrowser()) {
+    return
+  }
+
+  window.localStorage.setItem(
+    UNREAD_NOTIFICATION_MUTED_SCOPES_STORAGE_KEY,
+    JSON.stringify(Array.from(mutedScopes).sort()),
+  )
+  notifySubscribers()
+}
+
+export const createChannelUnreadNotificationMuteScope = (serverId: string, channelId: string) =>
+  `channel:${serverId}:${channelId}`
+
+export const createConversationUnreadNotificationMuteScope = (serverId: string, memberId: string) =>
+  `conversation:${serverId}:${memberId}`
+
+export const getUnreadNotificationMuteScopeForPayload = (payload: UnreadMessageCreatedRealtimePayload) => {
+  if (payload.scope === 'channel') {
+    return createChannelUnreadNotificationMuteScope(payload.serverId, payload.channelId)
+  }
+
+  return createConversationUnreadNotificationMuteScope(payload.serverId, payload.senderMemberId)
+}
+
+export const isUnreadNotificationScopeMuted = (scope: string) => parseMutedScopes(readMutedScopesSnapshot()).has(scope)
+
+export const setUnreadNotificationScopeMuted = (scope: string, muted: boolean) => {
+  const mutedScopes = parseMutedScopes(readMutedScopesSnapshot())
+
+  if (muted) {
+    mutedScopes.add(scope)
+  } else {
+    mutedScopes.delete(scope)
+  }
+
+  writeMutedScopes(mutedScopes)
+}
+
 export const useUnreadNotificationSoundPreference = () => {
   const enabled = useSyncExternalStore(
     subscribeToUnreadNotificationSoundPreference,
@@ -75,6 +142,21 @@ export const useUnreadNotificationSoundPreference = () => {
   return {
     enabled,
     setEnabled: setUnreadNotificationSoundEnabled,
+  }
+}
+
+export const useUnreadNotificationMutedScope = (scope: string) => {
+  const mutedScopesSnapshot = useSyncExternalStore(
+    subscribeToUnreadNotificationSoundPreference,
+    readMutedScopesSnapshot,
+    () => '[]',
+  )
+  const isMuted = parseMutedScopes(mutedScopesSnapshot).has(scope)
+
+  return {
+    isMuted,
+    setMuted: (muted: boolean) => setUnreadNotificationScopeMuted(scope, muted),
+    toggleMuted: () => setUnreadNotificationScopeMuted(scope, !isMuted),
   }
 }
 

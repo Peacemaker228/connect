@@ -7,6 +7,11 @@ import { cn } from '@/lib/shared/utils/utils'
 import { UserAvatar } from '@/lib/shared/features/user-avatar'
 import { roleIconMap } from '@/lib/shared/utils/role-icon-map'
 import { ERoutes } from '@app-core/routing/routes'
+import { UnreadSoundMuteControl } from '@/lib/server-list/features/unread-sound-mute-control'
+import {
+  createConversationUnreadNotificationMuteScope,
+  useUnreadNotificationMutedScope,
+} from '@/lib/shared/data-access/unread/unread-notification-sound'
 
 interface IServerMemberProps {
   member: MemberWithProfileDto
@@ -20,6 +25,8 @@ export const ServerMember: FC<IServerMemberProps> = ({ member, unreadCount = 0 }
 
   const icon = roleIconMap()[member.role]
   const hasUnread = unreadCount > 0
+  const soundMuteScope = createConversationUnreadNotificationMuteScope(member.serverId, member.id)
+  const { isMuted: isSoundMuted, toggleMuted: toggleSoundMuted } = useUnreadNotificationMutedScope(soundMuteScope)
 
   const handleClick = () => {
     router.push(`${ERoutes.SERVERS}/${params?.serverId}${ERoutes.CONVERSATIONS}/${member.id}`)
@@ -42,17 +49,19 @@ export const ServerMember: FC<IServerMemberProps> = ({ member, unreadCount = 0 }
       <p
         className={cn(
           'font-semibold text-sm text-zinc-500 group-hover:text-zinc-600 dark:text-zinc-400 dark:group-hover:text-zinc-300 transition line-clamp-1',
-          hasUnread && 'font-bold text-zinc-900 group-hover:text-zinc-900 dark:text-zinc-100 dark:group-hover:text-white',
+          hasUnread &&
+            'font-bold text-zinc-900 group-hover:text-zinc-900 dark:text-zinc-100 dark:group-hover:text-white',
           params?.memberId === member.id && 'text-primary dark:text-zinc-200 dark:group-hover:text-white',
         )}>
         {member.profile.name}
       </p>
       {icon}
       {unreadCount > 0 && (
-        <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-rose-500 text-[10px] leading-5 text-white font-semibold text-center">
+        <span className="min-w-5 h-5 px-1.5 rounded-full bg-rose-500 text-[10px] leading-5 text-white font-semibold text-center">
           {unreadCount > 99 ? '99+' : unreadCount}
         </span>
       )}
+      <UnreadSoundMuteControl className={cn('ml-auto')} isMuted={isSoundMuted} onToggle={toggleSoundMuted} />
     </button>
   )
 }

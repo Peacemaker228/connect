@@ -905,7 +905,40 @@ Manual smoke:
 - pending two-user local smoke; not run in this shell because no ready authenticated two-user local sessions were available.
 
 Follow-up requirement:
-- add per-channel and per-direct-conversation sound mute controls, likely from the row hover/context controls, while preserving visual unread badges and counts.
+- per-channel and per-direct-conversation sound mute controls are covered by `customer-unread-per-chat-sound-mute-controls`.
+
+## Unread Per-Chat Sound Mute Controls Result
+
+Segment:
+- `customer-unread-per-chat-sound-mute-controls`
+
+Status: `pass / implemented locally; manual two-user smoke pending`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_199_CUSTOMER_UNREAD_PER_CHAT_SOUND_MUTE_CONTROLS.md`
+
+Delivered:
+- added local per-channel and per-direct-conversation sound mute state without changing unread badges, counts, row emphasis, server rail badges, title count, or `New` divider behavior;
+- stored muted scopes in `localStorage` under `ax-connect:unread-notification-muted-scopes` as a JSON string array;
+- used stable scope keys: `channel:${serverId}:${channelId}` and `conversation:${serverId}:${memberId}`;
+- resolved direct mute scopes from accepted direct unread payloads with `senderMemberId`, matching the recipient-side member row;
+- blocked sound when global sound is disabled or the specific scope is muted, while still accepting realtime unread cache updates and visual indicators;
+- kept bounded message-id sound dedupe active even for muted events so replays do not sound later after unmute;
+- added compact hover/focus speaker controls to channel and direct member rows, with muted rows keeping the muted icon visible;
+- did not add backend notification preference persistence, DB schema/migrations, server-wide mute, Notification API, native desktop popups, taskbar/app badge, storage, WebRTC/media, or staging/prod changes.
+
+Verification:
+- `git diff --check`: pass;
+- `bun.cmd x prisma validate`: pass;
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass;
+- `bun.cmd run typecheck:api`: pass;
+- `bun.cmd run build:api`: pass;
+- `bun.cmd x next lint`: pass;
+- `bun.cmd run build:web`: pass;
+- `bun.cmd run check:desktop:config`: pass.
+
+Manual smoke:
+- pending two-user local smoke.
 
 ## Unread Realtime Idempotency / Reconnect Fix Plan
 
