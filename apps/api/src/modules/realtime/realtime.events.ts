@@ -1,21 +1,21 @@
 export type RealtimeEvent<TPayload> = {
-  key: string;
-  payload: TPayload;
-};
+  key: string
+  payload: TPayload
+}
 
-export const getServerChannelsRealtimeKey = (serverId: string) => `server:${serverId}:channels`;
+export const getServerChannelsRealtimeKey = (serverId: string) => `server:${serverId}:channels`
 
-export const getServerMembersRealtimeKey = (serverId: string) => `server:${serverId}:members`;
+export const getServerMembersRealtimeKey = (serverId: string) => `server:${serverId}:members`
 
-export const getServerProfileRealtimeKey = (serverId: string) => `server:${serverId}:profile`;
+export const getServerProfileRealtimeKey = (serverId: string) => `server:${serverId}:profile`
 
-export const getChatMessagesRealtimeKey = (chatId: string) => `chat:${chatId}:messages`;
+export const getChatMessagesRealtimeKey = (chatId: string) => `chat:${chatId}:messages`
 
-export const getChatMessagesUpdateRealtimeKey = (chatId: string) => `chat:${chatId}:messages:update`;
+export const getChatMessagesUpdateRealtimeKey = (chatId: string) => `chat:${chatId}:messages:update`
 
-export const getServerUnreadRealtimeKey = (serverId: string) => `server:${serverId}:unread`;
+export const getServerUnreadRealtimeKey = (serverId: string) => `server:${serverId}:unread`
 
-export const getMemberDirectUnreadRealtimeKey = (memberId: string) => `member:${memberId}:direct-unread`;
+export const getMemberDirectUnreadRealtimeKey = (memberId: string) => `member:${memberId}:direct-unread`
 
 export const createChannelCreatedRealtimeEvent = (
   serverId: string,
@@ -26,7 +26,7 @@ export const createChannelCreatedRealtimeEvent = (
     action: 'channel_created',
     channel,
   },
-});
+})
 
 export const createChannelUpdatedRealtimeEvent = (
   serverId: string,
@@ -37,7 +37,7 @@ export const createChannelUpdatedRealtimeEvent = (
     action: 'channel_updated',
     channel,
   },
-});
+})
 
 export const createChannelDeletedRealtimeEvent = (
   serverId: string,
@@ -48,7 +48,7 @@ export const createChannelDeletedRealtimeEvent = (
     action: 'channel_deleted',
     channelId,
   },
-});
+})
 
 export const createMemberDeletedRealtimeEvent = (
   serverId: string,
@@ -59,7 +59,7 @@ export const createMemberDeletedRealtimeEvent = (
     action: 'member_deleted',
     memberId,
   },
-});
+})
 
 export const createMemberRoleUpdatedRealtimeEvent = (
   serverId: string,
@@ -70,7 +70,7 @@ export const createMemberRoleUpdatedRealtimeEvent = (
     action: 'member_role_updated',
     memberId,
   },
-});
+})
 
 export const createMemberLeftRealtimeEvent = (
   serverId: string,
@@ -81,7 +81,7 @@ export const createMemberLeftRealtimeEvent = (
     action: 'member_left',
     memberId,
   },
-});
+})
 
 export const createMemberAddedRealtimeEvent = (
   serverId: string,
@@ -91,7 +91,7 @@ export const createMemberAddedRealtimeEvent = (
     action: 'member_added',
     serverId,
   },
-});
+})
 
 export const createServerUpdatedRealtimeEvent = (
   serverId: string,
@@ -102,7 +102,7 @@ export const createServerUpdatedRealtimeEvent = (
     action: 'server_updated',
     server,
   },
-});
+})
 
 export const createChatMessageCreatedRealtimeEvent = <TPayload>(
   chatId: string,
@@ -110,7 +110,7 @@ export const createChatMessageCreatedRealtimeEvent = <TPayload>(
 ): RealtimeEvent<TPayload> => ({
   key: getChatMessagesRealtimeKey(chatId),
   payload,
-});
+})
 
 export const createChatMessageUpdatedRealtimeEvent = <TPayload>(
   chatId: string,
@@ -118,35 +118,36 @@ export const createChatMessageUpdatedRealtimeEvent = <TPayload>(
 ): RealtimeEvent<TPayload> => ({
   key: getChatMessagesUpdateRealtimeKey(chatId),
   payload,
-});
+})
 
 type UnreadMessageCreatedRealtimePayload =
   | {
-      action: 'message_created';
-      scope: 'channel';
-      serverId: string;
-      channelId: string;
-      messageId: string;
-      senderMemberId: string;
-      createdAt: string;
-      unreadCount: number;
-      mentionCount: number;
-      replyCount: number;
-      attentionLevel: 'unread';
+      action: 'message_created'
+      scope: 'channel'
+      serverId: string
+      channelId: string
+      messageId: string
+      senderMemberId: string
+      createdAt: string
+      unreadCount: number
+      mentionCount: number
+      mentionedMemberIds?: string[]
+      replyCount: number
+      attentionLevel: 'unread' | 'mention' | 'reply'
     }
   | {
-      action: 'message_created';
-      scope: 'conversation';
-      serverId: string;
-      conversationId: string;
-      messageId: string;
-      senderMemberId: string;
-      createdAt: string;
-      unreadCount: number;
-      mentionCount: number;
-      replyCount: number;
-      attentionLevel: 'unread';
-    };
+      action: 'message_created'
+      scope: 'conversation'
+      serverId: string
+      conversationId: string
+      messageId: string
+      senderMemberId: string
+      createdAt: string
+      unreadCount: number
+      mentionCount: number
+      replyCount: number
+      attentionLevel: 'unread' | 'mention' | 'reply'
+    }
 
 export const createUnreadMessageCreatedRealtimeEvent = (
   serverId: string,
@@ -154,7 +155,7 @@ export const createUnreadMessageCreatedRealtimeEvent = (
 ): RealtimeEvent<Extract<UnreadMessageCreatedRealtimePayload, { scope: 'channel' }>> => ({
   key: getServerUnreadRealtimeKey(serverId),
   payload,
-});
+})
 
 export const createDirectUnreadMessageCreatedRealtimeEvent = (
   recipientMemberId: string,
@@ -162,4 +163,4 @@ export const createDirectUnreadMessageCreatedRealtimeEvent = (
 ): RealtimeEvent<Extract<UnreadMessageCreatedRealtimePayload, { scope: 'conversation' }>> => ({
   key: getMemberDirectUnreadRealtimeKey(recipientMemberId),
   payload,
-});
+})

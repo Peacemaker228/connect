@@ -1,6 +1,6 @@
 'use client'
 
-import type { MemberDto, MemberWithProfileDto } from '@app-core/contracts'
+import type { MemberDto, MemberWithProfileDto, MessageMentionDto } from '@app-core/contracts'
 import { FC, useEffect, useState } from 'react'
 import { UserAvatar } from '@/lib/shared/features/user-avatar'
 import { ActionTooltip } from '@/lib/shared/features/action-tooltip'
@@ -20,6 +20,7 @@ import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { chatInputSchema, IChatInputSchema } from '@app-core/schemas/chat-input-schema'
 import { buildStorageAccessPath, getUploadValueParts } from '@/lib/shared/utils/upload-file'
 import { useUpdateMessage } from '@sdk/mutations/message'
+import { MessageContent } from '@/lib/chat/features/message-content'
 
 interface IChatItemProps {
   id: string
@@ -32,6 +33,7 @@ interface IChatItemProps {
   isUpdated: boolean
   messageApiUrl: string
   messageQuery: Record<string, string>
+  mentions?: MessageMentionDto[]
 }
 
 export const ChatItem: FC<IChatItemProps> = ({
@@ -45,6 +47,7 @@ export const ChatItem: FC<IChatItemProps> = ({
   timestamp,
   content,
   id,
+  mentions,
 }) => {
   const [isEditing, setIsEditing] = useState(false)
   const { onOpen } = useModal()
@@ -102,6 +105,7 @@ export const ChatItem: FC<IChatItemProps> = ({
   const imageAlt = resolvedFileUrl || 'Image attachment'
   const isPDF = fileType === 'application/pdf' && fileAccessPath
   const isImage = Boolean(fileAccessPath) && fileType?.startsWith('image')
+  const isCurrentMemberMentioned = !deleted && mentions?.some((mention) => mention.memberId === currentMember.id)
 
   const isLoading = form.formState.isSubmitting
 
@@ -117,7 +121,12 @@ export const ChatItem: FC<IChatItemProps> = ({
   }
 
   return (
-    <div className="relative group flex items-center hover:bg-black/5 p-4 transition w-full">
+    <div
+      className={cn(
+        'relative group flex items-center hover:bg-black/5 p-4 transition w-full',
+        isCurrentMemberMentioned &&
+          'border-l-4 border-amber-500 bg-amber-500/10 hover:bg-amber-500/15 dark:bg-amber-400/10 dark:hover:bg-amber-400/15',
+      )}>
       <div className={'group flex gap-x-2 items-start w-full'}>
         <div onClick={onMemberClick} className={'cursor-pointer hover:drop-shadow-md transition'}>
           <UserAvatar name={member.profile.name} src={member.profile.imageUrl} />
@@ -163,7 +172,7 @@ export const ChatItem: FC<IChatItemProps> = ({
                 'text-accent text-zinc-600 dark:text-zinc-300 whitespace-pre-wrap break-words',
                 deleted && 'italic text-zinc-500 dark:text-zinc-400 text-xs mt-1',
               )}>
-              {content}
+              {deleted ? content : <MessageContent content={content} mentions={mentions} />}
               {isUpdated && !deleted && (
                 <span className="text-[10px] mx-2 text-zinc-500 dark:text-zinc-400">({t('ChatItem.edited')})</span>
               )}

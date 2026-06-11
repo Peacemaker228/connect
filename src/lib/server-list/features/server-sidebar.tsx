@@ -151,8 +151,14 @@ export const ServerSidebar: FC<IServerSidebarProps> = ({ serverId }) => {
   const unreadCountByChannelId = new Map(
     unreadSummary?.channels.map((channel) => [channel.channelId, channel.unreadCount]) ?? [],
   )
+  const attentionLevelByChannelId = new Map(
+    unreadSummary?.channels.map((channel) => [channel.channelId, channel.attentionLevel]) ?? [],
+  )
   const unreadCountByMemberId = new Map(
     unreadSummary?.conversations.map((conversation) => [conversation.memberId, conversation.unreadCount]) ?? [],
+  )
+  const attentionLevelByMemberId = new Map(
+    unreadSummary?.conversations.map((conversation) => [conversation.memberId, conversation.attentionLevel]) ?? [],
   )
   const conversationIdByMemberId = new Map(
     unreadSummary?.conversations.map((conversation) => [conversation.memberId, conversation.conversationId]) ?? [],
@@ -229,6 +235,7 @@ export const ServerSidebar: FC<IServerSidebarProps> = ({ serverId }) => {
                   role={role}
                   server={server}
                   unreadCount={shouldHideActiveChannelUnread(c.id) ? 0 : (unreadCountByChannelId.get(c.id) ?? 0)}
+                  attentionLevel={shouldHideActiveChannelUnread(c.id) ? 'none' : attentionLevelByChannelId.get(c.id)}
                 />
               ))}
             </div>
@@ -270,6 +277,7 @@ export const ServerSidebar: FC<IServerSidebarProps> = ({ serverId }) => {
                   member={m}
                   server={server}
                   unreadCount={shouldHideActiveMemberUnread(m.id) ? 0 : (unreadCountByMemberId.get(m.id) ?? 0)}
+                  attentionLevel={shouldHideActiveMemberUnread(m.id) ? 'none' : attentionLevelByMemberId.get(m.id)}
                 />
               ))}
             </div>

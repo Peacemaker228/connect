@@ -11,6 +11,10 @@ import { useSocket } from '@/lib/shared/providers'
 import { getChatVisibilitySnapshot } from '@/lib/shared/data-access/unread/unread-notification-visibility'
 import { isUnreadPayloadAtActiveChatReadBoundary } from '@/lib/shared/data-access/unread/active-chat-read-state'
 import { recordUnreadNotificationDecision } from '@/lib/shared/data-access/unread/unread-notification-diagnostics'
+import {
+  getUnreadAttentionLevel,
+  getUnreadMentionCountForMember,
+} from '@/lib/shared/data-access/unread/unread-attention'
 
 const PROCESSED_UNREAD_EVENT_TTL_MS = 5 * 60 * 1000
 const PROCESSED_UNREAD_EVENT_MAX_SIZE = 500
@@ -50,11 +54,8 @@ const shouldProcessUnreadEvent = (eventId: string) => {
   return true
 }
 
-const getUnreadEventId = (
-  currentMemberId: string,
-  serverId: string,
-  payload: UnreadMessageCreatedRealtimePayload,
-) => `${currentMemberId}:${serverId}:${payload.scope}:${payload.messageId}`
+const getUnreadEventId = (currentMemberId: string, serverId: string, payload: UnreadMessageCreatedRealtimePayload) =>
+  `${currentMemberId}:${serverId}:${payload.scope}:${payload.messageId}`
 
 type UseUnreadSocketParams = {
   activeChannelId?: string
@@ -110,7 +111,9 @@ export const useUnreadSocket = ({
     const serverUnreadKey = getServerUnreadRealtimeKey(serverId)
     const directUnreadKey = getMemberDirectUnreadRealtimeKey(currentMemberId)
 
-    const handleChannelUnreadMessage = (payload: Extract<UnreadMessageCreatedRealtimePayload, { scope: 'channel' }>) => {
+    const handleChannelUnreadMessage = (
+      payload: Extract<UnreadMessageCreatedRealtimePayload, { scope: 'channel' }>,
+    ) => {
       if (payload.action !== 'message_created' || payload.senderMemberId === currentMemberId) {
         return
       }
@@ -151,20 +154,25 @@ export const useUnreadSocket = ({
         }
 
         scheduleUnreadSummaryReconcile()
+        const mentionCount = getUnreadMentionCountForMember(payload, currentMemberId)
 
         return {
           ...summary,
-          channels: summary.channels.map((channel) =>
-            channel.channelId === payload.channelId
-              ? {
-                  ...channel,
-                  unreadCount: channel.unreadCount + payload.unreadCount,
-                  mentionCount: channel.mentionCount + payload.mentionCount,
-                  replyCount: channel.replyCount + payload.replyCount,
-                  attentionLevel: payload.attentionLevel,
-                }
-              : channel,
-          ),
+          channels: summary.channels.map((channel) => {
+            if (channel.channelId !== payload.channelId) {
+              return channel
+            }
+
+            const nextMentionCount = channel.mentionCount + mentionCount
+
+            return {
+              ...channel,
+              unreadCount: channel.unreadCount + payload.unreadCount,
+              mentionCount: nextMentionCount,
+              replyCount: channel.replyCount + payload.replyCount,
+              attentionLevel: getUnreadAttentionLevel({ mentionCount: nextMentionCount, payload }),
+            }
+          }),
         }
       })
     }
@@ -211,6 +219,8 @@ export const useUnreadSocket = ({
           })
         }
 
+        const mentionCount = getUnreadMentionCountForMember(payload, currentMemberId)
+        const attentionLevel = getUnreadAttentionLevel({ mentionCount, payload })
         const existingConversation = summary.conversations.find(
           (conversation) => conversation.conversationId === payload.conversationId,
         )
@@ -227,9 +237,9 @@ export const useUnreadSocket = ({
                 memberId: payload.senderMemberId,
                 lastReadAt: new Date(new Date(payload.createdAt).getTime() - 1),
                 unreadCount: payload.unreadCount,
-                mentionCount: payload.mentionCount,
+                mentionCount,
                 replyCount: payload.replyCount,
-                attentionLevel: payload.attentionLevel,
+                attentionLevel,
               },
             ],
           }
@@ -239,17 +249,21 @@ export const useUnreadSocket = ({
 
         return {
           ...summary,
-          conversations: summary.conversations.map((conversation) =>
-            conversation.conversationId === payload.conversationId
-              ? {
-                  ...conversation,
-                  unreadCount: conversation.unreadCount + payload.unreadCount,
-                  mentionCount: conversation.mentionCount + payload.mentionCount,
-                  replyCount: conversation.replyCount + payload.replyCount,
-                  attentionLevel: payload.attentionLevel,
-                }
-              : conversation,
-          ),
+          conversations: summary.conversations.map((conversation) => {
+            if (conversation.conversationId !== payload.conversationId) {
+              return conversation
+            }
+
+            const nextMentionCount = conversation.mentionCount + mentionCount
+
+            return {
+              ...conversation,
+              unreadCount: conversation.unreadCount + payload.unreadCount,
+              mentionCount: nextMentionCount,
+              replyCount: conversation.replyCount + payload.replyCount,
+              attentionLevel: getUnreadAttentionLevel({ mentionCount: nextMentionCount, payload }),
+            }
+          }),
         }
       })
     }

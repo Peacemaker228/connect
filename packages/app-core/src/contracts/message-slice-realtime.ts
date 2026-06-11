@@ -16,6 +16,7 @@ export type UnreadMessageCreatedRealtimePayload =
       createdAt: string
       unreadCount: number
       mentionCount: number
+      mentionedMemberIds?: string[]
       replyCount: number
       attentionLevel: UnreadAttentionLevel
     }

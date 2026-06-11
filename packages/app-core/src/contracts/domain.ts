@@ -64,6 +64,7 @@ export interface MessageDto {
   deleted: boolean
   createdAt: DomainTimestamp
   updatedAt: DomainTimestamp
+  mentions?: MessageMentionDto[]
 }
 
 export interface ConversationDto {
@@ -76,6 +77,17 @@ export interface ConversationDto {
 
 export type MemberWithProfileDto = MemberDto & {
   profile: ProfileDto
+}
+
+export type MessageMentionKind = 'USER' | 'ALL'
+
+export interface MessageMentionDto {
+  id: string
+  messageId: string
+  memberId: string
+  kind: MessageMentionKind
+  member: MemberWithProfileDto
+  createdAt: DomainTimestamp
 }
 
 export type ServerListItemDto = ServerDto & {
