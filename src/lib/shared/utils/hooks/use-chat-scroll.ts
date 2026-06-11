@@ -1,5 +1,5 @@
 import { RefObject, useCallback, useEffect, useRef, useState } from 'react'
-import { CHAT_SCROLL_TO_BOTTOM_EVENT } from '@/lib/chat/features/chat-events'
+import { CHAT_SCROLL_TO_BOTTOM_EVENT } from '@/lib/shared/utils/chat-events'
 
 interface IUseChatScroll {
   chatId: string

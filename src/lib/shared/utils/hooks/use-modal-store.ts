@@ -19,6 +19,7 @@ interface IModalData {
   channelType?: ChannelType
   channel?: ChannelDto
   apiUrl?: string
+  initialFile?: File
   // может быть любое значение
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   query?: Record<string, any>
@@ -36,6 +37,6 @@ export const useModal = create<IModalStore>((set) => ({
   type: null,
   isOpen: false,
   onOpen: (type: TModalType, data = {}) => set({ isOpen: true, type, data }),
-  onClose: () => set({ isOpen: false, type: null }),
+  onClose: () => set({ isOpen: false, type: null, data: {} }),
   data: {},
 }))

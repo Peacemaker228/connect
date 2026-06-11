@@ -1,6 +1,6 @@
 'use client'
 
-import { ChangeEvent, FC, useRef, useState } from 'react'
+import { ChangeEvent, FC, useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { FileIcon, Loader2, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -13,24 +13,42 @@ interface IFileUploadProps {
   value: string
   endpoint: UploadEndpoint
   isStagedValueAction?: (value: string) => boolean
+  isActive?: boolean
+  initialFile?: File
   onCleanupStagedValueAction?: (value: string) => Promise<unknown>
   onUploadCompleteAction?: (value: string) => void
+  onUploadStateChangeAction?: (isUploading: boolean) => void
 }
 
 export const FileUpload: FC<IFileUploadProps> = ({
   endpoint,
   value,
+  isActive = true,
+  initialFile,
   onChangeAction,
   isStagedValueAction,
   onCleanupStagedValueAction,
   onUploadCompleteAction,
+  onUploadStateChangeAction,
 }) => {
   const inputRef = useRef<HTMLInputElement | null>(null)
+  const isActiveRef = useRef(isActive)
+  const uploadedInitialFileRef = useRef<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const t = useTranslations('Modals.ServerModal')
 
   const { fileType, fileUrl } = getUploadValueParts(value, endpoint)
   const fileAccessPath = buildStorageAccessPath(value, endpoint)
+
+  useEffect(() => {
+    isActiveRef.current = isActive
+  }, [isActive])
+
+  useEffect(() => {
+    return () => {
+      isActiveRef.current = false
+    }
+  }, [])
 
   const handleRemoveFile = async () => {
     if (value && isStagedValueAction?.(value)) {
@@ -48,53 +66,108 @@ export const FileUpload: FC<IFileUploadProps> = ({
     }
   }
 
+  const isAllowedFile = useCallback(
+    (file: File) => {
+      const isImage = file.type.startsWith('image/')
+      const isPdf = file.type === 'application/pdf'
+
+      if (endpoint === 'serverImage' && !isImage) {
+        console.warn('Only images are allowed for serverImage')
+        return false
+      }
+
+      if (endpoint === 'messageFile' && !isImage && !isPdf) {
+        console.warn('Only image or pdf are allowed for messageFile')
+        return false
+      }
+
+      return true
+    },
+    [endpoint],
+  )
+
+  const uploadFile = useCallback(
+    async (file: File) => {
+      if (!isAllowedFile(file)) {
+        return false
+      }
+
+      setIsUploading(true)
+      onUploadStateChangeAction?.(true)
+
+      try {
+        const uploadedFile = await uploadStorageFile(endpoint, file)
+
+        const nextValue = serializeUploadValue({
+          accessKind: uploadedFile.accessKind,
+          fileKey: uploadedFile.key,
+          fileType: uploadedFile.type,
+          fileUrl: uploadedFile.url,
+        })
+
+        if (value && nextValue !== value && isStagedValueAction?.(value)) {
+          try {
+            await onCleanupStagedValueAction?.(value)
+          } catch (error) {
+            console.warn(error)
+          }
+        }
+
+        if (!isActiveRef.current) {
+          onUploadCompleteAction?.(nextValue)
+
+          try {
+            await onCleanupStagedValueAction?.(nextValue)
+          } catch (error) {
+            console.warn(error)
+          }
+
+          return false
+        }
+
+        onUploadCompleteAction?.(nextValue)
+        onChangeAction(nextValue)
+        return true
+      } catch (error) {
+        console.warn(error)
+        return false
+      } finally {
+        if (isActiveRef.current) {
+          setIsUploading(false)
+        }
+        onUploadStateChangeAction?.(false)
+      }
+    },
+    [
+      endpoint,
+      isAllowedFile,
+      isStagedValueAction,
+      onChangeAction,
+      onCleanupStagedValueAction,
+      onUploadCompleteAction,
+      onUploadStateChangeAction,
+      value,
+    ],
+  )
+
+  useEffect(() => {
+    if (!initialFile || uploadedInitialFileRef.current === initialFile) {
+      return
+    }
+
+    uploadedInitialFileRef.current = initialFile
+    void uploadFile(initialFile)
+  }, [initialFile, uploadFile])
+
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
 
     if (!file) return
 
-    const isImage = file.type.startsWith('image/')
-    const isPdf = file.type === 'application/pdf'
+    const didUpload = await uploadFile(file)
 
-    if (endpoint === 'serverImage' && !isImage) {
-      console.warn('Only images are allowed for serverImage')
+    if (!didUpload) {
       event.target.value = ''
-      return
-    }
-
-    if (endpoint === 'messageFile' && !isImage && !isPdf) {
-      console.warn('Only image or pdf are allowed for messageFile')
-      event.target.value = ''
-      return
-    }
-
-    setIsUploading(true)
-
-    try {
-      const uploadedFile = await uploadStorageFile(endpoint, file)
-
-      const nextValue = serializeUploadValue({
-        accessKind: uploadedFile.accessKind,
-        fileKey: uploadedFile.key,
-        fileType: uploadedFile.type,
-        fileUrl: uploadedFile.url,
-      })
-
-      if (value && nextValue !== value && isStagedValueAction?.(value)) {
-        try {
-          await onCleanupStagedValueAction?.(value)
-        } catch (error) {
-          console.warn(error)
-        }
-      }
-
-      onUploadCompleteAction?.(nextValue)
-      onChangeAction(nextValue)
-    } catch (error) {
-      console.warn(error)
-      event.target.value = ''
-    } finally {
-      setIsUploading(false)
     }
   }
 
