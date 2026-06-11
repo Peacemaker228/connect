@@ -453,6 +453,7 @@ Handoff:
 12. Run web checks, then desktop checks for shared UI changes.
 13. Create a separate dev/preview stand after the current colleague-requirements batch stabilizes.
 14. Resume WebRTC cleanup only after customer-priority work stabilizes or moves to a separate dev stand.
+15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 
 ## Low-Risk UX Fixes Result
 
