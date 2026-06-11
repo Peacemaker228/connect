@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -20,6 +21,29 @@ import { Button } from '@/lib/shared/ui/button'
 import { useTranslations } from 'next-intl'
 import { useStagedUpload } from '@/lib/shared/utils/hooks/use-staged-upload'
 import { useCreateMessage } from '@sdk/mutations/message'
+import { CHAT_COMPOSER_FOCUS_EVENT } from '@/lib/shared/utils/chat-events'
+
+const getChatIdFromMessageQuery = (query?: Record<string, unknown>) => {
+  if (typeof query?.channelId === 'string') {
+    return query.channelId
+  }
+
+  if (typeof query?.conversationId === 'string') {
+    return query.conversationId
+  }
+
+  return null
+}
+
+const dispatchComposerFocus = (chatId: string) => {
+  const dispatchFocus = () => {
+    window.dispatchEvent(new CustomEvent(CHAT_COMPOSER_FOCUS_EVENT, { detail: { chatId } }))
+  }
+
+  requestAnimationFrame(dispatchFocus)
+  window.setTimeout(dispatchFocus, 50)
+  window.setTimeout(dispatchFocus, 150)
+}
 
 export const MessageFileModal = () => {
   const router = useRouter()
@@ -28,8 +52,9 @@ export const MessageFileModal = () => {
   const commonTrans = useTranslations('Common')
   const stagedUpload = useStagedUpload('messageFile')
   const { mutateAsync: createMessage } = useCreateMessage()
+  const [isUploading, setIsUploading] = useState(false)
 
-  const { apiUrl, query } = data
+  const { apiUrl, initialFile, query } = data
 
   const isModalOpen = isOpen && type === 'messageFile'
 
@@ -49,9 +74,16 @@ export const MessageFileModal = () => {
       } finally {
         stagedUpload.reset()
         form.reset()
+        setIsUploading(false)
         onClose()
       }
     })()
+  }
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      handleClose()
+    }
   }
 
   const isLoading = form.formState.isSubmitting
@@ -67,16 +99,23 @@ export const MessageFileModal = () => {
       stagedUpload.markCommitted(data.fileUrl)
       stagedUpload.reset()
       form.reset()
+      setIsUploading(false)
+
+      const chatId = getChatIdFromMessageQuery(query)
 
       router.refresh()
       onClose()
+
+      if (chatId) {
+        dispatchComposerFocus(chatId)
+      }
     } catch (err) {
       console.log(err)
     }
   }
 
   return (
-    <Dialog open={isModalOpen} onOpenChange={handleClose}>
+    <Dialog open={isModalOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="bg-white text-black p-0 overflow-hidden">
         <DialogHeader className="pt-8 px-6">
           <DialogTitle className="text-2xl text-center">{t('title')}</DialogTitle>
@@ -96,9 +135,12 @@ export const MessageFileModal = () => {
                           <FileUpload
                             onChangeAction={field.onChange}
                             endpoint={'messageFile'}
+                            isActive={isModalOpen}
+                            initialFile={initialFile}
                             isStagedValueAction={stagedUpload.isStagedValue}
                             onCleanupStagedValueAction={stagedUpload.cleanupStagedValue}
                             onUploadCompleteAction={stagedUpload.registerUploadedValue}
+                            onUploadStateChangeAction={setIsUploading}
                             {...field}
                           />
                         </FormControl>
@@ -110,7 +152,7 @@ export const MessageFileModal = () => {
               </div>
             </div>
             <DialogFooter className="bg-gray-100 dark:bg-[#1E1E1E] px-6 py-4">
-              <Button type="submit" variant="primary" disabled={isLoading}>
+              <Button type="submit" variant="primary" disabled={isLoading || isUploading}>
                 {commonTrans('Send')}
               </Button>
             </DialogFooter>

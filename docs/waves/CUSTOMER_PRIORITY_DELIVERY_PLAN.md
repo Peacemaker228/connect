@@ -1017,6 +1017,43 @@ Verification:
 Manual smoke:
 - pending two-user browser smoke for channel/DM visible-active, hidden-active, muted, duplicate, reload/focus, and debug reason-code cases.
 
+## Chat Composer Screenshot Paste And Focus Result
+
+Segment:
+- `customer-chat-composer-screenshot-paste-and-focus-stability`
+
+Status: `pass / implemented locally; manual web smoke pending`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_202_CUSTOMER_CHAT_COMPOSER_SCREENSHOT_PASTE_FOCUS.md`
+
+Delivered:
+- chat composer paste now detects clipboard image files and wraps them in timestamped screenshot-style `File` objects;
+- pasted images open the existing `messageFile` attachment confirmation modal instead of auto-sending;
+- pasted and normally selected message files both upload through the same backend-owned staged storage path, `uploadStorageFile('messageFile', file)`;
+- attachment `Send` is disabled while a pasted/preselected file is still uploading;
+- cancel/remove keeps staged upload cleanup through `useStagedUpload`, and late upload completion after modal close is cleaned when the client still owns that staged value;
+- successful attachment send still creates the message through the existing SDK message mutation and backend finalization path;
+- composer focus now runs on safe channel/DM entry and after successful text or attachment send, while avoiding focus while a modal is open or another focusable control owns focus;
+- plain text paste, plus-button file upload, `Enter` send, `Shift+Enter` newline, unread behavior, auth/session, storage provider config, DB schema, media/WebRTC, staging DB, and production infra are unchanged.
+
+Verification:
+- `git diff --check`: pass;
+- `bun.cmd x prisma validate`: pass;
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass;
+- `bun.cmd run typecheck:api`: pass;
+- `bun.cmd run build:api`: pass;
+- `bun.cmd x next lint`: pass;
+- `bun.cmd run build:web`: pass;
+- `bun.cmd run check:desktop:config`: pass.
+
+Manual smoke:
+- pending authenticated web smoke for channel screenshot paste, DM screenshot paste, cancel cleanup, plain text paste, plus-button upload, Enter/Shift+Enter, and focus stability;
+- packaged desktop runtime smoke was not run; desktop remains `review`, not pass, with only config verification completed.
+
+Known limitation:
+- mixed text+image clipboard payloads are handled as image paste; the text part is not inserted into the composer.
+
 ## Unread Active Visible Read Semantics Fix Result
 
 Segment:

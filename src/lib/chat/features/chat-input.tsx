@@ -1,6 +1,6 @@
 'use client'
 
-import { FC, KeyboardEvent, useCallback, useEffect, useRef } from 'react'
+import { ClipboardEvent, FC, KeyboardEvent, useCallback, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
@@ -15,12 +15,71 @@ import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { chatInputSchema, IChatInputSchema } from '@app-core/schemas/chat-input-schema'
 import { useCreateMessage } from '@sdk/mutations/message'
 import type { ChatMessagesPage } from '@sdk/queries/chat'
-import { CHAT_SCROLL_TO_BOTTOM_EVENT } from './chat-events'
+import { CHAT_COMPOSER_FOCUS_EVENT, CHAT_SCROLL_TO_BOTTOM_EVENT } from '@/lib/shared/utils/chat-events'
 
 const CHAT_INPUT_LINE_HEIGHT = 20
 const CHAT_INPUT_VERTICAL_PADDING = 28
 const CHAT_INPUT_MAX_VISIBLE_LINES = 20
 const CHAT_INPUT_MAX_HEIGHT = CHAT_INPUT_LINE_HEIGHT * CHAT_INPUT_MAX_VISIBLE_LINES + CHAT_INPUT_VERTICAL_PADDING
+const CLIPBOARD_SCREENSHOT_EXTENSION_BY_TYPE: Record<string, string> = {
+  'image/gif': 'gif',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+}
+
+const padDatePart = (value: number) => String(value).padStart(2, '0')
+
+const createClipboardScreenshotName = (date = new Date()) => {
+  const year = date.getFullYear()
+  const month = padDatePart(date.getMonth() + 1)
+  const day = padDatePart(date.getDate())
+  const hours = padDatePart(date.getHours())
+  const minutes = padDatePart(date.getMinutes())
+  const seconds = padDatePart(date.getSeconds())
+
+  return `screenshot-${year}${month}${day}-${hours}${minutes}${seconds}`
+}
+
+const getClipboardImageFile = (clipboardData: DataTransfer) => {
+  const itemImage = Array.from(clipboardData.items).find(
+    (item) => item.kind === 'file' && item.type.startsWith('image/'),
+  )
+  const sourceFile =
+    itemImage?.getAsFile() ?? Array.from(clipboardData.files).find((file) => file.type.startsWith('image/'))
+
+  if (!sourceFile || !sourceFile.type.startsWith('image/')) {
+    return null
+  }
+
+  const fileType = sourceFile.type || 'image/png'
+  const extension = CLIPBOARD_SCREENSHOT_EXTENSION_BY_TYPE[fileType] ?? 'png'
+
+  return new File([sourceFile], `${createClipboardScreenshotName()}.${extension}`, {
+    type: fileType,
+    lastModified: Date.now(),
+  })
+}
+
+type FocusMode = 'entry' | 'after-send'
+
+const isFocusBlockingElement = (element: Element | null) => {
+  if (!(element instanceof HTMLElement)) {
+    return false
+  }
+
+  const tagName = element.tagName.toLowerCase()
+
+  if (tagName === 'input' || tagName === 'textarea' || tagName === 'select' || element.isContentEditable) {
+    return true
+  }
+
+  return Boolean(
+    element.closest(
+      '[role="dialog"], [role="menu"], [role="menuitem"], [role="listbox"], [role="option"], [data-radix-popper-content-wrapper]',
+    ),
+  )
+}
 
 interface IChatInputProps {
   messageApiUrl: string
@@ -32,13 +91,26 @@ interface IChatInputProps {
 }
 
 export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, name, type }) => {
-  const { onOpen } = useModal()
+  const { isOpen: isAnyModalOpen, onOpen } = useModal()
   const router = useRouter()
   const queryClient = useQueryClient()
   const t = useTranslations('ChannelPage')
   const { mutateAsync: createMessage } = useCreateMessage()
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
+  const isAnyModalOpenRef = useRef(isAnyModalOpen)
   const shouldFocusAfterSendRef = useRef(false)
+  const activeChatId =
+    typeof messageQuery.channelId === 'string'
+      ? messageQuery.channelId
+      : typeof messageQuery.conversationId === 'string'
+        ? messageQuery.conversationId
+        : null
+  const chatFocusKey =
+    activeChatId && typeof messageQuery.channelId === 'string'
+      ? `channel:${activeChatId}`
+      : activeChatId
+        ? `conversation:${activeChatId}`
+        : messageApiUrl
 
   const form = useForm<IChatInputSchema>({
     resolver: zodResolver(chatInputSchema),
@@ -49,6 +121,10 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
 
   const isLoading = form.formState.isSubmitting
 
+  useEffect(() => {
+    isAnyModalOpenRef.current = isAnyModalOpen
+  }, [isAnyModalOpen])
+
   const resizeInput = useCallback((element: HTMLTextAreaElement | null) => {
     if (!element) {
       return
@@ -58,6 +134,69 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
     element.style.height = `${Math.min(element.scrollHeight, CHAT_INPUT_MAX_HEIGHT)}px`
     element.style.overflowY = element.scrollHeight > CHAT_INPUT_MAX_HEIGHT ? 'auto' : 'hidden'
   }, [])
+
+  const canFocusInput = useCallback((element: HTMLTextAreaElement, mode: FocusMode) => {
+    if (isAnyModalOpenRef.current || document.visibilityState !== 'visible') {
+      return false
+    }
+
+    const activeElement = document.activeElement
+
+    if (!activeElement || activeElement === element || activeElement === document.body) {
+      return true
+    }
+
+    if (mode === 'entry') {
+      return !isFocusBlockingElement(activeElement)
+    }
+
+    return false
+  }, [])
+
+  const focusInputIfSafe = useCallback((mode: FocusMode) => {
+    const element = inputRef.current
+
+    if (!element || !canFocusInput(element, mode)) {
+      return false
+    }
+
+    element.focus()
+    resizeInput(element)
+
+    return true
+  }, [canFocusInput, resizeInput])
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      focusInputIfSafe('entry')
+    })
+    const timeout = window.setTimeout(() => {
+      focusInputIfSafe('entry')
+    }, 75)
+
+    return () => {
+      cancelAnimationFrame(frame)
+      window.clearTimeout(timeout)
+    }
+  }, [chatFocusKey, focusInputIfSafe])
+
+  useEffect(() => {
+    const handleComposerFocus = (event: Event) => {
+      if (!(event instanceof CustomEvent) || event.detail?.chatId !== activeChatId) {
+        return
+      }
+
+      requestAnimationFrame(() => {
+        focusInputIfSafe('after-send')
+      })
+    }
+
+    window.addEventListener(CHAT_COMPOSER_FOCUS_EVENT, handleComposerFocus)
+
+    return () => {
+      window.removeEventListener(CHAT_COMPOSER_FOCUS_EVENT, handleComposerFocus)
+    }
+  }, [activeChatId, focusInputIfSafe])
 
   useEffect(() => {
     const stopAutofocus = (event: Event) => {
@@ -85,9 +224,7 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
         return
       }
 
-      const activeElement = document.activeElement
-
-      if (!activeElement || activeElement === element || activeElement === document.body) {
+      if (canFocusInput(element, 'after-send')) {
         element.focus()
         resizeInput(element)
       }
@@ -100,7 +237,19 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
     requestAnimationFrame(() => focusInput())
     window.setTimeout(() => focusInput(), 50)
     window.setTimeout(() => focusInput(true), 150)
-  }, [resizeInput])
+  }, [canFocusInput, resizeInput])
+
+  const handlePaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    const pastedImage = getClipboardImageFile(event.clipboardData)
+
+    if (!pastedImage) {
+      return
+    }
+
+    event.preventDefault()
+    shouldFocusAfterSendRef.current = false
+    onOpen('messageFile', { apiUrl: messageApiUrl, initialFile: pastedImage, query: messageQuery })
+  }
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) {
@@ -192,6 +341,7 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
                       resizeInput(event.currentTarget)
                     }}
                     onKeyDown={handleKeyDown}
+                    onPaste={handlePaste}
                     ref={(element) => {
                       field.ref(element)
                       inputRef.current = element
