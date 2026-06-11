@@ -1130,6 +1130,10 @@ Manual smoke:
 - initial smoke stopped on mention rendering/attention findings: inconsistent chips across clients, unproven `@all`, missing stable-token note, and missing target-user whole-message highlight;
 - pending repeat two/three-user channel smoke for plain unread, `@user`, explicit self-mention rendering/highlight, `@all` including sender rendering/highlight, sender own-message unread/sound negative case, non-target normal unread, active-visible auto-read, read clearing, reload restore, hidden/scrolled-up behavior, muted channel visual attention, and desktop runtime review.
 
+Watch item:
+- if a self-mention such as `@alek` shows yellow mention badges for other users only after idle/reconnect and disappears after browser refresh, treat it as a realtime/cache reconciliation suspect first; verify backend unread summaries before changing mention parsing semantics;
+- future architecture should split mention rendering entities from notification/attention recipients, while keeping current own-message unread/sound suppression as a hard invariant.
+
 Next split after this:
 - mention autocomplete/picker UX if it does not fit safely inside the foundation slice;
 - reply-to-message as a separate backend/schema/SDK/UI segment;
