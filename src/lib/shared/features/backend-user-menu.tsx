@@ -2,12 +2,14 @@
 
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Loader2, LogOut } from 'lucide-react'
+import { Loader2, LogOut, Volume2, VolumeX } from 'lucide-react'
 import { logoutSession } from '@sdk/actions/auth'
 import { getProfileQueryKey } from '@sdk/queries/profile'
+import { useUnreadNotificationSoundPreference } from '@/lib/shared/data-access/unread/unread-notification-sound'
 
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -39,6 +41,8 @@ const getInitials = (name?: string | null, email?: string | null) => {
 export function BackendUserMenu({ email, imageUrl, name }: BackendUserMenuProps) {
   const queryClient = useQueryClient()
   const [isSigningOut, setIsSigningOut] = useState(false)
+  const { enabled: isUnreadNotificationSoundEnabled, setEnabled: setUnreadNotificationSoundEnabled } =
+    useUnreadNotificationSoundPreference()
   const hasProfileSnapshot = name !== undefined || email !== undefined || imageUrl !== undefined
   const displayName = name?.trim() || email?.trim() || 'Account'
 
@@ -99,6 +103,19 @@ export function BackendUserMenu({ email, imageUrl, name }: BackendUserMenuProps)
           <div className="font-medium text-black dark:text-white">{displayName}</div>
           {email ? <div className="text-xs font-normal text-neutral-500">{email}</div> : null}
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuCheckboxItem
+          checked={isUnreadNotificationSoundEnabled}
+          className="cursor-pointer gap-2 dark:focus:bg-gray21"
+          onCheckedChange={(checked) => setUnreadNotificationSoundEnabled(Boolean(checked))}
+          onSelect={(event) => event.preventDefault()}>
+          {isUnreadNotificationSoundEnabled ? (
+            <Volume2 className="mr-2 h-4 w-4" />
+          ) : (
+            <VolumeX className="mr-2 h-4 w-4" />
+          )}
+          Notification sound
+        </DropdownMenuCheckboxItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="cursor-pointer dark:focus:bg-gray21"

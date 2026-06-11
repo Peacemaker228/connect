@@ -8,6 +8,10 @@ import {
   type UnreadMessageCreatedRealtimePayload,
 } from '@app-core/contracts'
 import { useSocket } from '@/lib/shared/providers'
+import {
+  playUnreadNotificationSoundOnce,
+  useUnreadNotificationSoundPreference,
+} from '@/lib/shared/data-access/unread/unread-notification-sound'
 
 const PROCESSED_GLOBAL_UNREAD_EVENT_TTL_MS = 5 * 60 * 1000
 const PROCESSED_GLOBAL_UNREAD_EVENT_MAX_SIZE = 500
@@ -66,6 +70,8 @@ export const useGlobalUnreadSocket = ({
   const { socket } = useSocket()
   const queryClient = useQueryClient()
   const reconcileTimeoutRef = useRef<number | null>(null)
+  const { enabled: isUnreadNotificationSoundEnabled } = useUnreadNotificationSoundPreference()
+  const soundEnabledRef = useRef(isUnreadNotificationSoundEnabled)
 
   const serverUnreadKeys = useMemo(
     () => Array.from(new Set(servers?.map((server) => getServerUnreadRealtimeKey(server.serverId)) ?? [])),
@@ -127,6 +133,10 @@ export const useGlobalUnreadSocket = ({
   }, [])
 
   useEffect(() => {
+    soundEnabledRef.current = isUnreadNotificationSoundEnabled
+  }, [isUnreadNotificationSoundEnabled])
+
+  useEffect(() => {
     if (!socket || serverUnreadKeys.length === 0) {
       return
     }
@@ -169,6 +179,8 @@ export const useGlobalUnreadSocket = ({
         scheduleGlobalUnreadReconcile(1000)
         return
       }
+
+      playUnreadNotificationSoundOnce(payload.messageId, soundEnabledRef.current)
 
       incrementGlobalUnreadCache(payload)
       scheduleGlobalUnreadReconcile()

@@ -120,6 +120,7 @@ Required behavior:
 - realtime updates should update badges without reload;
 - optional notification sound for new messages;
 - user can mute/disable sound.
+- follow-up notification controls should support muting sound per channel and per direct conversation, so a noisy chat can stay visually unread without playing audio.
 
 Implementation direction:
 - backend-owned persisted read state, not UI-only badges;
@@ -869,6 +870,42 @@ Verification:
 
 Manual smoke:
 - pending two-user idle/reconnect smoke; not run in this shell because no ready authenticated two-user local/staging sessions were available.
+
+## Unread Sound And Mute Settings Result
+
+Segment:
+- `customer-unread-sound-and-mute-settings`
+
+Status: `pass / implemented locally; manual two-user smoke pending`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_198_CUSTOMER_UNREAD_SOUND_AND_MUTE_SETTINGS.md`
+
+Delivered:
+- added a short local MP3 unread notification sound as a client-side effect of accepted realtime unread events;
+- sound is triggered from the global unread socket path only after own-message, active-chat, access/current-member, and duplicate-event guards pass;
+- reload summary, initial unread summary load, focus/reconnect refetch, and historical unread counts do not trigger sound;
+- added bounded message-id sound dedupe so duplicate/replayed realtime events do not play twice;
+- added local `Notification sound` checkbox to the account dropdown;
+- stored the preference in `localStorage` under `ax-connect:unread-notification-sound-enabled`, with a future path to backend profile preference;
+- kept unread badges, global summary reconciliation, title count, and `Новое` divider behavior on the existing unread system;
+- did not add Notification API, native desktop popups, taskbar/app badge, mentions, replies, storage, WebRTC/media, DB schema, or migrations.
+
+Verification:
+- `git diff --check`: pass;
+- `bun.cmd x prisma validate`: pass;
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass;
+- `bun.cmd run typecheck:api`: pass;
+- `bun.cmd run build:api`: pass;
+- `bun.cmd x next lint`: pass;
+- `bun.cmd run build:web`: pass;
+- `bun.cmd run check:desktop:config`: pass.
+
+Manual smoke:
+- pending two-user local smoke; not run in this shell because no ready authenticated two-user local sessions were available.
+
+Follow-up requirement:
+- add per-channel and per-direct-conversation sound mute controls, likely from the row hover/context controls, while preserving visual unread badges and counts.
 
 ## Unread Realtime Idempotency / Reconnect Fix Plan
 
