@@ -15,6 +15,13 @@ const subscribers = new Set<() => void>()
 const processedSoundEvents = new Map<string, number>()
 let notificationAudio: HTMLAudioElement | null = null
 
+export type UnreadNotificationSoundResult =
+  | { status: 'deduped' }
+  | { status: 'disabled' }
+  | { status: 'failed'; error: unknown }
+  | { status: 'not_available' }
+  | { status: 'played' }
+
 const isBrowser = () => typeof window !== 'undefined'
 
 const readUnreadNotificationSoundEnabled = () => {
@@ -207,11 +214,11 @@ const getNotificationAudio = () => {
   return notificationAudio
 }
 
-const playUnreadNotificationSound = async () => {
+const playUnreadNotificationSound = async (): Promise<UnreadNotificationSoundResult> => {
   const audio = getNotificationAudio()
 
   if (!audio) {
-    return
+    return { status: 'not_available' }
   }
 
   try {
@@ -219,15 +226,23 @@ const playUnreadNotificationSound = async () => {
     audio.currentTime = 0
     audio.volume = UNREAD_NOTIFICATION_SOUND_VOLUME
     await audio.play()
-  } catch {
-    // Browsers can block audio before a user gesture. Unread state must keep working.
+    return { status: 'played' }
+  } catch (error) {
+    return { status: 'failed', error }
   }
 }
 
-export const playUnreadNotificationSoundOnce = (messageId: string, enabled = readUnreadNotificationSoundEnabled()) => {
-  if (!shouldPlaySoundForMessage(messageId) || !enabled) {
-    return
+export const playUnreadNotificationSoundOnce = async (
+  messageId: string,
+  enabled = readUnreadNotificationSoundEnabled(),
+): Promise<UnreadNotificationSoundResult> => {
+  if (!shouldPlaySoundForMessage(messageId)) {
+    return { status: 'deduped' }
   }
 
-  void playUnreadNotificationSound().catch(() => undefined)
+  if (!enabled) {
+    return { status: 'disabled' }
+  }
+
+  return playUnreadNotificationSound()
 }
