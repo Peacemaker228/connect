@@ -1104,7 +1104,7 @@ Brief:
 
 Delivered:
 - channel messages now persist normalized mention targets in additive `messagemention` rows with `USER` / `ALL` kind;
-- backend message creation/update resolves stable `<@memberId>` / `<@all>` tokens and current raw `@DisplayName` / `@all` text against server members, excludes the sender from attention, and skips ambiguous duplicate display names;
+- backend message creation/update resolves stable `<@memberId>` / `<@all>` tokens and current raw `@DisplayName` / `@all` text against server members, allows explicit self-mentions and `@all` self-target rows for rendering/highlight, and skips ambiguous duplicate display names;
 - chat message DTOs include mention metadata, and message text renders mention chips while plain text and attachments keep the existing path;
 - raw `@name` / `@all` tokens render as fallback chips only if a client temporarily lacks the `mentions` metadata field, and target members get a subtle whole-message highlight when backend mention metadata includes their member id;
 - server-scoped and global unread summaries count mention rows per recipient member and return `attentionLevel: 'mention'` independently of normal unread count;
@@ -1128,7 +1128,7 @@ Verification:
 
 Manual smoke:
 - initial smoke stopped on mention rendering/attention findings: inconsistent chips across clients, unproven `@all`, missing stable-token note, and missing target-user whole-message highlight;
-- pending repeat two/three-user channel smoke for plain unread, `@user`, `@all`, sender negative case, non-target normal unread, active-visible auto-read, read clearing, reload restore, hidden/scrolled-up behavior, muted channel visual attention, and desktop runtime review.
+- pending repeat two/three-user channel smoke for plain unread, `@user`, explicit self-mention rendering/highlight, `@all` including sender rendering/highlight, sender own-message unread/sound negative case, non-target normal unread, active-visible auto-read, read clearing, reload restore, hidden/scrolled-up behavior, muted channel visual attention, and desktop runtime review.
 
 Next split after this:
 - mention autocomplete/picker UX if it does not fit safely inside the foundation slice;

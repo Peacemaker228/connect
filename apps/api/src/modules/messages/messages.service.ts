@@ -144,7 +144,7 @@ export class MessagesService {
       typeof body.fileUrl === 'string'
         ? await this.storageService.finalizeStoredValue(resolvedProfileId, 'messageFile', body.fileUrl)
         : body.fileUrl
-    const mentions = this.resolveMessageMentions(content, server.members, member.id)
+    const mentions = this.resolveMessageMentions(content, server.members)
 
     return this.prisma.message.create({
       data: {
@@ -188,7 +188,7 @@ export class MessagesService {
       throw new HttpException('Content Missing', HttpStatus.BAD_REQUEST)
     }
 
-    const mentions = this.resolveMessageMentions(content, server.members, member.id)
+    const mentions = this.resolveMessageMentions(content, server.members)
 
     return this.prisma.message.update({
       where: {
@@ -327,19 +327,13 @@ export class MessagesService {
     return content?.trim() ?? ''
   }
 
-  private resolveMessageMentions(
-    content: string,
-    members: MentionCandidateMember[],
-    senderMemberId: string,
-  ): ResolvedMessageMention[] {
+  private resolveMessageMentions(content: string, members: MentionCandidateMember[]): ResolvedMessageMention[] {
     const targetByMemberId = new Map<string, MessageMentionKind>()
     const mentionAll = STABLE_ALL_MENTION_PATTERN.test(content) || this.containsMentionToken(content, '@all')
 
     if (mentionAll) {
       members.forEach((member) => {
-        if (member.id !== senderMemberId) {
-          targetByMemberId.set(member.id, MessageMentionKind.ALL)
-        }
+        targetByMemberId.set(member.id, MessageMentionKind.ALL)
       })
 
       return Array.from(targetByMemberId, ([memberId, kind]) => ({ memberId, kind }))
@@ -352,7 +346,7 @@ export class MessagesService {
       const memberId = match[1]
       const member = memberById.get(memberId)
 
-      if (member && member.id !== senderMemberId) {
+      if (member) {
         targetByMemberId.set(member.id, MessageMentionKind.USER)
       }
     }
@@ -375,10 +369,6 @@ export class MessagesService {
       }
 
       const [member] = candidates
-
-      if (member.id === senderMemberId) {
-        continue
-      }
 
       if (this.containsMentionToken(content, `@${normalizedName}`)) {
         targetByMemberId.set(member.id, MessageMentionKind.USER)
