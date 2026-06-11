@@ -7,6 +7,7 @@
 - Segment: `customer-idle-profile-reconnect-sidebar-state-fix`
 - Type: customer-priority core runtime stability fix
 - Priority: `P0/P1 staging incident`
+- Status: `pass / implemented locally; manual idle smoke pending`
 - Commit policy: do not commit automatically; provide PowerShell-safe `git add` and `git commit` commands in the handoff
 
 ## Context
@@ -219,6 +220,67 @@ Add or update:
 - `docs/roadmap/STAGE_STATUS.md`.
 
 Do not change WebRTC/Stage 9 docs except to preserve the paused status.
+
+## Implementation Result
+
+Status: `pass / implemented locally; manual idle smoke pending`
+
+Root cause found:
+
+- The backend auth/session endpoint itself was not changed.
+- Client inspection showed an idle auth recovery gap: if an access cookie is present but expired, backend auth context can fall back to an anonymous session snapshot and `/api/auth/session` can return `200` with `profile: null`.
+- The SDK refresh-on-401 interceptor does not run for that anonymous `200` response, so `useGetProfile` could cache `null` until a later refetch/recovery path.
+- `ServerSidebar` treated missing `profile` as a valid render state: it filtered members with `profileId !== profile?.id`, so the current user was not filtered out while `profile` was `undefined`/`null`.
+- The same missing profile prevented `currentMember` resolution, so `useUnreadSocket` had no `currentMemberId` and did not subscribe to server-scoped unread keys; global unread/server rail could still update through the separate global summary path.
+
+Changed runtime behavior:
+
+- `useGetProfile` now attempts one cookie-session refresh when `/api/auth/session` returns no profile, then reads the refreshed profile from the exchange response or a follow-up session read.
+- The existing SDK refresh-on-401 behavior is preserved and now shares one `refreshBackendSession()` promise with explicit profile recovery and manual `refreshSession()`, avoiding competing refresh calls.
+- `useGetProfile` explicitly refetches on browser focus and reconnect.
+- `ServerSidebar` no longer derives `members`, `currentMember`, `role`, search data, or normal account UI until both `profile` and `currentMember` are available.
+- While profile/current member is recovering, the sidebar renders a bounded loading/error/auth-expired state instead of misleading member rows or `AX`/`Account`.
+- When `currentMember` becomes available, the server-scoped unread summary is invalidated so channel/direct row badges reconcile from the backend.
+- `BackendUserMenu` shows a neutral disabled loading avatar when no profile snapshot props are available, instead of deriving `AX` / `Account` from missing data.
+
+Changed files:
+
+- `packages/sdk/src/api/http-client.ts`
+- `packages/sdk/src/actions/auth.ts`
+- `packages/sdk/src/queries/profile.ts`
+- `src/lib/server-list/features/server-sidebar.tsx`
+- `src/lib/shared/features/backend-user-menu.tsx`
+- `docs/delegation/briefs/SEGMENT_BRIEF_197_CUSTOMER_IDLE_PROFILE_RECONNECT_SIDEBAR_STATE_FIX.md`
+- `docs/waves/CUSTOMER_PRIORITY_DELIVERY_PLAN.md`
+- `docs/roadmap/STAGE_STATUS.md`
+
+Not touched:
+
+- backend auth/session controller/service/cookie behavior;
+- unread realtime event contracts or socket hook subscription logic;
+- global unread/server rail behavior;
+- database schema/migrations;
+- storage, media/WebRTC/LiveKit, production/staging infra.
+
+Verification:
+
+```powershell
+git diff --check
+bun.cmd x prisma validate
+bun.cmd x tsc --noEmit -p tsconfig.json
+bun.cmd run typecheck:api
+bun.cmd run build:api
+bun.cmd x next lint
+bun.cmd run build:web
+bun.cmd run check:desktop:config
+```
+
+Result: all commands passed locally.
+
+Manual smoke:
+
+- authenticated two-user idle/reconnect smoke is still pending; no ready two-user authenticated local/staging browser sessions were available in this shell.
+- staging smoke should focus on profile recovery, member self-filtering, account identity, server rail unread, channel/direct row unread badges, clear-on-open, and Segment 196 title/divider regression.
 
 ## Handoff Requirements
 

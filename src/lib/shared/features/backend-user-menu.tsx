@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { LogOut } from 'lucide-react'
+import { Loader2, LogOut } from 'lucide-react'
 import { logoutSession } from '@sdk/actions/auth'
+import { getProfileQueryKey } from '@sdk/queries/profile'
 
 import {
   DropdownMenu,
@@ -21,8 +22,8 @@ type BackendUserMenuProps = {
   name?: string | null
 }
 
-const getInitials = (name?: string | null) => {
-  const normalizedName = name?.trim()
+const getInitials = (name?: string | null, email?: string | null) => {
+  const normalizedName = name?.trim() || email?.trim()
 
   if (!normalizedName) {
     return 'AX'
@@ -38,6 +39,8 @@ const getInitials = (name?: string | null) => {
 export function BackendUserMenu({ email, imageUrl, name }: BackendUserMenuProps) {
   const queryClient = useQueryClient()
   const [isSigningOut, setIsSigningOut] = useState(false)
+  const hasProfileSnapshot = name !== undefined || email !== undefined || imageUrl !== undefined
+  const displayName = name?.trim() || email?.trim() || 'Account'
 
   const handleLogout = async () => {
     if (isSigningOut) {
@@ -49,8 +52,8 @@ export function BackendUserMenu({ email, imageUrl, name }: BackendUserMenuProps)
     try {
       await logoutSession()
 
-      queryClient.setQueryData(['profile'], null)
-      // queryClient.removeQueries({ queryKey: ['profile'] })
+      queryClient.setQueryData(getProfileQueryKey(), null)
+      // queryClient.removeQueries({ queryKey: getProfileQueryKey() })
       // queryClient.removeQueries({ queryKey: ['servers'] })
 
       window.location.replace('/sign-in')
@@ -58,6 +61,22 @@ export function BackendUserMenu({ email, imageUrl, name }: BackendUserMenuProps)
       console.error('[BACKEND_USER_MENU_LOGOUT]', error)
       setIsSigningOut(false)
     }
+  }
+
+  if (!hasProfileSnapshot) {
+    return (
+      <button
+        aria-label="Account is loading"
+        className="rounded-full opacity-80"
+        disabled
+        type="button">
+        <Avatar className="h-[48px] w-[48px]">
+          <AvatarFallback className="bg-neutral-700 text-sm font-semibold text-white">
+            <Loader2 className="h-4 w-4 animate-spin" />
+          </AvatarFallback>
+        </Avatar>
+      </button>
+    )
   }
 
   return (
@@ -70,14 +89,14 @@ export function BackendUserMenu({ email, imageUrl, name }: BackendUserMenuProps)
           <Avatar className="h-[48px] w-[48px]">
             <AvatarImage src={imageUrl ?? undefined} />
             <AvatarFallback className="bg-neutral-700 text-sm font-semibold text-white">
-              {getInitials(name)}
+              {getInitials(name, email)}
             </AvatarFallback>
           </Avatar>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56 dark:bg-gray1E" side="top">
         <DropdownMenuLabel className="space-y-1">
-          <div className="font-medium text-black dark:text-white">{name ?? 'Account'}</div>
+          <div className="font-medium text-black dark:text-white">{displayName}</div>
           {email ? <div className="text-xs font-normal text-neutral-500">{email}</div> : null}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

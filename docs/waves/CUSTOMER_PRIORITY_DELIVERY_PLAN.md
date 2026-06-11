@@ -813,7 +813,7 @@ Known limitation:
 Segment:
 - `customer-idle-profile-reconnect-sidebar-state-fix`
 
-Status: `planned / blocking next notification work`
+Status: `implemented locally / see result below`
 
 Brief:
 - `docs/delegation/briefs/SEGMENT_BRIEF_197_CUSTOMER_IDLE_PROFILE_RECONNECT_SIDEBAR_STATE_FIX.md`
@@ -834,6 +834,41 @@ Decision:
 - do not continue to sound/native notifications until this core profile/current-member recovery issue is fixed or disproven;
 - fix the authenticated shell so it does not render misleading member/user state while profile is loading or recovering;
 - preserve staging data and avoid unrelated auth rewrites, DB migrations, storage work, media/WebRTC work, and production changes.
+
+## Idle Profile/Reconnection Sidebar State Result
+
+Segment:
+- `customer-idle-profile-reconnect-sidebar-state-fix`
+
+Status: `pass / implemented locally; manual idle smoke pending`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_197_CUSTOMER_IDLE_PROFILE_RECONNECT_SIDEBAR_STATE_FIX.md`
+
+Root cause:
+- `/api/auth/session` can return an anonymous `200` snapshot with `profile: null` when an expired access cookie is still present, so the SDK refresh-on-401 path does not run;
+- `useGetProfile` could cache that missing profile until a later refetch;
+- `ServerSidebar` rendered normal member/account UI from missing profile state, which let self appear in the member list and left server-scoped unread without `currentMemberId`.
+
+Delivered:
+- shared SDK auth refresh promise is now exposed through `refreshBackendSession()` and reused by the 401 interceptor plus manual/session recovery paths;
+- `useGetProfile` now attempts one refresh when the session snapshot has no profile and refetches on focus/reconnect;
+- `ServerSidebar` gates normal rendering until both profile and current member are ready, then invalidates server-scoped unread summary on current-member recovery;
+- `BackendUserMenu` no longer shows `AX` / `Account` from wholly missing profile props while account state is loading/recovering;
+- global unread/server rail behavior, unread realtime contracts, backend auth/session code, DB, storage, media/WebRTC, and production/staging infra were not changed.
+
+Verification:
+- `git diff --check`: pass;
+- `bun.cmd x prisma validate`: pass;
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass;
+- `bun.cmd run typecheck:api`: pass;
+- `bun.cmd run build:api`: pass;
+- `bun.cmd x next lint`: pass;
+- `bun.cmd run build:web`: pass;
+- `bun.cmd run check:desktop:config`: pass.
+
+Manual smoke:
+- pending two-user idle/reconnect smoke; not run in this shell because no ready authenticated two-user local/staging sessions were available.
 
 ## Unread Realtime Idempotency / Reconnect Fix Plan
 
