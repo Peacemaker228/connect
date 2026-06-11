@@ -18,6 +18,7 @@ import type {
   ApiAuthContext,
   ApiAuthPasswordLoginPayload,
   ApiAuthPasswordRegistrationPayload,
+  ApiAuthIssuedSessionSnapshot,
   ApiAuthProfileSnapshot,
   ApiAuthSessionExchangeSnapshot,
   ApiAuthSessionSnapshot,
@@ -27,6 +28,11 @@ import type {
 type AuthClientMetadata = {
   userAgent?: string;
   ipAddress?: string;
+};
+
+type AuthSessionReadResult = {
+  session: ApiAuthSessionSnapshot;
+  issuedSession?: ApiAuthIssuedSessionSnapshot;
 };
 
 @Injectable()
@@ -113,13 +119,7 @@ export class AuthService {
     authContext: ApiAuthContext | undefined,
   ): Promise<ApiAuthSessionSnapshot> {
     if (!authContext?.isAuthenticated) {
-      return {
-        isAuthenticated: false,
-        strategy: 'anonymous',
-        sessionId: null,
-        profile: null,
-        user: null,
-      };
+      return this.createAnonymousSessionSnapshot();
     }
 
     const profile = await this.getProfileSnapshot(authContext.profileId);
@@ -133,6 +133,51 @@ export class AuthService {
       authContext.strategy,
       authContext.sessionId,
     );
+  }
+
+  async readSessionWithCookieRecovery(params: {
+    authContext: ApiAuthContext | undefined;
+    cookieHeader?: string;
+    userAgent?: string;
+    ipAddress?: string;
+  }): Promise<AuthSessionReadResult> {
+    if (params.authContext?.isAuthenticated) {
+      return {
+        session: await this.getSessionSnapshot(params.authContext),
+      };
+    }
+
+    const refreshToken = this.authCookiesService.getRefreshTokenFromCookieHeader(
+      params.cookieHeader,
+    );
+
+    if (!refreshToken) {
+      return {
+        session: this.createAnonymousSessionSnapshot(),
+      };
+    }
+
+    try {
+      const exchangeSnapshot = await this.refreshSession({
+        refreshToken,
+        cookieHeader: params.cookieHeader,
+        userAgent: params.userAgent,
+        ipAddress: params.ipAddress,
+      });
+
+      return {
+        session: exchangeSnapshot.session,
+        issuedSession: exchangeSnapshot.issuedSession,
+      };
+    } catch (error) {
+      if (!(error instanceof UnauthorizedException)) {
+        throw error;
+      }
+
+      return {
+        session: this.createAnonymousSessionSnapshot(),
+      };
+    }
   }
 
   async refreshSession(params: {
@@ -329,6 +374,16 @@ export class AuthService {
         email: profile.email,
         imageUrl: profile.imageUrl,
       },
+    };
+  }
+
+  private createAnonymousSessionSnapshot(): ApiAuthSessionSnapshot {
+    return {
+      isAuthenticated: false,
+      strategy: 'anonymous',
+      sessionId: null,
+      profile: null,
+      user: null,
     };
   }
 

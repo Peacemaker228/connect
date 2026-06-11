@@ -27,8 +27,28 @@ export class AuthController {
   ) {}
 
   @Get('session')
-  getSession(@CurrentAuth() authContext: ApiAuthContext | undefined) {
-    return this.authService.getSessionSnapshot(authContext);
+  async getSession(
+    @CurrentAuth() authContext: ApiAuthContext | undefined,
+    @Headers('cookie') cookieHeader: string | undefined,
+    @Headers('user-agent') userAgent: string | undefined,
+    @Headers('x-forwarded-for') forwardedFor: string | undefined,
+    @Res({ passthrough: true }) response: AuthCookieResponse,
+  ) {
+    const sessionRead = await this.authService.readSessionWithCookieRecovery({
+      authContext,
+      cookieHeader,
+      userAgent,
+      ipAddress: forwardedFor,
+    });
+
+    if (sessionRead.issuedSession) {
+      this.authCookiesService.applyIssuedSessionCookies(
+        response,
+        sessionRead.issuedSession,
+      );
+    }
+
+    return sessionRead.session;
   }
 
   @Post('session/exchange')

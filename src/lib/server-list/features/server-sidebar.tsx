@@ -18,13 +18,13 @@ import { roleIconMap } from '@/lib/shared/utils/role-icon-map'
 import { Spinner } from '@/lib/shared/ui/spinner'
 import { ErrorComponent } from '@/lib/shared/ui/error-component'
 import { useTranslations } from 'next-intl'
-import { useGetServer, useGetServers } from '@sdk/queries/server'
+import { getServerQueryKey, getServersQueryKey, useGetServer, useGetServers } from '@sdk/queries/server'
 import { useSidebarSocket } from '@/lib/shared/data-access/navigation-sidebar/use-sidebar-socket'
 import { useGetProfile } from '@sdk/queries/profile'
 import { useParams, useRouter } from 'next/navigation'
 import { ERoutes } from '@app-core/routing/routes'
 import { BackendUserMenu } from '@/lib/shared/features/backend-user-menu'
-import { getUnreadSummaryQueryKey, useUnreadSummary } from '@sdk/queries/unread'
+import { getGlobalUnreadSummaryQueryKey, getUnreadSummaryQueryKey, useUnreadSummary } from '@sdk/queries/unread'
 import { useUnreadSocket } from '@/lib/shared/data-access/unread/use-unread-socket'
 
 interface IServerSidebarProps {
@@ -104,6 +104,9 @@ export const ServerSidebar: FC<IServerSidebarProps> = ({ serverId }) => {
     }
 
     void queryClient.invalidateQueries({ queryKey: getUnreadSummaryQueryKey(serverId) })
+    void queryClient.invalidateQueries({ queryKey: getGlobalUnreadSummaryQueryKey() })
+    void queryClient.invalidateQueries({ queryKey: getServersQueryKey() })
+    void queryClient.invalidateQueries({ queryKey: getServerQueryKey(serverId) })
   }, [currentMember?.id, queryClient, serverId])
 
   const renderSidebarState = (content: ReactNode) => {
