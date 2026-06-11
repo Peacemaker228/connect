@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useMarkChannelRead, useMarkConversationRead } from '@sdk/queries/unread'
-import { isPageActuallyVisibleForChat } from '@/lib/shared/data-access/unread/unread-notification-visibility'
+import { isPageVisibleForChatRead } from '@/lib/shared/data-access/unread/unread-notification-visibility'
 
 type UseMarkChatReadParams = {
   beforeMarkRead?: () => void
   enabled?: boolean
+  isNearBottom?: boolean
   paramKey: 'channelId' | 'conversationId'
   paramValue: string
   serverId: string
@@ -13,6 +14,7 @@ type UseMarkChatReadParams = {
 export const useMarkChatRead = ({
   beforeMarkRead,
   enabled = true,
+  isNearBottom = true,
   paramKey,
   paramValue,
   serverId,
@@ -26,11 +28,11 @@ export const useMarkChatRead = ({
   }, [beforeMarkRead])
 
   const markActiveChatRead = useCallback(() => {
-    if (!enabled || !serverId || !paramValue) {
+    if (!enabled || !isNearBottom || !serverId || !paramValue) {
       return
     }
 
-    if (!isPageActuallyVisibleForChat()) {
+    if (!isPageVisibleForChatRead()) {
       return
     }
 
@@ -42,7 +44,7 @@ export const useMarkChatRead = ({
     }
 
     markConversationRead({ serverId, conversationId: paramValue })
-  }, [enabled, markChannelRead, markConversationRead, paramKey, paramValue, serverId])
+  }, [enabled, isNearBottom, markChannelRead, markConversationRead, paramKey, paramValue, serverId])
 
   useEffect(() => {
     markActiveChatRead()

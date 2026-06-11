@@ -8,11 +8,34 @@ interface IUseChatScroll {
   shouldLoadMore: boolean
   loadMore: () => void
   count: number
+  onNearBottomChange?: (isNearBottom: boolean) => void
 }
 
-export const useChatScroll = ({ chatId, chatRef, bottomRef, shouldLoadMore, loadMore, count }: IUseChatScroll) => {
+export const useChatScroll = ({
+  chatId,
+  chatRef,
+  bottomRef,
+  shouldLoadMore,
+  loadMore,
+  count,
+  onNearBottomChange,
+}: IUseChatScroll) => {
   const [hasInitialized, setHasInitialized] = useState(false)
+  const [isNearBottom, setIsNearBottom] = useState(true)
   const isNearBottomRef = useRef(true)
+
+  const updateNearBottomState = useCallback(
+    (nextIsNearBottom: boolean) => {
+      if (isNearBottomRef.current === nextIsNearBottom) {
+        return
+      }
+
+      isNearBottomRef.current = nextIsNearBottom
+      setIsNearBottom(nextIsNearBottom)
+      onNearBottomChange?.(nextIsNearBottom)
+    },
+    [onNearBottomChange],
+  )
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'auto') => {
     const container = chatRef.current
@@ -26,13 +49,19 @@ export const useChatScroll = ({ chatId, chatRef, bottomRef, shouldLoadMore, load
       behavior,
     })
     bottomRef.current?.scrollIntoView({ block: 'end', behavior })
-  }, [bottomRef, chatRef])
+    updateNearBottomState(true)
+  }, [bottomRef, chatRef, updateNearBottomState])
 
   const scheduleScrollToBottom = useCallback(() => {
     requestAnimationFrame(() => scrollToBottom())
     window.setTimeout(() => scrollToBottom(), 50)
     window.setTimeout(() => scrollToBottom('smooth'), 150)
   }, [scrollToBottom])
+
+  useEffect(() => {
+    setHasInitialized(false)
+    updateNearBottomState(true)
+  }, [chatId, updateNearBottomState])
 
   useEffect(() => {
     const topDiv = chatRef?.current
@@ -44,7 +73,7 @@ export const useChatScroll = ({ chatId, chatRef, bottomRef, shouldLoadMore, load
 
       const distanceFromBottom = topDiv.scrollHeight - topDiv.scrollTop - topDiv.clientHeight
 
-      isNearBottomRef.current = distanceFromBottom <= 160
+      updateNearBottomState(distanceFromBottom <= 160)
     }
 
     const handleScroll = () => {
@@ -63,7 +92,7 @@ export const useChatScroll = ({ chatId, chatRef, bottomRef, shouldLoadMore, load
     return () => {
       topDiv?.removeEventListener('scroll', handleScroll)
     }
-  }, [chatRef, loadMore, shouldLoadMore])
+  }, [chatRef, loadMore, shouldLoadMore, updateNearBottomState])
 
   useEffect(() => {
     const topDiv = chatRef?.current
@@ -99,4 +128,8 @@ export const useChatScroll = ({ chatId, chatRef, bottomRef, shouldLoadMore, load
       window.removeEventListener(CHAT_SCROLL_TO_BOTTOM_EVENT, handleForcedScroll)
     }
   }, [chatId, scheduleScrollToBottom])
+
+  return {
+    isNearBottom,
+  }
 }

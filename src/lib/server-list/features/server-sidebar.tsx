@@ -26,6 +26,7 @@ import { ERoutes } from '@app-core/routing/routes'
 import { BackendUserMenu } from '@/lib/shared/features/backend-user-menu'
 import { getGlobalUnreadSummaryQueryKey, getUnreadSummaryQueryKey, useUnreadSummary } from '@sdk/queries/unread'
 import { useUnreadSocket } from '@/lib/shared/data-access/unread/use-unread-socket'
+import { useActiveChatReadStateSnapshot } from '@/lib/shared/data-access/unread/active-chat-read-state'
 
 interface IServerSidebarProps {
   serverId: string
@@ -62,6 +63,7 @@ export const ServerSidebar: FC<IServerSidebarProps> = ({ serverId }) => {
   } = useGetServer(serverId)
   const { data: servers, isLoading: isServersLoading } = useGetServers()
   const { data: unreadSummary } = useUnreadSummary(serverId)
+  const activeChatReadState = useActiveChatReadStateSnapshot()
   const t = useTranslations('ServerSidebar')
 
   useSidebarSocket(serverId)
@@ -152,6 +154,32 @@ export const ServerSidebar: FC<IServerSidebarProps> = ({ serverId }) => {
   const unreadCountByMemberId = new Map(
     unreadSummary?.conversations.map((conversation) => [conversation.memberId, conversation.unreadCount]) ?? [],
   )
+  const conversationIdByMemberId = new Map(
+    unreadSummary?.conversations.map((conversation) => [conversation.memberId, conversation.conversationId]) ?? [],
+  )
+
+  const shouldHideActiveChannelUnread = (channelId: string) => {
+    return (
+      params?.channelId === channelId &&
+      activeChatReadState?.serverId === serverId &&
+      activeChatReadState.paramKey === 'channelId' &&
+      activeChatReadState.paramValue === channelId &&
+      activeChatReadState.isNearBottom
+    )
+  }
+
+  const shouldHideActiveMemberUnread = (memberId: string) => {
+    const conversationId = conversationIdByMemberId.get(memberId)
+
+    return (
+      params?.memberId === memberId &&
+      !!conversationId &&
+      activeChatReadState?.serverId === serverId &&
+      activeChatReadState.paramKey === 'conversationId' &&
+      activeChatReadState.paramValue === conversationId &&
+      activeChatReadState.isNearBottom
+    )
+  }
 
   const searchData: IServerData[] = [
     {
@@ -200,7 +228,7 @@ export const ServerSidebar: FC<IServerSidebarProps> = ({ serverId }) => {
                   channel={c}
                   role={role}
                   server={server}
-                  unreadCount={params?.channelId === c.id ? 0 : (unreadCountByChannelId.get(c.id) ?? 0)}
+                  unreadCount={shouldHideActiveChannelUnread(c.id) ? 0 : (unreadCountByChannelId.get(c.id) ?? 0)}
                 />
               ))}
             </div>
@@ -241,7 +269,7 @@ export const ServerSidebar: FC<IServerSidebarProps> = ({ serverId }) => {
                   key={m.id}
                   member={m}
                   server={server}
-                  unreadCount={params?.memberId === m.id ? 0 : (unreadCountByMemberId.get(m.id) ?? 0)}
+                  unreadCount={shouldHideActiveMemberUnread(m.id) ? 0 : (unreadCountByMemberId.get(m.id) ?? 0)}
                 />
               ))}
             </div>

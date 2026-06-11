@@ -3,6 +3,7 @@
 export type ChatVisibilitySnapshot = {
   hasFocus: boolean
   isActuallyVisible: boolean
+  isPageVisible: boolean
   visibilityState: DocumentVisibilityState | 'unknown'
 }
 
@@ -11,18 +12,22 @@ export const getChatVisibilitySnapshot = (): ChatVisibilitySnapshot => {
     return {
       hasFocus: false,
       isActuallyVisible: false,
+      isPageVisible: false,
       visibilityState: 'unknown',
     }
   }
 
   const visibilityState = document.visibilityState
   const hasFocus = document.hasFocus()
+  const isPageVisible = visibilityState === 'visible'
 
   return {
     hasFocus,
-    isActuallyVisible: visibilityState === 'visible' && hasFocus,
+    isActuallyVisible: isPageVisible && hasFocus,
+    isPageVisible,
     visibilityState,
   }
 }
 
 export const isPageActuallyVisibleForChat = () => getChatVisibilitySnapshot().isActuallyVisible
+export const isPageVisibleForChatRead = () => getChatVisibilitySnapshot().isPageVisible
