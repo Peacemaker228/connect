@@ -7,6 +7,11 @@ import { cn } from '@/lib/shared/utils/utils'
 import { UserAvatar } from '@/lib/shared/features/user-avatar'
 import { roleIconMap } from '@/lib/shared/utils/role-icon-map'
 import { ERoutes } from '@app-core/routing/routes'
+import { UnreadSoundMuteControl } from '@/lib/server-list/features/unread-sound-mute-control'
+import {
+  createConversationUnreadNotificationMuteScope,
+  useUnreadNotificationMutedScope,
+} from '@/lib/shared/data-access/unread/unread-notification-sound'
 
 interface IServerMemberProps {
   member: MemberWithProfileDto
@@ -20,6 +25,8 @@ export const ServerMember: FC<IServerMemberProps> = ({ member, unreadCount = 0 }
 
   const icon = roleIconMap()[member.role]
   const hasUnread = unreadCount > 0
+  const soundMuteScope = createConversationUnreadNotificationMuteScope(member.serverId, member.id)
+  const { isMuted: isSoundMuted, toggleMuted: toggleSoundMuted } = useUnreadNotificationMutedScope(soundMuteScope)
 
   const handleClick = () => {
     router.push(`${ERoutes.SERVERS}/${params?.serverId}${ERoutes.CONVERSATIONS}/${member.id}`)
@@ -53,6 +60,11 @@ export const ServerMember: FC<IServerMemberProps> = ({ member, unreadCount = 0 }
           {unreadCount > 99 ? '99+' : unreadCount}
         </span>
       )}
+      <UnreadSoundMuteControl
+        className={cn(unreadCount === 0 && 'ml-auto')}
+        isMuted={isSoundMuted}
+        onToggle={toggleSoundMuted}
+      />
     </button>
   )
 }

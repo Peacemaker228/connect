@@ -9,6 +9,8 @@ import {
 } from '@app-core/contracts'
 import { useSocket } from '@/lib/shared/providers'
 import {
+  getUnreadNotificationMuteScopeForPayload,
+  isUnreadNotificationScopeMuted,
   playUnreadNotificationSoundOnce,
   useUnreadNotificationSoundPreference,
 } from '@/lib/shared/data-access/unread/unread-notification-sound'
@@ -180,7 +182,10 @@ export const useGlobalUnreadSocket = ({
         return
       }
 
-      playUnreadNotificationSoundOnce(payload.messageId, soundEnabledRef.current)
+      playUnreadNotificationSoundOnce(
+        payload.messageId,
+        soundEnabledRef.current && !isUnreadNotificationScopeMuted(getUnreadNotificationMuteScopeForPayload(payload)),
+      )
 
       incrementGlobalUnreadCache(payload)
       scheduleGlobalUnreadReconcile()
