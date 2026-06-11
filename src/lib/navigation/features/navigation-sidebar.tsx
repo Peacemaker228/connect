@@ -45,6 +45,9 @@ export const NavigationSidebar = () => {
   const unreadCountByServerId = new Map(
     globalUnreadSummary?.servers.map((server) => [server.serverId, server.unreadCount]) ?? [],
   )
+  const attentionLevelByServerId = new Map(
+    globalUnreadSummary?.servers.map((server) => [server.serverId, server.attentionLevel]) ?? [],
+  )
 
   return (
     <div className="space-y-4 flex flex-col items-center h-full text-primary dark:bg-[#2B2D31] bg-[#E3E5E8] py-3 border-r-2 border-neutral-200 dark:border-neutral-800">
@@ -59,6 +62,7 @@ export const NavigationSidebar = () => {
               name={server.name}
               imageUrl={server.imageUrl}
               unreadCount={unreadCountByServerId.get(server.id) ?? 0}
+              attentionLevel={attentionLevelByServerId.get(server.id)}
             />
           </div>
         ))}

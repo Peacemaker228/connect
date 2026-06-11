@@ -1,6 +1,12 @@
 'use client'
 
-import { ChannelType, type ChannelDto, type MemberRole, type ServerDto } from '@app-core/contracts'
+import {
+  ChannelType,
+  type ChannelDto,
+  type MemberRole,
+  type ServerDto,
+  type UnreadAttentionLevel,
+} from '@app-core/contracts'
 import React, { FC } from 'react'
 import { Edit, Hash, Lock, Mic, Trash, Video } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
@@ -21,6 +27,7 @@ interface IServerChannelProps {
   server: ServerDto
   role?: MemberRole
   unreadCount?: number
+  attentionLevel?: UnreadAttentionLevel
 }
 
 const iconMap = {
@@ -29,7 +36,13 @@ const iconMap = {
   [ChannelType.VIDEO]: Video,
 }
 
-export const ServerChannel: FC<IServerChannelProps> = ({ channel, server, role, unreadCount = 0 }) => {
+export const ServerChannel: FC<IServerChannelProps> = ({
+  channel,
+  server,
+  role,
+  unreadCount = 0,
+  attentionLevel = 'none',
+}) => {
   const { onOpen } = useModal()
   const params = useParams()
   const router = useRouter()
@@ -37,6 +50,7 @@ export const ServerChannel: FC<IServerChannelProps> = ({ channel, server, role, 
 
   const Icon = iconMap[channel.type]
   const hasUnread = unreadCount > 0
+  const hasMentionAttention = hasUnread && attentionLevel === 'mention'
   const soundMuteScope = createChannelUnreadNotificationMuteScope(server.id, channel.id)
   const { isMuted: isSoundMuted, toggleMuted: toggleSoundMuted } = useUnreadNotificationMutedScope(soundMuteScope)
 
@@ -60,13 +74,17 @@ export const ServerChannel: FC<IServerChannelProps> = ({ channel, server, role, 
       {hasUnread && (
         <span
           aria-hidden="true"
-          className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-zinc-900/80 dark:bg-white"
+          className={cn(
+            'absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full',
+            hasMentionAttention ? 'bg-amber-500' : 'bg-zinc-900/80 dark:bg-white',
+          )}
         />
       )}
       <Icon
         className={cn(
           'flex-shrink-0 w-5 h-5 text-zinc-500 dark:text-zinc-400',
           hasUnread && 'text-zinc-800 dark:text-zinc-100',
+          hasMentionAttention && 'text-amber-600 dark:text-amber-300',
         )}
       />
       <p
@@ -74,12 +92,18 @@ export const ServerChannel: FC<IServerChannelProps> = ({ channel, server, role, 
           'line-clamp-1 font-semibold text-sm text-zinc-500 group-hover:text-zinc-600 dark:text-zinc-400 dark:group-hover:text-zinc-300 transition',
           hasUnread &&
             'font-bold text-zinc-900 group-hover:text-zinc-900 dark:text-zinc-100 dark:group-hover:text-white',
+          hasMentionAttention &&
+            'text-amber-700 group-hover:text-amber-700 dark:text-amber-300 dark:group-hover:text-amber-200',
           params?.channelId === channel.id && 'text-primary dark:text-zinc-200 dark:group-hover:text-white',
         )}>
         {channel.name}
       </p>
       {unreadCount > 0 && (
-        <span className="min-w-5 h-5 px-1.5 rounded-full bg-rose-500 text-[10px] leading-5 text-white font-semibold text-center">
+        <span
+          className={cn(
+            'min-w-5 h-5 px-1.5 rounded-full text-[10px] leading-5 text-white font-semibold text-center',
+            hasMentionAttention ? 'bg-amber-500' : 'bg-rose-500',
+          )}>
           {unreadCount > 99 ? '99+' : unreadCount}
         </span>
       )}

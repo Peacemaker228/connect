@@ -19,6 +19,47 @@ Checked before drafting:
 - `apps/api/src/modules/unread/unread.service.ts` currently computes mention/reply counts as zero placeholders;
 - `Message` and `DirectMessage` currently have no persisted mention metadata.
 
+## Implementation Result
+
+Status: `implemented locally / command verification passed; manual smoke pending`
+
+Delivered:
+
+- Added additive channel-message mention metadata through `MessageMentionKind` and `MessageMention`.
+- Resolved channel-message mentions server-side from stable `<@memberId>` / `<@all>` tokens and current raw `@DisplayName` / `@all` text.
+- Excluded the sender from mention attention and skipped ambiguous raw display-name matches.
+- Returned mention metadata with chat messages and rendered mention chips in existing message text.
+- Counted mention rows per recipient in server-scoped and global unread summaries.
+- Added channel realtime `mentionedMemberIds` so only the mentioned recipient promotes a normal unread event to mention attention.
+- Kept direct unread on recipient-private `member:${memberId}:direct-unread`.
+- Kept normal unread, Segment 203 active visible read semantics, attachments, storage, auth, media/WebRTC, Notification API, link rendering, message copy, and reply-to-message behavior separate.
+
+Known limitations:
+
+- Mention autocomplete/picker UX is deferred; users can currently type supported tokens/text directly.
+- Raw `@DisplayName` parsing intentionally skips duplicate display names; stable member tokens are the safer future picker output.
+- Edit-time mention metadata is recomputed and rendering updates through the existing message update event, but edit-created mention attention is not separately replayed as a new unread event in this foundation slice.
+- Historical messages are not backfilled into mention rows.
+
+Verification:
+
+- `git diff --check`: pass, with existing CRLF conversion warnings only.
+- `bun.cmd x prisma validate`: pass.
+- `bun.cmd x prisma generate`: pass.
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass.
+- `bun.cmd run typecheck:api`: pass.
+- `bun.cmd run build:api`: pass.
+- `bun.cmd x next lint`: pass.
+- `bun.cmd run build:web`: pass.
+- `bun.cmd run check:desktop:config`: pass.
+- `bun.cmd x prisma migrate status`: initially reported `20260611130000_add_message_mentions` pending on local `connect_validation`.
+- `bun.cmd x prisma migrate deploy`: pass on local `connect_validation`, applied only `20260611130000_add_message_mentions`.
+- `bun.cmd x prisma migrate status`: pass after deploy, local `connect_validation` schema up to date.
+
+Manual smoke:
+
+- Pending two/three-user authenticated browser smoke for plain unread, `@user`, `@all`, sender negative case, read clearing, reload restore, hidden/scrolled-up Segment 203 behavior, muted channel visual attention, and desktop runtime review.
+
 ## Goal
 
 Add the first metadata-backed mention/attention slice so normal unread and direct attention are no longer conflated.

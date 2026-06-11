@@ -1,6 +1,6 @@
 'use client'
 
-import type { MemberDto, MemberWithProfileDto } from '@app-core/contracts'
+import type { MemberDto, MemberWithProfileDto, MessageMentionDto } from '@app-core/contracts'
 import { FC, useEffect, useState } from 'react'
 import { UserAvatar } from '@/lib/shared/features/user-avatar'
 import { ActionTooltip } from '@/lib/shared/features/action-tooltip'
@@ -20,6 +20,7 @@ import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
 import { chatInputSchema, IChatInputSchema } from '@app-core/schemas/chat-input-schema'
 import { buildStorageAccessPath, getUploadValueParts } from '@/lib/shared/utils/upload-file'
 import { useUpdateMessage } from '@sdk/mutations/message'
+import { MessageContent } from '@/lib/chat/features/message-content'
 
 interface IChatItemProps {
   id: string
@@ -32,6 +33,7 @@ interface IChatItemProps {
   isUpdated: boolean
   messageApiUrl: string
   messageQuery: Record<string, string>
+  mentions?: MessageMentionDto[]
 }
 
 export const ChatItem: FC<IChatItemProps> = ({
@@ -45,6 +47,7 @@ export const ChatItem: FC<IChatItemProps> = ({
   timestamp,
   content,
   id,
+  mentions,
 }) => {
   const [isEditing, setIsEditing] = useState(false)
   const { onOpen } = useModal()
@@ -163,7 +166,7 @@ export const ChatItem: FC<IChatItemProps> = ({
                 'text-accent text-zinc-600 dark:text-zinc-300 whitespace-pre-wrap break-words',
                 deleted && 'italic text-zinc-500 dark:text-zinc-400 text-xs mt-1',
               )}>
-              {content}
+              {deleted ? content : <MessageContent content={content} mentions={mentions} />}
               {isUpdated && !deleted && (
                 <span className="text-[10px] mx-2 text-zinc-500 dark:text-zinc-400">({t('ChatItem.edited')})</span>
               )}

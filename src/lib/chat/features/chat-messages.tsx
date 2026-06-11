@@ -1,7 +1,10 @@
 'use client'
 
 import type { ChatMessageDto, MemberDto } from '@app-core/contracts'
-import { getChatMessagesRealtimeKey, getChatMessagesUpdateRealtimeKey } from '@app-core/contracts/message-slice-realtime'
+import {
+  getChatMessagesRealtimeKey,
+  getChatMessagesUpdateRealtimeKey,
+} from '@app-core/contracts/message-slice-realtime'
 import { ElementRef, FC, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { TChannelConversation } from '@/types'
 import { Loader2, ServerCrash } from 'lucide-react'
@@ -144,7 +147,12 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   }, [isNearBottom, paramKey, paramValue, serverId])
 
   useEffect(() => {
-    if (isNearBottom || unreadAnchor?.chatKey === chatReadKey || !currentUnreadItem || currentUnreadItem.unreadCount <= 0) {
+    if (
+      isNearBottom ||
+      unreadAnchor?.chatKey === chatReadKey ||
+      !currentUnreadItem ||
+      currentUnreadItem.unreadCount <= 0
+    ) {
       return
     }
 
@@ -242,6 +250,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
                   id={m.id}
                   member={m.member}
                   content={m.content}
+                  mentions={m.mentions}
                   deleted={m.deleted}
                   isUpdated={m.updatedAt !== m.createdAt}
                   timestamp={format(new Date(m.createdAt), EDateFormat.MESSAGE_ITEM)}

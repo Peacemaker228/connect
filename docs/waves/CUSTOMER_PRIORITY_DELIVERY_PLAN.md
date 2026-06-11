@@ -1097,17 +1097,36 @@ Manual smoke:
 Segment:
 - `customer-mentions-attention-foundation`
 
-Status: `planned / brief ready`
+Status: `implemented locally / command verification passed; manual smoke pending`
 
 Brief:
 - `docs/delegation/briefs/SEGMENT_BRIEF_204_CUSTOMER_MENTIONS_ATTENTION_FOUNDATION.md`
 
-Planned scope:
-- first mentions slice is metadata-backed `@user` / `@all` attention for channel messages;
-- normal unread must stay separate from mention attention;
-- unread summaries/realtime already expose `mentionCount`, `replyCount`, and `attentionLevel`, but current controllers and summary queries still use placeholder mention counts;
-- this segment should add persisted mention metadata, server-side target resolution, mention rendering, and correct per-recipient mention attention;
-- full reply-to-message, reply attention, link rendering, message copy, notification API, native desktop popups, storage/auth/media changes, and broad realtime transport hardening stay out of scope.
+Delivered:
+- channel messages now persist normalized mention targets in additive `messagemention` rows with `USER` / `ALL` kind;
+- backend message creation/update resolves stable `<@memberId>` / `<@all>` tokens and current raw `@DisplayName` / `@all` text against server members, excludes the sender from attention, and skips ambiguous duplicate display names;
+- chat message DTOs include mention metadata, and message text renders mention chips while plain text and attachments keep the existing path;
+- server-scoped and global unread summaries count mention rows per recipient member and return `attentionLevel: 'mention'` independently of normal unread count;
+- channel unread realtime events include `mentionedMemberIds`, so each client promotes only its own events to mention attention while other recipients keep normal unread;
+- server rail and channel/member row badges use summary/realtime `attentionLevel` for stronger mention styling without changing active visible read semantics from Segment 203;
+- direct unread remains private on `member:${memberId}:direct-unread`;
+- reply-to-message, reply attention, autocomplete/picker UX, link rendering, message copy, Notification API, native desktop popups, storage/auth/media, and broad realtime transport hardening remain out of scope.
+
+Verification:
+- `git diff --check`: pass, with existing CRLF conversion warnings only;
+- `bun.cmd x prisma validate`: pass;
+- `bun.cmd x prisma generate`: pass;
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass;
+- `bun.cmd run typecheck:api`: pass;
+- `bun.cmd run build:api`: pass;
+- `bun.cmd x next lint`: pass;
+- `bun.cmd run build:web`: pass;
+- `bun.cmd run check:desktop:config`: pass;
+- `bun.cmd x prisma migrate deploy`: pass on local `connect_validation`, applying only `20260611130000_add_message_mentions`;
+- post-deploy `bun.cmd x prisma migrate status`: pass, local `connect_validation` schema up to date.
+
+Manual smoke:
+- pending two/three-user channel smoke for plain unread, `@user`, `@all`, sender negative case, read clearing, reload restore, hidden/scrolled-up behavior, muted channel visual attention, and desktop runtime review.
 
 Next split after this:
 - mention autocomplete/picker UX if it does not fit safely inside the foundation slice;

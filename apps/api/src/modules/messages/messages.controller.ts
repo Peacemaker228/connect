@@ -1,19 +1,31 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common'
 
-import { CurrentProfileId } from '../auth/decorators/current-profile-id.decorator';
-import { RequireAuthGuard } from '../auth/guards/require-auth.guard';
-import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { CurrentProfileId } from '../auth/decorators/current-profile-id.decorator'
+import { RequireAuthGuard } from '../auth/guards/require-auth.guard'
+import { RealtimeGateway } from '../realtime/realtime.gateway'
 import {
   createChatMessageCreatedRealtimeEvent,
   createChatMessageUpdatedRealtimeEvent,
   createUnreadMessageCreatedRealtimeEvent,
-} from '../realtime/realtime.events';
-import { MessagesService } from './messages.service';
+} from '../realtime/realtime.events'
+import { MessagesService } from './messages.service'
 
 type MessageMutationBody = {
-  content?: string;
-  fileUrl?: string | null;
-};
+  content?: string
+  fileUrl?: string | null
+}
 
 @Controller('messages')
 @UseGuards(RequireAuthGuard)
@@ -29,7 +41,7 @@ export class MessagesController {
     @Query('channelId') channelId: string | undefined,
     @Query('cursor') cursor: string | undefined,
   ) {
-    return this.messagesService.getMessages(profileId, channelId, cursor);
+    return this.messagesService.getMessages(profileId, channelId, cursor)
   }
 
   @Post()
@@ -40,13 +52,15 @@ export class MessagesController {
     @Query('channelId') channelId: string | undefined,
     @Body() body: MessageMutationBody,
   ) {
-    const message = await this.messagesService.createMessage(profileId, serverId, channelId, body);
+    const message = await this.messagesService.createMessage(profileId, serverId, channelId, body)
 
     if (channelId) {
-      this.realtimeGateway.emit(createChatMessageCreatedRealtimeEvent(channelId, message));
+      this.realtimeGateway.emit(createChatMessageCreatedRealtimeEvent(channelId, message))
     }
 
     if (serverId && channelId) {
+      const mentionedMemberIds = message.mentions?.map((mention) => mention.memberId) ?? []
+
       this.realtimeGateway.emit(
         createUnreadMessageCreatedRealtimeEvent(serverId, {
           action: 'message_created',
@@ -58,13 +72,14 @@ export class MessagesController {
           createdAt: message.createdAt.toISOString(),
           unreadCount: 1,
           mentionCount: 0,
+          mentionedMemberIds,
           replyCount: 0,
           attentionLevel: 'unread',
         }),
-      );
+      )
     }
 
-    return message;
+    return message
   }
 
   @Patch(':messageId')
@@ -75,13 +90,13 @@ export class MessagesController {
     @Query('channelId') channelId: string | undefined,
     @Body() body: MessageMutationBody,
   ) {
-    const message = await this.messagesService.updateMessage(profileId, serverId, channelId, messageId, body);
+    const message = await this.messagesService.updateMessage(profileId, serverId, channelId, messageId, body)
 
     if (channelId) {
-      this.realtimeGateway.emit(createChatMessageUpdatedRealtimeEvent(channelId, message));
+      this.realtimeGateway.emit(createChatMessageUpdatedRealtimeEvent(channelId, message))
     }
 
-    return message;
+    return message
   }
 
   @Delete(':messageId')
@@ -91,12 +106,12 @@ export class MessagesController {
     @Query('serverId') serverId: string | undefined,
     @Query('channelId') channelId: string | undefined,
   ) {
-    const message = await this.messagesService.deleteMessage(profileId, serverId, channelId, messageId);
+    const message = await this.messagesService.deleteMessage(profileId, serverId, channelId, messageId)
 
     if (channelId) {
-      this.realtimeGateway.emit(createChatMessageUpdatedRealtimeEvent(channelId, message));
+      this.realtimeGateway.emit(createChatMessageUpdatedRealtimeEvent(channelId, message))
     }
 
-    return message;
+    return message
   }
 }

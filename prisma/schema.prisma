@@ -16,10 +16,10 @@ model Profile {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  servers      Server[]
-  members      Member[]
-  channels     Channel[]
-  authSessions AuthSession[]
+  servers        Server[]
+  members        Member[]
+  channels       Channel[]
+  authSessions   AuthSession[]
   authIdentities AuthIdentity[]
 
   @@map("profile")
@@ -55,11 +55,11 @@ model AuthIdentity {
 }
 
 model AuthPasswordCredential {
-  identityId String       @id
-  identity   AuthIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
-  passwordHash String     @db.Text
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
+  identityId   String       @id
+  identity     AuthIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  passwordHash String       @db.Text
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   @@map("authpasswordcredential")
 }
@@ -120,9 +120,10 @@ model Member {
   serverId String
   server   Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
 
-  messages       Message[]
-  directMessages DirectMessage[]
-  channelReadStates ChannelReadState[]
+  messages               Message[]
+  directMessages         DirectMessage[]
+  messageMentions        MessageMention[]
+  channelReadStates      ChannelReadState[]
   conversationReadStates ConversationReadState[]
 
   createdAt DateTime @default(now())
@@ -143,6 +144,11 @@ enum ChannelType {
   VIDEO
 }
 
+enum MessageMentionKind {
+  USER
+  ALL
+}
+
 model Channel {
   id   String      @id @default(uuid())
   name String
@@ -154,9 +160,9 @@ model Channel {
   serverId String
   server   Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  messages  Message[]
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  messages   Message[]
   readStates ChannelReadState[]
 
   @@index([profileId])
@@ -178,13 +184,33 @@ model Message {
 
   deleted Boolean @default(false)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  mentions  MessageMention[]
 
   @@index([channelId])
   @@index([channelId, createdAt])
   @@index([memberId])
   @@map("message")
+}
+
+model MessageMention {
+  id String @id @default(uuid())
+
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  memberId String
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  kind MessageMentionKind @default(USER)
+
+  createdAt DateTime @default(now())
+
+  @@unique([messageId, memberId])
+  @@index([messageId])
+  @@index([memberId])
+  @@map("messagemention")
 }
 
 model Conversation {
@@ -197,7 +223,7 @@ model Conversation {
   memberTwo   Member @relation("MemberTwo", fields: [memberTwoId], references: [id], onDelete: Cascade)
 
   directMessages DirectMessage[]
-  readStates ConversationReadState[]
+  readStates     ConversationReadState[]
 
   @@unique([memberOneId, memberTwoId])
   @@index([memberTwoId])

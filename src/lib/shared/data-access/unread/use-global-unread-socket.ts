@@ -21,6 +21,10 @@ import {
 } from '@/lib/shared/data-access/unread/unread-notification-diagnostics'
 import { getChatVisibilitySnapshot } from '@/lib/shared/data-access/unread/unread-notification-visibility'
 import { isUnreadPayloadAtActiveChatReadBoundary } from '@/lib/shared/data-access/unread/active-chat-read-state'
+import {
+  getUnreadAttentionLevel,
+  getUnreadMentionCountForMember,
+} from '@/lib/shared/data-access/unread/unread-attention'
 
 const PROCESSED_GLOBAL_UNREAD_EVENT_TTL_MS = 5 * 60 * 1000
 const PROCESSED_GLOBAL_UNREAD_EVENT_MAX_SIZE = 500
@@ -89,9 +93,7 @@ const isPayloadForActiveRoute = (
   return payload.senderMemberId === params.activeMemberId
 }
 
-const getSoundResultDecisionReason = (
-  result: UnreadNotificationSoundResult,
-): UnreadNotificationDecisionReason => {
+const getSoundResultDecisionReason = (result: UnreadNotificationSoundResult): UnreadNotificationDecisionReason => {
   if (result.status === 'deduped') {
     return 'sound_deduped'
   }
@@ -156,17 +158,22 @@ export const useGlobalUnreadSocket = ({
         return {
           ...summary,
           totalUnreadCount: summary.totalUnreadCount + payload.unreadCount,
-          servers: summary.servers.map((server) =>
-            server.serverId === payload.serverId
-              ? {
-                  ...server,
-                  unreadCount: server.unreadCount + payload.unreadCount,
-                  mentionCount: server.mentionCount + payload.mentionCount,
-                  replyCount: server.replyCount + payload.replyCount,
-                  attentionLevel: payload.attentionLevel,
-                }
-              : server,
-          ),
+          servers: summary.servers.map((server) => {
+            if (server.serverId !== payload.serverId) {
+              return server
+            }
+
+            const mentionCount = getUnreadMentionCountForMember(payload, server.memberId)
+            const nextMentionCount = server.mentionCount + mentionCount
+
+            return {
+              ...server,
+              unreadCount: server.unreadCount + payload.unreadCount,
+              mentionCount: nextMentionCount,
+              replyCount: server.replyCount + payload.replyCount,
+              attentionLevel: getUnreadAttentionLevel({ mentionCount: nextMentionCount, payload }),
+            }
+          }),
         }
       })
     },
@@ -279,8 +286,11 @@ export const useGlobalUnreadSocket = ({
       }
 
       void playUnreadNotificationSoundOnce(payload.messageId, isSoundEnabled && !isScopeMuted).then((result) => {
-        const reason =
-          !isSoundEnabled ? 'sound_blocked_global' : isScopeMuted ? 'sound_blocked_scope' : getSoundResultDecisionReason(result)
+        const reason = !isSoundEnabled
+          ? 'sound_blocked_global'
+          : isScopeMuted
+            ? 'sound_blocked_scope'
+            : getSoundResultDecisionReason(result)
 
         recordUnreadNotificationDecision({
           globalSoundEnabled: isSoundEnabled,
