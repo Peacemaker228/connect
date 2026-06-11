@@ -6,6 +6,9 @@
 - `waves/*.md` = ordered waves by stage
 - `SEGMENT_BRIEF_*` = concrete PR slices inside a wave
 
+Planning review debt:
+- `PLATFORM_MIGRATION_PLAN.md` should be fully re-audited before it is treated as the sole baseline for future planning. There are suspected internal inconsistencies between stage descriptions and sprint/wave contents, plus possible drift from the actual implementation path. Future roadmap work should reconcile the master plan against this status file, `docs/waves/*.md`, and completed segment briefs.
+
 Current wave order:
 - `Wave 1` = `FIRST_MIGRATION`
 - `Wave 2` = `NEST_FOUNDATION`

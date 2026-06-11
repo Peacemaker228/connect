@@ -1,5 +1,7 @@
 # Platform Migration Plan
 
+> Review debt: this master migration plan needs a full consistency audit before it is used as the sole planning base again. The current stage descriptions, sprint/wave breakdown, and actual implementation path may no longer line up cleanly with each other or with the route the project has taken. Future planning should explicitly reconcile this file against `docs/roadmap/STAGE_STATUS.md`, `docs/waves/*.md`, and completed segment briefs before deriving new work from it.
+
 ## 1. Executive Summary
 
 Проекту нужен не большой одномоментный rewrite, а последовательная смена архитектуры.
