@@ -1064,6 +1064,7 @@ Next likely work:
 - run two-user smoke for unread sound/mute behavior, including per-channel and per-direct muted scopes
 - after unread read semantics smoke, continue to `customer-mentions-replies-attention` unless mention/reply attention becomes more urgent
 - keep link preview, copy/reply, and media fallback as separate scoped segments
+- keep realtime transport hardening as last-priority backlog: staging currently shows `Socket.IO` over `transport=polling` with websocket upgrade advertised but not observed; do not start Nginx websocket/rooms/auth hardening unless a concrete incident or load/security evidence forces it earlier
 
 ## Historical Notes
 

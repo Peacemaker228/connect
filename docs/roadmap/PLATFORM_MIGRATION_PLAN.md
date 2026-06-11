@@ -589,6 +589,7 @@ Current planning update:
 - `Wave 34 / PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN` starts the production media infrastructure/runbook planning track.
 - This is not production rollout: no production SFU/TURN deployment, no default switch, no LiveKit removal, and no Stage 6 Postgres cutover are included.
 - Current pause: `Wave 35 / CUSTOMER_PRIORITY_DELIVERY_PLAN` is active because `staging.ax-connect.ru` is now serving real team work. The next WebRTC cleanup segment is preserved in docs but not active by default.
+- Realtime transport observation: a Playwright MCP check on `staging.ax-connect.ru` showed active `Socket.IO` traffic, but the observed browser transport stayed on `transport=polling`; the server handshake advertised `upgrades:["websocket"]`. This is recorded as a last-priority hardening item, not active customer work.
 
 ### Deferred Late-Roadmap Auth Product Work
 
@@ -927,6 +928,25 @@ Historical note:
 Итог:
 - backend/auth/storage migration — среднесрочный проект
 - замена `LiveKit` — отдельное тяжёлое направление
+
+## 15A. Last-Priority Realtime Transport Hardening Backlog
+
+This item is intentionally deferred to the end unless production load, security evidence, or a concrete incident forces it earlier.
+
+Observed state:
+- the active realtime layer is `Socket.IO`, not SSE;
+- staging browser evidence showed `/socket.io/?EIO=4&transport=polling`;
+- the handshake advertised websocket upgrade support, but the checked browser session did not show a completed `transport=websocket` upgrade.
+
+Future hardening scope:
+- verify Nginx/websocket proxy headers for `/socket.io`;
+- confirm browser transport upgrades to `websocket` on staging/production;
+- keep polling only as fallback, not the preferred steady-state transport;
+- replace broad emit-by-event-key behavior with authenticated Socket.IO rooms/subscriptions for server/channel/member scopes;
+- keep direct unread privacy and message payload fanout under explicit room/auth control;
+- add transport diagnostics and load-oriented monitoring before any large-scale realtime usage claim.
+
+Do not start this while customer-priority product work is active, while Stage 6 production Postgres migration is deferred, or while WebRTC/media production hardening is paused, unless there is a concrete incident.
 
 ## 16. Final Recommendation
 
