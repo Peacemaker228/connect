@@ -8,6 +8,8 @@ const ns = {
   description: 'This is the beginning of your communication in',
   message: 'Message',
   ChatItem: {
+    copy: 'Copy',
+    copied: 'Copied',
     edit: 'Edit',
     delete: 'Delete',
     description: 'Press ESC to cancel editing, press Enter to save',
