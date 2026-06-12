@@ -278,22 +278,46 @@ Acceptance:
 - replies render for other connected participants through realtime;
 - unsupported edge cases are explicit, not silent failures.
 
-### P1. Edit Message Autofocus
+### P1. Message Edit Mode Correctness
 
 Problem:
 - after clicking edit on an existing message, focus does not move into the edit input;
 - this slows down quick correction flow and feels inconsistent with chat-first UX.
+- metadata-backed mention tokens can surface in edit mode as internal values such as `<@memberId>` / `<@all>`, while users expect readable `@name` / `@all`;
+- more than one message can be put into edit mode at the same time, which is confusing and not Discord-like.
 
 Required behavior:
 - clicking edit focuses the edit input automatically;
 - caret should be placed in a useful position, preferably at the end of the current message;
+- edit input should show user-readable mention text, not internal stable tokens;
+- only one message should be in edit mode at a time in the current chat view;
 - Escape/cancel behavior must remain intact;
 - focus must not be stolen from modals, menus, or unrelated controls.
 
 Acceptance:
 - user clicks edit and can immediately type;
+- messages with `@user` / `@all` display readable mentions in edit mode;
+- opening edit on a second message closes or cancels the previous edit mode cleanly;
 - fast edit/save flow works for text messages;
 - existing edit permissions stay unchanged.
+
+### P1. Chat Send Button
+
+Problem:
+- users expect a visible send affordance in addition to Enter-to-send, especially on touch/mobile and for discoverability.
+
+Required behavior:
+- composer exposes a compact send icon/button;
+- click uses the same submit path as Enter;
+- disabled state follows the same trimmed-empty and loading rules as keyboard submit;
+- `Shift+Enter` newline behavior remains unchanged;
+- after click-send, focus returns to composer when appropriate.
+
+Acceptance:
+- clicking send sends the same payload as Enter;
+- empty/whitespace-only messages cannot be sent;
+- rapid send/focus behavior remains stable;
+- mobile and desktop layouts do not overlap existing plus/emoji controls.
 
 ### P1. File Transfer Expansion Analysis
 
@@ -490,14 +514,15 @@ Handoff:
 6. Implement mentions and `@all`.
 7. Implement safe link rendering, then optional backend-owned link previews.
 8. Implement message copy action.
-9. Implement reply-to-message.
-10. Fix edit-message autofocus.
-11. Analyze and then implement file transfer expansion with explicit type/size policy.
-12. Restore staging storage readiness for avatars.
-13. Improve media provider/fallback UI and screen-share fullscreen.
-14. Run web checks, then desktop checks for shared UI changes.
-15. Create a separate dev/preview stand after the current colleague-requirements batch stabilizes.
-16. Resume WebRTC cleanup only after customer-priority work stabilizes or moves to a separate dev stand.
+9. Fix message edit mode correctness.
+10. Add chat send button.
+11. Implement reply-to-message.
+12. Analyze and then implement file transfer expansion with explicit type/size policy.
+13. Restore staging storage readiness for avatars.
+14. Improve media provider/fallback UI and screen-share fullscreen.
+15. Run web checks, then desktop checks for shared UI changes.
+16. Create a separate dev/preview stand after the current colleague-requirements batch stabilizes.
+17. Resume WebRTC cleanup only after customer-priority work stabilizes or moves to a separate dev stand.
 
 ## Segment 206. Customer Message Copy Action
 
@@ -505,7 +530,7 @@ Brief:
 - `docs/delegation/briefs/SEGMENT_BRIEF_206_CUSTOMER_MESSAGE_COPY_ACTION.md`
 
 Status:
-- `ready for implementation`
+- `implemented locally / command verification passed; manual smoke pending`
 
 Scope:
 - add a frontend-first message copy action for channel/direct messages;
@@ -514,6 +539,18 @@ Scope:
 - copy useful attachment URLs for image/file/PDF messages;
 - never copy broken values such as `[object Object]`;
 - consider both web clipboard and existing desktop `window.electron.writeClipboardText` behavior.
+
+Delivered:
+- non-deleted channel and direct messages expose a compact copy action in the existing hover action area;
+- non-owners can copy messages while edit/delete permission checks remain unchanged;
+- text and multiline messages copy readable text;
+- metadata-backed stable mention tokens copy as readable `@name` / `@all`;
+- image/PDF attachment messages copy the backend access URL, with meaningful non-storage text prepended when present;
+- clipboard write uses desktop `window.electron.writeClipboardText` when available, web `navigator.clipboard.writeText`, and a legacy textarea fallback;
+- storage marker values and `[object Object]` are filtered out of copied text.
+
+Manual smoke:
+- pending authenticated web smoke and desktop runtime review.
 
 Out of scope:
 - binary image clipboard writes unless proven reliable;
