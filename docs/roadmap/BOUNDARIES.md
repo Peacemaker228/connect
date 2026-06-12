@@ -180,6 +180,12 @@ Auth runtime note:
 - app routing
 - runtime-specific providers
 
+UI primitive preference:
+- existing shadcn/Radix/cmdk primitives are the preferred starting point for standard interactive controls when they fit the product behavior and do not fight the feature ownership model;
+- this is a preference, not a hard dependency: large lists, unusual editor/composer interactions, performance issues, or feature-specific behavior may justify a focused custom component;
+- when a shadcn/Radix/cmdk component is not used for a standard control, record the reason in the segment brief or nearby docs so future agents do not reintroduce the same mismatch blindly;
+- app-specific orchestration still belongs in feature code; shared primitive extraction belongs in `packages/ui` only after the behavior stabilizes.
+
 ## Early-Stage No-Touch Areas
 
 До поздних stages не трогаем без прямой необходимости:

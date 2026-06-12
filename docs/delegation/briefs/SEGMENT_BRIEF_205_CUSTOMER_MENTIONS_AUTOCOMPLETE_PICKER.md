@@ -227,10 +227,15 @@ Status: `implemented locally / command verification passed; manual smoke pending
 Delivered:
 
 - Channel composer typing `@` opens a bounded picker with current server members from the existing `useGetServer(serverId)` data path plus a visually separated `@all` option.
+- The picker popup uses the existing shadcn/cmdk `Command` list primitives for a more consistent selected-item UI while keeping text input ownership in the chat `textarea`.
 - Suggestions are built only when the loaded server snapshot id matches the current `channelServerId`, avoiding stale members from `keepPreviousData`.
 - Suggestions filter by the query after `@`.
 - Member suggestions are capped, while matching `@all` remains selectable below a horizontal divider even when there are more members than the cap.
 - ArrowUp/ArrowDown move selection.
+- The picker list uses a Discord-like tall bounded `max-height` sized to fit the current cap of 8 member suggestions plus the separated `@all` option, but it is also viewport-aware so small windows shrink the list and allow scrolling.
+- When the list becomes scrollable, keyboard navigation keeps the selected option visible through native `scrollIntoView({ block: 'nearest' })`, without custom scroll math.
+- Pointer interaction inside the picker, including dragging the scroll bar, no longer closes the picker through the textarea blur handler; after pointer release, focus/caret are restored back to the chat textarea.
+- Known polish debt: keyboard navigation can still visually jump while the chat `textarea` owns input focus and the shadcn/cmdk `Command` popup owns only the option list. This is acceptable for the current MVP slice and should be revisited as a focused mention editor / combobox-controller polish task if users complain.
 - Enter/Tab select while the picker is open.
 - Escape closes the picker without changing text.
 - Mouse selection uses the same insertion path.
