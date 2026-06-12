@@ -1,63 +1,11 @@
 'use client'
 
 import type { MessageMentionDto } from '@app-core/contracts'
+import type { MentionRenderToken } from '@/lib/chat/features/message-mention-text'
 import { Fragment } from 'react'
-
-type MentionRenderToken = {
-  label: string
-  target: string
-  targetLower: string
-}
+import { getMentionRenderTokens } from '@/lib/chat/features/message-mention-text'
 
 const FALLBACK_MENTION_PATTERN = /(^|[\s.,!?;:()[\]{}"'`])(@all|@[^\s.,!?;:()[\]{}"'`<>]+)/gi
-
-const getMentionLabel = (mention: MessageMentionDto) => {
-  if (mention.kind === 'ALL') {
-    return 'all'
-  }
-
-  return mention.member.profile.name
-}
-
-const getMentionRenderTokens = (mentions: MessageMentionDto[] = []) => {
-  const tokenByTarget = new Map<string, MentionRenderToken>()
-  const rawLabels = new Set<string>()
-
-  mentions.forEach((mention) => {
-    const label = getMentionLabel(mention)
-    const stableTarget = `<@${mention.memberId}>`
-
-    tokenByTarget.set(stableTarget, {
-      label,
-      target: stableTarget,
-      targetLower: stableTarget.toLowerCase(),
-    })
-
-    if (mention.kind === 'ALL') {
-      tokenByTarget.set('<@all>', {
-        label: 'all',
-        target: '<@all>',
-        targetLower: '<@all>',
-      })
-      rawLabels.add('all')
-      return
-    }
-
-    rawLabels.add(label)
-  })
-
-  rawLabels.forEach((label) => {
-    const target = `@${label}`
-
-    tokenByTarget.set(target.toLowerCase(), {
-      label,
-      target,
-      targetLower: target.toLowerCase(),
-    })
-  })
-
-  return Array.from(tokenByTarget.values()).sort((a, b) => b.target.length - a.target.length)
-}
 
 const findFallbackMentionMatch = (content: string, cursor: number) => {
   FALLBACK_MENTION_PATTERN.lastIndex = cursor

@@ -72,6 +72,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const bottomRef = useRef<ElementRef<'div'>>(null)
   const capturedChatKeyRef = useRef<string | null>(null)
   const [unreadAnchor, setUnreadAnchor] = useState<UnreadAnchor | null>(null)
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useChatQuery({
     queryKey,
@@ -109,6 +110,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   useEffect(() => {
     capturedChatKeyRef.current = null
     setUnreadAnchor(null)
+    setEditingMessageId(null)
   }, [chatReadKey])
 
   useChatSocket({ queryKey, addKey, updateKey })
@@ -253,6 +255,18 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
                   mentions={m.mentions}
                   deleted={m.deleted}
                   isUpdated={m.updatedAt !== m.createdAt}
+                  isEditing={editingMessageId === m.id}
+                  onStartEditing={() => setEditingMessageId(m.id)}
+                  onCancelEditing={() => {
+                    setEditingMessageId((currentEditingMessageId) =>
+                      currentEditingMessageId === m.id ? null : currentEditingMessageId,
+                    )
+                  }}
+                  onFinishEditing={() => {
+                    setEditingMessageId((currentEditingMessageId) =>
+                      currentEditingMessageId === m.id ? null : currentEditingMessageId,
+                    )
+                  }}
                   timestamp={format(new Date(m.createdAt), EDateFormat.MESSAGE_ITEM)}
                 />
                 {unreadDividerMessageId === m.id && <NewMessagesDivider />}

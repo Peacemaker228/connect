@@ -559,6 +559,63 @@ Out of scope:
 - edit-message autofocus;
 - broad file-transfer policy changes;
 - backend/API/SDK/DB/storage/auth/unread/media changes.
+
+## Segment 207. Customer Message Edit Mode Correctness
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_207_CUSTOMER_MESSAGE_EDIT_MODE_CORRECTNESS.md`
+
+Status:
+- `implemented locally / command verification passed; manual smoke pending`
+
+Scope:
+- focus edit input immediately after clicking edit;
+- place caret at the end of current edit text;
+- render user-readable mention text in edit mode (`@name` / `@all`) instead of internal stable tokens such as `<@memberId>` / `<@all>`;
+- prevent multiple simultaneous edited messages in the current chat view;
+- keep existing owner-only text edit permissions, Escape cancel, save behavior, copy action, and delete action intact.
+
+Delivered:
+- edit state is owned by the current `ChatMessages` view, so only one visible message row can be in edit mode at once;
+- edit input autofocus runs after entering edit mode and places the caret at the end;
+- edit form content uses readable mention text derived from backend mention metadata;
+- save still uses the existing message update mutation and backend parser path.
+
+Out of scope:
+- send button;
+- reply-to-message;
+- link rendering/previews;
+- broad file upload type/size policy;
+- edit-mode mention picker/autocomplete;
+- rich text editor;
+- backend/API/SDK/DB/unread/auth/storage/media changes.
+
+Follow-up:
+- next focused targets are `customer-message-edit-mention-picker`, then `customer-chat-send-button`; neither is part of Segment 207.
+
+## Segment 208. Customer Message Edit Mention Picker
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_208_CUSTOMER_MESSAGE_EDIT_MENTION_PICKER.md`
+
+Status:
+- `ready for implementation`
+
+Scope:
+- add channel-message edit-mode mention picker/autocomplete;
+- keep edit text readable as `@name` / `@all`;
+- serialize picker-selected edit mentions to stable `<@memberId>` / `<@all>` on save;
+- solve duplicate display-name ambiguity for picker-selected edit mentions;
+- preserve Segment 207 edit autofocus, caret, Escape cancel, and single-edit-mode behavior.
+
+Out of scope:
+- chat send button;
+- replies;
+- link rendering/previews;
+- broad file transfer;
+- rich text editor;
+- backend/API/SDK/DB/unread/auth/storage/media changes.
+
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 
 ## Low-Risk UX Fixes Result
