@@ -1,12 +1,12 @@
 'use client'
 
-import { ClipboardEvent, FC, Fragment, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ClipboardEvent, FC, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
 import type { InfiniteData } from '@tanstack/react-query'
 import { Form, FormControl, FormField, FormItem } from '@/lib/shared/ui/form'
-import { AtSign, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { EmojiPickerCustom } from '@/lib/shared/features/emoji-picker-custom'
 import { useRouter } from 'next/navigation'
 import { TChannelConversation } from '@/types'
@@ -17,9 +17,7 @@ import { useCreateMessage } from '@sdk/mutations/message'
 import type { ChatMessagesPage } from '@sdk/queries/chat'
 import { CHAT_COMPOSER_FOCUS_EVENT, CHAT_SCROLL_TO_BOTTOM_EVENT } from '@/lib/shared/utils/chat-events'
 import { useGetServer } from '@sdk/queries/server'
-import { UserAvatar } from '@/lib/shared/features/user-avatar'
-import { cn } from '@/lib/shared/utils/utils'
-import { Command, CommandItem, CommandList, CommandSeparator } from '@/lib/shared/ui/command'
+import { MentionPickerCommand } from '@/lib/chat/features/mention-picker-command'
 import {
   applyMentionSuggestionToText,
   createMentionSuggestions,
@@ -145,7 +143,6 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
     [mentionSuggestions, mentionTrigger],
   )
   const isMentionPickerOpen = type === 'channel' && Boolean(mentionTrigger) && visibleMentionSuggestions.length > 0
-  const hasVisibleMentionMembers = visibleMentionSuggestions.some((suggestion) => suggestion.type === 'member')
 
   const form = useForm<IChatInputSchema>({
     resolver: zodResolver(chatInputSchema),
@@ -538,65 +535,17 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
                     <Plus className="text-white dark:text-[#313338]" />
                   </button>
                   {isMentionPickerOpen && (
-                    <Command
-                      shouldFilter={false}
-                      value={visibleMentionSuggestions[mentionSelectedIndex]?.id ?? ''}
+                    <MentionPickerCommand
+                      suggestions={visibleMentionSuggestions}
+                      selectedIndex={mentionSelectedIndex}
+                      optionRefs={mentionOptionRefs}
                       onValueChange={handleMentionCommandValueChange}
                       onPointerDownCapture={() => {
                         isPointerDownInsideMentionPickerRef.current = true
                       }}
-                      className="absolute mb-2 right-4 bottom-[calc(100%-1rem)] left-4 z-50 h-auto max-w-[calc(100%-2rem)] overflow-hidden rounded-md border border-zinc-300 bg-white p-0 text-zinc-700 shadow-lg dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-                      <CommandList className="max-h-[min(31rem,calc(100dvh-12rem))] p-2">
-                        {visibleMentionSuggestions.map((suggestion, index) => {
-                          const isSelected = index === mentionSelectedIndex
-
-                          return (
-                            <Fragment key={suggestion.id}>
-                              {suggestion.type === 'all' && hasVisibleMentionMembers && (
-                                <CommandSeparator className="my-1 bg-zinc-200 dark:bg-zinc-700" />
-                              )}
-                              <CommandItem
-                                ref={(element) => {
-                                  mentionOptionRefs.current[index] = element
-                                }}
-                                value={suggestion.id}
-                                onMouseDown={(event) => {
-                                  event.preventDefault()
-                                  applyMentionSuggestion(suggestion)
-                                }}
-                                className={cn(
-                                  'flex w-full cursor-pointer items-center gap-3 rounded-sm px-3 py-2 text-left text-sm text-zinc-700 transition dark:text-zinc-200',
-                                  isSelected
-                                    ? 'bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-white'
-                                    : 'hover:bg-zinc-100 dark:hover:bg-zinc-700/70',
-                                )}>
-                                {suggestion.type === 'all' ? (
-                                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-300">
-                                    <AtSign className="h-4 w-4" />
-                                  </span>
-                                ) : (
-                                  <UserAvatar
-                                    name={suggestion.member.profile.name}
-                                    src={suggestion.member.profile.imageUrl}
-                                    className="h-8 w-8 md:h-8 md:w-8"
-                                  />
-                                )}
-                                <span className="min-w-0 flex-1">
-                                  <span className="block truncate font-semibold">
-                                    {suggestion.type === 'all' ? '@all' : `@${suggestion.label}`}
-                                  </span>
-                                  {suggestion.type === 'member' && (
-                                    <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">
-                                      {suggestion.member.profile.email}
-                                    </span>
-                                  )}
-                                </span>
-                              </CommandItem>
-                            </Fragment>
-                          )
-                        })}
-                      </CommandList>
-                    </Command>
+                      onSelectSuggestion={applyMentionSuggestion}
+                      className="absolute mb-2 right-4 bottom-[calc(100%-1rem)] left-4 z-50 h-auto max-w-[calc(100%-2rem)] overflow-hidden rounded-md border border-zinc-300 bg-white p-0 text-zinc-700 shadow-lg dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                    />
                   )}
                   <textarea
                     name={field.name}

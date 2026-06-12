@@ -21,6 +21,8 @@ import {
   clearActiveChatReadState,
   setActiveChatReadState,
 } from '@/lib/shared/data-access/unread/active-chat-read-state'
+import { useGetServer } from '@sdk/queries/server'
+import { createMentionSuggestions } from '@/lib/chat/features/mention-picker-utils'
 
 type MessageWithMemberWithProfile = ChatMessageDto
 
@@ -80,6 +82,13 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     paramKey,
     paramValue,
   })
+  const mentionServerId = type === 'channel' ? serverId : ''
+  const { data: mentionServer } = useGetServer(mentionServerId)
+  const mentionServerMembers = mentionServer?.id === mentionServerId ? mentionServer.members : null
+  const mentionSuggestions = useMemo(
+    () => (mentionServerId && mentionServerMembers ? createMentionSuggestions(mentionServerMembers) : []),
+    [mentionServerId, mentionServerMembers],
+  )
   const { data: unreadSummary, status: unreadSummaryStatus } = useUnreadSummary(serverId)
   const chatReadKey = `${serverId}:${paramKey}:${paramValue}`
   const currentUnreadItem = useMemo(() => {
@@ -267,6 +276,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
                       currentEditingMessageId === m.id ? null : currentEditingMessageId,
                     )
                   }}
+                  mentionSuggestions={mentionSuggestions}
                   timestamp={format(new Date(m.createdAt), EDateFormat.MESSAGE_ITEM)}
                 />
                 {unreadDividerMessageId === m.id && <NewMessagesDivider />}

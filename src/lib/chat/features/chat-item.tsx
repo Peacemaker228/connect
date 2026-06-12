@@ -1,7 +1,7 @@
 'use client'
 
 import type { MemberDto, MemberWithProfileDto, MessageMentionDto } from '@app-core/contracts'
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { FC, KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { UserAvatar } from '@/lib/shared/features/user-avatar'
 import { ActionTooltip } from '@/lib/shared/features/action-tooltip'
 import { roleIconMap } from '@/lib/shared/utils/role-icon-map'
@@ -23,6 +23,26 @@ import { useUpdateMessage } from '@sdk/mutations/message'
 import { MessageContent } from '@/lib/chat/features/message-content'
 import { getReadableMessageEditContent } from '@/lib/chat/features/message-mention-text'
 import { buildMessageCopyText, writeMessageClipboardText } from '@/lib/chat/features/message-copy'
+import {
+  applyMentionSuggestionToText,
+  filterMentionSuggestions,
+  getMentionTrigger,
+  serializeSelectedMentionsForSubmit,
+  updateMentionRangesForTextChange,
+  type MentionSuggestion,
+  type MentionTrigger,
+  type SelectedMentionRange,
+} from '@/lib/chat/features/mention-picker-utils'
+import { MentionPickerCommand } from '@/lib/chat/features/mention-picker-command'
+
+const EDIT_MENTION_PICKER_MAX_HEIGHT = 320
+const EDIT_MENTION_PICKER_VIEWPORT_MARGIN = 8
+const EDIT_MENTION_PICKER_CHROME_HEIGHT = 20
+
+type EditMentionPickerPlacement = {
+  maxHeight: number
+  side: 'bottom' | 'top'
+}
 
 interface IChatItemProps {
   id: string
@@ -40,6 +60,7 @@ interface IChatItemProps {
   onStartEditing: () => void
   onCancelEditing: () => void
   onFinishEditing: () => void
+  mentionSuggestions?: MentionSuggestion[]
 }
 
 export const ChatItem: FC<IChatItemProps> = ({
@@ -58,9 +79,21 @@ export const ChatItem: FC<IChatItemProps> = ({
   onStartEditing,
   onCancelEditing,
   onFinishEditing,
+  mentionSuggestions = [],
 }) => {
   const editInputRef = useRef<HTMLInputElement | null>(null)
+  const mentionOptionRefs = useRef<Array<HTMLDivElement | null>>([])
+  const isPointerDownInsideMentionPickerRef = useRef(false)
+  const isMentionPickerOpenRef = useRef(false)
+  const mentionInputSelectionRef = useRef<{ end: number; start: number } | null>(null)
+  const selectedMentionRangesRef = useRef<SelectedMentionRange[]>([])
   const [isCopied, setIsCopied] = useState(false)
+  const [mentionTrigger, setMentionTrigger] = useState<MentionTrigger | null>(null)
+  const [mentionSelectedIndex, setMentionSelectedIndex] = useState(0)
+  const [mentionPickerPlacement, setMentionPickerPlacement] = useState<EditMentionPickerPlacement>({
+    maxHeight: EDIT_MENTION_PICKER_MAX_HEIGHT,
+    side: 'top',
+  })
   const copyFeedbackTimeoutRef = useRef<number | null>(null)
   const { onOpen } = useModal()
   const params = useParams()
@@ -70,6 +103,40 @@ export const ChatItem: FC<IChatItemProps> = ({
   const t = useTranslations('ChannelPage')
   const commonTranslation = useTranslations('Common')
   const editableContent = useMemo(() => getReadableMessageEditContent(content, mentions), [content, mentions])
+  const canUseMentionPicker = typeof messageQuery.serverId === 'string' && typeof messageQuery.channelId === 'string'
+  const visibleMentionSuggestions = useMemo(
+    () => (mentionTrigger ? filterMentionSuggestions(mentionSuggestions, mentionTrigger.query) : []),
+    [mentionSuggestions, mentionTrigger],
+  )
+  const isMentionPickerOpen = canUseMentionPicker && Boolean(mentionTrigger) && visibleMentionSuggestions.length > 0
+
+  const updateMentionPickerPlacement = useCallback(() => {
+    const editInput = editInputRef.current
+
+    if (!editInput) {
+      return
+    }
+
+    const rect = editInput.getBoundingClientRect()
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight
+    const spaceAbove = Math.max(rect.top - EDIT_MENTION_PICKER_VIEWPORT_MARGIN, 0)
+    const spaceBelow = Math.max(viewportHeight - rect.bottom - EDIT_MENTION_PICKER_VIEWPORT_MARGIN, 0)
+    const shouldOpenAbove = spaceAbove >= EDIT_MENTION_PICKER_MAX_HEIGHT || spaceAbove >= spaceBelow
+    const side = shouldOpenAbove ? 'top' : 'bottom'
+    const availableHeight = Math.floor(shouldOpenAbove ? spaceAbove : spaceBelow)
+    const maxHeight = Math.max(
+      0,
+      Math.min(EDIT_MENTION_PICKER_MAX_HEIGHT, availableHeight - EDIT_MENTION_PICKER_CHROME_HEIGHT),
+    )
+
+    setMentionPickerPlacement((currentPlacement) => {
+      if (currentPlacement.side === side && currentPlacement.maxHeight === maxHeight) {
+        return currentPlacement
+      }
+
+      return { maxHeight, side }
+    })
+  }, [])
 
   const onMemberClick = () => {
     if (member.id === currentMember.id) return
@@ -84,14 +151,25 @@ export const ChatItem: FC<IChatItemProps> = ({
     },
   })
 
+  const closeMentionPicker = useCallback(() => {
+    setMentionTrigger(null)
+    setMentionSelectedIndex(0)
+  }, [])
+
   const cancelEditing = useCallback(() => {
+    selectedMentionRangesRef.current = []
+    closeMentionPicker()
     form.reset({ content: editableContent })
     onCancelEditing()
-  }, [editableContent, form, onCancelEditing])
+  }, [closeMentionPicker, editableContent, form, onCancelEditing])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isEditing) {
+        if (isMentionPickerOpenRef.current) {
+          return
+        }
+
         cancelEditing()
       }
     }
@@ -104,13 +182,88 @@ export const ChatItem: FC<IChatItemProps> = ({
   }, [cancelEditing, isEditing])
 
   useEffect(() => {
+    isMentionPickerOpenRef.current = isMentionPickerOpen
+  }, [isMentionPickerOpen])
+
+  useEffect(() => {
+    if (!isMentionPickerOpen) {
+      return
+    }
+
+    updateMentionPickerPlacement()
+
+    window.addEventListener('resize', updateMentionPickerPlacement)
+    window.addEventListener('scroll', updateMentionPickerPlacement, true)
+
+    return () => {
+      window.removeEventListener('resize', updateMentionPickerPlacement)
+      window.removeEventListener('scroll', updateMentionPickerPlacement, true)
+    }
+  }, [isMentionPickerOpen, mentionTrigger?.start, updateMentionPickerPlacement, visibleMentionSuggestions.length])
+
+  useEffect(() => {
+    const resetMentionPickerPointerState = () => {
+      const shouldRestoreInputFocus = isPointerDownInsideMentionPickerRef.current && isMentionPickerOpenRef.current
+      const inputElement = editInputRef.current
+      const selection = mentionInputSelectionRef.current
+
+      if (shouldRestoreInputFocus && inputElement) {
+        window.requestAnimationFrame(() => {
+          if (!inputElement.isConnected || !isMentionPickerOpenRef.current) {
+            return
+          }
+
+          inputElement.focus({ preventScroll: true })
+
+          if (selection) {
+            const end = Math.min(selection.end, inputElement.value.length)
+            const start = Math.min(selection.start, inputElement.value.length)
+
+            inputElement.setSelectionRange(start, end)
+          }
+        })
+      }
+
+      window.setTimeout(() => {
+        isPointerDownInsideMentionPickerRef.current = false
+      }, 0)
+    }
+
+    window.addEventListener('pointerup', resetMentionPickerPointerState)
+    window.addEventListener('pointercancel', resetMentionPickerPointerState)
+
+    return () => {
+      window.removeEventListener('pointerup', resetMentionPickerPointerState)
+      window.removeEventListener('pointercancel', resetMentionPickerPointerState)
+    }
+  }, [])
+
+  useEffect(() => {
+    setMentionSelectedIndex(0)
+  }, [mentionTrigger?.start, mentionTrigger?.query, visibleMentionSuggestions.length])
+
+  useEffect(() => {
+    if (!isMentionPickerOpen) {
+      return
+    }
+
+    window.requestAnimationFrame(() => {
+      mentionOptionRefs.current[mentionSelectedIndex]?.scrollIntoView({ block: 'nearest' })
+    })
+  }, [isMentionPickerOpen, mentionSelectedIndex, visibleMentionSuggestions.length])
+
+  useEffect(() => {
     form.reset({
       content: editableContent,
     })
-  }, [editableContent, form])
+    selectedMentionRangesRef.current = []
+    closeMentionPicker()
+  }, [closeMentionPicker, editableContent, form])
 
   useEffect(() => {
     if (!isEditing) {
+      selectedMentionRangesRef.current = []
+      closeMentionPicker()
       return
     }
 
@@ -129,7 +282,7 @@ export const ChatItem: FC<IChatItemProps> = ({
     return () => {
       window.cancelAnimationFrame(frame)
     }
-  }, [isEditing, editableContent])
+  }, [closeMentionPicker, isEditing, editableContent])
 
   useEffect(() => {
     return () => {
@@ -157,10 +310,115 @@ export const ChatItem: FC<IChatItemProps> = ({
 
   const isLoading = form.formState.isSubmitting
 
+  const handleMentionCommandValueChange = useCallback(
+    (value: string) => {
+      const nextIndex = visibleMentionSuggestions.findIndex((suggestion) => suggestion.id === value)
+
+      if (nextIndex >= 0) {
+        setMentionSelectedIndex(nextIndex)
+      }
+    },
+    [visibleMentionSuggestions],
+  )
+
+  const syncMentionTrigger = useCallback(
+    (element: HTMLInputElement | null) => {
+      if (!element || !canUseMentionPicker) {
+        setMentionTrigger(null)
+        return
+      }
+
+      setMentionTrigger(getMentionTrigger(element.value, element.selectionStart ?? element.value.length))
+    },
+    [canUseMentionPicker],
+  )
+
+  const updateContentValue = useCallback((previousValue: string, nextValue: string) => {
+    selectedMentionRangesRef.current = updateMentionRangesForTextChange(
+      selectedMentionRangesRef.current,
+      previousValue,
+      nextValue,
+    )
+  }, [])
+
+  const applyMentionSuggestion = useCallback(
+    (suggestion: MentionSuggestion) => {
+      const element = editInputRef.current
+      const trigger = mentionTrigger
+
+      if (!element || !trigger) {
+        return
+      }
+
+      const { nextCaretPosition, nextRanges, nextValue } = applyMentionSuggestionToText(
+        element.value,
+        trigger,
+        suggestion,
+        selectedMentionRangesRef.current,
+      )
+
+      selectedMentionRangesRef.current = nextRanges
+      form.setValue('content', nextValue, { shouldDirty: true, shouldTouch: true, shouldValidate: true })
+      closeMentionPicker()
+
+      requestAnimationFrame(() => {
+        const nextElement = editInputRef.current
+
+        if (!nextElement) {
+          return
+        }
+
+        nextElement.focus()
+        nextElement.setSelectionRange(nextCaretPosition, nextCaretPosition)
+      })
+    },
+    [closeMentionPicker, form, mentionTrigger],
+  )
+
+  const handleEditKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (!isMentionPickerOpen) {
+      return
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      setMentionSelectedIndex((mentionSelectedIndex + 1) % visibleMentionSuggestions.length)
+      return
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      setMentionSelectedIndex(
+        (mentionSelectedIndex - 1 + visibleMentionSuggestions.length) % visibleMentionSuggestions.length,
+      )
+      return
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      event.stopPropagation()
+      closeMentionPicker()
+      return
+    }
+
+    if ((event.key === 'Enter' && !event.nativeEvent.isComposing) || event.key === 'Tab') {
+      event.preventDefault()
+      applyMentionSuggestion(visibleMentionSuggestions[mentionSelectedIndex] ?? visibleMentionSuggestions[0])
+    }
+  }
+
   const handleSubmit = async (data: IChatInputSchema) => {
     try {
-      await updateMessage({ apiUrl: `${messageApiUrl}/${id}`, query: messageQuery, payload: data })
+      const rawContent = form.getValues('content')
+      const payload = {
+        ...data,
+        content: serializeSelectedMentionsForSubmit(rawContent, selectedMentionRangesRef.current).trim(),
+      }
 
+      await updateMessage({ apiUrl: `${messageApiUrl}/${id}`, query: messageQuery, payload })
+
+      selectedMentionRangesRef.current = []
+      closeMentionPicker()
       form.reset()
       onFinishEditing()
     } catch (err) {
@@ -169,6 +427,8 @@ export const ChatItem: FC<IChatItemProps> = ({
   }
 
   const handleStartEditing = () => {
+    selectedMentionRangesRef.current = []
+    closeMentionPicker()
     form.reset({ content: editableContent })
     onStartEditing()
   }
@@ -278,12 +538,63 @@ export const ChatItem: FC<IChatItemProps> = ({
                     <FormItem className={'flex-1'}>
                       <FormControl>
                         <div className={'relative w-full'}>
+                          {isMentionPickerOpen && (
+                            <MentionPickerCommand
+                              suggestions={visibleMentionSuggestions}
+                              selectedIndex={mentionSelectedIndex}
+                              optionRefs={mentionOptionRefs}
+                              onValueChange={handleMentionCommandValueChange}
+                              onPointerDownCapture={() => {
+                                isPointerDownInsideMentionPickerRef.current = true
+                              }}
+                              onSelectSuggestion={applyMentionSuggestion}
+                              className={cn(
+                                'absolute left-0 right-0 z-50 h-auto max-w-full overflow-hidden rounded-md border border-zinc-300 bg-white p-0 text-zinc-700 shadow-lg dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200',
+                                mentionPickerPlacement.side === 'top' ? 'bottom-full mb-2' : 'top-full mt-2',
+                              )}
+                              listClassName="p-2"
+                              listStyle={{ maxHeight: mentionPickerPlacement.maxHeight }}
+                            />
+                          )}
                           <Input
                             {...field}
                             ref={(element) => {
                               field.ref(element)
                               editInputRef.current = element
                             }}
+                            onBlur={(event) => {
+                              const element = event.currentTarget
+
+                              mentionInputSelectionRef.current = {
+                                end: element.selectionEnd ?? element.value.length,
+                                start: element.selectionStart ?? element.value.length,
+                              }
+                              field.onBlur()
+                              window.setTimeout(() => {
+                                if (isPointerDownInsideMentionPickerRef.current) {
+                                  return
+                                }
+
+                                if (document.activeElement !== element) {
+                                  closeMentionPicker()
+                                }
+                              }, 0)
+                            }}
+                            onChange={(event) => {
+                              const nextValue = event.currentTarget.value
+
+                              updateContentValue(field.value, nextValue)
+                              field.onChange(nextValue)
+                              syncMentionTrigger(event.currentTarget)
+                            }}
+                            onClick={(event) => syncMentionTrigger(event.currentTarget)}
+                            onKeyDown={handleEditKeyDown}
+                            onKeyUp={(event) => {
+                              if (event.key !== 'Escape') {
+                                syncMentionTrigger(event.currentTarget)
+                              }
+                            }}
+                            onSelect={(event) => syncMentionTrigger(event.currentTarget)}
                             disabled={isLoading}
                             className={
                               'p-2 bg-zinc-200/90 dark:bg-zinc-700/75 border-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-600 dark:text-zinc-200'

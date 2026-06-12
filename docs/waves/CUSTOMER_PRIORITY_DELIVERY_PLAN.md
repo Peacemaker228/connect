@@ -599,7 +599,7 @@ Brief:
 - `docs/delegation/briefs/SEGMENT_BRIEF_208_CUSTOMER_MESSAGE_EDIT_MENTION_PICKER.md`
 
 Status:
-- `ready for implementation`
+- `implemented locally / command verification passed; manual smoke pending`
 
 Scope:
 - add channel-message edit-mode mention picker/autocomplete;
@@ -607,6 +607,24 @@ Scope:
 - serialize picker-selected edit mentions to stable `<@memberId>` / `<@all>` on save;
 - solve duplicate display-name ambiguity for picker-selected edit mentions;
 - preserve Segment 207 edit autofocus, caret, Escape cancel, and single-edit-mode behavior.
+
+Delivered:
+- edit mode reuses the same bounded mention suggestion UI as the composer through a shared `MentionPickerCommand`;
+- channel edit suggestions come from the current server member snapshot after the server id guard passes;
+- edit picker placement is collision-aware and constrains its list height to available viewport space;
+- picker-selected edit mentions remain readable in the input but serialize to stable tokens before the existing update mutation;
+- edited picker-selected ranges are dropped from stable serialization if their visible text is changed.
+
+Product decision:
+- message edits update mention metadata/rendering through the existing update path;
+- edits should not create a new normal unread/sound notification by default;
+- attention behavior for newly added mentions during edit remains a separate future decision unless explicitly implemented and tested.
+
+Known limitation:
+- pre-existing readable mentions are not initialized as tracked stable ranges in this slice; they remain backend-parser based unless reselected through the edit picker.
+
+Next:
+- `customer-chat-send-button` remains the next focused composer UX target.
 
 Out of scope:
 - chat send button;
