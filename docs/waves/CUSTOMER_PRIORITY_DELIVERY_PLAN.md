@@ -505,7 +505,7 @@ Brief:
 - `docs/delegation/briefs/SEGMENT_BRIEF_206_CUSTOMER_MESSAGE_COPY_ACTION.md`
 
 Status:
-- `ready for implementation`
+- `implemented locally / command verification passed; manual smoke pending`
 
 Scope:
 - add a frontend-first message copy action for channel/direct messages;
@@ -514,6 +514,18 @@ Scope:
 - copy useful attachment URLs for image/file/PDF messages;
 - never copy broken values such as `[object Object]`;
 - consider both web clipboard and existing desktop `window.electron.writeClipboardText` behavior.
+
+Delivered:
+- non-deleted channel and direct messages expose a compact copy action in the existing hover action area;
+- non-owners can copy messages while edit/delete permission checks remain unchanged;
+- text and multiline messages copy readable text;
+- metadata-backed stable mention tokens copy as readable `@name` / `@all`;
+- image/PDF attachment messages copy the backend access URL, with meaningful non-storage text prepended when present;
+- clipboard write uses desktop `window.electron.writeClipboardText` when available, web `navigator.clipboard.writeText`, and a legacy textarea fallback;
+- storage marker values and `[object Object]` are filtered out of copied text.
+
+Manual smoke:
+- pending authenticated web smoke and desktop runtime review.
 
 Out of scope:
 - binary image clipboard writes unless proven reliable;

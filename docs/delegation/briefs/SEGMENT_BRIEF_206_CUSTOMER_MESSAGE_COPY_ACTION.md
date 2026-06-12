@@ -2,7 +2,7 @@
 
 Branch: `feature/customer-message-copy-action`  
 Segment: `customer-message-copy-action`  
-Status: `ready for implementation`  
+Status: `implemented locally / command verification passed; manual smoke pending`
 Base: latest `origin/core/reborn`
 
 ## Preparation Notes
@@ -180,6 +180,21 @@ Check:
 - ensure owner can still edit/delete;
 - ensure deleted message has no copy action;
 - quick desktop runtime review if available.
+
+## Implementation Result
+
+Delivered:
+- Non-deleted channel and direct messages expose a compact copy action in the existing message hover action area.
+- Copy is available to non-owners; edit/delete permission checks remain unchanged.
+- Text messages copy readable text while preserving multiline line breaks.
+- Metadata-backed stable mention tokens copy as readable `@name` / `@all` text.
+- Image/PDF attachment messages copy a backend access URL; if useful non-storage text is present, it is copied before the URL.
+- Storage marker values and `[object Object]` are filtered out of copied text.
+- Clipboard write uses `window.electron.writeClipboardText` in desktop when available, `navigator.clipboard.writeText` in web, and a legacy textarea fallback when needed.
+- Backend/API/SDK contracts, DB schema/migrations, storage provider config, auth/session, unread/realtime, media/WebRTC, link rendering/previews, replies, and binary image clipboard writes remain unchanged.
+
+Manual smoke:
+- pending authenticated web smoke and desktop runtime review.
 
 ## Handoff Format
 

@@ -1,12 +1,12 @@
 'use client'
 
 import type { MemberDto, MemberWithProfileDto, MessageMentionDto } from '@app-core/contracts'
-import { FC, useEffect, useState } from 'react'
+import { FC, useEffect, useRef, useState } from 'react'
 import { UserAvatar } from '@/lib/shared/features/user-avatar'
 import { ActionTooltip } from '@/lib/shared/features/action-tooltip'
 import { roleIconMap } from '@/lib/shared/utils/role-icon-map'
 import Image from 'next/image'
-import { Edit, FileIcon, Trash } from 'lucide-react'
+import { Check, Copy, Edit, FileIcon, Trash } from 'lucide-react'
 import { cn } from '@/lib/shared/utils/utils'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -21,6 +21,7 @@ import { chatInputSchema, IChatInputSchema } from '@app-core/schemas/chat-input-
 import { buildStorageAccessPath, getUploadValueParts } from '@/lib/shared/utils/upload-file'
 import { useUpdateMessage } from '@sdk/mutations/message'
 import { MessageContent } from '@/lib/chat/features/message-content'
+import { buildMessageCopyText, writeMessageClipboardText } from '@/lib/chat/features/message-copy'
 
 interface IChatItemProps {
   id: string
@@ -50,6 +51,8 @@ export const ChatItem: FC<IChatItemProps> = ({
   mentions,
 }) => {
   const [isEditing, setIsEditing] = useState(false)
+  const [isCopied, setIsCopied] = useState(false)
+  const copyFeedbackTimeoutRef = useRef<number | null>(null)
   const { onOpen } = useModal()
   const params = useParams()
   const router = useRouter()
@@ -92,6 +95,14 @@ export const ChatItem: FC<IChatItemProps> = ({
     })
   }, [content, form])
 
+  useEffect(() => {
+    return () => {
+      if (copyFeedbackTimeoutRef.current) {
+        window.clearTimeout(copyFeedbackTimeoutRef.current)
+      }
+    }
+  }, [])
+
   const { fileType, fileUrl: resolvedFileUrl } = getUploadValueParts(fileUrl ?? '', 'messageFile')
   const fileAccessPath = buildStorageAccessPath(fileUrl ?? '', 'messageFile')
 
@@ -101,6 +112,7 @@ export const ChatItem: FC<IChatItemProps> = ({
 
   const canDeleteMessage = !deleted && (isAdmin || isModerator || isOwner)
   const canEditMessage = !deleted && isOwner && !fileUrl
+  const canCopyMessage = !deleted
 
   const imageAlt = resolvedFileUrl || 'Image attachment'
   const isPDF = fileType === 'application/pdf' && fileAccessPath
@@ -119,6 +131,45 @@ export const ChatItem: FC<IChatItemProps> = ({
       console.log(err)
     }
   }
+
+  const setCopiedState = () => {
+    setIsCopied(true)
+
+    if (copyFeedbackTimeoutRef.current) {
+      window.clearTimeout(copyFeedbackTimeoutRef.current)
+    }
+
+    copyFeedbackTimeoutRef.current = window.setTimeout(() => {
+      setIsCopied(false)
+      copyFeedbackTimeoutRef.current = null
+    }, 1000)
+  }
+
+  const handleCopy = async () => {
+    const copyText = buildMessageCopyText({
+      content,
+      fileAccessPath,
+      fileUrl,
+      mentions,
+      origin: window.location.origin,
+      resolvedFileUrl,
+    })
+
+    if (!copyText) {
+      return
+    }
+
+    try {
+      await writeMessageClipboardText(copyText)
+      setCopiedState()
+    } catch (error) {
+      console.error('[chat-item][copy]', error)
+    }
+  }
+
+  const copyTooltipLabel = isCopied ? t('ChatItem.copied') : t('ChatItem.copy')
+  const actionIconClassName =
+    'cursor-pointer w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition'
 
   return (
     <div
@@ -210,31 +261,48 @@ export const ChatItem: FC<IChatItemProps> = ({
           )}
         </div>
       </div>
-      {canDeleteMessage && (
+      {canCopyMessage && (
         <div
           className={
             'hidden group-hover:flex items-center gap-x-2 absolute p-1 -top-2 right-5 bg-white dark:bg-zinc-800 shadow-sm rounded-sm'
           }>
+          <ActionTooltip label={copyTooltipLabel}>
+            <button
+              type="button"
+              aria-label={copyTooltipLabel}
+              onClick={handleCopy}
+              className="flex h-4 w-4 items-center justify-center">
+              {isCopied ? (
+                <Check className="h-4 w-4 text-emerald-500 transition" />
+              ) : (
+                <Copy className={actionIconClassName} />
+              )}
+            </button>
+          </ActionTooltip>
           {canEditMessage && (
             <ActionTooltip label={t('ChatItem.edit')}>
-              <Edit
+              <button
+                type="button"
+                aria-label={t('ChatItem.edit')}
                 onClick={() => setIsEditing(true)}
-                className={
-                  'cursor-pointer ml-auto w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition'
-                }
-              />
+                className="flex h-4 w-4 items-center justify-center">
+                <Edit className={actionIconClassName} />
+              </button>
             </ActionTooltip>
           )}
-          <ActionTooltip label={t('ChatItem.delete')}>
-            <Trash
-              onClick={() => {
-                onOpen('deleteMessage', { apiUrl: `${messageApiUrl}/${id}`, query: messageQuery })
-              }}
-              className={
-                'cursor-pointer ml-auto w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition'
-              }
-            />
-          </ActionTooltip>
+          {canDeleteMessage && (
+            <ActionTooltip label={t('ChatItem.delete')}>
+              <button
+                type="button"
+                aria-label={t('ChatItem.delete')}
+                onClick={() => {
+                  onOpen('deleteMessage', { apiUrl: `${messageApiUrl}/${id}`, query: messageQuery })
+                }}
+                className="flex h-4 w-4 items-center justify-center">
+                <Trash className={actionIconClassName} />
+              </button>
+            </ActionTooltip>
+          )}
         </div>
       )}
     </div>
