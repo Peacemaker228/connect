@@ -278,6 +278,49 @@ Acceptance:
 - replies render for other connected participants through realtime;
 - unsupported edge cases are explicit, not silent failures.
 
+### P1. Edit Message Autofocus
+
+Problem:
+- after clicking edit on an existing message, focus does not move into the edit input;
+- this slows down quick correction flow and feels inconsistent with chat-first UX.
+
+Required behavior:
+- clicking edit focuses the edit input automatically;
+- caret should be placed in a useful position, preferably at the end of the current message;
+- Escape/cancel behavior must remain intact;
+- focus must not be stolen from modals, menus, or unrelated controls.
+
+Acceptance:
+- user clicks edit and can immediately type;
+- fast edit/save flow works for text messages;
+- existing edit permissions stay unchanged.
+
+### P1. File Transfer Expansion Analysis
+
+Problem:
+- current message attachments are limited to images and PDF;
+- users want to share broader file types, including archives, documents, and potentially `.exe` files;
+- upload limits and security policy are not yet decided.
+
+Required analysis:
+- inventory the current `messageFile` upload path, allowed MIME/extensions, storage metadata, preview/rendering behavior, and backend limits;
+- propose allowed file policy for MVP:
+  - keep images and PDF previews where already supported;
+  - allow additional file types as download-only attachments where safe;
+  - treat executable-like files (`.exe`, scripts, installers) as download-only and visually explicit, never inline-previewed or executed;
+- propose an initial per-file size cap that is useful but not huge. Candidate to evaluate: `50 MB` per file, with operator approval before implementation;
+- define rejection UX for unsupported type/size;
+- consider storage cost, upload timeout, API/body limits, antivirus/malware expectations, and desktop behavior.
+
+Out of scope for analysis:
+- implementing broad file support before policy is agreed;
+- virus scanning unless explicitly selected as a follow-up;
+- changing storage provider/env secrets.
+
+Acceptance:
+- a follow-up implementation brief can be written with a concrete type/size policy;
+- no broad file support is enabled accidentally.
+
 ### P1. Chat Input Autofocus After Send
 
 Problem:
@@ -448,11 +491,37 @@ Handoff:
 7. Implement safe link rendering, then optional backend-owned link previews.
 8. Implement message copy action.
 9. Implement reply-to-message.
-10. Restore staging storage readiness for avatars.
-11. Improve media provider/fallback UI and screen-share fullscreen.
-12. Run web checks, then desktop checks for shared UI changes.
-13. Create a separate dev/preview stand after the current colleague-requirements batch stabilizes.
-14. Resume WebRTC cleanup only after customer-priority work stabilizes or moves to a separate dev stand.
+10. Fix edit-message autofocus.
+11. Analyze and then implement file transfer expansion with explicit type/size policy.
+12. Restore staging storage readiness for avatars.
+13. Improve media provider/fallback UI and screen-share fullscreen.
+14. Run web checks, then desktop checks for shared UI changes.
+15. Create a separate dev/preview stand after the current colleague-requirements batch stabilizes.
+16. Resume WebRTC cleanup only after customer-priority work stabilizes or moves to a separate dev stand.
+
+## Segment 206. Customer Message Copy Action
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_206_CUSTOMER_MESSAGE_COPY_ACTION.md`
+
+Status:
+- `ready for implementation`
+
+Scope:
+- add a frontend-first message copy action for channel/direct messages;
+- copy user-useful text for normal messages, preserving multiline content;
+- copy readable mentions such as `@name` / `@all` instead of stable internal tokens;
+- copy useful attachment URLs for image/file/PDF messages;
+- never copy broken values such as `[object Object]`;
+- consider both web clipboard and existing desktop `window.electron.writeClipboardText` behavior.
+
+Out of scope:
+- binary image clipboard writes unless proven reliable;
+- link rendering/previews;
+- reply-to-message;
+- edit-message autofocus;
+- broad file-transfer policy changes;
+- backend/API/SDK/DB/storage/auth/unread/media changes.
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 
 ## Low-Risk UX Fixes Result

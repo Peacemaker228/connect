@@ -1076,7 +1076,9 @@ Next likely work:
 - run two-user smoke for unread sound/mute behavior, including per-channel and per-direct muted scopes
 - after unread read semantics smoke, continue to `customer-mentions-replies-attention` unless mention/reply attention becomes more urgent
 - keep link preview, copy/reply, and media fallback as separate scoped segments
+- new customer requirements recorded: edit-message autofocus should be a small focused UX fix, and broad message file-transfer expansion needs a separate analysis/design segment before implementation because allowed file types, executable downloads, size cap, storage limits, malware expectations, and desktop behavior are not yet decided
 - keep realtime transport hardening as last-priority backlog: staging currently shows `Socket.IO` over `transport=polling` with websocket upgrade advertised but not observed; do not start Nginx websocket/rooms/auth hardening unless a concrete incident or load/security evidence forces it earlier
+- next implementation brief is ready: `docs/delegation/briefs/SEGMENT_BRIEF_206_CUSTOMER_MESSAGE_COPY_ACTION.md`, a frontend-first message copy action that must copy useful text/URLs and never `[object Object]`, with link rendering, replies, backend/API/DB, storage config, unread, and media changes out of scope
 
 ## Historical Notes
 
