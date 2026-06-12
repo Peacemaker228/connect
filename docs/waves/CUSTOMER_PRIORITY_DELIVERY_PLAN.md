@@ -1150,9 +1150,11 @@ Brief:
 - `docs/delegation/briefs/SEGMENT_BRIEF_205_CUSTOMER_MENTIONS_AUTOCOMPLETE_PICKER.md`
 
 Delivered:
-- added a bounded `@` picker to the channel composer only, using existing `useGetServer(serverId)` member data plus a visually separated `@all` option that remains selectable when the member list exceeds the visible member cap;
+- added a bounded `@` picker to the channel composer only, using existing `useGetServer(serverId)` member data plus a visually separated `@all` option that remains selectable when the member list exceeds the visible member cap; the popup uses existing shadcn/cmdk `Command` list primitives while keeping text input ownership in the chat `textarea`;
 - mention suggestions are built only when the loaded server snapshot id matches the current `channelServerId`, avoiding stale members from `keepPreviousData`;
-- picker controls support filter text, ArrowUp/ArrowDown, Enter/Tab selection, Escape close, and mouse selection while preserving closed-picker Enter send and Shift+Enter newline behavior;
+- picker controls support filter text, ArrowUp/ArrowDown, Enter/Tab selection, Escape close, and mouse selection while preserving closed-picker Enter send and Shift+Enter newline behavior; the picker list uses a Discord-like tall bounded `max-height` sized to fit the current cap of 8 member suggestions plus the separated `@all` option, shrinks on small viewports, and keeps keyboard-selected options visible through native `scrollIntoView({ block: 'nearest' })` rather than custom scroll math;
+- pointer interaction inside the picker, including dragging the scroll bar, no longer closes the picker through the textarea blur handler, and focus/caret are restored back to the chat textarea after pointer release;
+- known polish debt: keyboard navigation can still visually jump because the chat `textarea` owns input focus while the shadcn/cmdk `Command` popup owns only the option list; this is accepted for the current MVP slice and should be revisited only as a focused mention editor / combobox-controller polish task;
 - selected mentions stay readable in the textarea as `@DisplayName` / `@all`, but submit as stable `<@memberId>` / `<@all>` tokens when the selected text range remains intact;
 - if the user edits a selected mention range, the client drops that tracked stable replacement and the remaining text follows the existing Segment 204 backend raw-parser path;
 - screenshot paste, attachment modal, emoji insert, autofocus, normal text paste, and existing message creation remain on the current composer path;
