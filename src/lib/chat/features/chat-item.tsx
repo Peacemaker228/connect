@@ -1,7 +1,7 @@
 'use client'
 
 import type { MemberDto, MemberWithProfileDto, MessageMentionDto } from '@app-core/contracts'
-import { FC, useEffect, useState } from 'react'
+import { FC, useCallback, useEffect, useMemo, useRef } from 'react'
 import { UserAvatar } from '@/lib/shared/features/user-avatar'
 import { ActionTooltip } from '@/lib/shared/features/action-tooltip'
 import { roleIconMap } from '@/lib/shared/utils/role-icon-map'
@@ -21,6 +21,7 @@ import { chatInputSchema, IChatInputSchema } from '@app-core/schemas/chat-input-
 import { buildStorageAccessPath, getUploadValueParts } from '@/lib/shared/utils/upload-file'
 import { useUpdateMessage } from '@sdk/mutations/message'
 import { MessageContent } from '@/lib/chat/features/message-content'
+import { getReadableMessageEditContent } from '@/lib/chat/features/message-mention-text'
 
 interface IChatItemProps {
   id: string
@@ -34,6 +35,10 @@ interface IChatItemProps {
   messageApiUrl: string
   messageQuery: Record<string, string>
   mentions?: MessageMentionDto[]
+  isEditing: boolean
+  onStartEditing: () => void
+  onCancelEditing: () => void
+  onFinishEditing: () => void
 }
 
 export const ChatItem: FC<IChatItemProps> = ({
@@ -48,8 +53,12 @@ export const ChatItem: FC<IChatItemProps> = ({
   content,
   id,
   mentions,
+  isEditing,
+  onStartEditing,
+  onCancelEditing,
+  onFinishEditing,
 }) => {
-  const [isEditing, setIsEditing] = useState(false)
+  const editInputRef = useRef<HTMLInputElement | null>(null)
   const { onOpen } = useModal()
   const params = useParams()
   const router = useRouter()
@@ -57,6 +66,7 @@ export const ChatItem: FC<IChatItemProps> = ({
 
   const t = useTranslations('ChannelPage')
   const commonTranslation = useTranslations('Common')
+  const editableContent = useMemo(() => getReadableMessageEditContent(content, mentions), [content, mentions])
 
   const onMemberClick = () => {
     if (member.id === currentMember.id) return
@@ -67,15 +77,19 @@ export const ChatItem: FC<IChatItemProps> = ({
   const form = useForm<IChatInputSchema>({
     resolver: zodResolver(chatInputSchema),
     defaultValues: {
-      content,
+      content: editableContent,
     },
   })
+
+  const cancelEditing = useCallback(() => {
+    form.reset({ content: editableContent })
+    onCancelEditing()
+  }, [editableContent, form, onCancelEditing])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isEditing) {
-        setIsEditing(false)
-        form.reset({ content })
+        cancelEditing()
       }
     }
 
@@ -84,13 +98,35 @@ export const ChatItem: FC<IChatItemProps> = ({
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [content, form, isEditing])
+  }, [cancelEditing, isEditing])
 
   useEffect(() => {
     form.reset({
-      content,
+      content: editableContent,
     })
-  }, [content, form])
+  }, [editableContent, form])
+
+  useEffect(() => {
+    if (!isEditing) {
+      return
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const editInput = editInputRef.current
+
+      if (!editInput) {
+        return
+      }
+
+      editInput.focus()
+      const caretPosition = editInput.value.length
+      editInput.setSelectionRange(caretPosition, caretPosition)
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+    }
+  }, [isEditing, editableContent])
 
   const { fileType, fileUrl: resolvedFileUrl } = getUploadValueParts(fileUrl ?? '', 'messageFile')
   const fileAccessPath = buildStorageAccessPath(fileUrl ?? '', 'messageFile')
@@ -114,10 +150,15 @@ export const ChatItem: FC<IChatItemProps> = ({
       await updateMessage({ apiUrl: `${messageApiUrl}/${id}`, query: messageQuery, payload: data })
 
       form.reset()
-      setIsEditing(false)
+      onFinishEditing()
     } catch (err) {
       console.log(err)
     }
+  }
+
+  const handleStartEditing = () => {
+    form.reset({ content: editableContent })
+    onStartEditing()
   }
 
   return (
@@ -188,6 +229,10 @@ export const ChatItem: FC<IChatItemProps> = ({
                         <div className={'relative w-full'}>
                           <Input
                             {...field}
+                            ref={(element) => {
+                              field.ref(element)
+                              editInputRef.current = element
+                            }}
                             disabled={isLoading}
                             className={
                               'p-2 bg-zinc-200/90 dark:bg-zinc-700/75 border-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-600 dark:text-zinc-200'
@@ -218,7 +263,7 @@ export const ChatItem: FC<IChatItemProps> = ({
           {canEditMessage && (
             <ActionTooltip label={t('ChatItem.edit')}>
               <Edit
-                onClick={() => setIsEditing(true)}
+                onClick={handleStartEditing}
                 className={
                   'cursor-pointer ml-auto w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition'
                 }
