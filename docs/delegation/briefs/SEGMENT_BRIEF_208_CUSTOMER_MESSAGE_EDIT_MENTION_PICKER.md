@@ -1,8 +1,8 @@
 # Segment Brief 208: Customer Message Edit Mention Picker
 
-Branch: `feature/customer-message-edit-mention-picker`  
-Segment: `customer-message-edit-mention-picker`  
-Status: `ready for implementation`  
+Branch: `feature/customer-message-edit-mention-picker`
+Segment: `customer-message-edit-mention-picker`
+Status: `implemented locally / command verification passed; manual smoke pending`
 Base: latest `origin/core/reborn`
 
 ## Preparation Notes
@@ -163,6 +163,29 @@ Regression:
 - owner-only edit permission remains unchanged;
 - delete/copy actions remain unchanged;
 - composer mention picker from Segment 205 still works.
+
+## Implementation Result
+
+Delivered:
+- added channel-message edit-mode mention picker using the existing Segment 205 mention helper flow;
+- extracted the bounded Discord-like mention suggestion list into `MentionPickerCommand`, reused by the composer and edit mode;
+- `ChatMessages` loads the server member snapshot once and passes guarded mention suggestions to message rows only after `mentionServer.id` matches the current server id;
+- edit-mode picker placement is collision-aware: it opens above the edit input when there is room, otherwise below, and constrains list height to the available viewport space;
+- edit mode keeps readable `@name` / `@all` text, tracks picker-selected visible ranges, and serializes intact ranges to stable `<@memberId>` / `<@all>` before the existing update mutation;
+- if the user edits a picker-selected mention range, that stable replacement is dropped and the remaining readable text follows the existing backend raw mention parser;
+- Segment 207 autofocus/caret, Escape cancel, single-edit-mode, owner-only text edit, delete/copy actions, and existing update mutation path remain unchanged;
+- backend/API/SDK contracts, DB schema, unread/realtime behavior, auth/session, storage, media, replies, links, broad files, and chat send button remain unchanged.
+
+Product decision:
+- editing a message updates mention metadata/rendering through the existing message update path;
+- editing a message should not create a new normal unread/sound notification by default;
+- notification/attention behavior for newly added mentions during edit is a separate future product decision unless explicitly implemented and tested.
+
+Existing mention limitation:
+- pre-existing readable mentions in an edited message are not reconstructed as tracked stable ranges in this slice; newly inserted picker-selected mentions are stable, while unchanged pre-existing readable mentions remain backend-parser based.
+
+Manual smoke:
+- pending authenticated channel smoke for ordinary edit, picker `@user`, picker `@all`, duplicate display-name selected member A/B, Escape cancel, switching edited message, composer picker regression, and desktop runtime review.
 
 ## Verification Commands
 
