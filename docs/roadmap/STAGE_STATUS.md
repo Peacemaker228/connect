@@ -1081,6 +1081,7 @@ Next likely work:
 - new customer requirements recorded: message edit mode correctness is a focused bugfix covering readable mention text in edit mode, edit input autofocus/caret, and preventing multiple simultaneous edited messages; chat send button should follow as a separate composer UX segment; broad message file-transfer expansion needs a separate analysis/design segment before implementation because allowed file types, executable downloads, size cap, storage limits, malware expectations, and desktop behavior are not yet decided
 - keep realtime transport hardening as last-priority backlog: staging currently shows `Socket.IO` over `transport=polling` with websocket upgrade advertised but not observed; do not start Nginx websocket/rooms/auth hardening unless a concrete incident or load/security evidence forces it earlier
 - next focused implementation targets: `customer-message-edit-mention-picker`, then `customer-chat-send-button`; do not fold either follow-up into Segment 207
+- next implementation brief is ready: `docs/delegation/briefs/SEGMENT_BRIEF_208_CUSTOMER_MESSAGE_EDIT_MENTION_PICKER.md`, focused on stable picker-selected edit mentions so duplicate display names resolve to the selected member
 
 ## Historical Notes
 

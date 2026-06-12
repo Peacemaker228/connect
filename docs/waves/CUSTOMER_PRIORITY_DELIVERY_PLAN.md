@@ -556,6 +556,29 @@ Out of scope:
 Follow-up:
 - next focused targets are `customer-message-edit-mention-picker`, then `customer-chat-send-button`; neither is part of Segment 207.
 
+## Segment 208. Customer Message Edit Mention Picker
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_208_CUSTOMER_MESSAGE_EDIT_MENTION_PICKER.md`
+
+Status:
+- `ready for implementation`
+
+Scope:
+- add channel-message edit-mode mention picker/autocomplete;
+- keep edit text readable as `@name` / `@all`;
+- serialize picker-selected edit mentions to stable `<@memberId>` / `<@all>` on save;
+- solve duplicate display-name ambiguity for picker-selected edit mentions;
+- preserve Segment 207 edit autofocus, caret, Escape cancel, and single-edit-mode behavior.
+
+Out of scope:
+- chat send button;
+- replies;
+- link rendering/previews;
+- broad file transfer;
+- rich text editor;
+- backend/API/SDK/DB/unread/auth/storage/media changes.
+
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 
 ## Low-Risk UX Fixes Result
