@@ -1078,7 +1078,8 @@ Next likely work:
 - run two-user smoke for unread sound/mute behavior, including per-channel and per-direct muted scopes
 - after unread read semantics smoke, continue to `customer-mentions-replies-attention` unless mention/reply attention becomes more urgent
 - keep link preview, copy/reply, and media fallback as separate scoped segments
-- new customer requirements recorded: edit-message autofocus should be a small focused UX fix, and broad message file-transfer expansion needs a separate analysis/design segment before implementation because allowed file types, executable downloads, size cap, storage limits, malware expectations, and desktop behavior are not yet decided
+- new customer requirements recorded: message edit mode correctness should be the next focused bugfix, covering readable mention text in edit mode, edit input autofocus/caret, and preventing multiple simultaneous edited messages; chat send button should follow as a separate composer UX segment; broad message file-transfer expansion needs a separate analysis/design segment before implementation because allowed file types, executable downloads, size cap, storage limits, malware expectations, and desktop behavior are not yet decided
+- next implementation target: `customer-message-edit-mode-correctness`, not reply/link/file expansion yet
 - keep realtime transport hardening as last-priority backlog: staging currently shows `Socket.IO` over `transport=polling` with websocket upgrade advertised but not observed; do not start Nginx websocket/rooms/auth hardening unless a concrete incident or load/security evidence forces it earlier
 
 ## Historical Notes
