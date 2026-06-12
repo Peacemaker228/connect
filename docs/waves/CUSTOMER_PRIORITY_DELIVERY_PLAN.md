@@ -1135,9 +1135,31 @@ Watch item:
 - future architecture should split mention rendering entities from notification/attention recipients, while keeping current own-message unread/sound suppression as a hard invariant.
 
 Next split after this:
-- mention autocomplete/picker UX if it does not fit safely inside the foundation slice;
+- `customer-mentions-autocomplete-picker` is the next scoped segment, tracked in `docs/delegation/briefs/SEGMENT_BRIEF_205_CUSTOMER_MENTIONS_AUTOCOMPLETE_PICKER.md`;
 - reply-to-message as a separate backend/schema/SDK/UI segment;
 - safe link rendering and message copy as separate segments.
+
+## Mentions Autocomplete Picker Plan
+
+Segment:
+- `customer-mentions-autocomplete-picker`
+
+Status: `implemented locally / command verification passed; manual smoke pending`
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_205_CUSTOMER_MENTIONS_AUTOCOMPLETE_PICKER.md`
+
+Delivered:
+- added a bounded `@` picker to the channel composer only, using existing `useGetServer(serverId)` member data plus a visually separated `@all` option that remains selectable when the member list exceeds the visible member cap;
+- mention suggestions are built only when the loaded server snapshot id matches the current `channelServerId`, avoiding stale members from `keepPreviousData`;
+- picker controls support filter text, ArrowUp/ArrowDown, Enter/Tab selection, Escape close, and mouse selection while preserving closed-picker Enter send and Shift+Enter newline behavior;
+- selected mentions stay readable in the textarea as `@DisplayName` / `@all`, but submit as stable `<@memberId>` / `<@all>` tokens when the selected text range remains intact;
+- if the user edits a selected mention range, the client drops that tracked stable replacement and the remaining text follows the existing Segment 204 backend raw-parser path;
+- screenshot paste, attachment modal, emoji insert, autofocus, normal text paste, and existing message creation remain on the current composer path;
+- backend/API/SDK contracts, DB schema/migrations, unread/realtime semantics, auth/session, storage, media/WebRTC, replies, link rendering, message copy, and Notification API remain unchanged.
+
+Manual smoke:
+- pending two/three-user channel smoke for picker open/filter/select, selected `@user`, selected `@all`, selected self mention, duplicate display name resolution through stable selected tokens, keyboard behavior, emoji/screenshot/attachment compatibility, reload restore, mention attention, sender own-message unread/sound negative case, and desktop runtime review.
 
 ## Unread Realtime Idempotency / Reconnect Fix Plan
 
