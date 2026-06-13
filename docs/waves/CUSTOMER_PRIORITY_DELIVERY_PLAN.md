@@ -328,13 +328,19 @@ Problem:
 
 Required analysis:
 - inventory the current `messageFile` upload path, allowed MIME/extensions, storage metadata, preview/rendering behavior, and backend limits;
-- propose allowed file policy for MVP:
+- agreed allowed file policy for MVP:
   - keep images and PDF previews where already supported;
   - allow additional file types as download-only attachments where safe;
   - treat executable-like files (`.exe`, scripts, installers) as download-only and visually explicit, never inline-previewed or executed;
-- propose an initial per-file size cap that is useful but not huge. Candidate to evaluate: `50 MB` per file, with operator approval before implementation;
+- use `50 MB` as the initial per-file cap for `messageFile`;
+- keep one attachment per message for now;
 - define rejection UX for unsupported type/size;
 - consider storage cost, upload timeout, API/body limits, antivirus/malware expectations, and desktop behavior.
+
+Large-file note:
+- users requested files up to roughly `300 MB`;
+- this is intentionally deferred from the MVP because it needs a separate large-file transfer mode/design decision covering Yandex Cloud storage billing, upload timeouts, backend/body limits, direct-to-object-storage or multipart/resumable upload, progress UI, quotas, retention, abuse/malware expectations, and staging/prod smoke;
+- do not silently raise the MVP limit to `300 MB` inside the generic attachment implementation.
 
 Out of scope for analysis:
 - implementing broad file support before policy is agreed;
@@ -695,6 +701,59 @@ Out of scope:
 
 Next:
 - after Segment 210, move to file-transfer policy/design, then reply-to-message.
+
+## Segment 211. Customer File Transfer Policy Design
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_211_CUSTOMER_FILE_TRANSFER_POLICY_DESIGN.md`
+
+Status:
+- `policy closed locally / runtime brief prepared; command verification passed`
+
+Scope:
+- inventory the current `messageFile` upload path;
+- record the agreed MVP allowed file types/categories;
+- record `50 MB` as the MVP max file size;
+- record executable-like files as download-only;
+- decide preview vs download-only rendering;
+- define frontend/backend validation responsibilities;
+- produce the next bounded runtime implementation brief if the policy is clear.
+
+Agreed MVP policy:
+- initial `messageFile` cap: `50 MB` per file;
+- one attachment per message remains unchanged;
+- generic files beyond images/PDF are allowed as download-only rows;
+- executable-like files such as `.exe`, `.msi`, `.bat`, `.cmd`, `.ps1`, `.sh`, `.apk` are download-only and must not be previewed/executed;
+- images keep inline preview, PDFs keep file row/open behavior, other files use a generic file row/access URL;
+- backend validation is authoritative; frontend validation is UX only;
+- no antivirus/malware scanning or safety claim is made in this slice;
+- `300 MB` file transfer is deferred to a separate large-file transfer design, not the MVP runtime segment.
+
+Current facts:
+- backend `messageFile` currently allows `image/*` and `application/pdf`;
+- backend max size is currently `4 MB`;
+- frontend `messageFile` currently accepts image/PDF only;
+- current message rendering supports inline images and PDF file rows.
+
+Policy result:
+- `messageFile` should move to `50 MB` generic attachments in the next runtime segment;
+- `serverImage` remains image-only and `4 MB`;
+- generic files, executable-like files, scripts, installers, archives, and unknown binaries are download/open-only rows with no safety claim;
+- `300 MB` remains deferred to a separate large-file transfer design.
+
+Prepared runtime brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_212_CUSTOMER_MESSAGE_GENERIC_FILE_ATTACHMENTS.md`
+
+Out of scope:
+- malware scanning implementation;
+- private/signed object access migration;
+- chunked/resumable uploads;
+- multiple attachments per message;
+- drag-and-drop attachments;
+- reply-to-message.
+
+Next:
+- after Segment 211, move to `customer-message-generic-file-attachments`, then reply-to-message.
 
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 

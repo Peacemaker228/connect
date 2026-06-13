@@ -258,6 +258,11 @@ Current storage decision:
 - `Stage 5` is now considered complete at the current roadmap level
 - the implemented storage hygiene path stays narrow: staged/temp-upload sweeper, not a full bucket-vs-DB orphan scanner
 
+Customer-priority file transfer decision:
+- generic message attachment expansion belongs to `Wave 35 / CUSTOMER_PRIORITY_DELIVERY_PLAN`, not to a broad storage-provider migration;
+- the immediate MVP target is `50 MB` per `messageFile`, one attachment per message, broad generic files as download-only rows, images/PDFs on the current preview/open paths, and executable-like files as download-only attachments without safety claims;
+- requests for roughly `300 MB` file transfer are deferred to a separate large-file transfer design covering object-storage billing, direct/multipart/resumable upload architecture, progress UI, quotas, retention, abuse/malware expectations, and staging/prod smoke.
+
 Это не выглядит срочной задачей.
 
 Сейчас в проекте уже есть хороший промежуточный слой: загрузка идёт через backend route, а не через произвольный direct flow из UI.
