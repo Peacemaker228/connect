@@ -35,6 +35,7 @@ const ns = {
   MessageFileModal: {
     title: 'Add an attachment',
     description: 'Send a file as a message',
+    maxSize: 'Maximum file size: 50 MB',
   },
   MembersModal: {
     title: 'Manage members',
