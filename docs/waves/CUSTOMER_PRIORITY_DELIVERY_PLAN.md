@@ -671,13 +671,20 @@ Brief:
 - `docs/delegation/briefs/SEGMENT_BRIEF_210_CUSTOMER_LINK_RENDERING_BASIC.md`
 
 Status:
-- `ready for implementation`
+- `implemented locally / command verification passed; manual smoke pending`
 
 Scope:
 - render safe `http://`, `https://`, and `www.` URLs in message text as clickable links;
 - preserve mentions, multiline text, deleted-message rendering, message copy, and attachment blocks;
 - use native `<a>` with `target="_blank"` and `rel="noopener noreferrer"`;
 - avoid `dangerouslySetInnerHTML`, backend URL fetching, and preview/unfurl behavior.
+
+Delivered:
+- message text now linkifies safe web URLs only after mention tokenization, so metadata-backed mentions and allowed raw fallback mentions remain higher priority;
+- `www.` links render with an `https://` href while preserving visible message text;
+- trailing punctuation remains outside the clickable href;
+- long URLs use the existing message wrapping helper to avoid overflowing the chat row;
+- deleted-message rendering, image/PDF attachment blocks, and message copy behavior stay unchanged.
 
 Out of scope:
 - link preview cards;
