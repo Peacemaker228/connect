@@ -76,6 +76,18 @@ const sanitizeFileNamePart = (fileName: string) => {
   };
 };
 
+const encodeContentDispositionFileName = (fileName: string) => {
+  return encodeURIComponent(basename(fileName) || 'file').replace(/['()*]/g, (character) => {
+    return `%${character.charCodeAt(0).toString(16).toUpperCase()}`;
+  });
+};
+
+const getContentDispositionFileNameFallback = (fileName: string) => {
+  const { baseName, extension } = sanitizeFileNamePart(fileName);
+
+  return `${baseName}${extension}`.replace(/[\r\n"]/g, '_') || 'file';
+};
+
 @Injectable()
 export class S3CompatibleStorageProvider implements BackendStorageProvider {
   readonly kind = 's3-compatible' as const;
@@ -91,6 +103,7 @@ export class S3CompatibleStorageProvider implements BackendStorageProvider {
 
     const config = this.getResolvedConfig();
     const objectKey = this.buildObjectKey(request.folder, request.fileName);
+    const contentDisposition = this.resolveContentDisposition(request);
 
     try {
       await this.getClient(config).send(
@@ -98,7 +111,7 @@ export class S3CompatibleStorageProvider implements BackendStorageProvider {
           Bucket: config.bucket,
           Key: objectKey,
           Body: request.buffer,
-          ContentDisposition: 'inline',
+          ContentDisposition: contentDisposition,
           ContentType: request.contentType,
           CacheControl: 'public, max-age=31536000, immutable',
           Metadata: {
@@ -328,6 +341,21 @@ export class S3CompatibleStorageProvider implements BackendStorageProvider {
 
   private createPublicUrl(publicBaseUrl: string, objectKey: string) {
     return `${publicBaseUrl}/${encodeStorageKey(objectKey)}`;
+  }
+
+  private resolveContentDisposition(request: StorageProviderUploadRequest) {
+    if (
+      request.endpoint !== 'messageFile' ||
+      request.contentType.startsWith('image/') ||
+      request.contentType === 'application/pdf'
+    ) {
+      return 'inline';
+    }
+
+    return [
+      `attachment; filename="${getContentDispositionFileNameFallback(request.fileName)}"`,
+      `filename*=UTF-8''${encodeContentDispositionFileName(request.fileName)}`,
+    ].join('; ');
   }
 
   private ensureAllowedFolder(objectKey: string, folder: string) {

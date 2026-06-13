@@ -15,7 +15,7 @@ export type UploadedStorageFile = {
 
 export interface StorageUploadPolicy {
   accessKind: StorageFileAccessKind;
-  allowedContentTypes: readonly string[];
+  allowedContentTypes?: readonly string[];
   folder: string;
   maxFileSizeBytes?: number;
   visibility: StorageVisibility;

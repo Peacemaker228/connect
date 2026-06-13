@@ -2,7 +2,7 @@
 
 Branch: `feature/customer-message-generic-file-attachments`
 Segment: `customer-message-generic-file-attachments`
-Status: `ready for implementation after Segment 211 policy closeout`
+Status: `implemented locally / command verification passed; manual smoke pending`
 Base: latest `origin/core/reborn` after `customer-file-transfer-policy-design`
 
 ## Context
@@ -23,6 +23,34 @@ Current runtime before this segment:
 - `FileUpload` blocks non-image/PDF files on the client;
 - stored upload metadata has `fileKey`, `fileUrl`, `fileType`, and access kind, but not a stable display filename;
 - message rendering supports image preview and PDF rows only.
+
+## Implementation Result
+
+Delivered:
+- backend `messageFile` policy now allows generic file content types and enforces `50 MB`;
+- backend `serverImage` remains image-only and `4 MB`;
+- empty/unknown uploaded MIME types normalize to `application/octet-stream`;
+- new stored upload values preserve optional display filename as `name` in `storage://v1` metadata while old values remain compatible;
+- finalized message file values preserve that display filename without a DB migration;
+- frontend `messageFile` picker no longer restricts `accept` to image/PDF, while `serverImage` keeps `accept="image/*"`;
+- frontend upload UX shows visible validation/upload errors for type/size/upload failures;
+- image attachments still render inline;
+- PDF attachments still render as file rows;
+- non-image/non-PDF attachments render as generic file rows;
+- non-image/non-PDF `messageFile` objects are uploaded with `Content-Disposition: attachment`;
+- copy action keeps using the existing backend access URL path.
+
+Not changed:
+- one attachment per message;
+- screenshot paste image flow;
+- storage provider/env/secrets/bucket policy;
+- DB schema/migrations;
+- auth/session;
+- unread/realtime;
+- media/WebRTC;
+- replies;
+- link previews;
+- `300 MB` large-file transfer.
 
 ## Required Reading
 

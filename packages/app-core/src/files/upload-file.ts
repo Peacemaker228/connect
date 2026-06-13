@@ -8,6 +8,7 @@ const DEFAULT_STORED_UPLOAD_ACCESS_KIND: StoredUploadAccessKind = 'backend-redir
 type StoredUploadMetadata = {
   accessKind: StoredUploadAccessKind
   fileKey: string | null
+  fileName: string | null
   fileType: string | null
   fileUrl: string
 }
@@ -15,6 +16,7 @@ type StoredUploadMetadata = {
 type SerializeUploadValueInput = {
   accessKind?: StoredUploadAccessKind
   fileKey: string
+  fileName?: string | null
   fileType: string
   fileUrl: string
 }
@@ -39,6 +41,7 @@ const parseMetadataUploadValue = (value: string): StoredUploadMetadata | null =>
   const searchParams = new URLSearchParams(value.slice(STORAGE_VALUE_PREFIX.length))
   const fileUrl = searchParams.get('url')?.trim() ?? ''
   const fileKey = searchParams.get('key')?.trim() ?? ''
+  const fileName = searchParams.get('name')?.trim() ?? ''
   const fileType = searchParams.get('type')?.trim() ?? ''
   const accessKind = normalizeStoredUploadAccessKind(searchParams.get('access'))
 
@@ -50,7 +53,29 @@ const parseMetadataUploadValue = (value: string): StoredUploadMetadata | null =>
     accessKind,
     fileUrl,
     fileKey,
+    fileName: fileName || null,
     fileType,
+  }
+}
+
+const safeDecodeURIComponent = (value: string) => {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
+
+const getFileNameFromUrl = (value: string) => {
+  try {
+    const url = new URL(value)
+    const lastPathSegment = url.pathname.split('/').filter(Boolean).pop()
+
+    return lastPathSegment ? safeDecodeURIComponent(lastPathSegment) : null
+  } catch {
+    const lastPathSegment = value.split(/[/?#]/).filter(Boolean).pop()
+
+    return lastPathSegment ? safeDecodeURIComponent(lastPathSegment) : null
   }
 }
 
@@ -61,6 +86,7 @@ const parseLegacyUploadValue = (value: string, endpoint: UploadEndpoint): Stored
     return {
       accessKind: DEFAULT_STORED_UPLOAD_ACCESS_KIND,
       fileKey: null,
+      fileName: getFileNameFromUrl(value),
       fileType: fileTypeMatch[1],
       fileUrl: value.slice(0, -fileTypeMatch[0].length),
     }
@@ -70,6 +96,7 @@ const parseLegacyUploadValue = (value: string, endpoint: UploadEndpoint): Stored
     return {
       accessKind: DEFAULT_STORED_UPLOAD_ACCESS_KIND,
       fileKey: null,
+      fileName: getFileNameFromUrl(value),
       fileType: 'image/*',
       fileUrl: value,
     }
@@ -78,6 +105,7 @@ const parseLegacyUploadValue = (value: string, endpoint: UploadEndpoint): Stored
   return {
     accessKind: DEFAULT_STORED_UPLOAD_ACCESS_KIND,
     fileKey: null,
+    fileName: getFileNameFromUrl(value),
     fileType: /\.pdf(?:$|[?#])/i.test(value) ? 'application/pdf' : 'image/*',
     fileUrl: value,
   }
@@ -88,6 +116,7 @@ export const getUploadValueParts = (value: string, endpoint: UploadEndpoint) => 
     return {
       accessKind: DEFAULT_STORED_UPLOAD_ACCESS_KIND,
       fileKey: null,
+      fileName: null,
       fileType: null,
       fileUrl: '',
     }
@@ -123,6 +152,7 @@ export const buildStorageAccessRequestPath = (value: string, endpoint: UploadEnd
 export const serializeUploadValue = ({
   accessKind = DEFAULT_STORED_UPLOAD_ACCESS_KIND,
   fileKey,
+  fileName,
   fileType,
   fileUrl,
 }: SerializeUploadValueInput) => {
@@ -132,6 +162,12 @@ export const serializeUploadValue = ({
     type: fileType,
     url: fileUrl,
   })
+
+  const normalizedFileName = fileName?.trim()
+
+  if (normalizedFileName) {
+    searchParams.set('name', normalizedFileName)
+  }
 
   return `${STORAGE_VALUE_PREFIX}${searchParams.toString()}`
 }
