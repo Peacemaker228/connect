@@ -13,7 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Form, FormControl, FormField, FormItem } from '@/lib/shared/ui/form'
 import { Input } from '@/lib/shared/ui/input'
 import { Button } from '@/lib/shared/ui/button'
-import { useParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { ERoutes } from '@app-core/routing/routes'
 import { useTranslations } from 'next-intl'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
@@ -56,6 +56,7 @@ interface IChatItemProps {
   messageApiUrl: string
   messageQuery: Record<string, string>
   mentions?: MessageMentionDto[]
+  serverId: string
   isEditing: boolean
   onStartEditing: () => void
   onCancelEditing: () => void
@@ -75,6 +76,7 @@ export const ChatItem: FC<IChatItemProps> = ({
   content,
   id,
   mentions,
+  serverId,
   isEditing,
   onStartEditing,
   onCancelEditing,
@@ -96,7 +98,6 @@ export const ChatItem: FC<IChatItemProps> = ({
   })
   const copyFeedbackTimeoutRef = useRef<number | null>(null)
   const { onOpen } = useModal()
-  const params = useParams()
   const router = useRouter()
   const { mutateAsync: updateMessage } = useUpdateMessage()
 
@@ -141,7 +142,7 @@ export const ChatItem: FC<IChatItemProps> = ({
   const onMemberClick = () => {
     if (member.id === currentMember.id) return
 
-    router.push(`${ERoutes.SERVERS}/${params?.serverId}${ERoutes.CONVERSATIONS}/${member.id}`)
+    router.push(`${ERoutes.SERVERS}/${serverId}${ERoutes.CONVERSATIONS}/${member.id}`)
   }
 
   const form = useForm<IChatInputSchema>({
@@ -538,7 +539,16 @@ export const ChatItem: FC<IChatItemProps> = ({
                 'text-accent text-zinc-600 dark:text-zinc-300 whitespace-pre-wrap break-words',
                 deleted && 'italic text-zinc-500 dark:text-zinc-400 text-xs mt-1',
               )}>
-              {deleted ? content : <MessageContent content={content} mentions={mentions} />}
+              {deleted ? (
+                content
+              ) : (
+                <MessageContent
+                  content={content}
+                  currentMemberId={currentMember.id}
+                  mentions={mentions}
+                  serverId={serverId}
+                />
+              )}
               {isUpdated && !deleted && (
                 <span className="text-[10px] mx-2 text-zinc-500 dark:text-zinc-400">({t('ChatItem.edited')})</span>
               )}

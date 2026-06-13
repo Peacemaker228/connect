@@ -262,6 +262,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
                   member={m.member}
                   content={m.content}
                   mentions={m.mentions}
+                  serverId={serverId}
                   deleted={m.deleted}
                   isUpdated={m.updatedAt !== m.createdAt}
                   isEditing={editingMessageId === m.id}

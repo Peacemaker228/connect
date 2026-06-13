@@ -799,7 +799,28 @@ Manual smoke:
 - pending authenticated web channel/DM smoke for image, PDF, generic document, archive, executable-like file, Cyrillic filename display, oversize rejection, server image negative, screenshot paste, file upload area drag/drop, composer drag/drop, copy action, and reload restore.
 
 Next:
-- decide between mention chip navigation and reply-to-message after Segment 213 verification/manual smoke.
+- mention chip navigation is closed in Segment 214; continue toward reply-to-message as the next scoped product slice unless manual smoke exposes a mention-navigation blocker.
+
+## Segment 214. Customer Mention Chip Navigation
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_214_CUSTOMER_MENTION_CHIP_NAVIGATION.md`
+
+Status:
+- `implemented locally / command verification passed; manual smoke pending`
+
+Delivered:
+- metadata-backed single-user mention chips now navigate to the existing direct conversation route for other members: `/servers/:serverId/conversations/:memberId`;
+- self mentions remain non-clickable to avoid the current self-conversation redirect path;
+- `@all` remains visually styled but non-clickable;
+- raw fallback mention chips without backend metadata remain non-clickable;
+- mention highlight, copy action readable mentions, edit readable mention text, edit picker behavior, basic link rendering, backend/API/SDK contracts, DB schema, unread/realtime, auth/session, storage, media/WebRTC, replies, profile modal, and link previews remain unchanged.
+
+Manual smoke:
+- pending authenticated web smoke for other-user mention navigation, self mention non-navigation, `@all` non-navigation, fallback non-navigation, copy/edit/link regressions, and desktop runtime review.
+
+Next:
+- continue to reply-to-message after Segment 214 verification/manual smoke unless a mention-navigation blocker appears.
 
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 

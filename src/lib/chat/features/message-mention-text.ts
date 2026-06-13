@@ -1,7 +1,11 @@
 import type { MessageMentionDto } from '@app-core/contracts'
 
 export type MentionRenderToken = {
+  email?: string
+  kind?: MessageMentionDto['kind']
   label: string
+  memberId?: string
+  metadataBacked?: boolean
   target: string
   targetLower: string
 }
@@ -16,39 +20,32 @@ export const getMessageMentionLabel = (mention: MessageMentionDto) => {
 
 export const getMentionRenderTokens = (mentions: MessageMentionDto[] = []) => {
   const tokenByTarget = new Map<string, MentionRenderToken>()
-  const rawLabels = new Set<string>()
+
+  const setMentionRenderToken = (target: string, mention: MessageMentionDto, label: string) => {
+    tokenByTarget.set(target.toLowerCase(), {
+      email: mention.kind === 'USER' ? mention.member.profile.email : undefined,
+      kind: mention.kind,
+      label,
+      memberId: mention.memberId,
+      metadataBacked: true,
+      target,
+      targetLower: target.toLowerCase(),
+    })
+  }
 
   mentions.forEach((mention) => {
     const label = getMessageMentionLabel(mention)
     const stableTarget = `<@${mention.memberId}>`
 
-    tokenByTarget.set(stableTarget, {
-      label,
-      target: stableTarget,
-      targetLower: stableTarget.toLowerCase(),
-    })
+    setMentionRenderToken(stableTarget, mention, label)
 
     if (mention.kind === 'ALL') {
-      tokenByTarget.set('<@all>', {
-        label: 'all',
-        target: '<@all>',
-        targetLower: '<@all>',
-      })
-      rawLabels.add('all')
+      setMentionRenderToken('<@all>', mention, 'all')
+      setMentionRenderToken('@all', mention, 'all')
       return
     }
 
-    rawLabels.add(label)
-  })
-
-  rawLabels.forEach((label) => {
-    const target = `@${label}`
-
-    tokenByTarget.set(target.toLowerCase(), {
-      label,
-      target,
-      targetLower: target.toLowerCase(),
-    })
+    setMentionRenderToken(`@${label}`, mention, label)
   })
 
   return Array.from(tokenByTarget.values()).sort((a, b) => b.target.length - a.target.length)

@@ -4,6 +4,10 @@ import type { MessageMentionDto } from '@app-core/contracts'
 import type { MentionRenderToken } from '@/lib/chat/features/message-mention-text'
 import { Fragment } from 'react'
 import { getMentionRenderTokens } from '@/lib/chat/features/message-mention-text'
+import Link from 'next/link'
+import { ERoutes } from '@app-core/routing/routes'
+import { cn } from '@/lib/shared/utils/utils'
+import { ActionTooltip } from '@/lib/shared/features/action-tooltip'
 
 const FALLBACK_MENTION_PATTERN = /(^|[\s.,!?;:()[\]{}"'`])(@all|@[^\s.,!?;:()[\]{}"'`<>]+)/gi
 const LINK_PATTERN = /(^|[\s([{])((?:https?:\/\/|www\.)[^\s<>"'`]+)/gi
@@ -132,10 +136,20 @@ const renderTextWithLinks = (content: string, keyPrefix: string) => {
 
 interface MessageContentProps {
   content: string
+  currentMemberId?: string
   mentions?: MessageMentionDto[]
+  serverId?: string
 }
 
-export const MessageContent = ({ content, mentions }: MessageContentProps) => {
+const mentionChipClassName =
+  'rounded-sm bg-amber-500/15 px-1 font-semibold text-amber-700 dark:bg-amber-400/15 dark:text-amber-300'
+
+const mentionLinkClassName = cn(
+  mentionChipClassName,
+  'transition hover:bg-amber-500/25 hover:text-amber-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:hover:bg-amber-400/25 dark:hover:text-amber-200 dark:focus-visible:ring-offset-zinc-900',
+)
+
+export const MessageContent = ({ content, currentMemberId, mentions, serverId }: MessageContentProps) => {
   const tokens = getMentionRenderTokens(mentions)
   const canUseRawFallback = mentions === undefined
   const contentLower = content.toLowerCase()
@@ -175,10 +189,28 @@ export const MessageContent = ({ content, mentions }: MessageContentProps) => {
           return <Fragment key={`text-${index}`}>{renderTextWithLinks(part, `text-${index}`)}</Fragment>
         }
 
+        const mentionHref =
+          serverId &&
+          currentMemberId &&
+          part.metadataBacked &&
+          part.kind === 'USER' &&
+          part.memberId &&
+          part.memberId !== currentMemberId
+            ? `${ERoutes.SERVERS}/${serverId}${ERoutes.CONVERSATIONS}/${part.memberId}`
+            : null
+
+        if (mentionHref) {
+          return (
+            <ActionTooltip key={`mention-${index}`} label={part.email ?? `@${part.label}`} preserveCase>
+              <Link href={mentionHref} className={mentionLinkClassName}>
+                @{part.label}
+              </Link>
+            </ActionTooltip>
+          )
+        }
+
         return (
-          <span
-            key={`mention-${index}`}
-            className="rounded-sm bg-amber-500/15 px-1 font-semibold text-amber-700 dark:bg-amber-400/15 dark:text-amber-300">
+          <span key={`mention-${index}`} className={mentionChipClassName}>
             @{part.label}
           </span>
         )
