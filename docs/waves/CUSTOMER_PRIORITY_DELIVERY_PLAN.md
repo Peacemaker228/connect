@@ -755,6 +755,43 @@ Out of scope:
 Next:
 - after Segment 211, move to `customer-message-generic-file-attachments`, then reply-to-message.
 
+## Segment 212. Customer Message Generic File Attachments
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_212_CUSTOMER_MESSAGE_GENERIC_FILE_ATTACHMENTS.md`
+
+Status:
+- `implemented locally / command verification passed; manual smoke pending`
+
+Delivered:
+- backend `messageFile` now accepts generic files up to `50 MB`;
+- `serverImage` remains image-only and `4 MB`;
+- backend upload normalizes multipart filename mojibake so new Cyrillic filenames are stored/displayed as readable UTF-8 names;
+- stored `storage://v1` metadata now supports optional display filename without a DB migration;
+- frontend `messageFile` picker allows generic files while server image upload remains image-only;
+- image attachments keep inline preview, PDF attachments keep file-row/open behavior, and all other files render as generic download/open rows;
+- non-image/non-PDF `messageFile` uploads use attachment content disposition so generic files are not inline-previewed by the app path;
+- upload UI surfaces visible validation/upload errors;
+- upload copy now reflects the single-attachment policy instead of promising bulk upload;
+- drag/drop on the file upload area and chat composer is handled by the app upload/modal flow instead of the browser opening/downloading the dropped file;
+- copy action still copies useful attachment access URLs.
+
+Out of scope:
+- `300 MB` large-file transfer;
+- multiple attachments;
+- drag-and-drop;
+- direct/multipart/resumable upload;
+- malware scanning or safety claims;
+- storage provider/env/secrets/bucket policy changes;
+- DB schema/migrations;
+- auth/session, unread/realtime, media/WebRTC, replies, and link previews.
+
+Manual smoke:
+- pending authenticated web channel/DM smoke for image, PDF, generic document, archive, executable-like file, Cyrillic filename display, oversize rejection, server image negative, screenshot paste, file upload area drag/drop, composer drag/drop, copy action, and reload restore.
+
+Next:
+- after Segment 212, move to reply-to-message unless a file-transfer smoke blocker appears.
+
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 
 ## Low-Risk UX Fixes Result

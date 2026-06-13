@@ -13,6 +13,10 @@ import type {
 
 const MB_IN_BYTES = 1024 * 1024;
 const STORAGE_VALUE_PREFIX = 'storage://v1?';
+const DEFAULT_GENERIC_CONTENT_TYPE = 'application/octet-stream';
+const UTF8_REPLACEMENT_CHARACTER = '\uFFFD';
+const LATIN1_MOJIBAKE_MARKER = /[ÃÂÐÑ]/;
+const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001F\u007F-\u009F]/;
 
 const STORAGE_UPLOAD_POLICIES: Record<StorageUploadEndpoint, StorageUploadPolicy> = {
   serverImage: {
@@ -24,9 +28,8 @@ const STORAGE_UPLOAD_POLICIES: Record<StorageUploadEndpoint, StorageUploadPolicy
   },
   messageFile: {
     accessKind: 'backend-redirect',
-    allowedContentTypes: ['image/', 'application/pdf'],
     folder: 'message-files',
-    maxFileSizeBytes: 4 * MB_IN_BYTES,
+    maxFileSizeBytes: 50 * MB_IN_BYTES,
     visibility: 'public',
   },
 };
@@ -39,23 +42,21 @@ export class StorageService {
     private readonly configService: ConfigService,
   ) {}
 
-  async uploadFile(
-    profileId: string | undefined,
-    endpoint: string | undefined,
-    file: UploadedStorageFile | undefined,
-  ) {
+  async uploadFile(profileId: string | undefined, endpoint: string | undefined, file: UploadedStorageFile | undefined) {
     const resolvedProfileId = this.requireProfileId(profileId);
     const resolvedEndpoint = this.requireUploadEndpoint(endpoint);
     const uploadPolicy = STORAGE_UPLOAD_POLICIES[resolvedEndpoint];
     const resolvedFile = this.requireUploadedFile(file);
+    const resolvedContentType = this.normalizeUploadedContentType(resolvedFile.mimetype);
+    const resolvedFileName = this.normalizeUploadedFileName(resolvedFile.originalname);
 
-    this.ensureAllowedFile(resolvedFile, uploadPolicy);
+    this.ensureAllowedFile(resolvedFile, uploadPolicy, resolvedContentType);
 
     const storedFile = await this.storageProvider.uploadFile({
       buffer: resolvedFile.buffer,
       endpoint: resolvedEndpoint,
-      fileName: resolvedFile.originalname,
-      contentType: resolvedFile.mimetype,
+      fileName: resolvedFileName,
+      contentType: resolvedContentType,
       folder: this.resolveStorageFolder(uploadPolicy.folder),
       profileId: resolvedProfileId,
       size: resolvedFile.size,
@@ -110,7 +111,7 @@ export class StorageService {
     }
 
     const uploadPolicy = STORAGE_UPLOAD_POLICIES[endpoint];
-    const { fileKey, fileUrl } = this.resolveStoredValueReference(resolvedValue);
+    const { fileKey, fileName, fileUrl } = this.resolveStoredValueReference(resolvedValue);
 
     if (!fileKey && !fileUrl) {
       return resolvedValue;
@@ -127,6 +128,7 @@ export class StorageService {
     return this.serializeStoredValue({
       accessKind: uploadPolicy.accessKind,
       fileKey: finalizedFile.key,
+      fileName: fileName ?? finalizedFile.name,
       fileType: finalizedFile.contentType,
       fileUrl: finalizedFile.url,
     });
@@ -173,8 +175,11 @@ export class StorageService {
     });
   }
 
-  private ensureAllowedFile(file: UploadedStorageFile, policy: StorageUploadPolicy) {
-    if (!policy.allowedContentTypes.some((contentType) => file.mimetype.startsWith(contentType))) {
+  private ensureAllowedFile(file: UploadedStorageFile, policy: StorageUploadPolicy, contentType: string) {
+    if (
+      policy.allowedContentTypes &&
+      !policy.allowedContentTypes.some((allowedType) => contentType.startsWith(allowedType))
+    ) {
       throw new HttpException('Invalid file type', HttpStatus.BAD_REQUEST);
     }
 
@@ -212,6 +217,7 @@ export class StorageService {
 
     return {
       fileKey: this.normalizeOptionalString(searchParams.get('key') ?? undefined),
+      fileName: this.normalizeOptionalString(searchParams.get('name') ?? undefined),
       fileUrl: this.normalizeOptionalString(searchParams.get('url') ?? undefined),
     };
   }
@@ -219,11 +225,13 @@ export class StorageService {
   private serializeStoredValue({
     accessKind,
     fileKey,
+    fileName,
     fileType,
     fileUrl,
   }: {
     accessKind: StorageUploadPolicy['accessKind'];
     fileKey: string;
+    fileName?: string | null;
     fileType: string;
     fileUrl: string;
   }) {
@@ -234,6 +242,12 @@ export class StorageService {
       url: fileUrl,
     });
 
+    const normalizedFileName = this.normalizeOptionalString(fileName ?? undefined);
+
+    if (normalizedFileName) {
+      searchParams.set('name', normalizedFileName);
+    }
+
     return `${STORAGE_VALUE_PREFIX}${searchParams.toString()}`;
   }
 
@@ -241,6 +255,30 @@ export class StorageService {
     const resolvedValue = value?.trim();
 
     return resolvedValue ? resolvedValue : null;
+  }
+
+  private normalizeUploadedContentType(value: string | undefined) {
+    return this.normalizeOptionalString(value) ?? DEFAULT_GENERIC_CONTENT_TYPE;
+  }
+
+  private normalizeUploadedFileName(value: string | undefined) {
+    const resolvedValue = this.normalizeOptionalString(value) ?? 'file';
+
+    if (!LATIN1_MOJIBAKE_MARKER.test(resolvedValue)) {
+      return resolvedValue;
+    }
+
+    const decodedValue = Buffer.from(resolvedValue, 'latin1').toString('utf8').trim();
+
+    if (
+      !decodedValue ||
+      decodedValue.includes(UTF8_REPLACEMENT_CHARACTER) ||
+      CONTROL_CHARACTER_PATTERN.test(decodedValue)
+    ) {
+      return resolvedValue;
+    }
+
+    return decodedValue;
   }
 
   private resolveStorageFolder(folder: string) {

@@ -292,8 +292,9 @@ export const ChatItem: FC<IChatItemProps> = ({
     }
   }, [])
 
-  const { fileType, fileUrl: resolvedFileUrl } = getUploadValueParts(fileUrl ?? '', 'messageFile')
+  const { fileName, fileType, fileUrl: resolvedFileUrl } = getUploadValueParts(fileUrl ?? '', 'messageFile')
   const fileAccessPath = buildStorageAccessPath(fileUrl ?? '', 'messageFile')
+  const attachmentDisplayName = fileName || resolvedFileUrl || 'Attachment'
 
   const isAdmin = currentMember.role === 'ADMIN'
   const isModerator = currentMember.role === 'MODERATOR'
@@ -303,9 +304,10 @@ export const ChatItem: FC<IChatItemProps> = ({
   const canEditMessage = !deleted && isOwner && !fileUrl
   const canCopyMessage = !deleted
 
-  const imageAlt = resolvedFileUrl || 'Image attachment'
+  const imageAlt = attachmentDisplayName || 'Image attachment'
   const isPDF = fileType === 'application/pdf' && fileAccessPath
   const isImage = Boolean(fileAccessPath) && fileType?.startsWith('image')
+  const isGenericFile = Boolean(fileAccessPath) && Boolean(fileType) && !isImage && !isPDF
   const isCurrentMemberMentioned = !deleted && mentions?.some((mention) => mention.memberId === currentMember.id)
 
   const isLoading = form.formState.isSubmitting
@@ -514,7 +516,19 @@ export const ChatItem: FC<IChatItemProps> = ({
                 target={'_blank'}
                 rel={'noopener noreferrer'}
                 className="ml-2 text-sm text-indigo-500 dark:text-indigo-400 hover:underline overflow-wrap-anywhere">
-                {resolvedFileUrl}
+                {attachmentDisplayName}
+              </a>
+            </div>
+          )}
+          {isGenericFile && (
+            <div className="relative flex max-w-xl items-center p-2 mt-2 rounded-md bg-background/10">
+              <FileIcon className="h-10 w-10 shrink-0 fill-zinc-200 stroke-zinc-500 dark:fill-zinc-700 dark:stroke-zinc-300" />
+              <a
+                href={fileAccessPath}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+                className="ml-2 min-w-0 text-sm text-indigo-500 dark:text-indigo-400 hover:underline overflow-wrap-anywhere">
+                {attachmentDisplayName}
               </a>
             </div>
           )}

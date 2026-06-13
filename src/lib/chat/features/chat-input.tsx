@@ -1,6 +1,16 @@
 'use client'
 
-import { ClipboardEvent, FC, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  ClipboardEvent,
+  DragEvent,
+  FC,
+  KeyboardEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
@@ -73,6 +83,14 @@ const getClipboardImageFile = (clipboardData: DataTransfer) => {
     type: fileType,
     lastModified: Date.now(),
   })
+}
+
+const hasDroppedFiles = (dataTransfer: DataTransfer) => Array.from(dataTransfer.types).includes('Files')
+
+const getDroppedFile = (dataTransfer: DataTransfer) => {
+  const [file] = Array.from(dataTransfer.files)
+
+  return file ?? null
 }
 
 type FocusMode = 'entry' | 'after-send'
@@ -425,6 +443,32 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
     onOpen('messageFile', { apiUrl: messageApiUrl, initialFile: pastedImage, query: messageQuery })
   }
 
+  const handleDragFile = (event: DragEvent<HTMLDivElement>) => {
+    if (!hasDroppedFiles(event.dataTransfer)) {
+      return
+    }
+
+    event.preventDefault()
+  }
+
+  const handleDropFile = (event: DragEvent<HTMLDivElement>) => {
+    if (!hasDroppedFiles(event.dataTransfer)) {
+      return
+    }
+
+    event.preventDefault()
+
+    const droppedFile = getDroppedFile(event.dataTransfer)
+
+    if (!droppedFile) {
+      return
+    }
+
+    shouldFocusAfterSendRef.current = false
+    closeMentionPicker()
+    onOpen('messageFile', { apiUrl: messageApiUrl, initialFile: droppedFile, query: messageQuery })
+  }
+
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (isMentionPickerOpen) {
       if (event.key === 'ArrowDown') {
@@ -537,7 +581,7 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <div className={'relative p-4 pb-6'}>
+                <div className={'relative p-4 pb-6'} onDragOver={handleDragFile} onDrop={handleDropFile}>
                   <button
                     type={'button'}
                     onClick={() => {
