@@ -30,10 +30,14 @@ Delivered:
 - backend `messageFile` policy now allows generic file content types and enforces `50 MB`;
 - backend `serverImage` remains image-only and `4 MB`;
 - empty/unknown uploaded MIME types normalize to `application/octet-stream`;
+- uploaded filenames are normalized at the backend boundary when multipart decoding produced Latin-1 mojibake, so new Cyrillic filenames are stored/read as readable UTF-8 names;
 - new stored upload values preserve optional display filename as `name` in `storage://v1` metadata while old values remain compatible;
 - finalized message file values preserve that display filename without a DB migration;
 - frontend `messageFile` picker no longer restricts `accept` to image/PDF, while `serverImage` keeps `accept="image/*"`;
 - frontend upload UX shows visible validation/upload errors for type/size/upload failures;
+- upload copy no longer claims bulk upload while the runtime supports one attachment per message;
+- dropping a file onto the file upload area uploads through the same single-file path instead of letting the browser open/download the file;
+- dropping a file onto the chat composer opens the existing attachment modal with that file preselected instead of letting the browser open/download it;
 - image attachments still render inline;
 - PDF attachments still render as file rows;
 - non-image/non-PDF attachments render as generic file rows;
@@ -239,8 +243,12 @@ Authenticated web session:
 - upload `messageFile` over `50 MB`: rejected with visible error;
 - server avatar upload still rejects non-image files;
 - screenshot paste still opens the existing attachment confirmation and sends image;
+- drag a file onto the attachment upload area: it uploads through the existing single-file path;
+- drag a file onto the chat composer/input area: the attachment modal opens and does not navigate away/open the file in the browser;
+- drag multiple files onto the upload area: the UI does not claim/perform bulk upload;
 - copy action copies useful text/access URL;
 - reload restores all attachment rows correctly.
+- upload a file with a Cyrillic filename: the chat row shows readable Cyrillic, not mojibake like `Ð...`.
 
 Staging/operator:
 - if staging returns proxy/body-size `413` or timeout before backend validation, record the exact limit symptom and treat infrastructure/body-limit adjustment as a separate operator follow-up. Do not change storage provider secrets or bucket policy in this segment.

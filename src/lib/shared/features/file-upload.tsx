@@ -1,6 +1,6 @@
 'use client'
 
-import { ChangeEvent, FC, useCallback, useEffect, useRef, useState } from 'react'
+import { ChangeEvent, DragEvent, FC, useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { FileIcon, Loader2, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
@@ -16,6 +16,7 @@ import { StorageActionError, uploadStorageFile } from '@sdk/actions/storage'
 const MB_IN_BYTES = 1024 * 1024
 const MESSAGE_FILE_MAX_SIZE_BYTES = 50 * MB_IN_BYTES
 const SERVER_IMAGE_MAX_SIZE_BYTES = 4 * MB_IN_BYTES
+const SINGLE_FILE_DROP_ERROR = 'Only one file can be uploaded at a time.'
 
 interface IFileUploadProps {
   onChangeAction: (url?: string) => void
@@ -206,6 +207,39 @@ export const FileUpload: FC<IFileUploadProps> = ({
     }
   }
 
+  const handleDragFile = (event: DragEvent<HTMLLabelElement>) => {
+    if (!Array.from(event.dataTransfer.types).includes('Files')) {
+      return
+    }
+
+    event.preventDefault()
+  }
+
+  const handleDropFile = async (event: DragEvent<HTMLLabelElement>) => {
+    if (!Array.from(event.dataTransfer.types).includes('Files')) {
+      return
+    }
+
+    event.preventDefault()
+
+    const files = Array.from(event.dataTransfer.files)
+
+    if (files.length === 0) {
+      return
+    }
+
+    if (files.length > 1) {
+      setUploadError(SINGLE_FILE_DROP_ERROR)
+      return
+    }
+
+    const didUpload = await uploadFile(files[0])
+
+    if (!didUpload && inputRef.current) {
+      inputRef.current.value = ''
+    }
+  }
+
   if (value && fileType) {
     if (fileType.startsWith('image/')) {
       return (
@@ -264,8 +298,11 @@ export const FileUpload: FC<IFileUploadProps> = ({
 
   return (
     <label
+      onDragEnter={handleDragFile}
+      onDragOver={handleDragFile}
+      onDrop={handleDropFile}
       className={
-        'border-1 border-dashed rounded-lg p-20 border-black dark:border-white cursor-pointer flex flex-col items-center justify-center'
+        'border-[1px] border-dashed rounded-lg p-20 border-black dark:border-white cursor-pointer flex flex-col items-center justify-center gap-2'
       }>
       {isUploading ? (
         <Loader2 className="h-8 w-8 animate-spin" />

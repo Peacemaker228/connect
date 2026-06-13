@@ -21,7 +21,7 @@ const ns = {
     name: 'Server name',
     namePlaceholder: 'Enter server name',
     imageOne: 'Click or drag file to this area to upload',
-    imageTwo: 'Support for a single or bulk upload',
+    imageTwo: 'One file can be uploaded at a time',
   },
   InviteModal: {
     title: 'Invite Friends',

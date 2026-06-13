@@ -766,11 +766,14 @@ Status:
 Delivered:
 - backend `messageFile` now accepts generic files up to `50 MB`;
 - `serverImage` remains image-only and `4 MB`;
+- backend upload normalizes multipart filename mojibake so new Cyrillic filenames are stored/displayed as readable UTF-8 names;
 - stored `storage://v1` metadata now supports optional display filename without a DB migration;
 - frontend `messageFile` picker allows generic files while server image upload remains image-only;
 - image attachments keep inline preview, PDF attachments keep file-row/open behavior, and all other files render as generic download/open rows;
 - non-image/non-PDF `messageFile` uploads use attachment content disposition so generic files are not inline-previewed by the app path;
 - upload UI surfaces visible validation/upload errors;
+- upload copy now reflects the single-attachment policy instead of promising bulk upload;
+- drag/drop on the file upload area and chat composer is handled by the app upload/modal flow instead of the browser opening/downloading the dropped file;
 - copy action still copies useful attachment access URLs.
 
 Out of scope:
@@ -784,7 +787,7 @@ Out of scope:
 - auth/session, unread/realtime, media/WebRTC, replies, and link previews.
 
 Manual smoke:
-- pending authenticated web channel/DM smoke for image, PDF, generic document, archive, executable-like file, oversize rejection, server image negative, screenshot paste, copy action, and reload restore.
+- pending authenticated web channel/DM smoke for image, PDF, generic document, archive, executable-like file, Cyrillic filename display, oversize rejection, server image negative, screenshot paste, file upload area drag/drop, composer drag/drop, copy action, and reload restore.
 
 Next:
 - after Segment 212, move to reply-to-message unless a file-transfer smoke blocker appears.

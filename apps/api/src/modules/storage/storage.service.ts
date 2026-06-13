@@ -14,6 +14,9 @@ import type {
 const MB_IN_BYTES = 1024 * 1024;
 const STORAGE_VALUE_PREFIX = 'storage://v1?';
 const DEFAULT_GENERIC_CONTENT_TYPE = 'application/octet-stream';
+const UTF8_REPLACEMENT_CHARACTER = '\uFFFD';
+const LATIN1_MOJIBAKE_MARKER = /[ÃÂÐÑ]/;
+const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001F\u007F-\u009F]/;
 
 const STORAGE_UPLOAD_POLICIES: Record<StorageUploadEndpoint, StorageUploadPolicy> = {
   serverImage: {
@@ -45,13 +48,14 @@ export class StorageService {
     const uploadPolicy = STORAGE_UPLOAD_POLICIES[resolvedEndpoint];
     const resolvedFile = this.requireUploadedFile(file);
     const resolvedContentType = this.normalizeUploadedContentType(resolvedFile.mimetype);
+    const resolvedFileName = this.normalizeUploadedFileName(resolvedFile.originalname);
 
     this.ensureAllowedFile(resolvedFile, uploadPolicy, resolvedContentType);
 
     const storedFile = await this.storageProvider.uploadFile({
       buffer: resolvedFile.buffer,
       endpoint: resolvedEndpoint,
-      fileName: resolvedFile.originalname,
+      fileName: resolvedFileName,
       contentType: resolvedContentType,
       folder: this.resolveStorageFolder(uploadPolicy.folder),
       profileId: resolvedProfileId,
@@ -255,6 +259,26 @@ export class StorageService {
 
   private normalizeUploadedContentType(value: string | undefined) {
     return this.normalizeOptionalString(value) ?? DEFAULT_GENERIC_CONTENT_TYPE;
+  }
+
+  private normalizeUploadedFileName(value: string | undefined) {
+    const resolvedValue = this.normalizeOptionalString(value) ?? 'file';
+
+    if (!LATIN1_MOJIBAKE_MARKER.test(resolvedValue)) {
+      return resolvedValue;
+    }
+
+    const decodedValue = Buffer.from(resolvedValue, 'latin1').toString('utf8').trim();
+
+    if (
+      !decodedValue ||
+      decodedValue.includes(UTF8_REPLACEMENT_CHARACTER) ||
+      CONTROL_CHARACTER_PATTERN.test(decodedValue)
+    ) {
+      return resolvedValue;
+    }
+
+    return decodedValue;
   }
 
   private resolveStorageFolder(folder: string) {
