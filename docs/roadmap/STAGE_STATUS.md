@@ -1092,7 +1092,8 @@ Next likely work:
 - keep link preview, copy/reply, and media fallback as separate scoped segments
 - new customer requirements recorded: message edit mode correctness is a focused bugfix covering readable mention text in edit mode, edit input autofocus/caret, and preventing multiple simultaneous edited messages; chat send button should follow as a separate composer UX segment; broad message file-transfer expansion has an agreed MVP policy but still needs a bounded implementation segment before runtime rollout
 - keep realtime transport hardening as last-priority backlog: staging currently shows `Socket.IO` over `transport=polling` with websocket upgrade advertised but not observed; do not start Nginx websocket/rooms/auth hardening unless a concrete incident or load/security evidence forces it earlier
-- next focused implementation target: reply-to-message unless Segment 212 manual smoke finds a file-transfer blocker
+- newly recorded follow-ups: single-user mention chips should navigate to the mentioned member's profile/conversation entry point while `@all` stays non-navigating; file upload UI should show translated `50 MB` maximum-size copy
+- next focused implementation target: reply-to-message unless Segment 212 manual smoke or the new small follow-ups take priority
 
 ## Historical Notes
 

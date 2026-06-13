@@ -205,6 +205,10 @@ Acceptance:
 - mentioned users get visible unread/notification indication;
 - behavior works in web and desktop where the same UI is used.
 
+Follow-up requirement:
+- single-user mention chips should become clickable and navigate to that member's profile/conversation entry point. In the current app shape, this likely means opening or navigating to the direct conversation with that member.
+- group mentions such as `@all` must not navigate to a single user.
+
 ### P1. Link Rendering And Link Preview
 
 Problem:
@@ -775,6 +779,9 @@ Delivered:
 - upload copy now reflects the single-attachment policy instead of promising bulk upload;
 - drag/drop on the file upload area and chat composer is handled by the app upload/modal flow instead of the browser opening/downloading the dropped file;
 - copy action still copies useful attachment access URLs.
+
+Follow-up requirement:
+- upload UI copy should visibly explain the `50 MB` maximum file size with translations, e.g. `Maximum file size: 50 MB` / `Максимальный размер файла: 50 МБ`.
 
 Out of scope:
 - `300 MB` large-file transfer;
