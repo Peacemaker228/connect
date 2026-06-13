@@ -665,6 +665,30 @@ Out of scope:
 Next:
 - after Segment 209, move to `customer-link-rendering-basic`.
 
+## Segment 210. Customer Link Rendering Basic
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_210_CUSTOMER_LINK_RENDERING_BASIC.md`
+
+Status:
+- `ready for implementation`
+
+Scope:
+- render safe `http://`, `https://`, and `www.` URLs in message text as clickable links;
+- preserve mentions, multiline text, deleted-message rendering, message copy, and attachment blocks;
+- use native `<a>` with `target="_blank"` and `rel="noopener noreferrer"`;
+- avoid `dangerouslySetInnerHTML`, backend URL fetching, and preview/unfurl behavior.
+
+Out of scope:
+- link preview cards;
+- remote metadata scraping;
+- backend/API/SDK/DB/unread/auth/storage/media changes;
+- file-transfer policy;
+- reply-to-message.
+
+Next:
+- after Segment 210, move to file-transfer policy/design, then reply-to-message.
+
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 
 ## Low-Risk UX Fixes Result

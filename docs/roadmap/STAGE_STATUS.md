@@ -1086,7 +1086,7 @@ Next likely work:
 - keep link preview, copy/reply, and media fallback as separate scoped segments
 - new customer requirements recorded: message edit mode correctness is a focused bugfix covering readable mention text in edit mode, edit input autofocus/caret, and preventing multiple simultaneous edited messages; chat send button should follow as a separate composer UX segment; broad message file-transfer expansion needs a separate analysis/design segment before implementation because allowed file types, executable downloads, size cap, storage limits, malware expectations, and desktop behavior are not yet decided
 - keep realtime transport hardening as last-priority backlog: staging currently shows `Socket.IO` over `transport=polling` with websocket upgrade advertised but not observed; do not start Nginx websocket/rooms/auth hardening unless a concrete incident or load/security evidence forces it earlier
-- next focused implementation target: `customer-link-rendering-basic`
+- next focused implementation target: `customer-link-rendering-basic`; brief is ready at `docs/delegation/briefs/SEGMENT_BRIEF_210_CUSTOMER_LINK_RENDERING_BASIC.md`
 - planned follow-up order after basic link rendering: file-transfer policy/design, then reply-to-message
 
 ## Historical Notes
