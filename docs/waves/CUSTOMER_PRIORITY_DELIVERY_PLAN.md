@@ -783,6 +783,9 @@ Delivered:
 Follow-up requirement:
 - upload UI copy should visibly explain the `50 MB` maximum file size with translations, e.g. `Maximum file size: 50 MB` / `Максимальный размер файла: 50 МБ`.
 
+Prepared follow-up:
+- `customer-file-upload-max-size-copy` is ready in `docs/delegation/briefs/SEGMENT_BRIEF_213_CUSTOMER_FILE_UPLOAD_MAX_SIZE_COPY.md`.
+
 Out of scope:
 - `300 MB` large-file transfer;
 - multiple attachments;
@@ -797,7 +800,7 @@ Manual smoke:
 - pending authenticated web channel/DM smoke for image, PDF, generic document, archive, executable-like file, Cyrillic filename display, oversize rejection, server image negative, screenshot paste, file upload area drag/drop, composer drag/drop, copy action, and reload restore.
 
 Next:
-- after Segment 212, move to reply-to-message unless a file-transfer smoke blocker appears.
+- after Segment 212, close the small `customer-file-upload-max-size-copy` follow-up, then decide between mention chip navigation and reply-to-message.
 
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 
