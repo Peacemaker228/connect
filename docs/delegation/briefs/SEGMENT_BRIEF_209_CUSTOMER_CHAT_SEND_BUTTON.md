@@ -2,7 +2,7 @@
 
 Branch: `feature/customer-chat-send-button`
 Segment: `customer-chat-send-button`
-Status: `ready for implementation`
+Status: `implemented locally / command verification passed; manual smoke pending`
 Base: latest `origin/core/reborn`
 
 ## Preparation Notes
@@ -163,6 +163,21 @@ Regression:
 - emoji picker still inserts emoji and does not overlap the send button;
 - mention picker still opens, selects with keyboard/mouse, and keeps focus/caret behavior;
 - no backend/API/DB/unread/storage/media behavior changes.
+
+## Implementation Result
+
+Delivered:
+- channel and direct-message composers now show a right-side `SendHorizontal` submit button next to the emoji picker;
+- the button submits through the existing composer form and `useCreateMessage` path;
+- button disabled state uses the effective serialized mention content plus `trim()`, so whitespace-only messages stay disabled while picker-selected mentions remain valid;
+- button is disabled while the form is submitting, and a local submit lock prevents fast repeated button submits from duplicating valid sends;
+- textarea right padding was expanded so message text does not sit underneath the emoji/send controls;
+- button click sets the same post-send focus intent used by Enter send, preserving focus restoration after successful send;
+- `Enter` send, `Shift+Enter` newline, screenshot paste, plus attachment, emoji insert, channel mention picker, stable mention serialization, optimistic cache insertion, scroll-to-bottom, and attachment modal behavior remain on the existing path;
+- backend/API/SDK contracts, DB schema, unread/realtime behavior, auth/session, storage, media, links, replies, and broad file-transfer behavior are unchanged.
+
+Manual smoke:
+- pending authenticated channel/direct checks for button send, Enter send, Shift+Enter newline, empty disabled state, rapid clicks, focus restore, emoji, mention picker, screenshot paste, plus upload, and narrow-width layout.
 
 ## Verification Commands
 

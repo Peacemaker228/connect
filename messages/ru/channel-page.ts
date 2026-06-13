@@ -7,6 +7,7 @@ const ns = {
   welcome: 'Добро пожаловать в',
   description: 'Это начало вашего общения в канале',
   message: 'Написать',
+  sendMessage: 'Отправить сообщение',
   ChatItem: {
     copy: 'Скопировать',
     copied: 'Скопировано',

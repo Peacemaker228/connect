@@ -620,7 +620,7 @@ export const ChatItem: FC<IChatItemProps> = ({
       {canCopyMessage && (
         <div
           className={
-            'hidden group-hover:flex items-center gap-x-2 absolute p-1 -top-2 right-5 bg-white dark:bg-zinc-800 shadow-sm rounded-sm'
+            'z-10 hidden group-hover:flex items-center gap-x-2 absolute p-1 -top-2 right-5 bg-white dark:bg-zinc-800 shadow-sm rounded-sm'
           }>
           <ActionTooltip label={copyTooltipLabel}>
             <button

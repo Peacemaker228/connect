@@ -6,7 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
 import type { InfiniteData } from '@tanstack/react-query'
 import { Form, FormControl, FormField, FormItem } from '@/lib/shared/ui/form'
-import { Plus } from 'lucide-react'
+import { Button } from '@/lib/shared/ui/button'
+import { Plus, SendHorizontal } from 'lucide-react'
 import { EmojiPickerCustom } from '@/lib/shared/features/emoji-picker-custom'
 import { useRouter } from 'next/navigation'
 import { TChannelConversation } from '@/types'
@@ -116,6 +117,7 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
   const mentionInputSelectionRef = useRef<{ end: number; start: number } | null>(null)
   const isAnyModalOpenRef = useRef(isAnyModalOpen)
   const shouldFocusAfterSendRef = useRef(false)
+  const isSubmitLockedRef = useRef(false)
   const selectedMentionRangesRef = useRef<SelectedMentionRange[]>([])
   const [mentionTrigger, setMentionTrigger] = useState<MentionTrigger | null>(null)
   const [mentionSelectedIndex, setMentionSelectedIndex] = useState(0)
@@ -152,6 +154,12 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
   })
 
   const isLoading = form.formState.isSubmitting
+  const contentValue = form.watch('content')
+  const serializedContentValue = useMemo(
+    () => serializeSelectedMentionsForSubmit(contentValue ?? '', selectedMentionRangesRef.current).trim(),
+    [contentValue],
+  )
+  const isSendDisabled = isLoading || serializedContentValue.length === 0
 
   useEffect(() => {
     isAnyModalOpenRef.current = isAnyModalOpen
@@ -461,6 +469,11 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
   }
 
   const handleSubmit = async (data: IChatInputSchema) => {
+    if (isSubmitLockedRef.current) {
+      return
+    }
+
+    isSubmitLockedRef.current = true
     shouldFocusAfterSendRef.current = document.activeElement === inputRef.current || shouldFocusAfterSendRef.current
 
     try {
@@ -507,6 +520,8 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
     } catch (err) {
       shouldFocusAfterSendRef.current = false
       console.log(err)
+    } finally {
+      isSubmitLockedRef.current = false
     }
   }
 
@@ -594,10 +609,10 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
                     placeholder={`${t('message')} ${type === 'conversation' ? name : '#' + name}`}
                     disabled={isLoading}
                     className={
-                      'chat-message-input min-h-[48px] w-full resize-none rounded-md px-14 py-3.5 text-sm leading-5 bg-zinc-200/90 dark:bg-zinc-700/75 border-none border-0 outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-600 dark:text-zinc-200 placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50'
+                      'chat-message-input min-h-[48px] w-full resize-none rounded-md py-3.5 pl-14 pr-24 text-sm leading-5 bg-zinc-200/90 dark:bg-zinc-700/75 border-none border-0 outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-600 dark:text-zinc-200 placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50'
                     }
                   />
-                  <div className="absolute top-7 right-8">
+                  <div className="absolute top-6 right-7 flex items-center gap-2">
                     <EmojiPickerCustom
                       onChangeAction={(e: string) => {
                         const nextValue = `${field.value}${e}`
@@ -608,6 +623,19 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
                         requestAnimationFrame(() => resizeInput(inputRef.current))
                       }}
                     />
+                    <Button
+                      type="submit"
+                      size="icon"
+                      variant="ghost"
+                      aria-label={t('sendMessage')}
+                      title={t('sendMessage')}
+                      disabled={isSendDisabled}
+                      onMouseDown={() => {
+                        shouldFocusAfterSendRef.current = true
+                      }}
+                      className="h-8 w-8 rounded-full [&_svg]:size-5 text-zinc-500 hover:bg-zinc-300/70 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-600/70 dark:hover:text-zinc-100">
+                      <SendHorizontal className="text-mainOrange" />
+                    </Button>
                   </div>
                 </div>
               </FormControl>

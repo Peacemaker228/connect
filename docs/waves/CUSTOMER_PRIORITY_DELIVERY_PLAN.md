@@ -640,7 +640,7 @@ Brief:
 - `docs/delegation/briefs/SEGMENT_BRIEF_209_CUSTOMER_CHAT_SEND_BUTTON.md`
 
 Status:
-- `ready for implementation`
+- `implemented locally / command verification passed; manual smoke pending`
 
 Scope:
 - add an explicit send icon/button to channel and direct-message composers;
@@ -648,6 +648,13 @@ Scope:
 - disable the button for empty/whitespace-only content and while submitting;
 - preserve post-send focus restoration and scroll-to-bottom behavior;
 - keep attachment, screenshot paste, emoji picker, and mention picker behavior intact.
+
+Delivered:
+- composer now has an explicit right-side send icon button next to the emoji picker;
+- the button submits the existing form path and uses the same post-send focus intent as Enter send;
+- disabled state is based on serialized picker-selected mention content plus trim, and remains disabled while submitting;
+- textarea right padding now accounts for emoji plus send controls;
+- a local submit lock guards against rapid duplicate button submits.
 
 Out of scope:
 - link rendering/previews;
