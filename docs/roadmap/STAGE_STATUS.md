@@ -290,6 +290,7 @@ Reason:
 - an external team is actively using `https://staging.ax-connect.ru`;
 - their requests are priority one;
 - staging must be protected as a working stand, not treated as a disposable media-smoke playground.
+- current file-transfer product decision: use a `50 MB` per-file MVP cap for generic message attachments, keep one attachment per message, keep images/PDFs on current preview/open paths, render other files as download-only rows, allow executable-like files only as download-only attachments without safety claims, and defer `300 MB` large-file transfer to a separate design.
 
 Stage 8 remains `local complete / production blocked`.
 
@@ -1069,6 +1070,7 @@ Done:
 - `customer-message-edit-mention-picker` is implemented locally with command verification passing in `docs/delegation/briefs/SEGMENT_BRIEF_208_CUSTOMER_MESSAGE_EDIT_MENTION_PICKER.md`: channel message edit mode now has a bounded collision-aware mention picker, picker-selected edit mentions serialize to stable `<@memberId>` / `<@all>` tokens before the existing update mutation, duplicate display names resolve to the selected member for picker-selected ranges, message edits update mention metadata/rendering without creating normal unread/sound by default, and newly added edit-mention attention remains a separate future product decision unless explicitly implemented and tested
 - `customer-chat-send-button` is implemented locally with command verification passing in `docs/delegation/briefs/SEGMENT_BRIEF_209_CUSTOMER_CHAT_SEND_BUTTON.md`: channel/direct composers now have an explicit send icon button next to the emoji picker, button submit uses the existing message creation path and post-send focus restoration, disabled state is based on serialized trimmed content and submitting state, rapid duplicate button submits are guarded by a local lock, and backend/API/SDK contracts, DB schema, unread/realtime behavior, auth/session, storage/media, links, replies, and broad file-transfer behavior remain unchanged
 - `customer-link-rendering-basic` is implemented locally in `docs/delegation/briefs/SEGMENT_BRIEF_210_CUSTOMER_LINK_RENDERING_BASIC.md`: message text now renders safe `http://`, `https://`, and `www.` URLs as native links after mention tokenization, `www.` links get `https://` hrefs while preserving visible text, trailing punctuation remains outside the clickable target, long links wrap inside chat rows, and deleted messages, image/PDF attachments, copy behavior, backend/API/SDK contracts, DB schema, unread/realtime behavior, auth/session, storage/media, previews, replies, and file-transfer policy remain unchanged
+- `customer-file-transfer-policy-design` is closed locally in `docs/delegation/briefs/SEGMENT_BRIEF_211_CUSTOMER_FILE_TRANSFER_POLICY_DESIGN.md`: the agreed MVP policy is `50 MB` per `messageFile`, one attachment per message, images/PDFs on current preview/open behavior, generic files as download/open-only rows, executable-like files/scripts/installers/archives/unknown binaries as download-only without safety claims, `serverImage` unchanged at image-only `4 MB`, and `300 MB` large-file transfer deferred to a separate design; the bounded runtime brief is ready at `docs/delegation/briefs/SEGMENT_BRIEF_212_CUSTOMER_MESSAGE_GENERIC_FILE_ATTACHMENTS.md`
 
 Next likely work:
 - run focused auth/session smoke for login, session read, access-token expiry with valid refresh cookie, session read recovery, refresh endpoint, logout, and protected-route behavior after logout
@@ -1086,9 +1088,10 @@ Next likely work:
 - run two-user smoke for unread sound/mute behavior, including per-channel and per-direct muted scopes
 - after unread read semantics smoke, continue to `customer-mentions-replies-attention` unless mention/reply attention becomes more urgent
 - keep link preview, copy/reply, and media fallback as separate scoped segments
-- new customer requirements recorded: message edit mode correctness is a focused bugfix covering readable mention text in edit mode, edit input autofocus/caret, and preventing multiple simultaneous edited messages; chat send button should follow as a separate composer UX segment; broad message file-transfer expansion needs a separate analysis/design segment before implementation because allowed file types, executable downloads, size cap, storage limits, malware expectations, and desktop behavior are not yet decided
+- new customer requirements recorded: message edit mode correctness is a focused bugfix covering readable mention text in edit mode, edit input autofocus/caret, and preventing multiple simultaneous edited messages; chat send button should follow as a separate composer UX segment; broad message file-transfer expansion has an agreed MVP policy but still needs a bounded implementation segment before runtime rollout
 - keep realtime transport hardening as last-priority backlog: staging currently shows `Socket.IO` over `transport=polling` with websocket upgrade advertised but not observed; do not start Nginx websocket/rooms/auth hardening unless a concrete incident or load/security evidence forces it earlier
-- next focused implementation target: file-transfer policy/design, then reply-to-message
+- next focused implementation target: `customer-message-generic-file-attachments`; brief is ready at `docs/delegation/briefs/SEGMENT_BRIEF_212_CUSTOMER_MESSAGE_GENERIC_FILE_ATTACHMENTS.md`
+- planned follow-up order after generic file attachment runtime: reply-to-message
 
 ## Historical Notes
 
