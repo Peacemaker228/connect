@@ -46,11 +46,16 @@ export const FileUpload: FC<IFileUploadProps> = ({
   const uploadedInitialFileRef = useRef<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
-  const t = useTranslations('Modals.ServerModal')
+  const serverUploadTrans = useTranslations('Modals.ServerModal')
+  const messageFileTrans = useTranslations('Modals.MessageFileModal')
 
   const { fileName, fileType, fileUrl } = getUploadValueParts(value, endpoint)
   const fileAccessPath = buildStorageAccessPath(value, endpoint)
   const displayFileName = fileName || fileUrl || 'Attachment'
+  const uploadHelperLines =
+    endpoint === 'messageFile'
+      ? [serverUploadTrans('imageOne'), serverUploadTrans('imageTwo'), messageFileTrans('maxSize')]
+      : [serverUploadTrans('imageOne'), serverUploadTrans('imageTwo')]
 
   useEffect(() => {
     isActiveRef.current = isActive
@@ -309,9 +314,10 @@ export const FileUpload: FC<IFileUploadProps> = ({
       ) : (
         <>
           <ImageUpload />
-          <div className={'flex-col text-primary'}>
-            <p>{t('imageOne')}</p>
-            <p>{t('imageTwo')}</p>
+          <div className={'flex flex-col text-primary gap-1'}>
+            {uploadHelperLines.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
           </div>
         </>
       )}

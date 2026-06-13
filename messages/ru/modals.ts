@@ -35,6 +35,7 @@ const ns = {
   MessageFileModal: {
     title: 'Добавить вложение',
     description: 'Отправьте файл в виде сообщения',
+    maxSize: 'Максимальный размер файла: 50 МБ',
   },
   MembersModal: {
     title: 'Управление участниками',

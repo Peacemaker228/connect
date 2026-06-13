@@ -2,7 +2,7 @@
 
 Branch: `feature/customer-file-upload-max-size-copy`
 Segment: `customer-file-upload-max-size-copy`
-Status: `ready for implementation`
+Status: `implemented locally / command verification passed; manual smoke pending`
 Base: latest `origin/core/reborn`
 
 ## Preparation Notes
@@ -155,3 +155,29 @@ Return:
 - PowerShell-safe `git add` / `git commit` commands.
 
 Do not commit automatically.
+
+## Implementation Result
+
+Status:
+- `implemented locally / command verification passed; manual smoke pending`
+
+Delivered:
+- message attachment upload now shows translated max-size helper copy before file selection:
+  - English: `Maximum file size: 50 MB`;
+  - Russian: `Максимальный размер файла: 50 МБ`;
+- the helper is rendered only for the `messageFile` upload endpoint;
+- `serverImage` upload keeps the existing server-image copy and does not show the `50 MB` message attachment limit;
+- upload limits, accepted file types, backend storage policy, storage provider/env/secrets, DB schema, auth/session, unread/realtime, media/WebRTC, replies, and mention navigation are unchanged.
+
+Manual smoke:
+- pending authenticated web smoke for message attachment modal EN/RU copy, server image modal negative check, normal upload under `50 MB`, and oversize rejection.
+
+Verification:
+- `git diff --check`: pass, with existing CRLF conversion warnings only;
+- `bun.cmd x prisma validate`: pass;
+- `bun.cmd x tsc --noEmit -p tsconfig.json`: pass;
+- `bun.cmd run typecheck:api`: pass;
+- `bun.cmd run build:api`: pass;
+- `bun.cmd x next lint`: pass;
+- `bun.cmd run build:web`: pass;
+- `bun.cmd run check:desktop:config`: pass.
