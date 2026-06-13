@@ -134,6 +134,7 @@ For current customer-priority tasks, always consider:
 - avoiding disruptive staging media/TURN experiments;
 - web verification first;
 - desktop-first follow-up for shared UI, notifications, clipboard, sound, and media controls;
+- for frontend/shared UI tasks, explicitly tell the agent to prefer existing shared/shadcn/Radix/cmdk primitives when they fit the control behavior, and to document the reason if a native/custom control is chosen instead;
 - no staging DB reset;
 - no production Postgres migration work;
 - no LiveKit removal;

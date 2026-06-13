@@ -7,6 +7,7 @@ const ns = {
   welcome: 'Welcome to the',
   description: 'This is the beginning of your communication in',
   message: 'Message',
+  sendMessage: 'Send message',
   ChatItem: {
     copy: 'Copy',
     copied: 'Copied',
