@@ -2,7 +2,7 @@
 
 Branch: `feature/customer-link-rendering-basic`
 Segment: `customer-link-rendering-basic`
-Status: `ready for implementation`
+Status: `implemented locally / command verification passed; manual smoke pending`
 Base: latest `origin/core/reborn`
 
 ## Preparation Notes
@@ -62,6 +62,22 @@ This is the first safe slice:
 - copy behavior should not be changed unless a bug is directly caused by link rendering.
 
 Attachments already render through separate file blocks in `ChatItem` and must stay unchanged.
+
+## Implementation Result
+
+Delivered:
+- `MessageContent` now keeps mention tokenization as the first rendering pass and linkifies only the remaining plain-text segments;
+- `http://`, `https://`, and `www.` message URLs render as native anchors with `target="_blank"` and `rel="noopener noreferrer"`;
+- `www.` links receive an `https://` href while preserving the visible text;
+- trailing punctuation such as `.`, `,`, `!`, `?`, and `)` remains visible as normal text outside the link target;
+- long links use the existing `overflow-wrap-anywhere` helper so message layout can wrap instead of overflowing;
+- deleted messages, file attachment blocks, and copy output remain on the existing paths.
+
+Not changed:
+- no link preview/unfurl cards;
+- no backend URL fetch;
+- no backend/API/SDK/DB/unread/auth/storage/media change;
+- no reply-to-message or file-transfer policy work.
 
 ## Inspect First
 
