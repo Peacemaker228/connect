@@ -9,6 +9,12 @@ export type ChatMessagesPage = {
   nextCursor?: string | null
 }
 
+export type ChatReplyTargetContextParams = {
+  apiUrl: string
+  messageId: string
+  query: Record<string, string>
+}
+
 export type ChatQueryParams = {
   queryKey: string
   apiUrl: string
@@ -55,6 +61,19 @@ export const fetchChatMessagesPage = async ({
       paramKey,
       paramValue,
     }),
+  )
+
+  return response.data
+}
+
+export const fetchChatReplyTargetContext = async ({
+  apiUrl,
+  messageId,
+  query,
+}: ChatReplyTargetContextParams) => {
+  const searchParams = new URLSearchParams(query)
+  const response = await privateApiInstance.get<ChatMessagesPage>(
+    `${apiUrl}/${messageId}/context?${searchParams.toString()}`,
   )
 
   return response.data

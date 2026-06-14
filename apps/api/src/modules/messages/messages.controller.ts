@@ -45,6 +45,16 @@ export class MessagesController {
     return this.messagesService.getMessages(profileId, channelId, cursor)
   }
 
+  @Get(':messageId/context')
+  getMessageContext(
+    @CurrentProfileId() profileId: string,
+    @Param('messageId') messageId: string,
+    @Query('serverId') serverId: string | undefined,
+    @Query('channelId') channelId: string | undefined,
+  ) {
+    return this.messagesService.getMessageContext(profileId, serverId, channelId, messageId)
+  }
+
   @Post()
   @HttpCode(HttpStatus.OK)
   async createMessage(

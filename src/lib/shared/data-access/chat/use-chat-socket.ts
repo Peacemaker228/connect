@@ -1,33 +1,26 @@
 import { useSocket } from '../../providers'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import type { ChatMessageDto, MessageReplyPreviewDto } from '@app-core/contracts'
+import type { ChatMessageDto } from '@app-core/contracts'
+import { patchChatMessagesPages } from '@/lib/shared/data-access/chat/chat-message-page-patch'
 
 type TMessageMemberProfile = ChatMessageDto
 
-const toReplyPreview = (message: TMessageMemberProfile): MessageReplyPreviewDto => ({
-  id: message.id,
-  content: message.content,
-  createdAt: message.createdAt,
-  deleted: message.deleted,
-  fileUrl: message.fileUrl,
-  member: message.member,
-  memberId: message.memberId,
-  mentions: message.mentions,
-})
-
-const shouldRefreshReplyPreview = (item: TMessageMemberProfile, updatedMessageId: string) =>
-  item.replyTo?.id === updatedMessageId ||
-  item.replyToMessageId === updatedMessageId ||
-  item.replyToDirectMessageId === updatedMessageId
+type ChatMessagesInfiniteData = {
+  pages: Array<{
+    items: TMessageMemberProfile[]
+  }>
+  pageParams?: unknown[]
+}
 
 interface IChatSocket {
   addKey: string
+  onMessageUpdate?: (message: TMessageMemberProfile) => void
   updateKey: string
   queryKey: string
 }
 
-export const useChatSocket = ({ addKey, updateKey, queryKey }: IChatSocket) => {
+export const useChatSocket = ({ addKey, onMessageUpdate, updateKey, queryKey }: IChatSocket) => {
   const { socket } = useSocket()
   const queryClient = useQueryClient()
 
@@ -35,36 +28,17 @@ export const useChatSocket = ({ addKey, updateKey, queryKey }: IChatSocket) => {
     if (!socket) return
 
     socket.on(updateKey, (message: TMessageMemberProfile) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      queryClient.setQueryData([queryKey], (oldData: any) => {
+      queryClient.setQueryData<ChatMessagesInfiniteData>([queryKey], (oldData) => {
         if (!oldData || !oldData.pages || oldData.pages.length === 0) return oldData
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const newData = oldData.pages.map((page: any) => {
-          return {
-            ...page,
-            items: page.items.map((item: TMessageMemberProfile) => {
-              if (item.id === message.id) {
-                return message
-              }
-
-              if (shouldRefreshReplyPreview(item, message.id)) {
-                return {
-                  ...item,
-                  replyTo: toReplyPreview(message),
-                }
-              }
-
-              return item
-            }),
-          }
-        })
+        const newData = patchChatMessagesPages(oldData.pages, message)
 
         return {
           ...oldData,
           pages: newData,
         }
       })
+      onMessageUpdate?.(message)
     })
 
     socket.on(addKey, (message: TMessageMemberProfile) => {
@@ -105,5 +79,5 @@ export const useChatSocket = ({ addKey, updateKey, queryKey }: IChatSocket) => {
       socket.off(addKey)
       socket.off(updateKey)
     }
-  }, [addKey, queryClient, queryKey, socket, updateKey])
+  }, [addKey, onMessageUpdate, queryClient, queryKey, socket, updateKey])
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import type { ChatMessageDto, MemberDto } from '@app-core/contracts'
+import { fetchChatReplyTargetContext, type ChatMessagesPage } from '@sdk/queries/chat'
 import {
   getChatMessagesRealtimeKey,
   getChatMessagesUpdateRealtimeKey,
@@ -25,6 +26,7 @@ import { useGetServer } from '@sdk/queries/server'
 import { createMentionSuggestions } from '@/lib/chat/features/mention-picker-utils'
 import { useChatReply } from '@/lib/chat/features/chat-reply-context'
 import { CHAT_COMPOSER_FOCUS_EVENT } from '@/lib/shared/utils/chat-events'
+import { patchChatMessagesPages } from '@/lib/shared/data-access/chat/chat-message-page-patch'
 
 type MessageWithMemberWithProfile = ChatMessageDto
 
@@ -36,6 +38,24 @@ type UnreadAnchor = {
 const REPLY_NAVIGATION_HIGHLIGHT_MS = 1800
 
 const getTimestampValue = (value: Date | string) => new Date(value).getTime()
+
+const getDedupedChatPages = (pages: ChatMessagesPage[]) => {
+  const seenMessageIds = new Set<string>()
+
+  return pages
+    .map((page) => ({
+      ...page,
+      items: page.items.filter((message) => {
+        if (seenMessageIds.has(message.id)) {
+          return false
+        }
+
+        seenMessageIds.add(message.id)
+        return true
+      }),
+    }))
+    .filter((page) => page.items.length > 0)
+}
 
 const NewMessagesDivider = () => (
   <div className="flex items-center gap-x-3 px-4 py-2 select-none" aria-label="Новые сообщения">
@@ -79,9 +99,11 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const capturedChatKeyRef = useRef<string | null>(null)
   const messageElementByIdRef = useRef(new Map<string, HTMLDivElement>())
   const replyNavigationHighlightTimeoutRef = useRef<number | null>(null)
+  const pendingReplyTargetContextIdRef = useRef<string | null>(null)
   const [unreadAnchor, setUnreadAnchor] = useState<UnreadAnchor | null>(null)
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
   const [replyNavigationHighlightedMessageId, setReplyNavigationHighlightedMessageId] = useState<string | null>(null)
+  const [replyTargetContextPages, setReplyTargetContextPages] = useState<ChatMessagesPage[]>([])
   const { setReplyTo } = useChatReply()
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useChatQuery({
@@ -129,6 +151,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     setUnreadAnchor(null)
     setEditingMessageId(null)
     setReplyNavigationHighlightedMessageId(null)
+    setReplyTargetContextPages([])
   }, [chatReadKey])
 
   useEffect(() => {
@@ -149,11 +172,11 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     messageElementByIdRef.current.set(messageId, element)
   }, [])
 
-  const navigateToLoadedReplyTarget = useCallback((messageId: string) => {
+  const scrollToLoadedReplyTarget = useCallback((messageId: string) => {
     const targetElement = messageElementByIdRef.current.get(messageId)
 
     if (!targetElement || !chatRef.current?.contains(targetElement)) {
-      return
+      return false
     }
 
     targetElement.scrollIntoView({ block: 'center', behavior: 'smooth' })
@@ -169,7 +192,56 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
       )
       replyNavigationHighlightTimeoutRef.current = null
     }, REPLY_NAVIGATION_HIGHLIGHT_MS)
+
+    return true
   }, [])
+
+  const scheduleReplyTargetScroll = useCallback(
+    (messageId: string) => {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          if (scrollToLoadedReplyTarget(messageId)) {
+            return
+          }
+
+          window.setTimeout(() => {
+            scrollToLoadedReplyTarget(messageId)
+          }, 50)
+        })
+      })
+    },
+    [scrollToLoadedReplyTarget],
+  )
+
+  const navigateToReplyTarget = useCallback(
+    async (messageId: string) => {
+      if (scrollToLoadedReplyTarget(messageId)) {
+        return
+      }
+
+      if (pendingReplyTargetContextIdRef.current === messageId) {
+        return
+      }
+
+      pendingReplyTargetContextIdRef.current = messageId
+
+      try {
+        const contextPage = await fetchChatReplyTargetContext({
+          apiUrl: messageApiUrl,
+          messageId,
+          query: messageQuery,
+        })
+
+        setReplyTargetContextPages((currentPages) => [...currentPages, { ...contextPage, nextCursor: null }])
+        scheduleReplyTargetScroll(messageId)
+      } catch {
+        // Failing to load a reply target context must not move the user to the wrong message.
+      } finally {
+        pendingReplyTargetContextIdRef.current = null
+      }
+    },
+    [messageApiUrl, messageQuery, scheduleReplyTargetScroll, scrollToLoadedReplyTarget],
+  )
 
   const handleReply = useCallback(
     (message: MessageWithMemberWithProfile['replyTo']) => {
@@ -183,7 +255,11 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     [chatId, setReplyTo],
   )
 
-  useChatSocket({ queryKey, addKey, updateKey })
+  const patchReplyTargetContextPages = useCallback((message: MessageWithMemberWithProfile) => {
+    setReplyTargetContextPages((currentPages) => patchChatMessagesPages(currentPages, message))
+  }, [])
+
+  useChatSocket({ queryKey, addKey, onMessageUpdate: patchReplyTargetContextPages, updateKey })
   const { isNearBottom } = useChatScroll({
     chatId,
     chatRef,
@@ -236,6 +312,10 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
 
   const t = useTranslations('ChannelPage')
   const commonTranslation = useTranslations('Common')
+  const visiblePages = useMemo(
+    () => getDedupedChatPages([...(data?.pages ?? []), ...replyTargetContextPages]),
+    [data?.pages, replyTargetContextPages],
+  )
   const unreadDividerMessageId = useMemo(() => {
     if (!unreadAnchor || unreadAnchor.chatKey !== chatReadKey) {
       return null
@@ -310,7 +390,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         </div>
       )}
       <div className={'flex flex-col-reverse mt-auto'}>
-        {data?.pages?.map((page, i) => (
+        {visiblePages.map((page, i) => (
           <Fragment key={i}>
             {page.items.map((m: MessageWithMemberWithProfile) => (
               <Fragment key={m.id}>
@@ -344,7 +424,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
                     )
                   }}
                   onReply={handleReply}
-                  onNavigateToReplyTarget={navigateToLoadedReplyTarget}
+                  onNavigateToReplyTarget={navigateToReplyTarget}
                   onRegisterMessageElement={registerMessageElement}
                   mentionSuggestions={mentionSuggestions}
                   timestamp={format(new Date(m.createdAt), EDateFormat.MESSAGE_ITEM)}

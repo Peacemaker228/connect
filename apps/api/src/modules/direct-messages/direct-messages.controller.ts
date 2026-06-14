@@ -45,6 +45,15 @@ export class DirectMessagesController {
     return this.directMessagesService.getMessages(profileId, conversationId, cursor)
   }
 
+  @Get(':directMessageId/context')
+  getMessageContext(
+    @CurrentProfileId() profileId: string,
+    @Param('directMessageId') directMessageId: string,
+    @Query('conversationId') conversationId: string | undefined,
+  ) {
+    return this.directMessagesService.getMessageContext(profileId, conversationId, directMessageId)
+  }
+
   @Post('conversations/:memberId')
   getOrCreateConversation(
     @CurrentProfileId() profileId: string,

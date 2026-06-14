@@ -85,7 +85,7 @@ export const MessageReplyPreviewBlock = ({
 
   const authorName = replyTo && !replyTo.deleted ? replyTo.member.profile.name : null
   const previewText = renderReplyPreviewText(replyTo, labels)
-  const canNavigate = Boolean(onNavigate && replyTo && !replyTo.deleted)
+  const canNavigate = Boolean(onNavigate && replyTo)
   const previewContent = (
     <>
       {authorName && <p className="truncate font-semibold text-zinc-700 dark:text-zinc-200">{authorName}</p>}
