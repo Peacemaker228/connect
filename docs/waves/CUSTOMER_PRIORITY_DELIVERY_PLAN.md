@@ -953,6 +953,36 @@ Delivered:
 - deleted originals and the composer reply bar remain non-navigating safe fallback paths;
 - backend/API/DB/realtime/unread, history loading, deep links, thread UI, and reply block redesign remain unchanged.
 
+Next:
+- continue with Segment 219 reply target context navigation to replace the unloaded-original no-op with a bounded backend/SDK/UI context-load path.
+
+## Segment 219. Customer Reply Target Context Navigation
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_219_CUSTOMER_REPLY_TARGET_CONTEXT_NAVIGATION.md`
+
+Status:
+- `planned / ready for implementation`
+
+Goal:
+- clicking a sent reply preview should navigate to the original even when the original is outside the currently loaded chat range.
+
+Scope:
+- backend-owned bounded context reads for channel and direct reply targets;
+- typed SDK helpers for reply target context;
+- frontend context-load integration, then scroll/highlight through the Segment 218 loaded-row path;
+- support soft-deleted originals as safe fallback rows;
+- no reply visual redesign, no new reply attention behavior, no DB schema/migration, no realtime event change.
+
+Key behavior:
+- loaded original: keep current scroll/highlight behavior;
+- unloaded original: load bounded context around the target, render it, then scroll/highlight;
+- deleted original: navigate to the deleted fallback row when accessible;
+- inaccessible or wrong-chat target: fail safely without wrong navigation.
+
+Next after Segment 219:
+- `customer-reply-visual-redesign-and-target-attention` for Discord-like reply block polish and visual emphasis on messages that reply to the current user.
+
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 
 ## Low-Risk UX Fixes Result
