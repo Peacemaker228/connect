@@ -891,16 +891,16 @@ Brief:
 - `docs/delegation/briefs/SEGMENT_BRIEF_217_CUSTOMER_REPLY_ATTENTION_UNREAD_FOUNDATION.md`
 
 Status:
-- `planned / ready for implementation`
+- `implemented locally / command verification passed; manual smoke pending`
 
 Goal:
 - make replies to the current user's channel/direct messages produce `replyCount` and `attentionLevel: 'reply'` through the existing unread summary and realtime contracts.
 
 Scope:
 - backend unread summary counts;
-- existing unread realtime payload fields;
+- existing unread realtime event type with an added `repliedToMemberId` discriminator;
 - client scoped/global unread cache handling;
-- subtle existing attention UI behavior;
+- subtle sky-accent reply attention UI behavior;
 - no DB schema/migration, no new event type, no scroll-to-original, no reply block redesign.
 
 Key behavior:
@@ -909,6 +909,14 @@ Key behavior:
 - active visible near-bottom chats auto-read as today;
 - hidden/minimized active chats remain sound-eligible unless muted;
 - global/per-chat mute blocks sound only, not visual reply attention.
+
+Delivered:
+- backend summaries now count reply unread for channel and direct messages where the unread message replies to the current member's message;
+- channel unread realtime carries `repliedToMemberId`; recipient clients promote `replyCount` only when that id matches their current member;
+- direct unread realtime remains private on `member:${memberId}:direct-unread` and recipient-specific;
+- scoped/global cache updates now aggregate member-specific `replyCount` and recompute attention from counts;
+- server rail, channel rows, and member rows distinguish reply attention from normal unread with a subtle sky accent;
+- backend/API DB schema, migrations, new event types, auth/storage/media, scroll-to-original, thread UI, and reply block redesign remain unchanged.
 
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 

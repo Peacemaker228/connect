@@ -27,6 +27,7 @@ export const ServerMember: FC<IServerMemberProps> = ({ member, unreadCount = 0, 
   const icon = roleIconMap()[member.role]
   const hasUnread = unreadCount > 0
   const hasMentionAttention = hasUnread && attentionLevel === 'mention'
+  const hasReplyAttention = hasUnread && attentionLevel === 'reply'
   const soundMuteScope = createConversationUnreadNotificationMuteScope(member.serverId, member.id)
   const { isMuted: isSoundMuted, toggleMuted: toggleSoundMuted } = useUnreadNotificationMutedScope(soundMuteScope)
 
@@ -46,7 +47,7 @@ export const ServerMember: FC<IServerMemberProps> = ({ member, unreadCount = 0, 
           aria-hidden="true"
           className={cn(
             'absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full',
-            hasMentionAttention ? 'bg-amber-500' : 'bg-zinc-900/80 dark:bg-white',
+            hasMentionAttention ? 'bg-amber-500' : hasReplyAttention ? 'bg-sky-500' : 'bg-zinc-900/80 dark:bg-white',
           )}
         />
       )}
@@ -58,6 +59,8 @@ export const ServerMember: FC<IServerMemberProps> = ({ member, unreadCount = 0, 
             'font-bold text-zinc-900 group-hover:text-zinc-900 dark:text-zinc-100 dark:group-hover:text-white',
           hasMentionAttention &&
             'text-amber-700 group-hover:text-amber-700 dark:text-amber-300 dark:group-hover:text-amber-200',
+          hasReplyAttention &&
+            'text-sky-700 group-hover:text-sky-700 dark:text-sky-300 dark:group-hover:text-sky-200',
           params?.memberId === member.id && 'text-primary dark:text-zinc-200 dark:group-hover:text-white',
         )}>
         {member.profile.name}
@@ -67,7 +70,7 @@ export const ServerMember: FC<IServerMemberProps> = ({ member, unreadCount = 0, 
         <span
           className={cn(
             'min-w-5 h-5 px-1.5 rounded-full text-[10px] leading-5 text-white font-semibold text-center',
-            hasMentionAttention ? 'bg-amber-500' : 'bg-rose-500',
+            hasMentionAttention ? 'bg-amber-500' : hasReplyAttention ? 'bg-sky-500' : 'bg-rose-500',
           )}>
           {unreadCount > 99 ? '99+' : unreadCount}
         </span>

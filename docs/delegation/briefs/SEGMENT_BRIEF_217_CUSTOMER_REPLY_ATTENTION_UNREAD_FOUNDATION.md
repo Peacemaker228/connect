@@ -2,7 +2,7 @@
 
 - Branch: `feature/customer-reply-attention-unread-foundation`
 - Segment: `customer-reply-attention-unread-foundation`
-- Status: `planned / ready for implementation`
+- Status: `implemented locally / command verification passed; manual smoke pending`
 - Base: latest `origin/core/reborn`
 - Priority: P1 customer chat attention workflow after reply foundation and reply preview mention polish
 
@@ -196,6 +196,24 @@ Run direct smoke:
 2. B replies to A's DM while A is away.
 3. Confirm A sees direct reply attention and sound follows mute setting.
 4. Confirm reload restores the summary until A opens/reads the DM.
+
+## Implementation Result
+
+Delivered:
+- backend unread summaries now count unread channel messages that reply to the current member's channel messages;
+- backend unread summaries now count unread direct messages that reply to the current member's direct messages;
+- summary `attentionLevel` continues to use `mention > reply > unread > none`;
+- channel unread realtime payloads include `repliedToMemberId` so each recipient client can promote reply attention only for its own member;
+- direct unread realtime payloads remain recipient-specific and set `replyCount: 1` only when the reply targets the recipient's message;
+- scoped and global unread cache increments compute member-specific reply counts while keeping mention attention higher priority;
+- server rail, channel rows, and member rows render `attentionLevel: 'reply'` with a subtle sky accent distinct from normal unread and below mention styling;
+- global and per-chat mute continue to block sound only; visual unread/reply attention is still applied;
+- active visible near-bottom read semantics, hidden/minimized active chat behavior, direct unread privacy on `member:${memberId}:direct-unread`, and reconciliation after event/focus/reconnect are unchanged.
+
+Not changed:
+- no DB schema or migration changes;
+- no new realtime event type;
+- no scroll-to-original, thread UI, reply block redesign, reply attention preference matrix, auth/storage/media, link preview, or copy changes.
 
 ## Verification Commands
 

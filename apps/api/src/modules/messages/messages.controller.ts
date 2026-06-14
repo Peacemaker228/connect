@@ -61,6 +61,8 @@ export class MessagesController {
 
     if (serverId && channelId) {
       const mentionedMemberIds = message.mentions?.map((mention) => mention.memberId) ?? []
+      const repliedToMemberId = message.replyTo?.memberId ?? null
+      const attentionLevel = mentionedMemberIds.length > 0 ? 'mention' : repliedToMemberId ? 'reply' : 'unread'
 
       this.realtimeGateway.emit(
         createUnreadMessageCreatedRealtimeEvent(serverId, {
@@ -74,8 +76,9 @@ export class MessagesController {
           unreadCount: 1,
           mentionCount: 0,
           mentionedMemberIds,
-          replyCount: 0,
-          attentionLevel: 'unread',
+          repliedToMemberId,
+          replyCount: repliedToMemberId ? 1 : 0,
+          attentionLevel,
         }),
       )
     }

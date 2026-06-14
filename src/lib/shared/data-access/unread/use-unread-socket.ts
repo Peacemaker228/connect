@@ -14,6 +14,7 @@ import { recordUnreadNotificationDecision } from '@/lib/shared/data-access/unrea
 import {
   getUnreadAttentionLevel,
   getUnreadMentionCountForMember,
+  getUnreadReplyCountForMember,
 } from '@/lib/shared/data-access/unread/unread-attention'
 
 const PROCESSED_UNREAD_EVENT_TTL_MS = 5 * 60 * 1000
@@ -155,6 +156,7 @@ export const useUnreadSocket = ({
 
         scheduleUnreadSummaryReconcile()
         const mentionCount = getUnreadMentionCountForMember(payload, currentMemberId)
+        const replyCount = getUnreadReplyCountForMember(payload, currentMemberId)
 
         return {
           ...summary,
@@ -164,13 +166,19 @@ export const useUnreadSocket = ({
             }
 
             const nextMentionCount = channel.mentionCount + mentionCount
+            const nextReplyCount = channel.replyCount + replyCount
+            const nextUnreadCount = channel.unreadCount + payload.unreadCount
 
             return {
               ...channel,
-              unreadCount: channel.unreadCount + payload.unreadCount,
+              unreadCount: nextUnreadCount,
               mentionCount: nextMentionCount,
-              replyCount: channel.replyCount + payload.replyCount,
-              attentionLevel: getUnreadAttentionLevel({ mentionCount: nextMentionCount, payload }),
+              replyCount: nextReplyCount,
+              attentionLevel: getUnreadAttentionLevel({
+                mentionCount: nextMentionCount,
+                replyCount: nextReplyCount,
+                unreadCount: nextUnreadCount,
+              }),
             }
           }),
         }
@@ -220,7 +228,12 @@ export const useUnreadSocket = ({
         }
 
         const mentionCount = getUnreadMentionCountForMember(payload, currentMemberId)
-        const attentionLevel = getUnreadAttentionLevel({ mentionCount, payload })
+        const replyCount = getUnreadReplyCountForMember(payload, currentMemberId)
+        const attentionLevel = getUnreadAttentionLevel({
+          mentionCount,
+          replyCount,
+          unreadCount: payload.unreadCount,
+        })
         const existingConversation = summary.conversations.find(
           (conversation) => conversation.conversationId === payload.conversationId,
         )
@@ -238,7 +251,7 @@ export const useUnreadSocket = ({
                 lastReadAt: new Date(new Date(payload.createdAt).getTime() - 1),
                 unreadCount: payload.unreadCount,
                 mentionCount,
-                replyCount: payload.replyCount,
+                replyCount,
                 attentionLevel,
               },
             ],
@@ -255,13 +268,19 @@ export const useUnreadSocket = ({
             }
 
             const nextMentionCount = conversation.mentionCount + mentionCount
+            const nextReplyCount = conversation.replyCount + replyCount
+            const nextUnreadCount = conversation.unreadCount + payload.unreadCount
 
             return {
               ...conversation,
-              unreadCount: conversation.unreadCount + payload.unreadCount,
+              unreadCount: nextUnreadCount,
               mentionCount: nextMentionCount,
-              replyCount: conversation.replyCount + payload.replyCount,
-              attentionLevel: getUnreadAttentionLevel({ mentionCount: nextMentionCount, payload }),
+              replyCount: nextReplyCount,
+              attentionLevel: getUnreadAttentionLevel({
+                mentionCount: nextMentionCount,
+                replyCount: nextReplyCount,
+                unreadCount: nextUnreadCount,
+              }),
             }
           }),
         }
