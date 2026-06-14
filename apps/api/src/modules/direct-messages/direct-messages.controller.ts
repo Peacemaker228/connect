@@ -66,6 +66,8 @@ export class DirectMessagesController {
     if (conversationId) {
       this.realtimeGateway.emit(createChatMessageCreatedRealtimeEvent(conversationId, message))
       const realtimeContext = await this.directMessagesService.getConversationRealtimeContext(profileId, conversationId)
+      const repliedToMemberId = message.replyTo?.memberId ?? null
+      const isReplyToRecipient = repliedToMemberId === realtimeContext.recipientMemberId
 
       this.realtimeGateway.emit(
         createDirectUnreadMessageCreatedRealtimeEvent(realtimeContext.recipientMemberId, {
@@ -78,8 +80,9 @@ export class DirectMessagesController {
           createdAt: message.createdAt.toISOString(),
           unreadCount: 1,
           mentionCount: 0,
-          replyCount: 0,
-          attentionLevel: 'unread',
+          repliedToMemberId,
+          replyCount: isReplyToRecipient ? 1 : 0,
+          attentionLevel: isReplyToRecipient ? 'reply' : 'unread',
         }),
       )
     }

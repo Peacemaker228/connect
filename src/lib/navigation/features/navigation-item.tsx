@@ -73,6 +73,7 @@ export const NavigationItem: FC<INavigationItemProps> = ({
   })
   const hasUnread = unreadCount > 0
   const hasMentionAttention = hasUnread && attentionLevel === 'mention'
+  const hasReplyAttention = hasUnread && attentionLevel === 'reply'
 
   useEffect(() => {
     setHasImageError(false)
@@ -93,7 +94,7 @@ export const NavigationItem: FC<INavigationItemProps> = ({
         <div
           className={cn(
             'absolute left-0 rounded-r-full transition-all w-[4px]',
-            hasMentionAttention ? 'bg-amber-500' : 'bg-mainOrange',
+            hasMentionAttention ? 'bg-amber-500' : hasReplyAttention ? 'bg-sky-500' : 'bg-mainOrange',
             params?.serverId !== id && 'group-hover:h-[20px]',
             params?.serverId === id ? 'h-[36px]' : hasUnread ? 'h-[16px]' : 'h-[8px]',
           )}
@@ -118,7 +119,7 @@ export const NavigationItem: FC<INavigationItemProps> = ({
           <span
             className={cn(
               'absolute right-2 top-0 min-w-5 h-5 px-1 rounded-full border-2 border-[#E3E5E8] dark:border-[#2B2D31] text-[10px] leading-4 text-white font-bold text-center',
-              hasMentionAttention ? 'bg-amber-500' : 'bg-rose-500',
+              hasMentionAttention ? 'bg-amber-500' : hasReplyAttention ? 'bg-sky-500' : 'bg-rose-500',
             )}>
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>

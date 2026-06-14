@@ -132,6 +132,7 @@ type UnreadMessageCreatedRealtimePayload =
       unreadCount: number
       mentionCount: number
       mentionedMemberIds?: string[]
+      repliedToMemberId?: string | null
       replyCount: number
       attentionLevel: 'unread' | 'mention' | 'reply'
     }
@@ -145,6 +146,7 @@ type UnreadMessageCreatedRealtimePayload =
       createdAt: string
       unreadCount: number
       mentionCount: number
+      repliedToMemberId?: string | null
       replyCount: number
       attentionLevel: 'unread' | 'mention' | 'reply'
     }

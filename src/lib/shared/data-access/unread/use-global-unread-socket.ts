@@ -24,6 +24,7 @@ import { isUnreadPayloadAtActiveChatReadBoundary } from '@/lib/shared/data-acces
 import {
   getUnreadAttentionLevel,
   getUnreadMentionCountForMember,
+  getUnreadReplyCountForMember,
 } from '@/lib/shared/data-access/unread/unread-attention'
 
 const PROCESSED_GLOBAL_UNREAD_EVENT_TTL_MS = 5 * 60 * 1000
@@ -164,14 +165,21 @@ export const useGlobalUnreadSocket = ({
             }
 
             const mentionCount = getUnreadMentionCountForMember(payload, server.memberId)
+            const replyCount = getUnreadReplyCountForMember(payload, server.memberId)
             const nextMentionCount = server.mentionCount + mentionCount
+            const nextReplyCount = server.replyCount + replyCount
+            const nextUnreadCount = server.unreadCount + payload.unreadCount
 
             return {
               ...server,
-              unreadCount: server.unreadCount + payload.unreadCount,
+              unreadCount: nextUnreadCount,
               mentionCount: nextMentionCount,
-              replyCount: server.replyCount + payload.replyCount,
-              attentionLevel: getUnreadAttentionLevel({ mentionCount: nextMentionCount, payload }),
+              replyCount: nextReplyCount,
+              attentionLevel: getUnreadAttentionLevel({
+                mentionCount: nextMentionCount,
+                replyCount: nextReplyCount,
+                unreadCount: nextUnreadCount,
+              }),
             }
           }),
         }

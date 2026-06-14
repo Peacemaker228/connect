@@ -239,8 +239,25 @@ export class UnreadService {
             },
           },
         })
+        const replyCount = await this.prisma.message.count({
+          where: {
+            channelId: channel.id,
+            deleted: false,
+            memberId: {
+              not: currentMember.id,
+            },
+            createdAt: {
+              gt: lastReadAt,
+            },
+            replyToMessage: {
+              is: {
+                memberId: currentMember.id,
+              },
+            },
+          },
+        })
 
-        return this.createChannelUnreadSummaryItem(channel.id, unreadCount, mentionCount, lastReadAt)
+        return this.createChannelUnreadSummaryItem(channel.id, unreadCount, mentionCount, replyCount, lastReadAt)
       }),
     )
 
@@ -261,8 +278,31 @@ export class UnreadService {
         })
         const otherMemberId =
           conversation.memberOneId === currentMember.id ? conversation.memberTwoId : conversation.memberOneId
+        const replyCount = await this.prisma.directMessage.count({
+          where: {
+            conversationId: conversation.id,
+            deleted: false,
+            memberId: {
+              not: currentMember.id,
+            },
+            createdAt: {
+              gt: lastReadAt,
+            },
+            replyToDirectMessage: {
+              is: {
+                memberId: currentMember.id,
+              },
+            },
+          },
+        })
 
-        return this.createConversationUnreadSummaryItem(conversation.id, otherMemberId, unreadCount, lastReadAt)
+        return this.createConversationUnreadSummaryItem(
+          conversation.id,
+          otherMemberId,
+          unreadCount,
+          replyCount,
+          lastReadAt,
+        )
       }),
     )
 
@@ -415,6 +455,7 @@ export class UnreadService {
     channelId: string,
     unreadCount: number,
     mentionCount: number,
+    replyCount: number,
     lastReadAt: Date,
   ): ChannelUnreadSummaryItem {
     return {
@@ -422,8 +463,8 @@ export class UnreadService {
       lastReadAt,
       unreadCount,
       mentionCount,
-      replyCount: 0,
-      attentionLevel: this.getAttentionLevel(unreadCount, mentionCount, 0),
+      replyCount,
+      attentionLevel: this.getAttentionLevel(unreadCount, mentionCount, replyCount),
     }
   }
 
@@ -431,6 +472,7 @@ export class UnreadService {
     conversationId: string,
     memberId: string,
     unreadCount: number,
+    replyCount: number,
     lastReadAt: Date,
   ): ConversationUnreadSummaryItem {
     return {
@@ -439,8 +481,8 @@ export class UnreadService {
       lastReadAt,
       unreadCount,
       mentionCount: 0,
-      replyCount: 0,
-      attentionLevel: this.getAttentionLevel(unreadCount, 0, 0),
+      replyCount,
+      attentionLevel: this.getAttentionLevel(unreadCount, 0, replyCount),
     }
   }
 
