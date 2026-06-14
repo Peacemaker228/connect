@@ -2,7 +2,7 @@
 
 - Branch: `feature/customer-reply-navigation-loaded-range-polish`
 - Segment: `customer-reply-navigation-loaded-range-polish`
-- Status: `planned / ready for implementation`
+- Status: `implemented locally / command verification passed; manual smoke pending`
 - Base: latest `origin/core/reborn`
 - Priority: P1 reply UX polish after reply foundation, reply preview mention rendering, and reply attention
 
@@ -165,6 +165,24 @@ Run authenticated web smoke:
 
 Desktop runtime:
 - if this is heading to desktop release, do a packaged/electron runtime spot check for click target and scroll behavior after web smoke passes.
+
+## Implementation Result
+
+Delivered:
+- `ChatMessages` keeps a local map of currently rendered message row elements by message id;
+- sent message reply previews can call back into `ChatMessages` to navigate to the original reply target;
+- when the target original is currently loaded/rendered in the same chat view, the row scrolls into view with smooth center positioning;
+- the target row receives a short no-layout-shift inset ring/background highlight and then returns to normal;
+- when the target original is not loaded/rendered, click is a quiet no-op with no history fetch, no wrong scroll, and no crash;
+- deleted reply targets keep the existing deleted fallback and are not made navigable;
+- composer reply bar keeps its existing cancel-only behavior and is not made navigable in this slice.
+
+Kept out of scope:
+- backend/API/SDK/DB/schema changes;
+- realtime/unread/read-state changes;
+- history loading around unloaded originals;
+- URL/deep-link navigation;
+- thread UI, reply block redesign, and reply attention changes.
 
 ## Verification Commands
 

@@ -68,6 +68,9 @@ interface IChatItemProps {
   onFinishEditing: () => void
   onReply: (message: MessageReplyPreviewDto) => void
   mentionSuggestions?: MentionSuggestion[]
+  onNavigateToReplyTarget?: (messageId: string) => void
+  onRegisterMessageElement?: (messageId: string, element: HTMLDivElement | null) => void
+  isReplyNavigationHighlighted?: boolean
 }
 
 export const ChatItem: FC<IChatItemProps> = ({
@@ -92,6 +95,9 @@ export const ChatItem: FC<IChatItemProps> = ({
   onCancelEditing,
   onFinishEditing,
   onReply,
+  onNavigateToReplyTarget,
+  onRegisterMessageElement,
+  isReplyNavigationHighlighted = false,
   mentionSuggestions = [],
 }) => {
   const editInputRef = useRef<HTMLInputElement | null>(null)
@@ -325,6 +331,14 @@ export const ChatItem: FC<IChatItemProps> = ({
   const isCurrentMemberMentioned = !deleted && mentions?.some((mention) => mention.memberId === currentMember.id)
 
   const isLoading = form.formState.isSubmitting
+  const replyNavigationTargetId = replyTo && !replyTo.deleted ? replyTo.id : null
+
+  const handleMessageElementRef = useCallback(
+    (element: HTMLDivElement | null) => {
+      onRegisterMessageElement?.(id, element)
+    },
+    [id, onRegisterMessageElement],
+  )
 
   const handleMentionCommandValueChange = useCallback(
     (value: string) => {
@@ -507,10 +521,13 @@ export const ChatItem: FC<IChatItemProps> = ({
 
   return (
     <div
+      ref={handleMessageElementRef}
       className={cn(
         'relative group flex items-center hover:bg-black/5 p-4 transition w-full',
         isCurrentMemberMentioned &&
           'border-l-4 border-amber-500 bg-amber-500/10 hover:bg-amber-500/15 dark:bg-amber-400/10 dark:hover:bg-amber-400/15',
+        isReplyNavigationHighlighted &&
+          'bg-mainOrange/15 ring-2 ring-inset ring-mainOrange/60 hover:bg-mainOrange/20 dark:bg-mainOrange/10 dark:hover:bg-mainOrange/15',
       )}>
       <div className={'group flex gap-x-2 items-start w-full'}>
         <div onClick={onMemberClick} className={'cursor-pointer hover:drop-shadow-md transition'}>
@@ -536,6 +553,11 @@ export const ChatItem: FC<IChatItemProps> = ({
                 attachment: t('Reply.attachment'),
                 deleted: t('Reply.deleted'),
               }}
+              onNavigate={
+                replyNavigationTargetId && onNavigateToReplyTarget
+                  ? () => onNavigateToReplyTarget(replyNavigationTargetId)
+                  : undefined
+              }
               className="mt-2"
             />
           )}
