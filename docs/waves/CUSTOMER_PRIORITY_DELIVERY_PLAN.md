@@ -918,6 +918,33 @@ Delivered:
 - server rail, channel rows, and member rows distinguish reply attention from normal unread with a subtle sky accent;
 - backend/API DB schema, migrations, new event types, auth/storage/media, scroll-to-original, thread UI, and reply block redesign remain unchanged.
 
+Next:
+- continue with Segment 218 loaded-range reply navigation before any history-loading/deep-link reply navigation work.
+
+## Segment 218. Customer Reply Navigation Loaded Range Polish
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_218_CUSTOMER_REPLY_NAVIGATION_LOADED_RANGE_POLISH.md`
+
+Status:
+- `planned / ready for implementation`
+
+Goal:
+- clicking a sent message's reply preview should scroll to the original message if the original is already loaded in the current channel/DM view, then briefly highlight it.
+
+Scope:
+- frontend loaded-range navigation and temporary highlight only;
+- no history fetch around unloaded originals;
+- no URL/deep-link message navigation;
+- no backend/API/DB/realtime/unread changes;
+- no reply block redesign.
+
+Key behavior:
+- loaded original: smooth scroll to target and time-bounded highlight;
+- deleted original: keep safe fallback and avoid misleading navigation;
+- unloaded original: no crash and no wrong scroll;
+- normal mention navigation, reply attention, edit/delete/copy, and active-read behavior stay unchanged.
+
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 
 ## Low-Risk UX Fixes Result
