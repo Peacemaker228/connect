@@ -26,6 +26,7 @@ import { useGetServer } from '@sdk/queries/server'
 import { createMentionSuggestions } from '@/lib/chat/features/mention-picker-utils'
 import { useChatReply } from '@/lib/chat/features/chat-reply-context'
 import { CHAT_COMPOSER_FOCUS_EVENT } from '@/lib/shared/utils/chat-events'
+import { patchChatMessagesPages } from '@/lib/shared/data-access/chat/chat-message-page-patch'
 
 type MessageWithMemberWithProfile = ChatMessageDto
 
@@ -254,7 +255,11 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     [chatId, setReplyTo],
   )
 
-  useChatSocket({ queryKey, addKey, updateKey })
+  const patchReplyTargetContextPages = useCallback((message: MessageWithMemberWithProfile) => {
+    setReplyTargetContextPages((currentPages) => patchChatMessagesPages(currentPages, message))
+  }, [])
+
+  useChatSocket({ queryKey, addKey, onMessageUpdate: patchReplyTargetContextPages, updateKey })
   const { isNearBottom } = useChatScroll({
     chatId,
     chatRef,

@@ -986,6 +986,7 @@ Delivered:
 - SDK exposes `fetchChatReplyTargetContext()` under `packages/sdk/src/queries/chat.ts`;
 - frontend reply preview navigation keeps the loaded-row fast path, fetches target context only when needed, renders non-duplicate context rows through a chat-local overlay, and then scrolls/highlights through the Segment 218 path;
 - normal infinite-query pagination and `load previous` cursor ownership are left intact;
+- context-loaded overlay rows are patched from the same realtime update/delete payloads as normal chat pages, including reply previews that point at the updated/deleted message;
 - soft-deleted targets are navigable as deleted fallback rows when accessible;
 - reply block visual redesign, reply attention/unread changes, DB schema/migrations, realtime events, auth/storage/media, deep links, and unbounded "load previous" loops remain out of scope.
 

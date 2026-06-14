@@ -226,6 +226,7 @@ Delivered:
 - reply preview navigation first tries the Segment 218 loaded-row scroll/highlight path;
 - if the target is not currently rendered, the UI fetches the bounded context, renders non-duplicate rows through a chat-local overlay, then scrolls/highlights the target after mount;
 - normal infinite-query pagination and `load previous` cursor ownership are left intact;
+- context-loaded overlay rows are patched from the same realtime update/delete payloads as normal chat pages, including rows whose reply preview points at the updated/deleted message;
 - failed/inaccessible/wrong-chat context requests fail silently without scrolling to another message.
 
 Kept out of scope:
