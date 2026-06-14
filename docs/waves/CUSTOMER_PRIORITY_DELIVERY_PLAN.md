@@ -962,7 +962,7 @@ Brief:
 - `docs/delegation/briefs/SEGMENT_BRIEF_219_CUSTOMER_REPLY_TARGET_CONTEXT_NAVIGATION.md`
 
 Status:
-- `planned / ready for implementation`
+- `implemented locally / command verification passed; manual smoke pending`
 
 Goal:
 - clicking a sent reply preview should navigate to the original even when the original is outside the currently loaded chat range.
@@ -979,6 +979,15 @@ Key behavior:
 - unloaded original: load bounded context around the target, render it, then scroll/highlight;
 - deleted original: navigate to the deleted fallback row when accessible;
 - inaccessible or wrong-chat target: fail safely without wrong navigation.
+
+Delivered:
+- backend exposes bounded context reads at `GET /api/messages/:messageId/context` and `GET /api/direct-messages/:directMessageId/context`;
+- both context reads reuse existing enriched chat message shapes and validate current access plus same channel/conversation ownership;
+- SDK exposes `fetchChatReplyTargetContext()` under `packages/sdk/src/queries/chat.ts`;
+- frontend reply preview navigation keeps the loaded-row fast path, fetches target context only when needed, renders non-duplicate context rows through a chat-local overlay, and then scrolls/highlights through the Segment 218 path;
+- normal infinite-query pagination and `load previous` cursor ownership are left intact;
+- soft-deleted targets are navigable as deleted fallback rows when accessible;
+- reply block visual redesign, reply attention/unread changes, DB schema/migrations, realtime events, auth/storage/media, deep links, and unbounded "load previous" loops remain out of scope.
 
 Next after Segment 219:
 - `customer-reply-visual-redesign-and-target-attention` for Discord-like reply block polish and visual emphasis on messages that reply to the current user.

@@ -331,7 +331,7 @@ export const ChatItem: FC<IChatItemProps> = ({
   const isCurrentMemberMentioned = !deleted && mentions?.some((mention) => mention.memberId === currentMember.id)
 
   const isLoading = form.formState.isSubmitting
-  const replyNavigationTargetId = replyTo && !replyTo.deleted ? replyTo.id : null
+  const replyNavigationTargetId = replyTo?.id ?? null
 
   const handleMessageElementRef = useCallback(
     (element: HTMLDivElement | null) => {

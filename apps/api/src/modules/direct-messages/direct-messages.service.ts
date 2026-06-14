@@ -11,6 +11,7 @@ type DirectMessageMutationBody = {
 }
 
 const MESSAGE_BATCH_SIZE = 10
+const MESSAGE_CONTEXT_RADIUS = 5
 const DIRECT_MESSAGE_INCLUDE = {
   member: {
     include: {
@@ -72,6 +73,76 @@ export class DirectMessagesService {
     return {
       items: messages.map((message) => this.toChatMessage(message)),
       nextCursor: messages.length === MESSAGE_BATCH_SIZE ? messages[MESSAGE_BATCH_SIZE - 1].id : null,
+    }
+  }
+
+  async getMessageContext(
+    profileId: string | undefined,
+    conversationId: string | undefined,
+    directMessageId: string | undefined,
+  ) {
+    const { conversation } = await this.resolveConversationMember(profileId, conversationId)
+    const resolvedDirectMessageId = this.requireValue(directMessageId, 'Direct Message ID Missing')
+
+    const targetMessage = await this.prisma.directMessage.findFirst({
+      where: {
+        id: resolvedDirectMessageId,
+        conversationId: conversation.id,
+      },
+      include: DIRECT_MESSAGE_INCLUDE,
+    })
+
+    if (!targetMessage) {
+      throw new HttpException('Message Not Found', HttpStatus.NOT_FOUND)
+    }
+
+    const newerMessages = await this.prisma.directMessage.findMany({
+      take: MESSAGE_CONTEXT_RADIUS,
+      where: {
+        conversationId: conversation.id,
+        OR: [
+          {
+            createdAt: {
+              gt: targetMessage.createdAt,
+            },
+          },
+          {
+            createdAt: targetMessage.createdAt,
+            id: {
+              gt: targetMessage.id,
+            },
+          },
+        ],
+      },
+      include: DIRECT_MESSAGE_INCLUDE,
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    })
+    const olderMessages = await this.prisma.directMessage.findMany({
+      take: MESSAGE_CONTEXT_RADIUS,
+      where: {
+        conversationId: conversation.id,
+        OR: [
+          {
+            createdAt: {
+              lt: targetMessage.createdAt,
+            },
+          },
+          {
+            createdAt: targetMessage.createdAt,
+            id: {
+              lt: targetMessage.id,
+            },
+          },
+        ],
+      },
+      include: DIRECT_MESSAGE_INCLUDE,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    })
+    const messages = [...newerMessages.reverse(), targetMessage, ...olderMessages]
+
+    return {
+      items: messages.map((message) => this.toChatMessage(message)),
+      nextCursor: null,
     }
   }
 
@@ -458,5 +529,13 @@ export class DirectMessagesService {
 
   private normalizeMessageContent(content: string | undefined) {
     return content?.trim() ?? ''
+  }
+
+  private requireValue(value: string | undefined, message: string) {
+    if (!value) {
+      throw new HttpException(message, HttpStatus.BAD_REQUEST)
+    }
+
+    return value
   }
 }

@@ -24,6 +24,7 @@ type ResolvedMessageMention = {
 }
 
 const MESSAGE_BATCH_SIZE = 10
+const MESSAGE_CONTEXT_RADIUS = 5
 const MESSAGE_INCLUDE = {
   member: {
     include: {
@@ -97,6 +98,100 @@ export class MessagesService {
     return {
       items: messages.map((message) => this.toChatMessage(message)),
       nextCursor: messages.length === MESSAGE_BATCH_SIZE ? messages[MESSAGE_BATCH_SIZE - 1].id : null,
+    }
+  }
+
+  async getMessageContext(
+    profileId: string | undefined,
+    serverId: string | undefined,
+    channelId: string | undefined,
+    messageId: string | undefined,
+  ) {
+    const resolvedProfileId = this.requireProfileId(profileId)
+    const resolvedServerId = this.requireValue(serverId, 'Server ID Missing')
+    const resolvedChannelId = this.requireValue(channelId, 'Channel ID Missing')
+    const resolvedMessageId = this.requireValue(messageId, 'Message ID Missing')
+
+    const channel = await this.prisma.channel.findFirst({
+      where: {
+        id: resolvedChannelId,
+        serverId: resolvedServerId,
+        server: {
+          members: {
+            some: {
+              profileId: resolvedProfileId,
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+      },
+    })
+
+    if (!channel) {
+      throw new HttpException('Channel Not Found', HttpStatus.NOT_FOUND)
+    }
+
+    const targetMessage = await this.prisma.message.findFirst({
+      where: {
+        id: resolvedMessageId,
+        channelId: resolvedChannelId,
+      },
+      include: MESSAGE_INCLUDE,
+    })
+
+    if (!targetMessage) {
+      throw new HttpException('Message Not Found', HttpStatus.NOT_FOUND)
+    }
+
+    const newerMessages = await this.prisma.message.findMany({
+      take: MESSAGE_CONTEXT_RADIUS,
+      where: {
+        channelId: resolvedChannelId,
+        OR: [
+          {
+            createdAt: {
+              gt: targetMessage.createdAt,
+            },
+          },
+          {
+            createdAt: targetMessage.createdAt,
+            id: {
+              gt: targetMessage.id,
+            },
+          },
+        ],
+      },
+      include: MESSAGE_INCLUDE,
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    })
+    const olderMessages = await this.prisma.message.findMany({
+      take: MESSAGE_CONTEXT_RADIUS,
+      where: {
+        channelId: resolvedChannelId,
+        OR: [
+          {
+            createdAt: {
+              lt: targetMessage.createdAt,
+            },
+          },
+          {
+            createdAt: targetMessage.createdAt,
+            id: {
+              lt: targetMessage.id,
+            },
+          },
+        ],
+      },
+      include: MESSAGE_INCLUDE,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    })
+    const messages = [...newerMessages.reverse(), targetMessage, ...olderMessages]
+
+    return {
+      items: messages.map((message) => this.toChatMessage(message)),
+      nextCursor: null,
     }
   }
 
@@ -401,6 +496,14 @@ export class MessagesService {
 
   private normalizeMessageContent(content: string | undefined) {
     return content?.trim() ?? ''
+  }
+
+  private requireValue(value: string | undefined, message: string) {
+    if (!value) {
+      throw new HttpException(message, HttpStatus.BAD_REQUEST)
+    }
+
+    return value
   }
 
   private resolveMessageMentions(content: string, members: MentionCandidateMember[]): ResolvedMessageMention[] {

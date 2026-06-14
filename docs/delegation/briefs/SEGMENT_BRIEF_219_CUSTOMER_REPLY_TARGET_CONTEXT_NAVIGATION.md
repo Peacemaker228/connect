@@ -2,7 +2,7 @@
 
 - Branch: `feature/customer-reply-target-context-navigation`
 - Segment: `customer-reply-target-context-navigation`
-- Status: `planned / ready for implementation`
+- Status: `implemented locally / command verification passed; manual smoke pending`
 - Base: latest `origin/core/reborn`
 - Priority: P1 reply UX correctness after loaded-range reply navigation
 
@@ -213,6 +213,29 @@ Run authenticated web smoke:
 
 Desktop runtime:
 - if this moves toward desktop release, run a packaged/electron spot check for click target, context load, scroll, and highlight after web smoke passes.
+
+## Implementation Result
+
+Delivered:
+- added `GET /api/messages/:messageId/context?serverId=...&channelId=...`;
+- added `GET /api/direct-messages/:directMessageId/context?conversationId=...`;
+- both backend paths validate current auth membership and same channel/conversation ownership before returning any target context;
+- context reads return the existing chat page shape with a bounded window of up to five newer messages, the target message, and up to five older messages;
+- soft-deleted target messages are included so existing deleted fallback rows can be navigated to when accessible;
+- added `fetchChatReplyTargetContext()` in `packages/sdk/src/queries/chat.ts`;
+- reply preview navigation first tries the Segment 218 loaded-row scroll/highlight path;
+- if the target is not currently rendered, the UI fetches the bounded context, renders non-duplicate rows through a chat-local overlay, then scrolls/highlights the target after mount;
+- normal infinite-query pagination and `load previous` cursor ownership are left intact;
+- failed/inaccessible/wrong-chat context requests fail silently without scrolling to another message.
+
+Kept out of scope:
+- no reply block visual redesign;
+- no reply attention/unread changes;
+- no DB schema/migration;
+- no realtime event changes;
+- no URL/deep-link routes;
+- no auth/storage/media changes;
+- no unbounded "load previous" loop.
 
 ## Verification Commands
 
