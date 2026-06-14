@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
-import { MemberRole, MessageMentionKind } from '@prisma/client'
+import { MemberRole, MessageMentionKind, Prisma } from '@prisma/client'
 
 import { PrismaService } from '../../common/database/prisma.service'
 import { StorageService } from '../storage/storage.service'
@@ -7,6 +7,7 @@ import { StorageService } from '../storage/storage.service'
 type MessageMutationBody = {
   content?: string
   fileUrl?: string | null
+  replyToMessageId?: string | null
 }
 
 type MentionCandidateMember = {
@@ -38,7 +39,27 @@ const MESSAGE_INCLUDE = {
       },
     },
   },
-} as const
+  replyToMessage: {
+    include: {
+      member: {
+        include: {
+          profile: true,
+        },
+      },
+      mentions: {
+        include: {
+          member: {
+            include: {
+              profile: true,
+            },
+          },
+        },
+      },
+    },
+  },
+} satisfies Prisma.MessageInclude
+type MessageWithRelations = Prisma.MessageGetPayload<{ include: typeof MESSAGE_INCLUDE }>
+type MessageReplyRelation = NonNullable<MessageWithRelations['replyToMessage']>
 const STABLE_MEMBER_MENTION_PATTERN = /<@([0-9a-fA-F-]{36})>/g
 const STABLE_ALL_MENTION_PATTERN = /<@all>/i
 
@@ -74,7 +95,7 @@ export class MessagesService {
     })
 
     return {
-      items: messages,
+      items: messages.map((message) => this.toChatMessage(message)),
       nextCursor: messages.length === MESSAGE_BATCH_SIZE ? messages[MESSAGE_BATCH_SIZE - 1].id : null,
     }
   }
@@ -145,13 +166,15 @@ export class MessagesService {
         ? await this.storageService.finalizeStoredValue(resolvedProfileId, 'messageFile', body.fileUrl)
         : body.fileUrl
     const mentions = this.resolveMessageMentions(content, server.members)
+    const replyToMessageId = await this.resolveReplyToMessageId(body.replyToMessageId, channelId)
 
-    return this.prisma.message.create({
+    const message = await this.prisma.message.create({
       data: {
         content,
         fileUrl: finalizedFileUrl,
         channelId,
         memberId: member.id,
+        replyToMessageId,
         mentions: mentions.length
           ? {
               create: mentions,
@@ -160,6 +183,8 @@ export class MessagesService {
       },
       include: MESSAGE_INCLUDE,
     })
+
+    return this.toChatMessage(message)
   }
 
   async updateMessage(
@@ -190,7 +215,7 @@ export class MessagesService {
 
     const mentions = this.resolveMessageMentions(content, server.members)
 
-    return this.prisma.message.update({
+    const updatedMessage = await this.prisma.message.update({
       where: {
         id: messageId,
       },
@@ -203,6 +228,8 @@ export class MessagesService {
       },
       include: MESSAGE_INCLUDE,
     })
+
+    return this.toChatMessage(updatedMessage)
   }
 
   async deleteMessage(
@@ -213,7 +240,7 @@ export class MessagesService {
   ) {
     await this.resolveMessageMutationAccess(profileId, serverId, channelId, messageId)
 
-    return this.prisma.message.update({
+    const deletedMessage = await this.prisma.message.update({
       where: {
         id: messageId,
       },
@@ -227,6 +254,55 @@ export class MessagesService {
       },
       include: MESSAGE_INCLUDE,
     })
+
+    return this.toChatMessage(deletedMessage)
+  }
+
+  private toChatMessage(message: MessageWithRelations) {
+    const { replyToMessage, ...chatMessage } = message
+
+    return {
+      ...chatMessage,
+      replyTo: replyToMessage ? this.toReplyPreview(replyToMessage) : null,
+    }
+  }
+
+  private toReplyPreview(message: MessageReplyRelation) {
+    return {
+      id: message.id,
+      content: message.content,
+      fileUrl: message.fileUrl,
+      deleted: message.deleted,
+      memberId: message.memberId,
+      member: message.member,
+      createdAt: message.createdAt,
+      mentions: message.mentions,
+    }
+  }
+
+  private async resolveReplyToMessageId(replyToMessageId: string | null | undefined, channelId: string) {
+    const normalizedReplyToMessageId = replyToMessageId?.trim()
+
+    if (!normalizedReplyToMessageId) {
+      return null
+    }
+
+    const replyToMessage = await this.prisma.message.findFirst({
+      where: {
+        id: normalizedReplyToMessageId,
+        channelId,
+        deleted: false,
+      },
+      select: {
+        id: true,
+      },
+    })
+
+    if (!replyToMessage) {
+      throw new HttpException('Reply Message Not Found', HttpStatus.BAD_REQUEST)
+    }
+
+    return replyToMessage.id
   }
 
   private async resolveMessageMutationAccess(

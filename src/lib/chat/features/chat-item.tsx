@@ -1,12 +1,12 @@
 'use client'
 
-import type { MemberDto, MemberWithProfileDto, MessageMentionDto } from '@app-core/contracts'
+import type { MemberDto, MemberWithProfileDto, MessageMentionDto, MessageReplyPreviewDto } from '@app-core/contracts'
 import { FC, KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { UserAvatar } from '@/lib/shared/features/user-avatar'
 import { ActionTooltip } from '@/lib/shared/features/action-tooltip'
 import { roleIconMap } from '@/lib/shared/utils/role-icon-map'
 import Image from 'next/image'
-import { Check, Copy, Edit, FileIcon, Trash } from 'lucide-react'
+import { Check, Copy, Edit, FileIcon, Reply, Trash } from 'lucide-react'
 import { cn } from '@/lib/shared/utils/utils'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -34,6 +34,7 @@ import {
   type SelectedMentionRange,
 } from '@/lib/chat/features/mention-picker-utils'
 import { MentionPickerCommand } from '@/lib/chat/features/mention-picker-command'
+import { MessageReplyPreviewBlock } from '@/lib/chat/features/message-reply-preview'
 
 const EDIT_MENTION_PICKER_MAX_HEIGHT = 320
 const EDIT_MENTION_PICKER_VIEWPORT_MARGIN = 8
@@ -48,9 +49,13 @@ interface IChatItemProps {
   id: string
   content: string
   member: MemberWithProfileDto
+  createdAt: Date | string
   timestamp: string
   fileUrl: string | null
   deleted: boolean
+  replyTo?: MessageReplyPreviewDto | null
+  replyToDirectMessageId?: string | null
+  replyToMessageId?: string | null
   currentMember: MemberDto
   isUpdated: boolean
   messageApiUrl: string
@@ -61,6 +66,7 @@ interface IChatItemProps {
   onStartEditing: () => void
   onCancelEditing: () => void
   onFinishEditing: () => void
+  onReply: (message: MessageReplyPreviewDto) => void
   mentionSuggestions?: MentionSuggestion[]
 }
 
@@ -73,14 +79,19 @@ export const ChatItem: FC<IChatItemProps> = ({
   messageQuery,
   isUpdated,
   timestamp,
+  createdAt,
   content,
   id,
   mentions,
+  replyTo,
+  replyToDirectMessageId,
+  replyToMessageId,
   serverId,
   isEditing,
   onStartEditing,
   onCancelEditing,
   onFinishEditing,
+  onReply,
   mentionSuggestions = [],
 }) => {
   const editInputRef = useRef<HTMLInputElement | null>(null)
@@ -304,6 +315,8 @@ export const ChatItem: FC<IChatItemProps> = ({
   const canDeleteMessage = !deleted && (isAdmin || isModerator || isOwner)
   const canEditMessage = !deleted && isOwner && !fileUrl
   const canCopyMessage = !deleted
+  const canReplyMessage = !deleted
+  const hasReplyTarget = Boolean(replyToMessageId || replyToDirectMessageId || replyTo)
 
   const imageAlt = attachmentDisplayName || 'Image attachment'
   const isPDF = fileType === 'application/pdf' && fileAccessPath
@@ -471,6 +484,23 @@ export const ChatItem: FC<IChatItemProps> = ({
     }
   }
 
+  const handleReply = () => {
+    if (!canReplyMessage) {
+      return
+    }
+
+    onReply({
+      id,
+      content,
+      fileUrl,
+      deleted,
+      memberId: member.id,
+      member,
+      createdAt: new Date(createdAt),
+      mentions,
+    })
+  }
+
   const copyTooltipLabel = isCopied ? t('ChatItem.copied') : t('ChatItem.copy')
   const actionIconClassName =
     'cursor-pointer w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition'
@@ -498,6 +528,17 @@ export const ChatItem: FC<IChatItemProps> = ({
             </div>
             <span className={'text-xs text-zinc-500 dark:text-zinc-400'}>{timestamp}</span>
           </div>
+          {!deleted && hasReplyTarget && (
+            <MessageReplyPreviewBlock
+              replyTo={replyTo}
+              hasReplyTarget={hasReplyTarget}
+              labels={{
+                attachment: t('Reply.attachment'),
+                deleted: t('Reply.deleted'),
+              }}
+              className="mt-2"
+            />
+          )}
           {isImage && (
             <a
               href={fileAccessPath}
@@ -641,11 +682,22 @@ export const ChatItem: FC<IChatItemProps> = ({
           )}
         </div>
       </div>
-      {canCopyMessage && (
+      {(canCopyMessage || canReplyMessage) && (
         <div
           className={
             'z-10 hidden group-hover:flex items-center gap-x-2 absolute p-1 -top-2 right-5 bg-white dark:bg-zinc-800 shadow-sm rounded-sm'
           }>
+          {canReplyMessage && (
+            <ActionTooltip label={t('ChatItem.reply')}>
+              <button
+                type="button"
+                aria-label={t('ChatItem.reply')}
+                onClick={handleReply}
+                className="flex h-4 w-4 items-center justify-center">
+                <Reply className={actionIconClassName} />
+              </button>
+            </ActionTooltip>
+          )}
           <ActionTooltip label={copyTooltipLabel}>
             <button
               type="button"

@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
-import { MemberRole } from '@prisma/client'
+import { MemberRole, Prisma } from '@prisma/client'
 
 import { PrismaService } from '../../common/database/prisma.service'
 import { StorageService } from '../storage/storage.service'
@@ -7,6 +7,7 @@ import { StorageService } from '../storage/storage.service'
 type DirectMessageMutationBody = {
   content?: string
   fileUrl?: string | null
+  replyToMessageId?: string | null
 }
 
 const MESSAGE_BATCH_SIZE = 10
@@ -16,7 +17,18 @@ const DIRECT_MESSAGE_INCLUDE = {
       profile: true,
     },
   },
-} as const
+  replyToDirectMessage: {
+    include: {
+      member: {
+        include: {
+          profile: true,
+        },
+      },
+    },
+  },
+} satisfies Prisma.DirectMessageInclude
+type DirectMessageWithRelations = Prisma.DirectMessageGetPayload<{ include: typeof DIRECT_MESSAGE_INCLUDE }>
+type DirectMessageReplyRelation = NonNullable<DirectMessageWithRelations['replyToDirectMessage']>
 const CONVERSATION_INCLUDE = {
   memberOne: {
     include: {
@@ -58,7 +70,7 @@ export class DirectMessagesService {
     })
 
     return {
-      items: messages,
+      items: messages.map((message) => this.toChatMessage(message)),
       nextCursor: messages.length === MESSAGE_BATCH_SIZE ? messages[MESSAGE_BATCH_SIZE - 1].id : null,
     }
   }
@@ -176,21 +188,26 @@ export class DirectMessagesService {
       typeof body.fileUrl === 'string'
         ? await this.storageService.finalizeStoredValue(resolvedProfileId, 'messageFile', body.fileUrl)
         : body.fileUrl
+    const replyToDirectMessageId = await this.resolveReplyToDirectMessageId(body.replyToMessageId, conversationId)
 
-    return this.prisma.directMessage.create({
+    const message = await this.prisma.directMessage.create({
       data: {
         content,
         fileUrl: finalizedFileUrl,
         conversationId,
         memberId: member.id,
+        replyToDirectMessageId,
       },
       include: DIRECT_MESSAGE_INCLUDE,
     })
+
+    return this.toChatMessage(message)
   }
 
   async getConversationRealtimeContext(profileId: string | undefined, conversationId: string | undefined) {
     const { conversation, member } = await this.resolveConversationMember(profileId, conversationId)
-    const recipientMemberId = conversation.memberOneId === member.id ? conversation.memberTwoId : conversation.memberOneId
+    const recipientMemberId =
+      conversation.memberOneId === member.id ? conversation.memberTwoId : conversation.memberOneId
 
     return {
       serverId: conversation.memberOne.serverId,
@@ -222,7 +239,7 @@ export class DirectMessagesService {
       throw new HttpException('Content Missing', HttpStatus.BAD_REQUEST)
     }
 
-    return this.prisma.directMessage.update({
+    const updatedMessage = await this.prisma.directMessage.update({
       where: {
         id: directMessageId,
       },
@@ -231,12 +248,14 @@ export class DirectMessagesService {
       },
       include: DIRECT_MESSAGE_INCLUDE,
     })
+
+    return this.toChatMessage(updatedMessage)
   }
 
   async deleteMessage(profileId: string | undefined, conversationId: string | undefined, directMessageId: string) {
     await this.resolveMessageMutationAccess(profileId, conversationId, directMessageId)
 
-    return this.prisma.directMessage.update({
+    const deletedMessage = await this.prisma.directMessage.update({
       where: {
         id: directMessageId,
       },
@@ -247,6 +266,54 @@ export class DirectMessagesService {
       },
       include: DIRECT_MESSAGE_INCLUDE,
     })
+
+    return this.toChatMessage(deletedMessage)
+  }
+
+  private toChatMessage(message: DirectMessageWithRelations) {
+    const { replyToDirectMessage, ...chatMessage } = message
+
+    return {
+      ...chatMessage,
+      replyTo: replyToDirectMessage ? this.toReplyPreview(replyToDirectMessage) : null,
+    }
+  }
+
+  private toReplyPreview(message: DirectMessageReplyRelation) {
+    return {
+      id: message.id,
+      content: message.content,
+      fileUrl: message.fileUrl,
+      deleted: message.deleted,
+      memberId: message.memberId,
+      member: message.member,
+      createdAt: message.createdAt,
+    }
+  }
+
+  private async resolveReplyToDirectMessageId(replyToMessageId: string | null | undefined, conversationId: string) {
+    const normalizedReplyToMessageId = replyToMessageId?.trim()
+
+    if (!normalizedReplyToMessageId) {
+      return null
+    }
+
+    const replyToDirectMessage = await this.prisma.directMessage.findFirst({
+      where: {
+        id: normalizedReplyToMessageId,
+        conversationId,
+        deleted: false,
+      },
+      select: {
+        id: true,
+      },
+    })
+
+    if (!replyToDirectMessage) {
+      throw new HttpException('Reply Message Not Found', HttpStatus.BAD_REQUEST)
+    }
+
+    return replyToDirectMessage.id
   }
 
   private async resolveMessageMutationAccess(

@@ -1,9 +1,25 @@
 import { useSocket } from '../../providers'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
-import type { ChatMessageDto } from '@app-core/contracts'
+import type { ChatMessageDto, MessageReplyPreviewDto } from '@app-core/contracts'
 
 type TMessageMemberProfile = ChatMessageDto
+
+const toReplyPreview = (message: TMessageMemberProfile): MessageReplyPreviewDto => ({
+  id: message.id,
+  content: message.content,
+  createdAt: message.createdAt,
+  deleted: message.deleted,
+  fileUrl: message.fileUrl,
+  member: message.member,
+  memberId: message.memberId,
+  mentions: message.mentions,
+})
+
+const shouldRefreshReplyPreview = (item: TMessageMemberProfile, updatedMessageId: string) =>
+  item.replyTo?.id === updatedMessageId ||
+  item.replyToMessageId === updatedMessageId ||
+  item.replyToDirectMessageId === updatedMessageId
 
 interface IChatSocket {
   addKey: string
@@ -30,6 +46,13 @@ export const useChatSocket = ({ addKey, updateKey, queryKey }: IChatSocket) => {
             items: page.items.map((item: TMessageMemberProfile) => {
               if (item.id === message.id) {
                 return message
+              }
+
+              if (shouldRefreshReplyPreview(item, message.id)) {
+                return {
+                  ...item,
+                  replyTo: toReplyPreview(message),
+                }
               }
 
               return item

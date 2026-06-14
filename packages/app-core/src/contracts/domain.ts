@@ -60,8 +60,12 @@ export interface MessageDto {
   content: string
   fileUrl: string | null
   memberId: string
-  channelId: string
+  channelId?: string
+  conversationId?: string
   deleted: boolean
+  replyToMessageId?: string | null
+  replyToDirectMessageId?: string | null
+  replyTo?: MessageReplyPreviewDto | null
   createdAt: DomainTimestamp
   updatedAt: DomainTimestamp
   mentions?: MessageMentionDto[]
@@ -88,6 +92,17 @@ export interface MessageMentionDto {
   kind: MessageMentionKind
   member: MemberWithProfileDto
   createdAt: DomainTimestamp
+}
+
+export type MessageReplyPreviewDto = {
+  id: string
+  content: string
+  fileUrl: string | null
+  deleted: boolean
+  memberId: string
+  member: MemberWithProfileDto
+  createdAt: DomainTimestamp
+  mentions?: MessageMentionDto[]
 }
 
 export type ServerListItemDto = ServerDto & {

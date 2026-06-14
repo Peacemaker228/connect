@@ -7,6 +7,7 @@ type MessageWithMemberProfile = ChatMessageDto
 export type MessageMutationPayload = {
   content?: string
   fileUrl?: string | null
+  replyToMessageId?: string | null
 }
 
 type MessageMutationParams = {
