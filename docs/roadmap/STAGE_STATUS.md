@@ -1092,6 +1092,7 @@ Next likely work:
 - run Segment 213 authenticated web smoke for message attachment max-size copy in EN/RU, server image negative check, normal file upload under `50 MB`, and oversize rejection
 - run Segment 214 authenticated channel smoke for other-user mention navigation, self mention non-navigation, `@all` non-navigation, raw fallback non-navigation, copy/edit/link regressions, and desktop runtime review
 - run Segment 215 authenticated channel/direct smoke for reply bar, cancel, send, reload persistence, realtime recipient rendering, deleted-original fallback, cross-channel/cross-conversation rejection, and send/edit/delete/copy/mention/link/file regressions
+- implement Segment 216 `customer-reply-preview-mention-rendering-polish` so `@user` / `@all` inside compact reply previews use readable highlighted mention styling without backend/API/DB or reply attention changes
 - run authenticated Segment 206 message-copy smoke for text, multiline, `@user` / `@all`, image attachment, PDF/file attachment if available, non-owner copy, owner edit/delete regression, deleted-message negative case, and desktop runtime review
 - keep Segment 195 review follow-ups visible during smoke: global summary query shape is acceptable for the current slice but may need later optimization
 - run two-user smoke for unread sound/mute behavior, including per-channel and per-direct muted scopes

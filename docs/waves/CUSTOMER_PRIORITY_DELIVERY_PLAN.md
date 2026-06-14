@@ -858,6 +858,23 @@ Manual smoke:
 Next:
 - after Segment 215 verification, first consider `customer-reply-preview-mention-rendering-polish`, then choose between reply attention/unread and reply navigation polish as separate scoped follow-ups.
 
+## Segment 216. Customer Reply Preview Mention Rendering Polish
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_216_CUSTOMER_REPLY_PREVIEW_MENTION_RENDERING_POLISH.md`
+
+Status:
+- `planned / ready for implementation`
+
+Goal:
+- render `@user` and `@all` inside compact reply previews with the same readable highlighted mention style used in normal message text, without adding reply attention/sound/badges or changing backend/API/DB contracts.
+
+Scope:
+- frontend rendering polish only;
+- preserve deleted-original fallback and file-only attachment fallback;
+- keep mention navigation behavior owned by normal message content unless reply-preview navigation is explicitly designed later;
+- no reply block visual redesign in this slice.
+
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 
 ## Low-Risk UX Fixes Result
