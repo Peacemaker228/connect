@@ -238,6 +238,25 @@ Kept out of scope:
 - no auth/storage/media changes;
 - no unbounded "load previous" loop.
 
+## Post-Smoke Product Decision
+
+Manual/local smoke confirmed the bounded context navigation works technically, but the chat-local overlay can create a visible history gap: the old target context appears separately from the latest-message range.
+
+This is acceptable as a bounded implementation step, not as the final UX model.
+
+Do not try to fix the gap with CSS spacing or by loading every message between the target and latest. The agreed follow-up is Segment 220:
+
+- `docs/delegation/briefs/SEGMENT_BRIEF_220_CUSTOMER_CHAT_ANCHOR_CONTEXT_HISTORY_NAVIGATION.md`
+- `customer-chat-anchor-context-history-navigation`
+
+Segment 220 should replace the overlay with an anchor/windowed history mode:
+
+- unloaded reply target opens a bounded target-centered history range;
+- older and newer adjacent messages can be loaded from that range;
+- a visible "jump to latest" / "down" control returns to the live bottom;
+- new messages while away from latest do not force-scroll;
+- full virtualization is deferred to a later performance review only if real smoke/profiling shows it is needed.
+
 ## Verification Commands
 
 Run from repo root in PowerShell:

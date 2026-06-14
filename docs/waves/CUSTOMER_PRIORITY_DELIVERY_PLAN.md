@@ -991,7 +991,37 @@ Delivered:
 - reply block visual redesign, reply attention/unread changes, DB schema/migrations, realtime events, auth/storage/media, deep links, and unbounded "load previous" loops remain out of scope.
 
 Next after Segment 219:
-- `customer-reply-visual-redesign-and-target-attention` for Discord-like reply block polish and visual emphasis on messages that reply to the current user.
+- `customer-chat-anchor-context-history-navigation` to replace the Segment 219 context overlay with an anchor/windowed history model before reply visual redesign.
+
+## Segment 220. Customer Chat Anchor Context History Navigation
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_220_CUSTOMER_CHAT_ANCHOR_CONTEXT_HISTORY_NAVIGATION.md`
+
+Status:
+- `planned / ready for runtime implementation`
+
+Decision:
+- Segment 219 is a correct bounded technical step, but its context overlay can create a visible gap between the old reply target context and the current latest-message range;
+- do not fix that gap with CSS or larger spacing;
+- the next implementation should use an anchor/windowed history model: navigating to an unloaded reply target opens a bounded active history window around that target, with adjacent older/newer loading from that window and a visible control to jump back to latest messages.
+
+Expected behavior:
+- loaded reply target: keep the fast local scroll/highlight path;
+- unloaded reply target: replace the visible range with a bounded target-centered history window instead of rendering a separate overlay island;
+- anchored history: support loading older and newer adjacent messages without loading every message between the target and latest;
+- latest return: add a "jump to latest" / "down" control that returns to the current live bottom;
+- realtime while away from latest: do not force-scroll; surface new-message state through existing unread/new-message affordances or the jump control;
+- deleted targets: keep navigation to accessible deleted fallback rows;
+- wrong-chat/inaccessible targets: keep backend rejection and safe no-scroll behavior.
+
+Virtualization note:
+- full message-list virtualization is not part of Segment 220;
+- consider virtualization later only if real smoke/profiling shows large loaded ranges causing DOM/performance issues;
+- possible later follow-up: `customer-chat-message-list-virtualization-review`.
+
+Next after Segment 220:
+- `customer-reply-visual-redesign-and-target-attention` for Discord-like reply block polish and visual emphasis on messages that reply to the current user, unless Segment 220 smoke exposes navigation/data issues first.
 
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 
