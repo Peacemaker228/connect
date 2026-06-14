@@ -927,7 +927,7 @@ Brief:
 - `docs/delegation/briefs/SEGMENT_BRIEF_218_CUSTOMER_REPLY_NAVIGATION_LOADED_RANGE_POLISH.md`
 
 Status:
-- `planned / ready for implementation`
+- `implemented locally / command verification passed; manual smoke pending`
 
 Goal:
 - clicking a sent message's reply preview should scroll to the original message if the original is already loaded in the current channel/DM view, then briefly highlight it.
@@ -944,6 +944,14 @@ Key behavior:
 - deleted original: keep safe fallback and avoid misleading navigation;
 - unloaded original: no crash and no wrong scroll;
 - normal mention navigation, reply attention, edit/delete/copy, and active-read behavior stay unchanged.
+
+Delivered:
+- `ChatMessages` owns a local loaded-row map and target highlight state;
+- sent message reply previews are keyboard/click reachable and request navigation only through the current chat view;
+- loaded originals scroll smoothly to center and receive a short inset highlight without layout shift;
+- unloaded originals quietly no-op without history fetch or deep-link behavior;
+- deleted originals and the composer reply bar remain non-navigating safe fallback paths;
+- backend/API/DB/realtime/unread, history loading, deep links, thread UI, and reply block redesign remain unchanged.
 
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 

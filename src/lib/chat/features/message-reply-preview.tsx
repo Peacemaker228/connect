@@ -18,6 +18,7 @@ interface MessageReplyPreviewBlockProps {
   hasReplyTarget?: boolean
   labels: MessageReplyPreviewLabels
   onCancel?: () => void
+  onNavigate?: () => void
   replyTo?: MessageReplyPreviewDto | null
 }
 
@@ -75,6 +76,7 @@ export const MessageReplyPreviewBlock = ({
   hasReplyTarget = true,
   labels,
   onCancel,
+  onNavigate,
   replyTo,
 }: MessageReplyPreviewBlockProps) => {
   if (!hasReplyTarget) {
@@ -83,6 +85,13 @@ export const MessageReplyPreviewBlock = ({
 
   const authorName = replyTo && !replyTo.deleted ? replyTo.member.profile.name : null
   const previewText = renderReplyPreviewText(replyTo, labels)
+  const canNavigate = Boolean(onNavigate && replyTo && !replyTo.deleted)
+  const previewContent = (
+    <>
+      {authorName && <p className="truncate font-semibold text-zinc-700 dark:text-zinc-200">{authorName}</p>}
+      <p className={cn('truncate', !authorName && 'italic')}>{previewText}</p>
+    </>
+  )
 
   return (
     <div
@@ -90,10 +99,18 @@ export const MessageReplyPreviewBlock = ({
         'flex min-w-0 max-w-xl items-start gap-2 border-l-2 border-mainOrange/80 pl-2 text-xs text-zinc-500 dark:text-zinc-400',
         className,
       )}>
-      <div className="min-w-0 flex-1">
-        {authorName && <p className="truncate font-semibold text-zinc-700 dark:text-zinc-200">{authorName}</p>}
-        <p className={cn('truncate', !authorName && 'italic')}>{previewText}</p>
-      </div>
+      {canNavigate ? (
+        <button
+          type="button"
+          aria-label="Scroll to replied message"
+          title="Scroll to replied message"
+          onClick={onNavigate}
+          className="min-w-0 flex-1 cursor-pointer text-left transition hover:text-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mainOrange/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:hover:text-zinc-200 dark:focus-visible:ring-offset-zinc-900">
+          {previewContent}
+        </button>
+      ) : (
+        <div className="min-w-0 flex-1">{previewContent}</div>
+      )}
       {onCancel && (
         <Button
           type="button"

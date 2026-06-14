@@ -33,6 +33,8 @@ type UnreadAnchor = {
   lastReadAt: Date | string
 }
 
+const REPLY_NAVIGATION_HIGHLIGHT_MS = 1800
+
 const getTimestampValue = (value: Date | string) => new Date(value).getTime()
 
 const NewMessagesDivider = () => (
@@ -75,8 +77,11 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const chatRef = useRef<ElementRef<'div'>>(null)
   const bottomRef = useRef<ElementRef<'div'>>(null)
   const capturedChatKeyRef = useRef<string | null>(null)
+  const messageElementByIdRef = useRef(new Map<string, HTMLDivElement>())
+  const replyNavigationHighlightTimeoutRef = useRef<number | null>(null)
   const [unreadAnchor, setUnreadAnchor] = useState<UnreadAnchor | null>(null)
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
+  const [replyNavigationHighlightedMessageId, setReplyNavigationHighlightedMessageId] = useState<string | null>(null)
   const { setReplyTo } = useChatReply()
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useChatQuery({
@@ -123,7 +128,48 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     capturedChatKeyRef.current = null
     setUnreadAnchor(null)
     setEditingMessageId(null)
+    setReplyNavigationHighlightedMessageId(null)
   }, [chatReadKey])
+
+  useEffect(() => {
+    return () => {
+      if (replyNavigationHighlightTimeoutRef.current) {
+        window.clearTimeout(replyNavigationHighlightTimeoutRef.current)
+        replyNavigationHighlightTimeoutRef.current = null
+      }
+    }
+  }, [])
+
+  const registerMessageElement = useCallback((messageId: string, element: HTMLDivElement | null) => {
+    if (!element) {
+      messageElementByIdRef.current.delete(messageId)
+      return
+    }
+
+    messageElementByIdRef.current.set(messageId, element)
+  }, [])
+
+  const navigateToLoadedReplyTarget = useCallback((messageId: string) => {
+    const targetElement = messageElementByIdRef.current.get(messageId)
+
+    if (!targetElement || !chatRef.current?.contains(targetElement)) {
+      return
+    }
+
+    targetElement.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    setReplyNavigationHighlightedMessageId(messageId)
+
+    if (replyNavigationHighlightTimeoutRef.current) {
+      window.clearTimeout(replyNavigationHighlightTimeoutRef.current)
+    }
+
+    replyNavigationHighlightTimeoutRef.current = window.setTimeout(() => {
+      setReplyNavigationHighlightedMessageId((currentMessageId) =>
+        currentMessageId === messageId ? null : currentMessageId,
+      )
+      replyNavigationHighlightTimeoutRef.current = null
+    }, REPLY_NAVIGATION_HIGHLIGHT_MS)
+  }, [])
 
   const handleReply = useCallback(
     (message: MessageWithMemberWithProfile['replyTo']) => {
@@ -285,6 +331,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
                   deleted={m.deleted}
                   isUpdated={m.updatedAt !== m.createdAt}
                   isEditing={editingMessageId === m.id}
+                  isReplyNavigationHighlighted={replyNavigationHighlightedMessageId === m.id}
                   onStartEditing={() => setEditingMessageId(m.id)}
                   onCancelEditing={() => {
                     setEditingMessageId((currentEditingMessageId) =>
@@ -297,6 +344,8 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
                     )
                   }}
                   onReply={handleReply}
+                  onNavigateToReplyTarget={navigateToLoadedReplyTarget}
+                  onRegisterMessageElement={registerMessageElement}
                   mentionSuggestions={mentionSuggestions}
                   timestamp={format(new Date(m.createdAt), EDateFormat.MESSAGE_ITEM)}
                 />
