@@ -69,6 +69,8 @@ Feature branch pattern:
 
 Rules:
 - branch from latest `core/reborn`;
+- create local feature branches from latest `origin/core/reborn`, but do not make them track `origin/core/reborn`;
+- if `git status --short --branch` shows a feature branch tracking `origin/core/reborn` or another wrong upstream, fix it before handoff with `git branch --unset-upstream`;
 - keep PRs small and user-visible;
 - do not use `main` for new work unless a separate repo-admin segment explicitly changes branch policy;
 - do not rewrite `main` while staging is being used unless there is a reviewed backup/branch-protection plan.
@@ -847,13 +849,14 @@ Out of scope:
 - reply attention/badges/sound and `replyCount` changes;
 - scroll-to-original/navigation;
 - visual redesign of the quoted block;
+- reply preview mention rendering polish: `@user` / `@all` inside compact reply previews should eventually use the same highlighted readable mention style as normal message text, without raw `<@id>` display;
 - partial quotes, threads, link previews, auth/storage/media changes, and staging/prod migration execution.
 
 Manual smoke:
 - pending authenticated channel/direct smoke for reply bar, cancel, send, reload persistence, realtime recipient rendering, deleted-original fallback, cross-channel/cross-conversation rejection, and send/edit/delete/copy/mention/link/file regressions.
 
 Next:
-- after Segment 215 verification, choose between reply attention/unread and reply navigation polish as separate scoped follow-ups.
+- after Segment 215 verification, first consider `customer-reply-preview-mention-rendering-polish`, then choose between reply attention/unread and reply navigation polish as separate scoped follow-ups.
 
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 

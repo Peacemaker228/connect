@@ -14,6 +14,7 @@ Before drafting the brief:
 
 - run `git status --short --branch`;
 - check the current branch and whether the worktree is dirty;
+- check whether a feature branch is accidentally tracking `origin/core/reborn` or another wrong upstream;
 - inspect recent commits if the requested status depends on what was merged;
 - do not overwrite or reinterpret uncommitted work from another agent;
 - if the worktree is dirty, say whether the new brief can be prepared safely without touching those files.
@@ -60,6 +61,8 @@ Do not pull legacy/historical context into the brief unless it is directly relev
 Current defaults unless `STAGE_STATUS.md` says otherwise:
 
 - active source branch is `core/reborn`;
+- task feature branches should be created from latest `origin/core/reborn`, but should not track `origin/core/reborn`;
+- if a feature branch shows the wrong upstream, fix it before handoff with `git branch --unset-upstream` or recreate the local branch cleanly;
 - customer-priority work is active under `Wave 35 / CUSTOMER_PRIORITY_DELIVERY_PLAN`;
 - `staging.ax-connect.ru` is a working stand with real user activity, not a disposable test target;
 - Stage 6 production Postgres migration is deferred;

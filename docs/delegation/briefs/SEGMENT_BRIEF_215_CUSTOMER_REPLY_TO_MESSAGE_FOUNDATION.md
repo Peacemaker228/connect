@@ -32,9 +32,10 @@ Use a calm Discord-like inline reply model:
 
 Future slices can add:
 
-1. `customer-reply-attention-unread`;
-2. `customer-reply-navigation-polish`;
-3. optional Telegram-like partial quote or richer thread UI, only if product feedback demands it.
+1. `customer-reply-preview-mention-rendering-polish`;
+2. `customer-reply-attention-unread`;
+3. `customer-reply-navigation-polish`;
+4. optional Telegram-like partial quote or richer thread UI, only if product feedback demands it.
 
 ## Implementation Result
 
@@ -55,6 +56,7 @@ Kept out of scope:
 - reply attention/badges/sound and `replyCount` increments;
 - scroll-to-original/navigation;
 - visual redesign of the quoted block;
+- reply preview mention rendering polish: `@user` / `@all` inside compact reply previews should eventually use the same highlighted readable style as normal message text, without raw `<@id>` display;
 - partial quotes, threads, link previews, auth/storage/media changes, and staging/prod migration execution.
 
 ## Current Context
