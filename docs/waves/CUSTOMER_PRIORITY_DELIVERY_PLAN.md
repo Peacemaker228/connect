@@ -999,7 +999,7 @@ Brief:
 - `docs/delegation/briefs/SEGMENT_BRIEF_220_CUSTOMER_CHAT_ANCHOR_CONTEXT_HISTORY_NAVIGATION.md`
 
 Status:
-- `planned / ready for runtime implementation`
+- `implemented locally / command verification passed; manual smoke pending`
 
 Decision:
 - Segment 219 is a correct bounded technical step, but its context overlay can create a visible gap between the old reply target context and the current latest-message range;
@@ -1014,6 +1014,14 @@ Expected behavior:
 - realtime while away from latest: do not force-scroll; surface new-message state through existing unread/new-message affordances or the jump control;
 - deleted targets: keep navigation to accessible deleted fallback rows;
 - wrong-chat/inaccessible targets: keep backend rejection and safe no-scroll behavior.
+
+Delivered:
+- context endpoints keep the Segment 219 access checks and now return `olderCursor` / `newerCursor` for anchored history windows;
+- SDK `fetchChatReplyTargetContext()` accepts optional `direction=older|newer` for bounded adjacent reads;
+- normal latest mode keeps the existing infinite-query `nextCursor` path and loaded-target scroll/highlight behavior;
+- unloaded targets enter anchored history mode, replacing the visible range rather than overlaying old context rows onto latest messages;
+- anchored mode supports older and newer adjacent loading, disables latest-mode auto-scroll/forced-bottom scrolling while anchored, keeps realtime update/delete patching for anchored rows/reply previews, and provides a sticky jump-to-latest/down control;
+- virtualization, reply visual redesign, reply attention/unread changes, DB schema/migrations, auth/storage/media/WebRTC, realtime transport hardening, deep links, and thread UI remain out of scope.
 
 Virtualization note:
 - full message-list virtualization is not part of Segment 220;

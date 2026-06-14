@@ -2,6 +2,7 @@
 
 - Branch: `feature/customer-chat-anchor-context-history-navigation`
 - Segment: `customer-chat-anchor-context-history-navigation`
+- Status: `implemented locally / command verification passed; manual smoke pending`
 - Wave: `Wave 35 / CUSTOMER_PRIORITY_DELIVERY_PLAN`
 - Stage: `Customer-priority product delivery`
 - Priority: P1 reply/history UX follow-up after Segment 219
@@ -212,6 +213,31 @@ Run authenticated web smoke:
 Desktop runtime:
 
 - if this moves toward desktop release, run a packaged/electron spot check for anchor navigation, jump-to-latest, and dynamic height rows.
+
+## Implementation Result
+
+Delivered:
+- Segment 219 context reads now expose explicit `olderCursor` and `newerCursor` metadata while preserving the existing normal latest `nextCursor` query behavior;
+- `GET /api/messages/:messageId/context` and `GET /api/direct-messages/:directMessageId/context` accept optional `direction=older|newer` for bounded adjacent history reads from the current anchor window boundary;
+- backend access checks and same channel/conversation validation remain authoritative for initial target context and adjacent cursor reads;
+- loaded reply targets keep the Segment 218 local scroll/highlight fast path with no context request;
+- unloaded reply targets replace the visible range with a target-centered anchored history window instead of rendering a separate overlay island beside latest messages;
+- anchored history can load older adjacent messages from the top and newer adjacent messages from the bottom without loading all history between target and latest;
+- a sticky down control exits anchored history and returns to the latest range/live bottom;
+- automatic bottom scrolling and forced scroll-to-bottom events are disabled while anchored so target scroll/highlight cannot race the latest-mode auto-scroll timers;
+- while anchored, normal latest read/near-bottom state is treated as not at latest so new messages do not force-scroll or get marked read as visible latest messages;
+- anchored rows and their reply previews are patched by the existing realtime update/delete payload path;
+- soft-deleted targets remain navigable as deleted fallback rows when backend access permits.
+
+Kept out of scope:
+- no virtualization or message-list library replacement;
+- no reply block visual redesign;
+- no reply attention/unread contract changes;
+- no DB schema/migration;
+- no auth/storage/media/WebRTC changes;
+- no realtime transport hardening;
+- no URL deep links/permalinks;
+- no thread UI.
 
 ## Verification Commands
 
