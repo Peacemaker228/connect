@@ -23,6 +23,8 @@ import {
 } from '@/lib/shared/data-access/unread/active-chat-read-state'
 import { useGetServer } from '@sdk/queries/server'
 import { createMentionSuggestions } from '@/lib/chat/features/mention-picker-utils'
+import { useChatReply } from '@/lib/chat/features/chat-reply-context'
+import { CHAT_COMPOSER_FOCUS_EVENT } from '@/lib/shared/utils/chat-events'
 
 type MessageWithMemberWithProfile = ChatMessageDto
 
@@ -75,6 +77,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const capturedChatKeyRef = useRef<string | null>(null)
   const [unreadAnchor, setUnreadAnchor] = useState<UnreadAnchor | null>(null)
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
+  const { setReplyTo } = useChatReply()
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useChatQuery({
     queryKey,
@@ -121,6 +124,18 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     setUnreadAnchor(null)
     setEditingMessageId(null)
   }, [chatReadKey])
+
+  const handleReply = useCallback(
+    (message: MessageWithMemberWithProfile['replyTo']) => {
+      if (!message) {
+        return
+      }
+
+      setReplyTo(message)
+      window.dispatchEvent(new CustomEvent(CHAT_COMPOSER_FOCUS_EVENT, { detail: { chatId } }))
+    },
+    [chatId, setReplyTo],
+  )
 
   useChatSocket({ queryKey, addKey, updateKey })
   const { isNearBottom } = useChatScroll({
@@ -260,8 +275,12 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
                   currentMember={member}
                   id={m.id}
                   member={m.member}
+                  createdAt={m.createdAt}
                   content={m.content}
                   mentions={m.mentions}
+                  replyTo={m.replyTo}
+                  replyToDirectMessageId={m.replyToDirectMessageId}
+                  replyToMessageId={m.replyToMessageId}
                   serverId={serverId}
                   deleted={m.deleted}
                   isUpdated={m.updatedAt !== m.createdAt}
@@ -277,6 +296,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
                       currentEditingMessageId === m.id ? null : currentEditingMessageId,
                     )
                   }}
+                  onReply={handleReply}
                   mentionSuggestions={mentionSuggestions}
                   timestamp={format(new Date(m.createdAt), EDateFormat.MESSAGE_ITEM)}
                 />

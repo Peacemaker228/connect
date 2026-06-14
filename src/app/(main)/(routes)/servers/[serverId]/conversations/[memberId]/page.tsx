@@ -2,7 +2,7 @@ import React, { FC } from 'react'
 import { ERoutes } from '@app-core/routing/routes'
 import { redirect } from 'next/navigation'
 import { getOrCreateConversation } from '@/lib/shared/utils/conversation'
-import { ChatHeader, ChatInput, ChatMessages } from '@/lib/chat/features'
+import { ChatHeader, ChatInput, ChatMessages, ChatReplyProvider } from '@/lib/chat/features'
 import { MediaRoom } from '@/lib/shared/features/media-room'
 import { createConversationMediaRoomEntry } from '@/lib/shared/features/media/media-room-entry'
 import { getServerRouteGuardAuth, getServerRouteGuardServer } from '@/lib/shared/utils/server-route-guard'
@@ -98,7 +98,7 @@ const MemberIdPage: FC<IMemberIdPageProps> = async ({ params, searchParams }) =>
         />
       )}
       {!video && (
-        <>
+        <ChatReplyProvider chatId={conversation.id}>
           <ChatMessages
             name={otherMember.profile.name}
             member={currentMember}
@@ -116,7 +116,7 @@ const MemberIdPage: FC<IMemberIdPageProps> = async ({ params, searchParams }) =>
             name={otherMember.profile.name}
             type={'conversation'}
           />
-        </>
+        </ChatReplyProvider>
       )}
     </div>
   )

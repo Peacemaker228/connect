@@ -20,6 +20,7 @@ interface IModalData {
   channel?: ChannelDto
   apiUrl?: string
   initialFile?: File
+  replyToMessageId?: string | null
   // может быть любое значение
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   query?: Record<string, any>

@@ -1,16 +1,6 @@
 'use client'
 
-import {
-  ClipboardEvent,
-  DragEvent,
-  FC,
-  KeyboardEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { ClipboardEvent, DragEvent, FC, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQueryClient } from '@tanstack/react-query'
@@ -29,6 +19,8 @@ import type { ChatMessagesPage } from '@sdk/queries/chat'
 import { CHAT_COMPOSER_FOCUS_EVENT, CHAT_SCROLL_TO_BOTTOM_EVENT } from '@/lib/shared/utils/chat-events'
 import { useGetServer } from '@sdk/queries/server'
 import { MentionPickerCommand } from '@/lib/chat/features/mention-picker-command'
+import { MessageReplyPreviewBlock } from '@/lib/chat/features/message-reply-preview'
+import { useChatReply } from '@/lib/chat/features/chat-reply-context'
 import {
   applyMentionSuggestionToText,
   createMentionSuggestions,
@@ -128,6 +120,7 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
   const queryClient = useQueryClient()
   const t = useTranslations('ChannelPage')
   const { mutateAsync: createMessage } = useCreateMessage()
+  const { clearReply, replyTo } = useChatReply()
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
   const mentionOptionRefs = useRef<Array<HTMLDivElement | null>>([])
   const isPointerDownInsideMentionPickerRef = useRef(false)
@@ -297,6 +290,13 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
     [canFocusInput, resizeInput],
   )
 
+  const handleCancelReply = useCallback(() => {
+    clearReply()
+    requestAnimationFrame(() => {
+      focusInputIfSafe('entry')
+    })
+  }, [clearReply, focusInputIfSafe])
+
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       focusInputIfSafe('entry')
@@ -317,6 +317,10 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
         return
       }
 
+      if (event.detail?.clearReply) {
+        clearReply()
+      }
+
       requestAnimationFrame(() => {
         focusInputIfSafe('after-send')
       })
@@ -327,7 +331,7 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
     return () => {
       window.removeEventListener(CHAT_COMPOSER_FOCUS_EVENT, handleComposerFocus)
     }
-  }, [activeChatId, focusInputIfSafe])
+  }, [activeChatId, clearReply, focusInputIfSafe])
 
   useEffect(() => {
     const stopAutofocus = (event: Event) => {
@@ -440,7 +444,12 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
     event.preventDefault()
     shouldFocusAfterSendRef.current = false
     closeMentionPicker()
-    onOpen('messageFile', { apiUrl: messageApiUrl, initialFile: pastedImage, query: messageQuery })
+    onOpen('messageFile', {
+      apiUrl: messageApiUrl,
+      initialFile: pastedImage,
+      query: messageQuery,
+      replyToMessageId: replyTo?.id,
+    })
   }
 
   const handleDragFile = (event: DragEvent<HTMLDivElement>) => {
@@ -466,7 +475,12 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
 
     shouldFocusAfterSendRef.current = false
     closeMentionPicker()
-    onOpen('messageFile', { apiUrl: messageApiUrl, initialFile: droppedFile, query: messageQuery })
+    onOpen('messageFile', {
+      apiUrl: messageApiUrl,
+      initialFile: droppedFile,
+      query: messageQuery,
+      replyToMessageId: replyTo?.id,
+    })
   }
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -525,6 +539,7 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
       const payload = {
         ...data,
         content: serializeSelectedMentionsForSubmit(rawContent, selectedMentionRangesRef.current).trim(),
+        replyToMessageId: replyTo?.id ?? undefined,
       }
       const createdMessage = await createMessage({ apiUrl: messageApiUrl, query: messageQuery, payload })
       const chatId =
@@ -558,6 +573,7 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
 
       selectedMentionRangesRef.current = []
       closeMentionPicker()
+      clearReply()
       form.reset()
       router.refresh()
       focusInputAfterSend()
@@ -581,105 +597,123 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <div className={'relative p-4 pb-6'} onDragOver={handleDragFile} onDrop={handleDropFile}>
-                  <button
-                    type={'button'}
-                    onClick={() => {
-                      closeMentionPicker()
-                      onOpen('messageFile', { apiUrl: messageApiUrl, query: messageQuery })
-                    }}
-                    className={
-                      'absolute top-7 left-8 h-[24px] w-[24px] bg-zinc-500 dark:bg-zinc-400 hover:bg-zinc-600 dark:hover:bg-zinc-300 transition rounded-full p-1 flex items-center justify-center'
-                    }>
-                    <Plus className="text-white dark:text-[#313338]" />
-                  </button>
-                  {isMentionPickerOpen && (
-                    <MentionPickerCommand
-                      suggestions={visibleMentionSuggestions}
-                      selectedIndex={mentionSelectedIndex}
-                      optionRefs={mentionOptionRefs}
-                      onValueChange={handleMentionCommandValueChange}
-                      onPointerDownCapture={() => {
-                        isPointerDownInsideMentionPickerRef.current = true
+                <div className={'p-4 pb-6'} onDragOver={handleDragFile} onDrop={handleDropFile}>
+                  {replyTo && (
+                    <MessageReplyPreviewBlock
+                      replyTo={replyTo}
+                      labels={{
+                        attachment: t('Reply.attachment'),
+                        cancel: t('Reply.cancel'),
+                        deleted: t('Reply.deleted'),
                       }}
-                      onSelectSuggestion={applyMentionSuggestion}
-                      className="absolute mb-2 right-4 bottom-[calc(100%-1rem)] left-4 z-50 h-auto max-w-[calc(100%-2rem)] overflow-hidden rounded-md border border-zinc-300 bg-white p-0 text-zinc-700 shadow-lg dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                      onCancel={handleCancelReply}
+                      className="mb-2 ml-10 mr-14 rounded-t-md bg-zinc-200/60 py-2 pr-2 dark:bg-zinc-700/50"
                     />
                   )}
-                  <textarea
-                    name={field.name}
-                    value={field.value}
-                    onBlur={(event) => {
-                      const element = event.currentTarget
+                  <div className="relative">
+                    <button
+                      type={'button'}
+                      onClick={() => {
+                        closeMentionPicker()
+                        onOpen('messageFile', {
+                          apiUrl: messageApiUrl,
+                          query: messageQuery,
+                          replyToMessageId: replyTo?.id,
+                        })
+                      }}
+                      className={
+                        'absolute top-3 left-4 h-[24px] w-[24px] bg-zinc-500 dark:bg-zinc-400 hover:bg-zinc-600 dark:hover:bg-zinc-300 transition rounded-full p-1 flex items-center justify-center'
+                      }>
+                      <Plus className="text-white dark:text-[#313338]" />
+                    </button>
+                    {isMentionPickerOpen && (
+                      <MentionPickerCommand
+                        suggestions={visibleMentionSuggestions}
+                        selectedIndex={mentionSelectedIndex}
+                        optionRefs={mentionOptionRefs}
+                        onValueChange={handleMentionCommandValueChange}
+                        onPointerDownCapture={() => {
+                          isPointerDownInsideMentionPickerRef.current = true
+                        }}
+                        onSelectSuggestion={applyMentionSuggestion}
+                        className="absolute bottom-full left-0 right-0 z-50 mb-2 h-auto overflow-hidden rounded-md border border-zinc-300 bg-white p-0 text-zinc-700 shadow-lg dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                      />
+                    )}
+                    <textarea
+                      name={field.name}
+                      value={field.value}
+                      onBlur={(event) => {
+                        const element = event.currentTarget
 
-                      mentionInputSelectionRef.current = {
-                        end: element.selectionEnd,
-                        start: element.selectionStart,
-                      }
-                      field.onBlur()
-                      window.setTimeout(() => {
-                        if (isPointerDownInsideMentionPickerRef.current) {
-                          return
+                        mentionInputSelectionRef.current = {
+                          end: element.selectionEnd,
+                          start: element.selectionStart,
                         }
+                        field.onBlur()
+                        window.setTimeout(() => {
+                          if (isPointerDownInsideMentionPickerRef.current) {
+                            return
+                          }
 
-                        if (document.activeElement !== element) {
-                          closeMentionPicker()
-                        }
-                      }, 0)
-                    }}
-                    onChange={(event) => {
-                      const nextValue = event.currentTarget.value
-
-                      updateContentValue(field.value, nextValue)
-                      field.onChange(nextValue)
-                      resizeInput(event.currentTarget)
-                      syncMentionTrigger(event.currentTarget)
-                    }}
-                    onClick={(event) => syncMentionTrigger(event.currentTarget)}
-                    onKeyDown={handleKeyDown}
-                    onKeyUp={(event) => {
-                      if (event.key !== 'Escape') {
-                        syncMentionTrigger(event.currentTarget)
-                      }
-                    }}
-                    onPaste={handlePaste}
-                    onSelect={(event) => syncMentionTrigger(event.currentTarget)}
-                    ref={(element) => {
-                      field.ref(element)
-                      inputRef.current = element
-                      resizeInput(element)
-                    }}
-                    rows={1}
-                    placeholder={`${t('message')} ${type === 'conversation' ? name : '#' + name}`}
-                    disabled={isLoading}
-                    className={
-                      'chat-message-input min-h-[48px] w-full resize-none rounded-md py-3.5 pl-14 pr-24 text-sm leading-5 bg-zinc-200/90 dark:bg-zinc-700/75 border-none border-0 outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-600 dark:text-zinc-200 placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50'
-                    }
-                  />
-                  <div className="absolute top-6 right-7 flex items-center gap-2">
-                    <EmojiPickerCustom
-                      onChangeAction={(e: string) => {
-                        const nextValue = `${field.value}${e}`
+                          if (document.activeElement !== element) {
+                            closeMentionPicker()
+                          }
+                        }, 0)
+                      }}
+                      onChange={(event) => {
+                        const nextValue = event.currentTarget.value
 
                         updateContentValue(field.value, nextValue)
                         field.onChange(nextValue)
-                        closeMentionPicker()
-                        requestAnimationFrame(() => resizeInput(inputRef.current))
+                        resizeInput(event.currentTarget)
+                        syncMentionTrigger(event.currentTarget)
                       }}
+                      onClick={(event) => syncMentionTrigger(event.currentTarget)}
+                      onKeyDown={handleKeyDown}
+                      onKeyUp={(event) => {
+                        if (event.key !== 'Escape') {
+                          syncMentionTrigger(event.currentTarget)
+                        }
+                      }}
+                      onPaste={handlePaste}
+                      onSelect={(event) => syncMentionTrigger(event.currentTarget)}
+                      ref={(element) => {
+                        field.ref(element)
+                        inputRef.current = element
+                        resizeInput(element)
+                      }}
+                      rows={1}
+                      placeholder={`${t('message')} ${type === 'conversation' ? name : '#' + name}`}
+                      disabled={isLoading}
+                      className={
+                        'chat-message-input min-h-[48px] w-full resize-none rounded-md py-3.5 pl-14 pr-24 text-sm leading-5 bg-zinc-200/90 dark:bg-zinc-700/75 border-none border-0 outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-600 dark:text-zinc-200 placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50'
+                      }
                     />
-                    <Button
-                      type="submit"
-                      size="icon"
-                      variant="ghost"
-                      aria-label={t('sendMessage')}
-                      title={t('sendMessage')}
-                      disabled={isSendDisabled}
-                      onMouseDown={() => {
-                        shouldFocusAfterSendRef.current = true
-                      }}
-                      className="h-8 w-8 rounded-full [&_svg]:size-5 text-zinc-500 hover:bg-zinc-300/70 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-600/70 dark:hover:text-zinc-100">
-                      <SendHorizontal className="text-mainOrange" />
-                    </Button>
+                    <div className="absolute top-2 right-3 flex items-center gap-2">
+                      <EmojiPickerCustom
+                        onChangeAction={(e: string) => {
+                          const nextValue = `${field.value}${e}`
+
+                          updateContentValue(field.value, nextValue)
+                          field.onChange(nextValue)
+                          closeMentionPicker()
+                          requestAnimationFrame(() => resizeInput(inputRef.current))
+                        }}
+                      />
+                      <Button
+                        type="submit"
+                        size="icon"
+                        variant="ghost"
+                        aria-label={t('sendMessage')}
+                        title={t('sendMessage')}
+                        disabled={isSendDisabled}
+                        onMouseDown={() => {
+                          shouldFocusAfterSendRef.current = true
+                        }}
+                        className="h-8 w-8 rounded-full [&_svg]:size-5 text-zinc-500 hover:bg-zinc-300/70 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-600/70 dark:hover:text-zinc-100">
+                        <SendHorizontal className="text-mainOrange" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </FormControl>

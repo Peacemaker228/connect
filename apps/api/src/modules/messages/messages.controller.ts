@@ -25,6 +25,7 @@ import { MessagesService } from './messages.service'
 type MessageMutationBody = {
   content?: string
   fileUrl?: string | null
+  replyToMessageId?: string | null
 }
 
 @Controller('messages')

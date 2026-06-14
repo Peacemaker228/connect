@@ -1,7 +1,7 @@
 import React, { FC } from 'react'
 import { ERoutes } from '@app-core/routing/routes'
 import { redirect } from 'next/navigation'
-import { ChatHeader, ChatInput, ChatMessages } from '@/lib/chat/features'
+import { ChatHeader, ChatInput, ChatMessages, ChatReplyProvider } from '@/lib/chat/features'
 import { MediaRoom } from '@/lib/shared/features/media-room'
 import { createChannelMediaRoomEntry } from '@/lib/shared/features/media/media-room-entry'
 import { getServerRouteGuardAuth, getServerRouteGuardServer } from '@/lib/shared/utils/server-route-guard'
@@ -58,7 +58,7 @@ const ChannelIdPage: FC<IChannelIdPageProps> = async ({ params }) => {
     <div className="bg-white dark:bg-[#313338] flex flex-col h-full">
       <ChatHeader name={channel.name} serverId={channel.serverId} type={'channel'} />
       {channel.type === 'TEXT' && (
-        <>
+        <ChatReplyProvider chatId={channel.id}>
           <ChatMessages
             member={member}
             name={channel.name}
@@ -70,13 +70,8 @@ const ChannelIdPage: FC<IChannelIdPageProps> = async ({ params }) => {
             messageQuery={messageQuery}
             serverId={serverId}
           />
-          <ChatInput
-            messageApiUrl={messageApiUrl}
-            type={'channel'}
-            messageQuery={messageQuery}
-            name={channel.name}
-          />
-        </>
+          <ChatInput messageApiUrl={messageApiUrl} type={'channel'} messageQuery={messageQuery} name={channel.name} />
+        </ChatReplyProvider>
       )}
       {channel.type === 'AUDIO' && mediaEntry && (
         <MediaRoom mediaEntry={mediaEntry} serverId={serverId} video={false} audio={true} />

@@ -11,12 +11,18 @@ const ns = {
   ChatItem: {
     copy: 'Copy',
     copied: 'Copied',
+    reply: 'Reply',
     edit: 'Edit',
     delete: 'Delete',
     description: 'Press ESC to cancel editing, press Enter to save',
     save: 'Save',
     edited: 'edited',
     editMessage: 'Edit the message',
+  },
+  Reply: {
+    attachment: 'Attachment',
+    cancel: 'Cancel reply',
+    deleted: 'Message deleted',
   },
 }
 

@@ -184,6 +184,10 @@ model Message {
 
   deleted Boolean @default(false)
 
+  replyToMessageId String?
+  replyToMessage   Message?  @relation("MessageReplies", fields: [replyToMessageId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  replies          Message[] @relation("MessageReplies")
+
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
   mentions  MessageMention[]
@@ -191,6 +195,7 @@ model Message {
   @@index([channelId])
   @@index([channelId, createdAt])
   @@index([memberId])
+  @@index([replyToMessageId])
   @@map("message")
 }
 
@@ -244,12 +249,17 @@ model DirectMessage {
 
   deleted Boolean @default(false)
 
+  replyToDirectMessageId String?
+  replyToDirectMessage   DirectMessage?  @relation("DirectMessageReplies", fields: [replyToDirectMessageId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  directReplies          DirectMessage[] @relation("DirectMessageReplies")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([memberId])
   @@index([conversationId])
   @@index([conversationId, createdAt])
+  @@index([replyToDirectMessageId])
   @@map("directmessage")
 }
 

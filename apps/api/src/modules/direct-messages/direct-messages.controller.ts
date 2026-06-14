@@ -1,19 +1,32 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common'
 
-import { CurrentProfileId } from '../auth/decorators/current-profile-id.decorator';
-import { RequireAuthGuard } from '../auth/guards/require-auth.guard';
-import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { CurrentProfileId } from '../auth/decorators/current-profile-id.decorator'
+import { RequireAuthGuard } from '../auth/guards/require-auth.guard'
+import { RealtimeGateway } from '../realtime/realtime.gateway'
 import {
   createChatMessageCreatedRealtimeEvent,
   createChatMessageUpdatedRealtimeEvent,
   createDirectUnreadMessageCreatedRealtimeEvent,
-} from '../realtime/realtime.events';
-import { DirectMessagesService } from './direct-messages.service';
+} from '../realtime/realtime.events'
+import { DirectMessagesService } from './direct-messages.service'
 
 type DirectMessageMutationBody = {
-  content?: string;
-  fileUrl?: string | null;
-};
+  content?: string
+  fileUrl?: string | null
+  replyToMessageId?: string | null
+}
 
 @Controller('direct-messages')
 @UseGuards(RequireAuthGuard)
@@ -29,7 +42,7 @@ export class DirectMessagesController {
     @Query('conversationId') conversationId: string | undefined,
     @Query('cursor') cursor: string | undefined,
   ) {
-    return this.directMessagesService.getMessages(profileId, conversationId, cursor);
+    return this.directMessagesService.getMessages(profileId, conversationId, cursor)
   }
 
   @Post('conversations/:memberId')
@@ -38,7 +51,7 @@ export class DirectMessagesController {
     @Param('memberId') memberId: string,
     @Query('serverId') serverId: string | undefined,
   ) {
-    return this.directMessagesService.getOrCreateConversation(profileId, serverId, memberId);
+    return this.directMessagesService.getOrCreateConversation(profileId, serverId, memberId)
   }
 
   @Post()
@@ -48,11 +61,11 @@ export class DirectMessagesController {
     @Query('conversationId') conversationId: string | undefined,
     @Body() body: DirectMessageMutationBody,
   ) {
-    const message = await this.directMessagesService.createMessage(profileId, conversationId, body);
+    const message = await this.directMessagesService.createMessage(profileId, conversationId, body)
 
     if (conversationId) {
-      this.realtimeGateway.emit(createChatMessageCreatedRealtimeEvent(conversationId, message));
-      const realtimeContext = await this.directMessagesService.getConversationRealtimeContext(profileId, conversationId);
+      this.realtimeGateway.emit(createChatMessageCreatedRealtimeEvent(conversationId, message))
+      const realtimeContext = await this.directMessagesService.getConversationRealtimeContext(profileId, conversationId)
 
       this.realtimeGateway.emit(
         createDirectUnreadMessageCreatedRealtimeEvent(realtimeContext.recipientMemberId, {
@@ -68,10 +81,10 @@ export class DirectMessagesController {
           replyCount: 0,
           attentionLevel: 'unread',
         }),
-      );
+      )
     }
 
-    return message;
+    return message
   }
 
   @Patch(':directMessageId')
@@ -81,13 +94,13 @@ export class DirectMessagesController {
     @Query('conversationId') conversationId: string | undefined,
     @Body() body: DirectMessageMutationBody,
   ) {
-    const message = await this.directMessagesService.updateMessage(profileId, conversationId, directMessageId, body);
+    const message = await this.directMessagesService.updateMessage(profileId, conversationId, directMessageId, body)
 
     if (conversationId) {
-      this.realtimeGateway.emit(createChatMessageUpdatedRealtimeEvent(conversationId, message));
+      this.realtimeGateway.emit(createChatMessageUpdatedRealtimeEvent(conversationId, message))
     }
 
-    return message;
+    return message
   }
 
   @Delete(':directMessageId')
@@ -96,12 +109,12 @@ export class DirectMessagesController {
     @Param('directMessageId') directMessageId: string,
     @Query('conversationId') conversationId: string | undefined,
   ) {
-    const message = await this.directMessagesService.deleteMessage(profileId, conversationId, directMessageId);
+    const message = await this.directMessagesService.deleteMessage(profileId, conversationId, directMessageId)
 
     if (conversationId) {
-      this.realtimeGateway.emit(createChatMessageUpdatedRealtimeEvent(conversationId, message));
+      this.realtimeGateway.emit(createChatMessageUpdatedRealtimeEvent(conversationId, message))
     }
 
-    return message;
+    return message
   }
 }

@@ -799,7 +799,7 @@ Manual smoke:
 - pending authenticated web channel/DM smoke for image, PDF, generic document, archive, executable-like file, Cyrillic filename display, oversize rejection, server image negative, screenshot paste, file upload area drag/drop, composer drag/drop, copy action, and reload restore.
 
 Next:
-- mention chip navigation is closed in Segment 214; continue toward reply-to-message as the next scoped product slice unless manual smoke exposes a mention-navigation blocker.
+- mention chip navigation is closed in Segment 214; reply-to-message foundation is the next scoped product slice.
 
 ## Segment 214. Customer Mention Chip Navigation
 
@@ -820,7 +820,37 @@ Manual smoke:
 - pending authenticated web smoke for other-user mention navigation, self mention non-navigation, `@all` non-navigation, fallback non-navigation, copy/edit/link regressions, and desktop runtime review.
 
 Next:
-- continue to reply-to-message after Segment 214 verification/manual smoke unless a mention-navigation blocker appears.
+- continue to Segment 215 reply-to-message verification/manual smoke; reply attention and reply navigation polish remain separate future slices unless a foundation blocker appears.
+
+## Segment 215. Customer Reply To Message Foundation
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_215_CUSTOMER_REPLY_TO_MESSAGE_FOUNDATION.md`
+
+Status:
+- `implemented locally / command verification passed; manual smoke pending`
+
+Delivered:
+- channel and direct messages now have additive nullable self-reference reply fields and reply-target indexes;
+- message create payloads can pass one shared `replyToMessageId` field;
+- channel replies are validated against the same channel, and direct replies are validated against the same conversation;
+- chat reads and existing created-message realtime payloads include a common compact `replyTo` preview;
+- chat UI has local per-chat reply state shared by `ChatMessages` and `ChatInput`;
+- non-deleted message rows expose a `Reply` action;
+- composers show a cancelable reply bar with author and short preview;
+- sent messages render compact inline reply previews;
+- deleted originals use the existing soft-delete path and render a safe fallback label.
+
+Out of scope:
+- reply attention/badges/sound and `replyCount` changes;
+- scroll-to-original/navigation;
+- partial quotes, threads, link previews, auth/storage/media changes, and staging/prod migration execution.
+
+Manual smoke:
+- pending authenticated channel/direct smoke for reply bar, cancel, send, reload persistence, realtime recipient rendering, deleted-original fallback, cross-channel/cross-conversation rejection, and send/edit/delete/copy/mention/link/file regressions.
+
+Next:
+- after Segment 215 verification, choose between reply attention/unread and reply navigation polish as separate scoped follow-ups.
 
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 

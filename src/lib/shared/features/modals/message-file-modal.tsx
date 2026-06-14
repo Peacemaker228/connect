@@ -35,9 +35,9 @@ const getChatIdFromMessageQuery = (query?: Record<string, unknown>) => {
   return null
 }
 
-const dispatchComposerFocus = (chatId: string) => {
+const dispatchComposerFocus = (chatId: string, clearReply = false) => {
   const dispatchFocus = () => {
-    window.dispatchEvent(new CustomEvent(CHAT_COMPOSER_FOCUS_EVENT, { detail: { chatId } }))
+    window.dispatchEvent(new CustomEvent(CHAT_COMPOSER_FOCUS_EVENT, { detail: { chatId, clearReply } }))
   }
 
   requestAnimationFrame(dispatchFocus)
@@ -54,7 +54,7 @@ export const MessageFileModal = () => {
   const { mutateAsync: createMessage } = useCreateMessage()
   const [isUploading, setIsUploading] = useState(false)
 
-  const { apiUrl, initialFile, query } = data
+  const { apiUrl, initialFile, query, replyToMessageId } = data
 
   const isModalOpen = isOpen && type === 'messageFile'
 
@@ -94,7 +94,7 @@ export const MessageFileModal = () => {
     }
 
     try {
-      await createMessage({ apiUrl, query, payload: { ...data, content: data.fileUrl } })
+      await createMessage({ apiUrl, query, payload: { ...data, content: data.fileUrl, replyToMessageId } })
 
       stagedUpload.markCommitted(data.fileUrl)
       stagedUpload.reset()
@@ -107,7 +107,7 @@ export const MessageFileModal = () => {
       onClose()
 
       if (chatId) {
-        dispatchComposerFocus(chatId)
+        dispatchComposerFocus(chatId, Boolean(replyToMessageId))
       }
     } catch (err) {
       console.log(err)
