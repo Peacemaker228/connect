@@ -885,6 +885,31 @@ Manual smoke:
 Next:
 - after Segment 216 verification, choose between reply attention/unread and reply navigation polish as separate scoped follow-ups.
 
+## Segment 217. Customer Reply Attention Unread Foundation
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_217_CUSTOMER_REPLY_ATTENTION_UNREAD_FOUNDATION.md`
+
+Status:
+- `planned / ready for implementation`
+
+Goal:
+- make replies to the current user's channel/direct messages produce `replyCount` and `attentionLevel: 'reply'` through the existing unread summary and realtime contracts.
+
+Scope:
+- backend unread summary counts;
+- existing unread realtime payload fields;
+- client scoped/global unread cache handling;
+- subtle existing attention UI behavior;
+- no DB schema/migration, no new event type, no scroll-to-original, no reply block redesign.
+
+Key behavior:
+- attention precedence remains `mention > reply > unread > none`;
+- own replies do not create own unread/reply attention;
+- active visible near-bottom chats auto-read as today;
+- hidden/minimized active chats remain sound-eligible unless muted;
+- global/per-chat mute blocks sound only, not visual reply attention.
+
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 
 ## Low-Risk UX Fixes Result
