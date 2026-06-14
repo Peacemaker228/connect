@@ -132,7 +132,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
       }
 
       setReplyTo(message)
-      window.dispatchEvent(new CustomEvent(CHAT_COMPOSER_FOCUS_EVENT, { detail: { chatId } }))
+      window.dispatchEvent(new CustomEvent(CHAT_COMPOSER_FOCUS_EVENT, { detail: { chatId, mode: 'reply' } }))
     },
     [chatId, setReplyTo],
   )

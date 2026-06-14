@@ -47,11 +47,14 @@ Delivered locally:
 - added a `Reply` row action for non-deleted channel/direct messages;
 - added a composer reply bar with author, short preview, and cancel control;
 - added compact inline reply previews above sent messages;
-- deleted originals show a safe fallback label through the existing soft-delete path.
+- existing message update realtime now refreshes loaded reply previews when the original message is edited or soft-deleted, so connected users see preview changes without reload;
+- deleted originals show a safe fallback label through the existing soft-delete path;
+- selecting `Reply` now returns focus to the composer so the user can immediately type.
 
 Kept out of scope:
 - reply attention/badges/sound and `replyCount` increments;
 - scroll-to-original/navigation;
+- visual redesign of the quoted block;
 - partial quotes, threads, link previews, auth/storage/media changes, and staging/prod migration execution.
 
 ## Current Context

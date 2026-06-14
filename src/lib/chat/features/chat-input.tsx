@@ -322,7 +322,7 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
       }
 
       requestAnimationFrame(() => {
-        focusInputIfSafe('after-send')
+        focusInputIfSafe(event.detail?.mode === 'reply' ? 'entry' : 'after-send')
       })
     }
 

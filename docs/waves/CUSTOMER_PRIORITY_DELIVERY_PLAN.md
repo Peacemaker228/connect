@@ -839,11 +839,14 @@ Delivered:
 - non-deleted message rows expose a `Reply` action;
 - composers show a cancelable reply bar with author and short preview;
 - sent messages render compact inline reply previews;
+- existing update realtime refreshes loaded reply previews when the original message is edited or soft-deleted;
+- selecting `Reply` returns focus to the composer so typing can start immediately;
 - deleted originals use the existing soft-delete path and render a safe fallback label.
 
 Out of scope:
 - reply attention/badges/sound and `replyCount` changes;
 - scroll-to-original/navigation;
+- visual redesign of the quoted block;
 - partial quotes, threads, link previews, auth/storage/media changes, and staging/prod migration execution.
 
 Manual smoke:
