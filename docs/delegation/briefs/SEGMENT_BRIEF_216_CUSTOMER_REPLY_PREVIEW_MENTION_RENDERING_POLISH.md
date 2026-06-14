@@ -2,7 +2,7 @@
 
 - Branch: `feature/customer-reply-preview-mention-rendering-polish`
 - Segment: `customer-reply-preview-mention-rendering-polish`
-- Status: `planned / ready for implementation`
+- Status: `implemented locally / command verification passed; manual smoke pending`
 - Base: latest `origin/core/reborn`
 - Priority: P1 follow-up to Segment 215 reply foundation
 
@@ -24,6 +24,18 @@ Use the existing message mention visual language in a compact reply-preview-safe
 - deleted reply targets still show the existing safe deleted fallback;
 - file-only reply targets still show the existing attachment fallback;
 - no new unread/attention semantics are introduced.
+
+## Implementation Result
+
+Delivered locally:
+- extracted the existing mention text splitting logic into a small shared `getMentionTextParts()` helper;
+- kept normal `MessageContent` rendering and mention navigation behavior unchanged while reusing that helper;
+- reply previews now render text with compact non-interactive highlighted mention spans for metadata-backed `@user` / `@all`;
+- stable `<@memberId>` / `<@all>` tokens in reply previews render as readable `@name` / `@all` when reply mention metadata is present;
+- deleted-original and file-only reply fallbacks remain unchanged.
+
+Kept out of scope:
+- reply attention/badges/sound, `replyCount`, scroll-to-original, backend/API/DB/realtime changes, reply preview navigation, and broader reply block redesign.
 
 ## Current Context
 

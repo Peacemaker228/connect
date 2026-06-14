@@ -849,14 +849,13 @@ Out of scope:
 - reply attention/badges/sound and `replyCount` changes;
 - scroll-to-original/navigation;
 - visual redesign of the quoted block;
-- reply preview mention rendering polish: `@user` / `@all` inside compact reply previews should eventually use the same highlighted readable mention style as normal message text, without raw `<@id>` display;
 - partial quotes, threads, link previews, auth/storage/media changes, and staging/prod migration execution.
 
 Manual smoke:
 - pending authenticated channel/direct smoke for reply bar, cancel, send, reload persistence, realtime recipient rendering, deleted-original fallback, cross-channel/cross-conversation rejection, and send/edit/delete/copy/mention/link/file regressions.
 
 Next:
-- after Segment 215 verification, first consider `customer-reply-preview-mention-rendering-polish`, then choose between reply attention/unread and reply navigation polish as separate scoped follow-ups.
+- after Segment 216 verification, choose between reply attention/unread and reply navigation polish as separate scoped follow-ups.
 
 ## Segment 216. Customer Reply Preview Mention Rendering Polish
 
@@ -864,16 +863,27 @@ Brief:
 - `docs/delegation/briefs/SEGMENT_BRIEF_216_CUSTOMER_REPLY_PREVIEW_MENTION_RENDERING_POLISH.md`
 
 Status:
-- `planned / ready for implementation`
+- `implemented locally / command verification passed; manual smoke pending`
 
-Goal:
-- render `@user` and `@all` inside compact reply previews with the same readable highlighted mention style used in normal message text, without adding reply attention/sound/badges or changing backend/API/DB contracts.
+Delivered:
+- extracted the existing mention text splitting logic into a shared `getMentionTextParts()` helper;
+- normal message content still uses the same mention rendering and navigation behavior as before;
+- compact reply previews now render metadata-backed `@user` and `@all` as readable highlighted non-interactive mention spans;
+- stable `<@memberId>` / `<@all>` tokens in reply previews render as readable `@name` / `@all` when reply mention metadata is available;
+- deleted-original and file-only reply preview fallbacks remain unchanged.
 
-Scope:
-- frontend rendering polish only;
-- preserve deleted-original fallback and file-only attachment fallback;
-- keep mention navigation behavior owned by normal message content unless reply-preview navigation is explicitly designed later;
-- no reply block visual redesign in this slice.
+Out of scope:
+- reply attention/badges/sound and `replyCount` changes;
+- scroll-to-original/navigation from reply previews;
+- backend/API/DB/realtime changes;
+- reply block visual redesign.
+
+Manual smoke:
+- pending authenticated channel smoke for reply previews containing `@user`, `@all`, edited-original mention updates, deleted-original fallback, file-only fallback, and normal mention chip navigation regression;
+- pending direct-message plain reply preview regression.
+
+Next:
+- after Segment 216 verification, choose between reply attention/unread and reply navigation polish as separate scoped follow-ups.
 
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 
