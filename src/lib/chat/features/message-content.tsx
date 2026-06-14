@@ -3,13 +3,12 @@
 import type { MessageMentionDto } from '@app-core/contracts'
 import type { MentionRenderToken } from '@/lib/chat/features/message-mention-text'
 import { Fragment } from 'react'
-import { getMentionRenderTokens } from '@/lib/chat/features/message-mention-text'
+import { getMentionTextParts } from '@/lib/chat/features/message-mention-text'
 import Link from 'next/link'
 import { ERoutes } from '@app-core/routing/routes'
 import { cn } from '@/lib/shared/utils/utils'
 import { ActionTooltip } from '@/lib/shared/features/action-tooltip'
 
-const FALLBACK_MENTION_PATTERN = /(^|[\s.,!?;:()[\]{}"'`])(@all|@[^\s.,!?;:()[\]{}"'`<>]+)/gi
 const LINK_PATTERN = /(^|[\s([{])((?:https?:\/\/|www\.)[^\s<>"'`]+)/gi
 const LINK_TRAILING_PUNCTUATION_PATTERN = /[.,!?;:)\]}]+$/u
 
@@ -19,29 +18,6 @@ type LinkRenderToken = {
 }
 
 type MessageRenderPart = string | MentionRenderToken
-
-const findFallbackMentionMatch = (content: string, cursor: number) => {
-  FALLBACK_MENTION_PATTERN.lastIndex = cursor
-
-  const match = FALLBACK_MENTION_PATTERN.exec(content)
-
-  if (!match) {
-    return null
-  }
-
-  const prefix = match[1] ?? ''
-  const target = match[2]
-  const index = match.index + prefix.length
-
-  return {
-    index,
-    token: {
-      label: target.slice(1),
-      target,
-      targetLower: target.toLowerCase(),
-    },
-  }
-}
 
 const trimLinkTrailingPunctuation = (value: string) => {
   const match = LINK_TRAILING_PUNCTUATION_PATTERN.exec(value)
@@ -150,37 +126,7 @@ const mentionLinkClassName = cn(
 )
 
 export const MessageContent = ({ content, currentMemberId, mentions, serverId }: MessageContentProps) => {
-  const tokens = getMentionRenderTokens(mentions)
-  const canUseRawFallback = mentions === undefined
-  const contentLower = content.toLowerCase()
-  const parts: MessageRenderPart[] = []
-  let cursor = 0
-
-  while (cursor < content.length) {
-    const metadataMatch = tokens
-      .map((token) => ({ token, index: contentLower.indexOf(token.targetLower, cursor) }))
-      .filter(({ index }) => index >= 0)
-      .sort((a, b) => a.index - b.index || b.token.target.length - a.token.target.length)[0]
-    const fallbackMatch = canUseRawFallback ? findFallbackMentionMatch(content, cursor) : null
-    const match =
-      metadataMatch && fallbackMatch
-        ? metadataMatch.index <= fallbackMatch.index
-          ? metadataMatch
-          : fallbackMatch
-        : (metadataMatch ?? fallbackMatch)
-
-    if (!match) {
-      parts.push(content.slice(cursor))
-      break
-    }
-
-    if (match.index > cursor) {
-      parts.push(content.slice(cursor, match.index))
-    }
-
-    parts.push(match.token)
-    cursor = match.index + match.token.target.length
-  }
+  const parts: MessageRenderPart[] = getMentionTextParts(content, mentions)
 
   return (
     <>

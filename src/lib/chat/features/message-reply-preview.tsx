@@ -3,8 +3,9 @@
 import type { MessageReplyPreviewDto } from '@app-core/contracts'
 import { Button } from '@/lib/shared/ui/button'
 import { cn } from '@/lib/shared/utils/utils'
-import { getReadableMessageCopyContent } from '@/lib/chat/features/message-copy'
+import { getMentionTextParts } from '@/lib/chat/features/message-mention-text'
 import { X } from 'lucide-react'
+import { Fragment } from 'react'
 
 type MessageReplyPreviewLabels = {
   attachment: string
@@ -32,9 +33,41 @@ const getMessageReplyPreviewText = (
     return labels.attachment
   }
 
-  const readableContent = getReadableMessageCopyContent(replyTo.content, replyTo.mentions).replace(/\s+/g, ' ').trim()
+  const readableContent = replyTo.content.replace(/\s+/g, ' ').trim()
 
   return readableContent || labels.attachment
+}
+
+const replyMentionChipClassName =
+  'rounded-sm bg-amber-500/15 px-0.5 font-semibold text-amber-700 dark:bg-amber-400/15 dark:text-amber-300'
+
+const renderReplyPreviewText = (
+  replyTo: MessageReplyPreviewDto | null | undefined,
+  labels: MessageReplyPreviewLabels,
+) => {
+  if (!replyTo || replyTo.deleted || replyTo.fileUrl) {
+    return getMessageReplyPreviewText(replyTo, labels)
+  }
+
+  const content = replyTo.content.replace(/\s+/g, ' ').trim()
+
+  if (!content) {
+    return labels.attachment
+  }
+
+  const parts = getMentionTextParts(content, replyTo.mentions)
+
+  return parts.map((part, index) => {
+    if (typeof part === 'string') {
+      return <Fragment key={`reply-text-${index}`}>{part}</Fragment>
+    }
+
+    return (
+      <span key={`reply-mention-${index}`} className={replyMentionChipClassName}>
+        @{part.label}
+      </span>
+    )
+  })
 }
 
 export const MessageReplyPreviewBlock = ({
@@ -49,7 +82,7 @@ export const MessageReplyPreviewBlock = ({
   }
 
   const authorName = replyTo && !replyTo.deleted ? replyTo.member.profile.name : null
-  const previewText = getMessageReplyPreviewText(replyTo, labels)
+  const previewText = renderReplyPreviewText(replyTo, labels)
 
   return (
     <div
