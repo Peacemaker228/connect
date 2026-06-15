@@ -1056,10 +1056,11 @@ Delivered:
 - composer reply bar reuses the shared violet reply preview style;
 - reply target navigation highlight now uses a temporary violet background instead of an orange ring-style treatment;
 - double-clicking an empty area of a non-deleted message row now starts a reply, while text, links, files, avatars, headers, reply previews, action buttons, and edit controls are ignored;
+- Escape closes active composer reply mode, and the jump-to-latest arrow is forced to a stable square size;
 - metadata-backed reply preview mentions, click/keyboard navigation, anchored history navigation, unread/reply attention behavior, and backend/API/SDK/DB/realtime/auth/storage/media remain unchanged.
 
 Next after Segment 221:
-- run visual smoke for channel/DM reply previews, deleted-original fallback, loaded/unloaded target navigation highlight, composer reply bar, double-click empty-area reply, double-click ignored controls/text, and light/dark theme contrast.
+- run visual smoke for channel/DM reply previews, deleted-original fallback, loaded/unloaded target navigation highlight, composer reply bar, Escape cancel, double-click empty-area reply, double-click ignored controls/text, jump-arrow size, and light/dark theme contrast.
 
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 

@@ -512,6 +512,12 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
       }
     }
 
+    if (event.key === 'Escape' && replyTo) {
+      event.preventDefault()
+      handleCancelReply()
+      return
+    }
+
     if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) {
       return
     }

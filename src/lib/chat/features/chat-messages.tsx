@@ -902,7 +902,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
           aria-label="Jump to latest messages"
           title="Jump to latest messages"
           onClick={jumpToLatestMessages}
-          className="sticky bottom-3 z-20 ml-auto mr-4 h-9 w-9 rounded-full shadow-md">
+          className="sticky bottom-3 z-20 ml-auto mr-4 aspect-square h-9 min-h-9 w-9 min-w-9 shrink-0 rounded-full p-0 shadow-md">
           <ArrowDown className="h-4 w-4" />
         </Button>
       )}
