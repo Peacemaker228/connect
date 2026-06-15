@@ -1084,6 +1084,8 @@ Done:
 - `customer-reply-telegram-visual-polish` is implemented locally in `docs/delegation/briefs/SEGMENT_BRIEF_221_CUSTOMER_REPLY_TELEGRAM_VISUAL_POLISH.md`: shared reply previews now use a compact Telegram-like violet accent line and subtle violet background, the composer reply bar inherits the same shared style, reply target navigation highlight now uses a temporary violet background instead of the previous orange ring-style treatment, double-clicking an empty area of a non-deleted message row starts a reply while text/links/files/avatars/headers/reply previews/actions/edit controls are ignored, Escape closes active composer reply mode, and the jump-to-latest arrow is forced to a stable square size; Segment 220 navigation behavior, metadata-backed reply preview mentions, backend/API/SDK/DB/realtime/auth/storage/media/WebRTC, reply attention/unread semantics, virtualization, deep links, and thread UI remain unchanged
 
 Next likely work:
+- after Segment 221 deploy/smoke, prioritize a global desktop staging/release validation pass before starting lower-priority product polish;
+- keep backend-owned link previews/unfurl deferred to the last customer-priority slot; basic clickable link rendering is already present;
 - run focused auth/session smoke for login, session read, access-token expiry with valid refresh cookie, session read recovery, refresh endpoint, logout, and protected-route behavior after logout
 - run two-user staging/local idle smoke for profile readiness, member self-filtering, account identity, server rail unread, channel/member row unread, and Segment 196 title/divider regression
 - run two-user unread semantics smoke for active visible channel/DM near-bottom, active visible scrolled-up, hidden/minimized active chat, different channel, different server, muted channel/DM, reload/reconnect, and debug reason-code behavior
@@ -1108,7 +1110,7 @@ Next likely work:
 - keep Segment 195 review follow-ups visible during smoke: global summary query shape is acceptable for the current slice but may need later optimization
 - run two-user smoke for unread sound/mute behavior, including per-channel and per-direct muted scopes
 - after unread read semantics smoke, continue to `customer-mentions-replies-attention` unless mention/reply attention becomes more urgent
-- keep link preview, copy/reply, and media fallback as separate scoped segments
+- keep media fallback as a separate scoped segment; keep link previews last after desktop validation and higher-priority stability work
 - new customer requirements recorded: message edit mode correctness is a focused bugfix covering readable mention text in edit mode, edit input autofocus/caret, and preventing multiple simultaneous edited messages; chat send button should follow as a separate composer UX segment; broad message file-transfer expansion has an agreed MVP policy but still needs a bounded implementation segment before runtime rollout
 - keep realtime transport hardening as last-priority backlog: staging currently shows `Socket.IO` over `transport=polling` with websocket upgrade advertised but not observed; do not start Nginx websocket/rooms/auth hardening unless a concrete incident or load/security evidence forces it earlier
 - next focused reply follow-up after Segment 219 smoke exposed the overlay/history UX issue: implement Segment 220 anchor/windowed history navigation first; reply visual redesign and target-attention polish come after that, unless Segment 220 smoke exposes another navigation/data blocker
