@@ -28,7 +28,9 @@ Implemented:
 - bounded viewport-aware initial loading so short-message histories do not leave a large empty top gap while older pages still exist;
 - added a shared shadcn-style `Skeleton` component and a chat initial skeleton layer that approximates text, image, and file message rows while the real list remains mounted for measurement;
 - initial placement uses instant container `scrollTop` positioning and reveals real content on the next animation frame, avoiding a visible "upper messages then smooth-scroll down" transition;
-- repeat navigation to a chat with valid React Query cache now follows stale-while-revalidate behavior: cached messages are shown immediately instead of being hidden behind the cold-load skeleton, while unread/read side effects still wait for normal initial positioning and unread summary reconciliation;
+- repeat navigation to a chat with valid React Query cache now follows stale-while-revalidate behavior: cached messages are shown immediately only after unread summary is known and no unread target is reported, while the active chat query always refetches on mount/return so missed inactive-chat realtime events cannot leave the latest page stale;
+- when unread summary already says the returning chat has unread messages, warm cached rows are not revealed as the final state until the latest page reconciliation completes, preventing a visible stale-cache jump before the new message appears;
+- unread/read side effects still wait for normal initial positioning and unread summary reconciliation;
 - set the `New` divider anchor from the same initial unread decision;
 - updated `useChatScroll` so re-enabling auto-scroll after a deliberate disabled phase does not perform a surprise first auto-scroll to bottom;
 - changed latest viewport auto-fill to preserve viewport position when older rows are prepended.
@@ -47,6 +49,7 @@ Manual smoke required:
 - the scrollbar should not visibly run through intermediate top/bottom states during initial fill;
 - real content should appear directly at the final initial position, without a visible smooth-scroll from older rows to bottom;
 - repeat channel/DM navigation with cached messages should show cached content immediately and reconcile in the background, not get stuck on the initial skeleton;
+- if another user sends a message while the current user is away from that channel/DM, returning to the chat must refetch the latest page and show the new message without requiring a full page reload;
 - production/staging chat with unread opens around the first unread and shows `New`;
 - opening a chat no longer visibly jumps bottom -> top -> middle;
 - older-history auto-fill does not move the user away from the selected initial target;

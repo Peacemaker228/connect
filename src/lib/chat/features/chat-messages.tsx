@@ -234,6 +234,8 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const initialScrollRevealFrameRef = useRef<number | null>(null)
   const initialScrollFallbackTimeoutRef = useRef<number | null>(null)
   const warmInitialChatKeyRef = useRef<string | null>(null)
+  const warmCacheReconcileStartedChatKeyRef = useRef<string | null>(null)
+  const [warmCacheFreshChatKey, setWarmCacheFreshChatKey] = useState<string | null>(null)
   const [unreadAnchor, setUnreadAnchor] = useState<UnreadAnchor | null>(null)
   const [anchoredHistory, setAnchoredHistory] = useState<AnchoredHistoryState | null>(null)
   const [anchoredHistoryLoadingDirection, setAnchoredHistoryLoadingDirection] = useState<ChatHistoryDirection | null>(
@@ -246,7 +248,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const { setReplyTo } = useChatReply()
   const initialMessageLimit = getInitialMessageLimit()
 
-  const { data, fetchNextPage, hasNextPage, isFetchedAfterMount, isFetchingNextPage, status } = useChatQuery({
+  const { data, fetchNextPage, hasNextPage, isFetchedAfterMount, isFetchingNextPage, refetch, status } = useChatQuery({
     queryKey,
     apiUrl: messageApiUrl,
     initialLimit: initialMessageLimit,
@@ -304,6 +306,8 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     pendingPrependScrollRef.current = null
     pendingInitialScrollTargetRef.current = null
     pendingReplyTargetScrollRef.current = null
+    warmCacheReconcileStartedChatKeyRef.current = null
+    setWarmCacheFreshChatKey(null)
     setAnchoredHistory(null)
     setAnchoredHistoryLoadingDirection(null)
     setUnreadAnchor(null)
@@ -686,8 +690,23 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     warmInitialChatKeyRef.current = chatReadKey
   }
 
-  const shouldBypassInitialSkeleton =
+  const shouldReconcileWarmCache =
     warmInitialChatKeyRef.current === chatReadKey && status === 'success' && visibleMessages.length > 0
+  const hasKnownUnreadTarget = Boolean(currentUnreadItem && currentUnreadItem.unreadCount > 0)
+  const isWarmCacheReconcilePending = shouldReconcileWarmCache && warmCacheFreshChatKey !== chatReadKey
+  const shouldBypassInitialSkeleton =
+    shouldReconcileWarmCache && unreadSummaryStatus !== 'pending' && !hasKnownUnreadTarget
+
+  useEffect(() => {
+    if (!shouldReconcileWarmCache || warmCacheReconcileStartedChatKeyRef.current === chatReadKey) {
+      return
+    }
+
+    warmCacheReconcileStartedChatKeyRef.current = chatReadKey
+    void refetch().finally(() => {
+      setWarmCacheFreshChatKey(chatReadKey)
+    })
+  }, [chatReadKey, refetch, shouldReconcileWarmCache])
   const loadedUnreadMessages = useMemo(() => {
     if (!currentUnreadItem || currentUnreadItem.unreadCount <= 0) {
       return []
@@ -826,16 +845,9 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
       isInitialScrollSettled ||
       isAnchoredHistoryMode ||
       status !== 'success' ||
+      (isWarmCacheReconcilePending && hasKnownUnreadTarget) ||
       (unreadSummaryStatus === 'pending' && !shouldBypassInitialSkeleton)
     ) {
-      return
-    }
-
-    if (unreadSummaryStatus === 'pending' && shouldBypassInitialSkeleton) {
-      container.scrollTo({
-        top: container.scrollHeight,
-        behavior: 'auto',
-      })
       return
     }
 
@@ -888,9 +900,11 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     chatReadKey,
     currentUnreadItem,
     hasNextPage,
+    hasKnownUnreadTarget,
     isAnchoredHistoryMode,
     isFetchingNextPage,
     isInitialScrollSettled,
+    isWarmCacheReconcilePending,
     initialScrollRetryTick,
     loadOlderMessages,
     loadedUnreadMessages,
@@ -929,7 +943,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     }
   }, [chatReadKey, revealInitialScroll, shouldShowInitialScrollSkeleton])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isInitialScrollSettled) {
       return
     }

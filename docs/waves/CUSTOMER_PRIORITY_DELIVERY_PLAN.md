@@ -1109,7 +1109,7 @@ Delivered:
 - initial latest windows also load bounded older pages when rendered rows are shorter than the viewport, avoiding a large empty top gap while older history still exists;
 - a message-shaped skeleton covers the chat while initial fill/positioning is still unsettled, so users do not see the scrollbar pass through intermediate states;
 - initial placement is instant and real content is revealed on the next animation frame, so opening a chat should show the final bottom/unread position directly rather than smooth-scrolling through older rows;
-- repeat navigation to a chat with valid React Query cache uses stale-while-revalidate behavior: cached messages render immediately instead of showing the cold-load skeleton, while unread/read side effects still wait for normal initial positioning and summary reconciliation;
+- repeat navigation to a chat with valid React Query cache uses stale-while-revalidate behavior: cached messages render immediately instead of showing the cold-load skeleton only after unread summary is known and there is no known unread target, but the active chat query always refetches on mount/return; if unread summary reports unread for that chat, the UI waits for latest-page reconciliation before revealing the final position so messages created while the user was away do not appear through a stale-cache jump;
 - mark-read, active read-state, jump-to-latest visibility, boundary load-more, latest auto-scroll, and viewport auto-fill are gated until initial positioning is complete;
 - `useChatScroll` no longer performs a surprise first auto-scroll when auto-scroll is re-enabled after a deliberate disabled phase;
 - latest viewport auto-fill preserves the current viewport when prepending older rows.

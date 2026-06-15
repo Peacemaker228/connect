@@ -100,20 +100,21 @@ export const fetchChatReplyTargetContext = async ({
 }
 
 export const useChatQuery = ({ queryKey, paramKey, paramValue, apiUrl, initialLimit, isConnected }: ChatQueryParams) => {
-  const { data, fetchNextPage, hasNextPage, isFetchedAfterMount, status, isFetchingNextPage } = useInfiniteQuery({
-    initialPageParam: undefined as string | undefined,
-    queryKey: getChatQueryKey(queryKey),
-    queryFn: ({ pageParam }) =>
-      fetchChatMessagesPage({
-        apiUrl,
-        cursor: pageParam,
-        limit: initialLimit,
-        paramKey,
-        paramValue,
-      }),
-    getNextPageParam: (lastPage) => lastPage?.nextCursor,
-    refetchInterval: isConnected ? false : 1000,
-  })
+  const { data, fetchNextPage, hasNextPage, isFetchedAfterMount, status, isFetchingNextPage, refetch } =
+    useInfiniteQuery({
+      initialPageParam: undefined as string | undefined,
+      queryKey: getChatQueryKey(queryKey),
+      queryFn: ({ pageParam }) =>
+        fetchChatMessagesPage({
+          apiUrl,
+          cursor: pageParam,
+          limit: initialLimit,
+          paramKey,
+          paramValue,
+        }),
+      getNextPageParam: (lastPage) => lastPage?.nextCursor,
+      refetchInterval: isConnected ? false : 1000,
+    })
 
   return {
     data,
@@ -122,5 +123,6 @@ export const useChatQuery = ({ queryKey, paramKey, paramValue, apiUrl, initialLi
     isFetchedAfterMount,
     status,
     hasNextPage,
+    refetch,
   }
 }
