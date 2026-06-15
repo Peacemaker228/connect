@@ -26,6 +26,7 @@ type ResolvedMessageMention = {
 type MessageContextDirection = 'newer' | 'older'
 
 const MESSAGE_BATCH_SIZE = 10
+const MESSAGE_BATCH_MAX_SIZE = 64
 const MESSAGE_CONTEXT_RADIUS = MESSAGE_BATCH_SIZE
 const MESSAGE_INCLUDE = {
   member: {
@@ -73,15 +74,22 @@ export class MessagesService {
     private readonly storageService: StorageService,
   ) {}
 
-  async getMessages(profileId: string | undefined, channelId: string | undefined, cursor: string | undefined) {
+  async getMessages(
+    profileId: string | undefined,
+    channelId: string | undefined,
+    cursor: string | undefined,
+    limit: string | undefined,
+  ) {
     this.requireProfileId(profileId)
 
     if (!channelId) {
       throw new HttpException('Channel ID Missing', HttpStatus.BAD_REQUEST)
     }
 
+    const take = this.normalizeMessageBatchLimit(limit)
+
     const messages = await this.prisma.message.findMany({
-      take: MESSAGE_BATCH_SIZE,
+      take,
       skip: cursor ? 1 : 0,
       cursor: cursor
         ? {
@@ -99,7 +107,7 @@ export class MessagesService {
 
     return {
       items: messages.map((message) => this.toChatMessage(message)),
-      nextCursor: messages.length === MESSAGE_BATCH_SIZE ? messages[MESSAGE_BATCH_SIZE - 1].id : null,
+      nextCursor: messages.length === take ? messages[take - 1].id : null,
     }
   }
 
@@ -544,6 +552,20 @@ export class MessagesService {
     }
 
     throw new HttpException('Invalid Context Direction', HttpStatus.BAD_REQUEST)
+  }
+
+  private normalizeMessageBatchLimit(limit: string | undefined) {
+    if (!limit) {
+      return MESSAGE_BATCH_SIZE
+    }
+
+    const parsedLimit = Number(limit)
+
+    if (!Number.isFinite(parsedLimit)) {
+      return MESSAGE_BATCH_SIZE
+    }
+
+    return Math.max(MESSAGE_BATCH_SIZE, Math.min(Math.floor(parsedLimit), MESSAGE_BATCH_MAX_SIZE))
   }
 
   private async findNewerMessages(channelId: string, cursorMessage: MessageWithRelations, take: number) {

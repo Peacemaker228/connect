@@ -28,6 +28,7 @@ import { useChatReply } from '@/lib/chat/features/chat-reply-context'
 import { CHAT_COMPOSER_FOCUS_EVENT } from '@/lib/shared/utils/chat-events'
 import { patchChatMessagesPages } from '@/lib/shared/data-access/chat/chat-message-page-patch'
 import { Button } from '@/lib/shared/ui/button'
+import { Skeleton } from '@/lib/shared/ui/skeleton'
 import { cn } from '@/lib/shared/utils/utils'
 
 type MessageWithMemberWithProfile = ChatMessageDto
@@ -58,12 +59,46 @@ type PendingPrependScroll = {
   previousScrollTop: number
 }
 
+type PendingInitialScrollTarget =
+  | {
+      type: 'bottom'
+    }
+  | {
+      messageId: string
+      type: 'message'
+    }
+
 const REPLY_NAVIGATION_HIGHLIGHT_MS = 1800
 const LOCAL_SMOOTH_SCROLL_DISTANCE_MULTIPLIER = 3
 const HISTORY_LOAD_MORE_THRESHOLD_PX = 480
 const VIEWPORT_AUTO_FILL_MULTIPLIER = 1.35
+const INITIAL_VIEWPORT_FILL_MULTIPLIER = 1.25
+const INITIAL_MESSAGE_LIMIT_MIN = 28
+const INITIAL_MESSAGE_LIMIT_MAX = 64
+const INITIAL_MESSAGE_ESTIMATED_ROW_HEIGHT_PX = 72
+const INITIAL_MESSAGE_VIEWPORT_RESERVED_HEIGHT_PX = 180
+const INITIAL_MESSAGE_VIEWPORT_FILL_MULTIPLIER = 2.2
 const PROGRAMMATIC_SCROLL_BOUNDARY_SUPPRESSION_MS = 1200
 const FAKE_SMOOTH_SCROLL_OFFSET_MULTIPLIER = 0.75
+const INITIAL_UNREAD_CONTEXT_PAGE_LIMIT = 8
+const INITIAL_SCROLL_BOUNDARY_SUPPRESSION_MS = 900
+
+const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(value, max))
+
+const getInitialMessageLimit = () => {
+  if (typeof window === 'undefined') {
+    return INITIAL_MESSAGE_LIMIT_MIN
+  }
+
+  const estimatedViewportHeight = Math.max(window.innerHeight - INITIAL_MESSAGE_VIEWPORT_RESERVED_HEIGHT_PX, 360)
+  const estimatedVisibleRows = Math.ceil(estimatedViewportHeight / INITIAL_MESSAGE_ESTIMATED_ROW_HEIGHT_PX)
+
+  return clamp(
+    Math.ceil(estimatedVisibleRows * INITIAL_MESSAGE_VIEWPORT_FILL_MULTIPLIER),
+    INITIAL_MESSAGE_LIMIT_MIN,
+    INITIAL_MESSAGE_LIMIT_MAX,
+  )
+}
 
 const getTimestampValue = (value: Date | string) => new Date(value).getTime()
 
@@ -104,6 +139,57 @@ const NewMessagesDivider = () => (
   </div>
 )
 
+const ChatInitialScrollSkeleton = () => (
+  <div
+    className="absolute inset-0 z-10 flex flex-col justify-end gap-y-5 bg-white px-4 py-6 dark:bg-[#313338]"
+    aria-hidden="true">
+    <div className="flex gap-x-3">
+      <Skeleton className="h-10 w-10 shrink-0 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="flex items-center gap-x-2">
+          <Skeleton className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700" />
+          <Skeleton className="h-3 w-28 bg-zinc-200/80 dark:bg-zinc-700/80" />
+        </div>
+        <Skeleton className="h-4 w-64 max-w-[70%] bg-zinc-200 dark:bg-zinc-700" />
+      </div>
+    </div>
+
+    <div className="flex gap-x-3">
+      <Skeleton className="h-10 w-10 shrink-0 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="flex items-center gap-x-2">
+          <Skeleton className="h-4 w-20 bg-zinc-200 dark:bg-zinc-700" />
+          <Skeleton className="h-3 w-24 bg-zinc-200/80 dark:bg-zinc-700/80" />
+        </div>
+        <Skeleton className="h-28 w-48 rounded-lg bg-zinc-200 dark:bg-zinc-700" />
+      </div>
+    </div>
+
+    <div className="flex gap-x-3">
+      <Skeleton className="h-10 w-10 shrink-0 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="flex items-center gap-x-2">
+          <Skeleton className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700" />
+          <Skeleton className="h-3 w-28 bg-zinc-200/80 dark:bg-zinc-700/80" />
+        </div>
+        <Skeleton className="h-12 w-full max-w-2xl rounded-lg bg-zinc-200 dark:bg-zinc-700" />
+      </div>
+    </div>
+
+    <div className="flex gap-x-3">
+      <Skeleton className="h-10 w-10 shrink-0 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="flex items-center gap-x-2">
+          <Skeleton className="h-4 w-16 bg-zinc-200 dark:bg-zinc-700" />
+          <Skeleton className="h-3 w-24 bg-zinc-200/80 dark:bg-zinc-700/80" />
+        </div>
+        <Skeleton className="h-4 w-80 max-w-[82%] bg-zinc-200 dark:bg-zinc-700" />
+        <Skeleton className="h-4 w-48 max-w-[56%] bg-zinc-200 dark:bg-zinc-700" />
+      </div>
+    </div>
+  </div>
+)
+
 interface IChatMessagesProps {
   name: string
   member: MemberDto
@@ -132,29 +218,38 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const updateKey = getChatMessagesUpdateRealtimeKey(chatId)
 
   const chatRef = useRef<ElementRef<'div'>>(null)
-  const bottomRef = useRef<ElementRef<'div'>>(null)
+  const messageListRef = useRef<ElementRef<'div'>>(null)
   const capturedChatKeyRef = useRef<string | null>(null)
   const messageElementByIdRef = useRef(new Map<string, HTMLDivElement>())
   const anchoredHistoryLoadingDirectionRef = useRef<ChatHistoryDirection | null>(null)
   const olderHistoryLoadInFlightRef = useRef(false)
   const pendingPrependScrollRef = useRef<PendingPrependScroll | null>(null)
+  const pendingInitialScrollTargetRef = useRef<PendingInitialScrollTarget | null>(null)
   const pendingReplyTargetScrollRef = useRef<PendingReplyTargetScroll | null>(null)
   const suppressBoundaryLoadUntilRef = useRef(0)
   const viewportFillInFlightRef = useRef(false)
   const replyNavigationHighlightTimeoutRef = useRef<number | null>(null)
   const pendingReplyTargetContextIdRef = useRef<string | null>(null)
+  const initialUnreadLoadAttemptsRef = useRef(0)
+  const initialScrollRevealFrameRef = useRef<number | null>(null)
+  const initialScrollFallbackTimeoutRef = useRef<number | null>(null)
+  const warmInitialChatKeyRef = useRef<string | null>(null)
   const [unreadAnchor, setUnreadAnchor] = useState<UnreadAnchor | null>(null)
   const [anchoredHistory, setAnchoredHistory] = useState<AnchoredHistoryState | null>(null)
   const [anchoredHistoryLoadingDirection, setAnchoredHistoryLoadingDirection] = useState<ChatHistoryDirection | null>(
     null,
   )
+  const [isInitialScrollSettled, setIsInitialScrollSettled] = useState(false)
+  const [initialScrollRetryTick, setInitialScrollRetryTick] = useState(0)
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
   const [replyNavigationHighlightedMessageId, setReplyNavigationHighlightedMessageId] = useState<string | null>(null)
   const { setReplyTo } = useChatReply()
+  const initialMessageLimit = getInitialMessageLimit()
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useChatQuery({
+  const { data, fetchNextPage, hasNextPage, isFetchedAfterMount, isFetchingNextPage, status } = useChatQuery({
     queryKey,
     apiUrl: messageApiUrl,
+    initialLimit: initialMessageLimit,
     paramKey,
     paramValue,
   })
@@ -195,9 +290,25 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   useEffect(() => {
     capturedChatKeyRef.current = null
     anchoredHistoryLoadingDirectionRef.current = null
+    initialUnreadLoadAttemptsRef.current = 0
+    if (initialScrollRevealFrameRef.current !== null) {
+      window.cancelAnimationFrame(initialScrollRevealFrameRef.current)
+      initialScrollRevealFrameRef.current = null
+    }
+    if (initialScrollFallbackTimeoutRef.current !== null) {
+      window.clearTimeout(initialScrollFallbackTimeoutRef.current)
+      initialScrollFallbackTimeoutRef.current = null
+    }
+    suppressBoundaryLoadUntilRef.current = 0
+    viewportFillInFlightRef.current = false
+    pendingPrependScrollRef.current = null
+    pendingInitialScrollTargetRef.current = null
+    pendingReplyTargetScrollRef.current = null
     setAnchoredHistory(null)
     setAnchoredHistoryLoadingDirection(null)
     setUnreadAnchor(null)
+    setIsInitialScrollSettled(false)
+    setInitialScrollRetryTick(0)
     setEditingMessageId(null)
     setReplyNavigationHighlightedMessageId(null)
   }, [chatReadKey])
@@ -207,6 +318,14 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
       if (replyNavigationHighlightTimeoutRef.current) {
         window.clearTimeout(replyNavigationHighlightTimeoutRef.current)
         replyNavigationHighlightTimeoutRef.current = null
+      }
+      if (initialScrollRevealFrameRef.current !== null) {
+        window.cancelAnimationFrame(initialScrollRevealFrameRef.current)
+        initialScrollRevealFrameRef.current = null
+      }
+      if (initialScrollFallbackTimeoutRef.current !== null) {
+        window.clearTimeout(initialScrollFallbackTimeoutRef.current)
+        initialScrollFallbackTimeoutRef.current = null
       }
     }
   }, [])
@@ -218,6 +337,28 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     }
 
     messageElementByIdRef.current.set(messageId, element)
+  }, [])
+
+  const scrollMessageToCenter = useCallback((messageId: string, behavior: ScrollBehavior = 'auto') => {
+    const container = chatRef.current
+    const targetElement = messageElementByIdRef.current.get(messageId)
+
+    if (!container || !targetElement || !container.contains(targetElement)) {
+      return false
+    }
+
+    const containerRect = container.getBoundingClientRect()
+    const targetRect = targetElement.getBoundingClientRect()
+    const centeredTop =
+      container.scrollTop + targetRect.top - containerRect.top - (container.clientHeight - targetRect.height) / 2
+    const maxScrollTop = Math.max(container.scrollHeight - container.clientHeight, 0)
+
+    container.scrollTo({
+      top: Math.max(0, Math.min(centeredTop, maxScrollTop)),
+      behavior,
+    })
+
+    return true
   }, [])
 
   const scrollToLoadedReplyTarget = useCallback((messageId: string, options: ReplyTargetScrollOptions = {}) => {
@@ -489,7 +630,6 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
             top: maxScrollTop,
             behavior: 'smooth',
           })
-          bottomRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })
         })
         return
       }
@@ -500,7 +640,6 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         top: maxScrollTop,
         behavior,
       })
-      bottomRef.current?.scrollIntoView({ block: 'end', behavior })
     })
   }, [anchoredHistory])
 
@@ -533,22 +672,58 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
 
   useChatSocket({ queryKey, addKey, onMessageUpdate: patchReplyTargetContextPages, updateKey })
   const isAnchoredHistoryMode = Boolean(anchoredHistory)
+  const visibleMessages = useMemo(
+    () =>
+      anchoredHistory
+        ? anchoredHistory.items
+        : mergeChatMessagesByAscendingTime([], data?.pages?.flatMap((page) => page.items) ?? []),
+    [anchoredHistory, data?.pages],
+  )
+  const hasWarmInitialChatDataNow =
+    !anchoredHistory && status === 'success' && visibleMessages.length > 0 && !isFetchedAfterMount
+
+  if (hasWarmInitialChatDataNow) {
+    warmInitialChatKeyRef.current = chatReadKey
+  }
+
+  const shouldBypassInitialSkeleton =
+    warmInitialChatKeyRef.current === chatReadKey && status === 'success' && visibleMessages.length > 0
+  const loadedUnreadMessages = useMemo(() => {
+    if (!currentUnreadItem || currentUnreadItem.unreadCount <= 0) {
+      return []
+    }
+
+    const anchorTime = getTimestampValue(currentUnreadItem.lastReadAt)
+
+    if (!Number.isFinite(anchorTime)) {
+      return []
+    }
+
+    return visibleMessages.filter((message) => {
+      const messageTime = getTimestampValue(message.createdAt)
+
+      return (
+        !message.deleted && message.memberId !== member.id && Number.isFinite(messageTime) && messageTime > anchorTime
+      )
+    })
+  }, [currentUnreadItem, member.id, visibleMessages])
   const { isNearBottom } = useChatScroll({
-    autoScrollEnabled: !isAnchoredHistoryMode,
+    autoScrollEnabled: !isAnchoredHistoryMode && isInitialScrollSettled,
     chatId,
     chatRef,
-    bottomRef,
     loadMore: loadOlderMessages,
     loadMoreThreshold: HISTORY_LOAD_MORE_THRESHOLD_PX,
-    shouldLoadMore: anchoredHistory
-      ? Boolean(anchoredHistory.olderCursor) && anchoredHistoryLoadingDirection !== 'older'
-      : !isFetchingNextPage && hasNextPage,
+    shouldLoadMore:
+      isInitialScrollSettled &&
+      (anchoredHistory
+        ? Boolean(anchoredHistory.olderCursor) && anchoredHistoryLoadingDirection !== 'older'
+        : !isFetchingNextPage && hasNextPage),
     count: isAnchoredHistoryMode ? 0 : (data?.pages?.[0]?.items?.length ?? 0),
   })
   useMarkChatRead({
     beforeMarkRead: captureUnreadAnchor,
-    enabled: !isAnchoredHistoryMode && unreadSummaryStatus !== 'pending',
-    isNearBottom: !isAnchoredHistoryMode && isNearBottom,
+    enabled: !isAnchoredHistoryMode && isInitialScrollSettled && unreadSummaryStatus !== 'pending',
+    isNearBottom: !isAnchoredHistoryMode && isInitialScrollSettled && isNearBottom,
     serverId,
     paramKey,
     paramValue,
@@ -556,7 +731,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
 
   useEffect(() => {
     setActiveChatReadState({
-      isNearBottom: !isAnchoredHistoryMode && isNearBottom,
+      isNearBottom: !isAnchoredHistoryMode && isInitialScrollSettled && isNearBottom,
       paramKey,
       paramValue,
       serverId,
@@ -569,10 +744,11 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         serverId,
       })
     }
-  }, [isAnchoredHistoryMode, isNearBottom, paramKey, paramValue, serverId])
+  }, [isAnchoredHistoryMode, isInitialScrollSettled, isNearBottom, paramKey, paramValue, serverId])
 
   useEffect(() => {
     if (
+      !isInitialScrollSettled ||
       isNearBottom ||
       unreadAnchor?.chatKey === chatReadKey ||
       !currentUnreadItem ||
@@ -585,7 +761,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
       chatKey: chatReadKey,
       lastReadAt: currentUnreadItem.lastReadAt,
     })
-  }, [chatReadKey, currentUnreadItem, isNearBottom, unreadAnchor?.chatKey])
+  }, [chatReadKey, currentUnreadItem, isInitialScrollSettled, isNearBottom, unreadAnchor?.chatKey])
 
   useEffect(() => {
     const container = chatRef.current
@@ -616,19 +792,182 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
 
   const t = useTranslations('ChannelPage')
   const commonTranslation = useTranslations('Common')
-  const visibleMessages = useMemo(
-    () =>
-      anchoredHistory
-        ? anchoredHistory.items
-        : mergeChatMessagesByAscendingTime([], data?.pages?.flatMap((page) => page.items) ?? []),
-    [anchoredHistory, data?.pages],
-  )
   const canLoadOlderMessages = anchoredHistory ? Boolean(anchoredHistory.olderCursor) : hasNextPage
   const isLoadingOlderMessages = anchoredHistory ? anchoredHistoryLoadingDirection === 'older' : isFetchingNextPage
   const canLoadNewerAnchoredMessages = Boolean(anchoredHistory?.newerCursor)
   const hasReachedHistoryStart = anchoredHistory ? !anchoredHistory.olderCursor : !hasNextPage
   const isLoadingNewerAnchoredMessages = anchoredHistoryLoadingDirection === 'newer'
-  const shouldShowJumpToLatestControl = Boolean(anchoredHistory?.newerCursor) || !isNearBottom
+  const shouldShowInitialScrollSkeleton =
+    !isInitialScrollSettled && !isAnchoredHistoryMode && !shouldBypassInitialSkeleton
+  const shouldShowJumpToLatestControl =
+    isInitialScrollSettled && (Boolean(anchoredHistory?.newerCursor) || !isNearBottom)
+
+  const revealInitialScroll = useCallback(() => {
+    if (initialScrollFallbackTimeoutRef.current !== null) {
+      window.clearTimeout(initialScrollFallbackTimeoutRef.current)
+      initialScrollFallbackTimeoutRef.current = null
+    }
+
+    if (initialScrollRevealFrameRef.current !== null) {
+      window.cancelAnimationFrame(initialScrollRevealFrameRef.current)
+    }
+
+    initialScrollRevealFrameRef.current = window.requestAnimationFrame(() => {
+      initialScrollRevealFrameRef.current = null
+      setIsInitialScrollSettled(true)
+    })
+  }, [])
+
+  useLayoutEffect(() => {
+    const container = chatRef.current
+
+    if (
+      !container ||
+      isInitialScrollSettled ||
+      isAnchoredHistoryMode ||
+      status !== 'success' ||
+      (unreadSummaryStatus === 'pending' && !shouldBypassInitialSkeleton)
+    ) {
+      return
+    }
+
+    if (unreadSummaryStatus === 'pending' && shouldBypassInitialSkeleton) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'auto',
+      })
+      return
+    }
+
+    const hasUnreadTarget = Boolean(currentUnreadItem && currentUnreadItem.unreadCount > 0)
+    const loadedUnreadCount = loadedUnreadMessages.length
+    const messageListHeight = messageListRef.current?.scrollHeight ?? 0
+    const isViewportUnderfilled =
+      messageListHeight > 0 && messageListHeight < container.clientHeight * INITIAL_VIEWPORT_FILL_MULTIPLIER
+    const shouldLoadOlderBeforeInitialSettle =
+      hasNextPage &&
+      !isFetchingNextPage &&
+      initialUnreadLoadAttemptsRef.current < INITIAL_UNREAD_CONTEXT_PAGE_LIMIT &&
+      ((hasUnreadTarget && loadedUnreadCount < (currentUnreadItem?.unreadCount ?? 0)) || isViewportUnderfilled)
+
+    if (shouldLoadOlderBeforeInitialSettle) {
+      initialUnreadLoadAttemptsRef.current += 1
+      void loadOlderMessages({ preserveViewport: false }).finally(() => {
+        window.setTimeout(() => {
+          setInitialScrollRetryTick((currentRetryTick) => currentRetryTick + 1)
+        }, 0)
+      })
+      return
+    }
+
+    suppressBoundaryLoadUntilRef.current = Date.now() + INITIAL_SCROLL_BOUNDARY_SUPPRESSION_MS
+
+    if (hasUnreadTarget && loadedUnreadMessages[0]) {
+      pendingInitialScrollTargetRef.current = {
+        messageId: loadedUnreadMessages[0].id,
+        type: 'message',
+      }
+      setUnreadAnchor({
+        chatKey: chatReadKey,
+        lastReadAt: currentUnreadItem!.lastReadAt,
+      })
+      scrollMessageToCenter(loadedUnreadMessages[0].id, 'auto')
+    } else {
+      pendingInitialScrollTargetRef.current = {
+        type: 'bottom',
+      }
+      setUnreadAnchor(null)
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'auto',
+      })
+    }
+
+    revealInitialScroll()
+  }, [
+    chatReadKey,
+    currentUnreadItem,
+    hasNextPage,
+    isAnchoredHistoryMode,
+    isFetchingNextPage,
+    isInitialScrollSettled,
+    initialScrollRetryTick,
+    loadOlderMessages,
+    loadedUnreadMessages,
+    revealInitialScroll,
+    scrollMessageToCenter,
+    shouldBypassInitialSkeleton,
+    status,
+    unreadSummaryStatus,
+  ])
+
+  useEffect(() => {
+    if (!shouldShowInitialScrollSkeleton) {
+      return
+    }
+
+    initialScrollFallbackTimeoutRef.current = window.setTimeout(() => {
+      const container = chatRef.current
+
+      if (!container) {
+        setIsInitialScrollSettled(true)
+        return
+      }
+
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'auto',
+      })
+      revealInitialScroll()
+    }, 2500)
+
+    return () => {
+      if (initialScrollFallbackTimeoutRef.current !== null) {
+        window.clearTimeout(initialScrollFallbackTimeoutRef.current)
+        initialScrollFallbackTimeoutRef.current = null
+      }
+    }
+  }, [chatReadKey, revealInitialScroll, shouldShowInitialScrollSkeleton])
+
+  useEffect(() => {
+    if (!isInitialScrollSettled) {
+      return
+    }
+
+    const timeoutIds: number[] = []
+    const frameId = window.requestAnimationFrame(() => {
+      const correctInitialTarget = () => {
+        const container = chatRef.current
+        const pendingTarget = pendingInitialScrollTargetRef.current
+
+        if (!container || !pendingTarget) {
+          return
+        }
+
+        if (pendingTarget.type === 'bottom') {
+          container.scrollTo({
+            top: container.scrollHeight,
+            behavior: 'auto',
+          })
+          return
+        }
+
+        scrollMessageToCenter(pendingTarget.messageId, 'auto')
+      }
+
+      correctInitialTarget()
+      timeoutIds.push(window.setTimeout(correctInitialTarget, 120))
+      timeoutIds.push(window.setTimeout(() => {
+        correctInitialTarget()
+        pendingInitialScrollTargetRef.current = null
+      }, 900))
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+      timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId))
+    }
+  }, [isInitialScrollSettled, scrollMessageToCenter, visibleMessages.length])
 
   useEffect(() => {
     if (!anchoredHistory || anchoredHistory.newerCursor || !isNearBottom) {
@@ -650,9 +989,8 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         top: container.scrollHeight,
         behavior: 'auto',
       })
-      bottomRef.current?.scrollIntoView({ block: 'end', behavior: 'auto' })
     })
-  }, [anchoredHistory, bottomRef, isNearBottom])
+  }, [anchoredHistory, isNearBottom])
 
   useLayoutEffect(() => {
     const pendingPrependScroll = pendingPrependScrollRef.current
@@ -677,7 +1015,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   useEffect(() => {
     const container = chatRef.current
 
-    if (!container || status !== 'success' || viewportFillInFlightRef.current) {
+    if (!container || status !== 'success' || !isInitialScrollSettled || viewportFillInFlightRef.current) {
       return
     }
 
@@ -742,7 +1080,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         }
 
         if (hasNextPage && !isFetchingNextPage) {
-          void loadOlderMessages({ preserveViewport: false }).finally(() => {
+          void loadOlderMessages().finally(() => {
             window.setTimeout(() => {
               viewportFillInFlightRef.current = false
             }, 0)
@@ -758,6 +1096,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     anchoredHistoryLoadingDirection,
     hasNextPage,
     isFetchingNextPage,
+    isInitialScrollSettled,
     loadAnchoredHistoryMessages,
     loadOlderMessages,
     status,
@@ -817,96 +1156,102 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
       </div>
     )
   }
-
   return (
-    <div ref={chatRef} className="flex-1 flex flex-col py-4 overflow-y-auto">
-      {hasReachedHistoryStart && <ChatWelcome name={name} type={type} />}
-      {canLoadOlderMessages && (
-        <div className="flex justify-center">
-          {isLoadingOlderMessages ? (
-            <Loader2 className="h-6 w-6 text-zinc-500 animate-spin my-4" />
-          ) : (
-            <button
-              onClick={() => {
-                void loadOlderMessages()
-              }}
-              className={
-                'text-zinc-500 hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-300 transition text-xs my-4'
-              }>
-              {t('loadMessages')}
-            </button>
-          )}
+    <div className="relative min-h-0 flex-1">
+      {shouldShowInitialScrollSkeleton && <ChatInitialScrollSkeleton />}
+      <div
+        ref={chatRef}
+        className={cn(
+          'flex h-full flex-col py-4',
+          shouldShowInitialScrollSkeleton ? 'invisible absolute inset-0 overflow-hidden' : 'overflow-y-auto',
+        )}>
+        {hasReachedHistoryStart && <ChatWelcome name={name} type={type} />}
+        {canLoadOlderMessages && (
+          <div className="flex justify-center">
+            {isLoadingOlderMessages ? (
+              <Loader2 className="h-6 w-6 text-zinc-500 animate-spin my-4" />
+            ) : (
+              <button
+                onClick={() => {
+                  void loadOlderMessages()
+                }}
+                className={
+                  'text-zinc-500 hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-300 transition text-xs my-4'
+                }>
+                {t('loadMessages')}
+              </button>
+            )}
+          </div>
+        )}
+        <div ref={messageListRef} className={cn('flex flex-col', !anchoredHistory && 'mt-auto')}>
+          {visibleMessages.map((m: MessageWithMemberWithProfile) => (
+            <Fragment key={m.id}>
+              {unreadDividerMessageId === m.id && <NewMessagesDivider />}
+              <ChatItem
+                fileUrl={m.fileUrl}
+                messageApiUrl={messageApiUrl}
+                messageQuery={messageQuery}
+                currentMember={member}
+                id={m.id}
+                member={m.member}
+                createdAt={m.createdAt}
+                content={m.content}
+                mentions={m.mentions}
+                replyTo={m.replyTo}
+                replyToDirectMessageId={m.replyToDirectMessageId}
+                replyToMessageId={m.replyToMessageId}
+                serverId={serverId}
+                deleted={m.deleted}
+                isUpdated={m.updatedAt !== m.createdAt}
+                isEditing={editingMessageId === m.id}
+                isReplyNavigationHighlighted={replyNavigationHighlightedMessageId === m.id}
+                onStartEditing={() => setEditingMessageId(m.id)}
+                onCancelEditing={() => {
+                  setEditingMessageId((currentEditingMessageId) =>
+                    currentEditingMessageId === m.id ? null : currentEditingMessageId,
+                  )
+                }}
+                onFinishEditing={() => {
+                  setEditingMessageId((currentEditingMessageId) =>
+                    currentEditingMessageId === m.id ? null : currentEditingMessageId,
+                  )
+                }}
+                onReply={handleReply}
+                onNavigateToReplyTarget={navigateToReplyTarget}
+                onRegisterMessageElement={registerMessageElement}
+                mentionSuggestions={mentionSuggestions}
+                timestamp={format(new Date(m.createdAt), EDateFormat.MESSAGE_ITEM)}
+              />
+            </Fragment>
+          ))}
         </div>
-      )}
-      <div className={cn('flex flex-col', !anchoredHistory && 'mt-auto')}>
-        {visibleMessages.map((m: MessageWithMemberWithProfile) => (
-          <Fragment key={m.id}>
-            {unreadDividerMessageId === m.id && <NewMessagesDivider />}
-            <ChatItem
-              fileUrl={m.fileUrl}
-              messageApiUrl={messageApiUrl}
-              messageQuery={messageQuery}
-              currentMember={member}
-              id={m.id}
-              member={m.member}
-              createdAt={m.createdAt}
-              content={m.content}
-              mentions={m.mentions}
-              replyTo={m.replyTo}
-              replyToDirectMessageId={m.replyToDirectMessageId}
-              replyToMessageId={m.replyToMessageId}
-              serverId={serverId}
-              deleted={m.deleted}
-              isUpdated={m.updatedAt !== m.createdAt}
-              isEditing={editingMessageId === m.id}
-              isReplyNavigationHighlighted={replyNavigationHighlightedMessageId === m.id}
-              onStartEditing={() => setEditingMessageId(m.id)}
-              onCancelEditing={() => {
-                setEditingMessageId((currentEditingMessageId) =>
-                  currentEditingMessageId === m.id ? null : currentEditingMessageId,
-                )
-              }}
-              onFinishEditing={() => {
-                setEditingMessageId((currentEditingMessageId) =>
-                  currentEditingMessageId === m.id ? null : currentEditingMessageId,
-                )
-              }}
-              onReply={handleReply}
-              onNavigateToReplyTarget={navigateToReplyTarget}
-              onRegisterMessageElement={registerMessageElement}
-              mentionSuggestions={mentionSuggestions}
-              timestamp={format(new Date(m.createdAt), EDateFormat.MESSAGE_ITEM)}
-            />
-          </Fragment>
-        ))}
+        {anchoredHistory && canLoadNewerAnchoredMessages && (
+          <div className="flex justify-center py-2">
+            {isLoadingNewerAnchoredMessages ? (
+              <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
+            ) : (
+              <button
+                type="button"
+                onClick={() => void loadAnchoredHistoryMessages('newer')}
+                className="text-xs text-zinc-500 transition hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-300">
+                {t('loadMessages')}
+              </button>
+            )}
+          </div>
+        )}
+        {shouldShowJumpToLatestControl && (
+          <Button
+            type="button"
+            size="icon"
+            variant="primary"
+            aria-label="Jump to latest messages"
+            title="Jump to latest messages"
+            onClick={jumpToLatestMessages}
+            className="sticky bottom-3 z-20 ml-auto mr-4 aspect-square h-9 min-h-9 w-9 min-w-9 shrink-0 rounded-full p-0 shadow-md">
+            <ArrowDown className="h-4 w-4" />
+          </Button>
+        )}
       </div>
-      {anchoredHistory && canLoadNewerAnchoredMessages && (
-        <div className="flex justify-center py-2">
-          {isLoadingNewerAnchoredMessages ? (
-            <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
-          ) : (
-            <button
-              type="button"
-              onClick={() => void loadAnchoredHistoryMessages('newer')}
-              className="text-xs text-zinc-500 transition hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-300">
-              {t('loadMessages')}
-            </button>
-          )}
-        </div>
-      )}
-      {shouldShowJumpToLatestControl && (
-        <Button
-          type="button"
-          size="icon"
-          variant="primary"
-          aria-label="Jump to latest messages"
-          title="Jump to latest messages"
-          onClick={jumpToLatestMessages}
-          className="sticky bottom-3 z-20 ml-auto mr-4 aspect-square h-9 min-h-9 w-9 min-w-9 shrink-0 rounded-full p-0 shadow-md">
-          <ArrowDown className="h-4 w-4" />
-        </Button>
-      )}
-      <div ref={bottomRef} />
     </div>
   )
 }

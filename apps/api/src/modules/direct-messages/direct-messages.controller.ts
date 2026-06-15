@@ -41,8 +41,9 @@ export class DirectMessagesController {
     @CurrentProfileId() profileId: string,
     @Query('conversationId') conversationId: string | undefined,
     @Query('cursor') cursor: string | undefined,
+    @Query('limit') limit: string | undefined,
   ) {
-    return this.directMessagesService.getMessages(profileId, conversationId, cursor)
+    return this.directMessagesService.getMessages(profileId, conversationId, cursor, limit)
   }
 
   @Get(':directMessageId/context')

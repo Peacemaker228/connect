@@ -6,6 +6,7 @@ import { fetchChatMessagesPage, getChatQueryKey, type ChatMessagesPage } from '@
 import { fetchServer, getServerQueryKey } from '@sdk/queries/server'
 
 const SERVER_ENTRY_MESSAGE_API_URL = '/api/messages'
+const SERVER_ENTRY_MESSAGE_PREFETCH_LIMIT = 32
 const SERVER_ENTRY_NAVIGATION_WAIT_MS = 200
 const SERVER_ENTRY_PREFETCH_STALE_TIME_MS = 10_000
 
@@ -50,6 +51,7 @@ export const usePrefetchServerEntry = ({
             fetchChatMessagesPage({
               apiUrl: SERVER_ENTRY_MESSAGE_API_URL,
               cursor: pageParam,
+              limit: SERVER_ENTRY_MESSAGE_PREFETCH_LIMIT,
               paramKey: 'channelId',
               paramValue: initialChannelId,
             }),

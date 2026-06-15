@@ -1083,9 +1083,45 @@ Delivered:
 - metadata-backed reply preview mentions, click/keyboard navigation, anchored history navigation, unread/reply attention behavior, and backend/API/SDK/DB/realtime/auth/storage/media remain unchanged.
 
 Next after Segment 221:
-- deploy and smoke Segment 221 on staging;
+- apply Segment 222 initial-scroll stability hotfix before the broader desktop pass if production/staging still shows chat entry jumps;
+- deploy and smoke Segment 221 plus Segment 222 on staging;
 - start the desktop staging release validation track before new lower-priority features;
 - keep backend-owned link previews/unfurl as the last customer-priority product slot, after desktop validation and higher-priority stability work.
+
+## Segment 222. Customer Chat Initial Scroll Stability Fix
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_222_CUSTOMER_CHAT_INITIAL_SCROLL_STABILITY_FIX.md`
+
+Status:
+- `implemented locally / verification pending`
+
+Reason:
+- production/staging chat entry could race between latest bottom auto-scroll, unread anchoring, viewport auto-fill, and boundary history loading;
+- the visible result could be a jump from bottom to top/middle or a stuck non-latest position when opening chats with history.
+
+Delivered:
+- `ChatMessages` now has a single initial-scroll owner before normal read/scroll side effects are enabled;
+- channel/direct message list endpoints now accept a bounded `limit` parameter, and the chat client uses a viewport-estimated initial limit so desktop panes do not start from an underfilled fixed page;
+- server-entry chat prefetch uses a larger bounded message limit to avoid seeding low-count cached pages before navigation;
+- unread chats can perform bounded older-page loading before settling on the first loaded unread non-own message;
+- chats without unread settle at latest bottom;
+- initial latest windows also load bounded older pages when rendered rows are shorter than the viewport, avoiding a large empty top gap while older history still exists;
+- a message-shaped skeleton covers the chat while initial fill/positioning is still unsettled, so users do not see the scrollbar pass through intermediate states;
+- initial placement is instant and real content is revealed on the next animation frame, so opening a chat should show the final bottom/unread position directly rather than smooth-scrolling through older rows;
+- repeat navigation to a chat with valid React Query cache uses stale-while-revalidate behavior: cached messages render immediately instead of showing the cold-load skeleton, while unread/read side effects still wait for normal initial positioning and summary reconciliation;
+- mark-read, active read-state, jump-to-latest visibility, boundary load-more, latest auto-scroll, and viewport auto-fill are gated until initial positioning is complete;
+- `useChatScroll` no longer performs a surprise first auto-scroll when auto-scroll is re-enabled after a deliberate disabled phase;
+- latest viewport auto-fill preserves the current viewport when prepending older rows.
+
+Out of scope:
+- backend/API/SDK/DB changes;
+- reply navigation redesign;
+- virtualization;
+- desktop staging release pass.
+
+Manual smoke:
+- pending production/staging smoke for long-history chat entry with and without unread, short-message initial viewport fill, skeleton during initial settle, direct final-position reveal without visible smooth-scroll, first unread `New` divider, no visible bottom/top/middle jump, reply target navigation regression, and jump-to-latest regression.
 
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 
