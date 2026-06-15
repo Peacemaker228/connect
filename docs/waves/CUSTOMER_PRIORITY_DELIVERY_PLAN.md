@@ -1106,6 +1106,7 @@ Delivered:
 - chats without unread settle at latest bottom;
 - initial latest windows also load bounded older pages when rendered rows are shorter than the viewport, avoiding a large empty top gap while older history still exists;
 - a message-shaped skeleton covers the chat while initial fill/positioning is still unsettled, so users do not see the scrollbar pass through intermediate states;
+- initial placement is instant and real content is revealed on the next animation frame, so opening a chat should show the final bottom/unread position directly rather than smooth-scrolling through older rows;
 - mark-read, active read-state, jump-to-latest visibility, boundary load-more, latest auto-scroll, and viewport auto-fill are gated until initial positioning is complete;
 - `useChatScroll` no longer performs a surprise first auto-scroll when auto-scroll is re-enabled after a deliberate disabled phase;
 - latest viewport auto-fill preserves the current viewport when prepending older rows.
@@ -1117,7 +1118,7 @@ Out of scope:
 - desktop staging release pass.
 
 Manual smoke:
-- pending production/staging smoke for long-history chat entry with and without unread, short-message initial viewport fill, skeleton during initial settle, first unread `New` divider, no visible bottom/top/middle jump, reply target navigation regression, and jump-to-latest regression.
+- pending production/staging smoke for long-history chat entry with and without unread, short-message initial viewport fill, skeleton during initial settle, direct final-position reveal without visible smooth-scroll, first unread `New` divider, no visible bottom/top/middle jump, reply target navigation regression, and jump-to-latest regression.
 
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 

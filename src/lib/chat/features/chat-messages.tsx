@@ -200,6 +200,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const replyNavigationHighlightTimeoutRef = useRef<number | null>(null)
   const pendingReplyTargetContextIdRef = useRef<string | null>(null)
   const initialUnreadLoadAttemptsRef = useRef(0)
+  const initialScrollRevealFrameRef = useRef<number | null>(null)
   const [unreadAnchor, setUnreadAnchor] = useState<UnreadAnchor | null>(null)
   const [anchoredHistory, setAnchoredHistory] = useState<AnchoredHistoryState | null>(null)
   const [anchoredHistoryLoadingDirection, setAnchoredHistoryLoadingDirection] = useState<ChatHistoryDirection | null>(
@@ -254,6 +255,10 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     capturedChatKeyRef.current = null
     anchoredHistoryLoadingDirectionRef.current = null
     initialUnreadLoadAttemptsRef.current = 0
+    if (initialScrollRevealFrameRef.current !== null) {
+      window.cancelAnimationFrame(initialScrollRevealFrameRef.current)
+      initialScrollRevealFrameRef.current = null
+    }
     suppressBoundaryLoadUntilRef.current = 0
     viewportFillInFlightRef.current = false
     pendingPrependScrollRef.current = null
@@ -271,6 +276,10 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
       if (replyNavigationHighlightTimeoutRef.current) {
         window.clearTimeout(replyNavigationHighlightTimeoutRef.current)
         replyNavigationHighlightTimeoutRef.current = null
+      }
+      if (initialScrollRevealFrameRef.current !== null) {
+        window.cancelAnimationFrame(initialScrollRevealFrameRef.current)
+        initialScrollRevealFrameRef.current = null
       }
     }
   }, [])
@@ -784,10 +793,12 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         top: container.scrollHeight,
         behavior: 'auto',
       })
-      bottomRef.current?.scrollIntoView({ block: 'end', behavior: 'auto' })
     }
 
-    setIsInitialScrollSettled(true)
+    initialScrollRevealFrameRef.current = window.requestAnimationFrame(() => {
+      initialScrollRevealFrameRef.current = null
+      setIsInitialScrollSettled(true)
+    })
   }, [
     chatReadKey,
     currentUnreadItem,

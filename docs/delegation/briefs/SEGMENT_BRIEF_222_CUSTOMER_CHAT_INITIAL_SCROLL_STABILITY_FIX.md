@@ -24,6 +24,7 @@ Implemented:
 - bounded initial unread context loading to avoid infinite older-page fetches;
 - bounded viewport-aware initial loading so short-message histories do not leave a large empty top gap while older pages still exist;
 - added a shared shadcn-style `Skeleton` component and a chat initial skeleton layer that approximates text, image, and file message rows while the real list remains mounted for measurement;
+- initial placement uses instant container `scrollTop` positioning and reveals real content on the next animation frame, avoiding a visible "upper messages then smooth-scroll down" transition;
 - set the `New` divider anchor from the same initial unread decision;
 - updated `useChatScroll` so re-enabling auto-scroll after a deliberate disabled phase does not perform a surprise first auto-scroll to bottom;
 - changed latest viewport auto-fill to preserve viewport position when older rows are prepended.
@@ -39,6 +40,7 @@ Manual smoke required:
 - production/staging chat with no unread and long history opens at latest bottom;
 - short-message histories load enough initial rows to avoid a large empty top gap when older pages still exist;
 - the scrollbar should not visibly run through intermediate top/bottom states during initial fill;
+- real content should appear directly at the final initial position, without a visible smooth-scroll from older rows to bottom;
 - production/staging chat with unread opens around the first unread and shows `New`;
 - opening a chat no longer visibly jumps bottom -> top -> middle;
 - older-history auto-fill does not move the user away from the selected initial target;
