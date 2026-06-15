@@ -62,8 +62,11 @@ const REPLY_NAVIGATION_HIGHLIGHT_MS = 1800
 const LOCAL_SMOOTH_SCROLL_DISTANCE_MULTIPLIER = 3
 const HISTORY_LOAD_MORE_THRESHOLD_PX = 480
 const VIEWPORT_AUTO_FILL_MULTIPLIER = 1.35
+const INITIAL_VIEWPORT_FILL_MULTIPLIER = 1.25
 const PROGRAMMATIC_SCROLL_BOUNDARY_SUPPRESSION_MS = 1200
 const FAKE_SMOOTH_SCROLL_OFFSET_MULTIPLIER = 0.75
+const INITIAL_UNREAD_CONTEXT_PAGE_LIMIT = 8
+const INITIAL_SCROLL_BOUNDARY_SUPPRESSION_MS = 900
 
 const getTimestampValue = (value: Date | string) => new Date(value).getTime()
 
@@ -133,6 +136,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
 
   const chatRef = useRef<ElementRef<'div'>>(null)
   const bottomRef = useRef<ElementRef<'div'>>(null)
+  const messageListRef = useRef<ElementRef<'div'>>(null)
   const capturedChatKeyRef = useRef<string | null>(null)
   const messageElementByIdRef = useRef(new Map<string, HTMLDivElement>())
   const anchoredHistoryLoadingDirectionRef = useRef<ChatHistoryDirection | null>(null)
@@ -143,11 +147,13 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const viewportFillInFlightRef = useRef(false)
   const replyNavigationHighlightTimeoutRef = useRef<number | null>(null)
   const pendingReplyTargetContextIdRef = useRef<string | null>(null)
+  const initialUnreadLoadAttemptsRef = useRef(0)
   const [unreadAnchor, setUnreadAnchor] = useState<UnreadAnchor | null>(null)
   const [anchoredHistory, setAnchoredHistory] = useState<AnchoredHistoryState | null>(null)
   const [anchoredHistoryLoadingDirection, setAnchoredHistoryLoadingDirection] = useState<ChatHistoryDirection | null>(
     null,
   )
+  const [isInitialScrollSettled, setIsInitialScrollSettled] = useState(false)
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
   const [replyNavigationHighlightedMessageId, setReplyNavigationHighlightedMessageId] = useState<string | null>(null)
   const { setReplyTo } = useChatReply()
@@ -195,9 +201,15 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   useEffect(() => {
     capturedChatKeyRef.current = null
     anchoredHistoryLoadingDirectionRef.current = null
+    initialUnreadLoadAttemptsRef.current = 0
+    suppressBoundaryLoadUntilRef.current = 0
+    viewportFillInFlightRef.current = false
+    pendingPrependScrollRef.current = null
+    pendingReplyTargetScrollRef.current = null
     setAnchoredHistory(null)
     setAnchoredHistoryLoadingDirection(null)
     setUnreadAnchor(null)
+    setIsInitialScrollSettled(false)
     setEditingMessageId(null)
     setReplyNavigationHighlightedMessageId(null)
   }, [chatReadKey])
@@ -218,6 +230,28 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     }
 
     messageElementByIdRef.current.set(messageId, element)
+  }, [])
+
+  const scrollMessageToCenter = useCallback((messageId: string, behavior: ScrollBehavior = 'auto') => {
+    const container = chatRef.current
+    const targetElement = messageElementByIdRef.current.get(messageId)
+
+    if (!container || !targetElement || !container.contains(targetElement)) {
+      return false
+    }
+
+    const containerRect = container.getBoundingClientRect()
+    const targetRect = targetElement.getBoundingClientRect()
+    const centeredTop =
+      container.scrollTop + targetRect.top - containerRect.top - (container.clientHeight - targetRect.height) / 2
+    const maxScrollTop = Math.max(container.scrollHeight - container.clientHeight, 0)
+
+    container.scrollTo({
+      top: Math.max(0, Math.min(centeredTop, maxScrollTop)),
+      behavior,
+    })
+
+    return true
   }, [])
 
   const scrollToLoadedReplyTarget = useCallback((messageId: string, options: ReplyTargetScrollOptions = {}) => {
@@ -533,22 +567,53 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
 
   useChatSocket({ queryKey, addKey, onMessageUpdate: patchReplyTargetContextPages, updateKey })
   const isAnchoredHistoryMode = Boolean(anchoredHistory)
+  const visibleMessages = useMemo(
+    () =>
+      anchoredHistory
+        ? anchoredHistory.items
+        : mergeChatMessagesByAscendingTime([], data?.pages?.flatMap((page) => page.items) ?? []),
+    [anchoredHistory, data?.pages],
+  )
+  const loadedUnreadMessages = useMemo(() => {
+    if (!currentUnreadItem || currentUnreadItem.unreadCount <= 0) {
+      return []
+    }
+
+    const anchorTime = getTimestampValue(currentUnreadItem.lastReadAt)
+
+    if (!Number.isFinite(anchorTime)) {
+      return []
+    }
+
+    return visibleMessages.filter((message) => {
+      const messageTime = getTimestampValue(message.createdAt)
+
+      return (
+        !message.deleted &&
+        message.memberId !== member.id &&
+        Number.isFinite(messageTime) &&
+        messageTime > anchorTime
+      )
+    })
+  }, [currentUnreadItem, member.id, visibleMessages])
   const { isNearBottom } = useChatScroll({
-    autoScrollEnabled: !isAnchoredHistoryMode,
+    autoScrollEnabled: !isAnchoredHistoryMode && isInitialScrollSettled,
     chatId,
     chatRef,
     bottomRef,
     loadMore: loadOlderMessages,
     loadMoreThreshold: HISTORY_LOAD_MORE_THRESHOLD_PX,
-    shouldLoadMore: anchoredHistory
-      ? Boolean(anchoredHistory.olderCursor) && anchoredHistoryLoadingDirection !== 'older'
-      : !isFetchingNextPage && hasNextPage,
+    shouldLoadMore:
+      isInitialScrollSettled &&
+      (anchoredHistory
+        ? Boolean(anchoredHistory.olderCursor) && anchoredHistoryLoadingDirection !== 'older'
+        : !isFetchingNextPage && hasNextPage),
     count: isAnchoredHistoryMode ? 0 : (data?.pages?.[0]?.items?.length ?? 0),
   })
   useMarkChatRead({
     beforeMarkRead: captureUnreadAnchor,
-    enabled: !isAnchoredHistoryMode && unreadSummaryStatus !== 'pending',
-    isNearBottom: !isAnchoredHistoryMode && isNearBottom,
+    enabled: !isAnchoredHistoryMode && isInitialScrollSettled && unreadSummaryStatus !== 'pending',
+    isNearBottom: !isAnchoredHistoryMode && isInitialScrollSettled && isNearBottom,
     serverId,
     paramKey,
     paramValue,
@@ -556,7 +621,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
 
   useEffect(() => {
     setActiveChatReadState({
-      isNearBottom: !isAnchoredHistoryMode && isNearBottom,
+      isNearBottom: !isAnchoredHistoryMode && isInitialScrollSettled && isNearBottom,
       paramKey,
       paramValue,
       serverId,
@@ -569,10 +634,11 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         serverId,
       })
     }
-  }, [isAnchoredHistoryMode, isNearBottom, paramKey, paramValue, serverId])
+  }, [isAnchoredHistoryMode, isInitialScrollSettled, isNearBottom, paramKey, paramValue, serverId])
 
   useEffect(() => {
     if (
+      !isInitialScrollSettled ||
       isNearBottom ||
       unreadAnchor?.chatKey === chatReadKey ||
       !currentUnreadItem ||
@@ -585,7 +651,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
       chatKey: chatReadKey,
       lastReadAt: currentUnreadItem.lastReadAt,
     })
-  }, [chatReadKey, currentUnreadItem, isNearBottom, unreadAnchor?.chatKey])
+  }, [chatReadKey, currentUnreadItem, isInitialScrollSettled, isNearBottom, unreadAnchor?.chatKey])
 
   useEffect(() => {
     const container = chatRef.current
@@ -616,19 +682,75 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
 
   const t = useTranslations('ChannelPage')
   const commonTranslation = useTranslations('Common')
-  const visibleMessages = useMemo(
-    () =>
-      anchoredHistory
-        ? anchoredHistory.items
-        : mergeChatMessagesByAscendingTime([], data?.pages?.flatMap((page) => page.items) ?? []),
-    [anchoredHistory, data?.pages],
-  )
   const canLoadOlderMessages = anchoredHistory ? Boolean(anchoredHistory.olderCursor) : hasNextPage
   const isLoadingOlderMessages = anchoredHistory ? anchoredHistoryLoadingDirection === 'older' : isFetchingNextPage
   const canLoadNewerAnchoredMessages = Boolean(anchoredHistory?.newerCursor)
   const hasReachedHistoryStart = anchoredHistory ? !anchoredHistory.olderCursor : !hasNextPage
   const isLoadingNewerAnchoredMessages = anchoredHistoryLoadingDirection === 'newer'
-  const shouldShowJumpToLatestControl = Boolean(anchoredHistory?.newerCursor) || !isNearBottom
+  const shouldShowJumpToLatestControl =
+    isInitialScrollSettled && (Boolean(anchoredHistory?.newerCursor) || !isNearBottom)
+
+  useLayoutEffect(() => {
+    const container = chatRef.current
+
+    if (
+      !container ||
+      isInitialScrollSettled ||
+      isAnchoredHistoryMode ||
+      status !== 'success' ||
+      unreadSummaryStatus === 'pending'
+    ) {
+      return
+    }
+
+    const hasUnreadTarget = Boolean(currentUnreadItem && currentUnreadItem.unreadCount > 0)
+    const loadedUnreadCount = loadedUnreadMessages.length
+    const messageListHeight = messageListRef.current?.scrollHeight ?? 0
+    const isViewportUnderfilled =
+      messageListHeight > 0 && messageListHeight < container.clientHeight * INITIAL_VIEWPORT_FILL_MULTIPLIER
+    const shouldLoadOlderBeforeInitialSettle =
+      hasNextPage &&
+      !isFetchingNextPage &&
+      initialUnreadLoadAttemptsRef.current < INITIAL_UNREAD_CONTEXT_PAGE_LIMIT &&
+      ((hasUnreadTarget && loadedUnreadCount < (currentUnreadItem?.unreadCount ?? 0)) || isViewportUnderfilled)
+
+    if (shouldLoadOlderBeforeInitialSettle) {
+      initialUnreadLoadAttemptsRef.current += 1
+      void loadOlderMessages({ preserveViewport: false })
+      return
+    }
+
+    suppressBoundaryLoadUntilRef.current = Date.now() + INITIAL_SCROLL_BOUNDARY_SUPPRESSION_MS
+
+    if (hasUnreadTarget && loadedUnreadMessages[0]) {
+      setUnreadAnchor({
+        chatKey: chatReadKey,
+        lastReadAt: currentUnreadItem!.lastReadAt,
+      })
+      scrollMessageToCenter(loadedUnreadMessages[0].id, 'auto')
+    } else {
+      setUnreadAnchor(null)
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'auto',
+      })
+      bottomRef.current?.scrollIntoView({ block: 'end', behavior: 'auto' })
+    }
+
+    setIsInitialScrollSettled(true)
+  }, [
+    chatReadKey,
+    currentUnreadItem,
+    hasNextPage,
+    isAnchoredHistoryMode,
+    isFetchingNextPage,
+    isInitialScrollSettled,
+    loadOlderMessages,
+    loadedUnreadMessages,
+    scrollMessageToCenter,
+    status,
+    unreadSummaryStatus,
+  ])
 
   useEffect(() => {
     if (!anchoredHistory || anchoredHistory.newerCursor || !isNearBottom) {
@@ -677,7 +799,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   useEffect(() => {
     const container = chatRef.current
 
-    if (!container || status !== 'success' || viewportFillInFlightRef.current) {
+    if (!container || status !== 'success' || !isInitialScrollSettled || viewportFillInFlightRef.current) {
       return
     }
 
@@ -742,7 +864,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         }
 
         if (hasNextPage && !isFetchingNextPage) {
-          void loadOlderMessages({ preserveViewport: false }).finally(() => {
+          void loadOlderMessages().finally(() => {
             window.setTimeout(() => {
               viewportFillInFlightRef.current = false
             }, 0)
@@ -758,6 +880,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     anchoredHistoryLoadingDirection,
     hasNextPage,
     isFetchingNextPage,
+    isInitialScrollSettled,
     loadAnchoredHistoryMessages,
     loadOlderMessages,
     status,
@@ -838,7 +961,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
           )}
         </div>
       )}
-      <div className={cn('flex flex-col', !anchoredHistory && 'mt-auto')}>
+      <div ref={messageListRef} className={cn('flex flex-col', !anchoredHistory && 'mt-auto')}>
         {visibleMessages.map((m: MessageWithMemberWithProfile) => (
           <Fragment key={m.id}>
             {unreadDividerMessageId === m.id && <NewMessagesDivider />}

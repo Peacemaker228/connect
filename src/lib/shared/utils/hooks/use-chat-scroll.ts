@@ -108,6 +108,10 @@ export const useChatScroll = ({
     const topDiv = chatRef?.current
 
     if (!autoScrollEnabled) {
+      if (!hasInitialized) {
+        setHasInitialized(true)
+      }
+
       return
     }
 
