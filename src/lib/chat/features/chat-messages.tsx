@@ -201,12 +201,14 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const pendingReplyTargetContextIdRef = useRef<string | null>(null)
   const initialUnreadLoadAttemptsRef = useRef(0)
   const initialScrollRevealFrameRef = useRef<number | null>(null)
+  const initialScrollFallbackTimeoutRef = useRef<number | null>(null)
   const [unreadAnchor, setUnreadAnchor] = useState<UnreadAnchor | null>(null)
   const [anchoredHistory, setAnchoredHistory] = useState<AnchoredHistoryState | null>(null)
   const [anchoredHistoryLoadingDirection, setAnchoredHistoryLoadingDirection] = useState<ChatHistoryDirection | null>(
     null,
   )
   const [isInitialScrollSettled, setIsInitialScrollSettled] = useState(false)
+  const [initialScrollRetryTick, setInitialScrollRetryTick] = useState(0)
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
   const [replyNavigationHighlightedMessageId, setReplyNavigationHighlightedMessageId] = useState<string | null>(null)
   const { setReplyTo } = useChatReply()
@@ -259,6 +261,10 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
       window.cancelAnimationFrame(initialScrollRevealFrameRef.current)
       initialScrollRevealFrameRef.current = null
     }
+    if (initialScrollFallbackTimeoutRef.current !== null) {
+      window.clearTimeout(initialScrollFallbackTimeoutRef.current)
+      initialScrollFallbackTimeoutRef.current = null
+    }
     suppressBoundaryLoadUntilRef.current = 0
     viewportFillInFlightRef.current = false
     pendingPrependScrollRef.current = null
@@ -267,6 +273,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     setAnchoredHistoryLoadingDirection(null)
     setUnreadAnchor(null)
     setIsInitialScrollSettled(false)
+    setInitialScrollRetryTick(0)
     setEditingMessageId(null)
     setReplyNavigationHighlightedMessageId(null)
   }, [chatReadKey])
@@ -280,6 +287,10 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
       if (initialScrollRevealFrameRef.current !== null) {
         window.cancelAnimationFrame(initialScrollRevealFrameRef.current)
         initialScrollRevealFrameRef.current = null
+      }
+      if (initialScrollFallbackTimeoutRef.current !== null) {
+        window.clearTimeout(initialScrollFallbackTimeoutRef.current)
+        initialScrollFallbackTimeoutRef.current = null
       }
     }
   }, [])
@@ -749,6 +760,22 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const shouldShowJumpToLatestControl =
     isInitialScrollSettled && (Boolean(anchoredHistory?.newerCursor) || !isNearBottom)
 
+  const revealInitialScroll = useCallback(() => {
+    if (initialScrollFallbackTimeoutRef.current !== null) {
+      window.clearTimeout(initialScrollFallbackTimeoutRef.current)
+      initialScrollFallbackTimeoutRef.current = null
+    }
+
+    if (initialScrollRevealFrameRef.current !== null) {
+      window.cancelAnimationFrame(initialScrollRevealFrameRef.current)
+    }
+
+    initialScrollRevealFrameRef.current = window.requestAnimationFrame(() => {
+      initialScrollRevealFrameRef.current = null
+      setIsInitialScrollSettled(true)
+    })
+  }, [])
+
   useLayoutEffect(() => {
     const container = chatRef.current
 
@@ -775,7 +802,11 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
 
     if (shouldLoadOlderBeforeInitialSettle) {
       initialUnreadLoadAttemptsRef.current += 1
-      void loadOlderMessages({ preserveViewport: false })
+      void loadOlderMessages({ preserveViewport: false }).finally(() => {
+        window.setTimeout(() => {
+          setInitialScrollRetryTick((currentRetryTick) => currentRetryTick + 1)
+        }, 0)
+      })
       return
     }
 
@@ -795,10 +826,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
       })
     }
 
-    initialScrollRevealFrameRef.current = window.requestAnimationFrame(() => {
-      initialScrollRevealFrameRef.current = null
-      setIsInitialScrollSettled(true)
-    })
+    revealInitialScroll()
   }, [
     chatReadKey,
     currentUnreadItem,
@@ -806,12 +834,42 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     isAnchoredHistoryMode,
     isFetchingNextPage,
     isInitialScrollSettled,
+    initialScrollRetryTick,
     loadOlderMessages,
     loadedUnreadMessages,
+    revealInitialScroll,
     scrollMessageToCenter,
     status,
     unreadSummaryStatus,
   ])
+
+  useEffect(() => {
+    if (!shouldShowInitialScrollSkeleton) {
+      return
+    }
+
+    initialScrollFallbackTimeoutRef.current = window.setTimeout(() => {
+      const container = chatRef.current
+
+      if (!container) {
+        setIsInitialScrollSettled(true)
+        return
+      }
+
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'auto',
+      })
+      revealInitialScroll()
+    }, 2500)
+
+    return () => {
+      if (initialScrollFallbackTimeoutRef.current !== null) {
+        window.clearTimeout(initialScrollFallbackTimeoutRef.current)
+        initialScrollFallbackTimeoutRef.current = null
+      }
+    }
+  }, [chatReadKey, revealInitialScroll, shouldShowInitialScrollSkeleton])
 
   useEffect(() => {
     if (!anchoredHistory || anchoredHistory.newerCursor || !isNearBottom) {
