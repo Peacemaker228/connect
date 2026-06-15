@@ -145,8 +145,9 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const pendingReplyTargetContextIdRef = useRef<string | null>(null)
   const [unreadAnchor, setUnreadAnchor] = useState<UnreadAnchor | null>(null)
   const [anchoredHistory, setAnchoredHistory] = useState<AnchoredHistoryState | null>(null)
-  const [anchoredHistoryLoadingDirection, setAnchoredHistoryLoadingDirection] =
-    useState<ChatHistoryDirection | null>(null)
+  const [anchoredHistoryLoadingDirection, setAnchoredHistoryLoadingDirection] = useState<ChatHistoryDirection | null>(
+    null,
+  )
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
   const [replyNavigationHighlightedMessageId, setReplyNavigationHighlightedMessageId] = useState<string | null>(null)
   const { setReplyTo } = useChatReply()
@@ -397,56 +398,56 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     [anchoredHistory, messageApiUrl, messageQuery],
   )
 
-  const loadOlderMessagesPreservingViewport = useCallback(
-    async (loadMessages: () => Promise<unknown> | void) => {
-      if (olderHistoryLoadInFlightRef.current) {
+  const loadOlderMessagesPreservingViewport = useCallback(async (loadMessages: () => Promise<unknown> | void) => {
+    if (olderHistoryLoadInFlightRef.current) {
+      return
+    }
+
+    const container = chatRef.current
+    const previousScrollHeight = container?.scrollHeight ?? 0
+    const previousScrollTop = container?.scrollTop ?? 0
+
+    pendingPrependScrollRef.current = {
+      previousScrollHeight,
+      previousScrollTop,
+    }
+    olderHistoryLoadInFlightRef.current = true
+
+    try {
+      await loadMessages()
+    } finally {
+      window.setTimeout(() => {
+        if (pendingPrependScrollRef.current?.previousScrollHeight === previousScrollHeight) {
+          pendingPrependScrollRef.current = null
+          olderHistoryLoadInFlightRef.current = false
+        }
+      }, 120)
+    }
+  }, [])
+
+  const loadOlderMessages = useCallback(
+    async (options: { preserveViewport?: boolean } = {}) => {
+      if (Date.now() < suppressBoundaryLoadUntilRef.current) {
         return
       }
 
-      const container = chatRef.current
-      const previousScrollHeight = container?.scrollHeight ?? 0
-      const previousScrollTop = container?.scrollTop ?? 0
+      const loadMessages = () => {
+        if (anchoredHistory) {
+          return loadAnchoredHistoryMessages('older')
+        }
 
-      pendingPrependScrollRef.current = {
-        previousScrollHeight,
-        previousScrollTop,
+        return fetchNextPage()
       }
-      olderHistoryLoadInFlightRef.current = true
 
-      try {
+      if (options.preserveViewport === false) {
         await loadMessages()
-      } finally {
-        window.setTimeout(() => {
-          if (pendingPrependScrollRef.current?.previousScrollHeight === previousScrollHeight) {
-            pendingPrependScrollRef.current = null
-            olderHistoryLoadInFlightRef.current = false
-          }
-        }, 120)
+        return
       }
+
+      await loadOlderMessagesPreservingViewport(loadMessages)
     },
-    [],
+    [anchoredHistory, fetchNextPage, loadAnchoredHistoryMessages, loadOlderMessagesPreservingViewport],
   )
-
-  const loadOlderMessages = useCallback(async (options: { preserveViewport?: boolean } = {}) => {
-    if (Date.now() < suppressBoundaryLoadUntilRef.current) {
-      return
-    }
-
-    const loadMessages = () => {
-      if (anchoredHistory) {
-        return loadAnchoredHistoryMessages('older')
-      }
-
-      return fetchNextPage()
-    }
-
-    if (options.preserveViewport === false) {
-      await loadMessages()
-      return
-    }
-
-    await loadOlderMessagesPreservingViewport(loadMessages)
-  }, [anchoredHistory, fetchNextPage, loadAnchoredHistoryMessages, loadOlderMessagesPreservingViewport])
 
   const jumpToLatestMessages = useCallback(() => {
     const shouldExitAnchoredWindow = Boolean(anchoredHistory?.newerCursor)
@@ -901,7 +902,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
           aria-label="Jump to latest messages"
           title="Jump to latest messages"
           onClick={jumpToLatestMessages}
-          className="sticky bottom-3 z-20 ml-auto mr-4 h-9 w-9 rounded-full shadow-md">
+          className="sticky bottom-3 z-20 ml-auto mr-4 aspect-square h-9 min-h-9 w-9 min-w-9 shrink-0 rounded-full p-0 shadow-md">
           <ArrowDown className="h-4 w-4" />
         </Button>
       )}
