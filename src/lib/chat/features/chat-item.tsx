@@ -1,7 +1,16 @@
 'use client'
 
 import type { MemberDto, MemberWithProfileDto, MessageMentionDto, MessageReplyPreviewDto } from '@app-core/contracts'
-import { FC, KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  FC,
+  KeyboardEvent as ReactKeyboardEvent,
+  MouseEvent as ReactMouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { UserAvatar } from '@/lib/shared/features/user-avatar'
 import { ActionTooltip } from '@/lib/shared/features/action-tooltip'
 import { roleIconMap } from '@/lib/shared/utils/role-icon-map'
@@ -39,10 +48,39 @@ import { MessageReplyPreviewBlock } from '@/lib/chat/features/message-reply-prev
 const EDIT_MENTION_PICKER_MAX_HEIGHT = 320
 const EDIT_MENTION_PICKER_VIEWPORT_MARGIN = 8
 const EDIT_MENTION_PICKER_CHROME_HEIGHT = 20
+const DOUBLE_CLICK_REPLY_IGNORE_SELECTOR =
+  'a,button,input,textarea,select,[role="button"],[contenteditable="true"],[data-chat-double-click-ignore="true"]'
 
 type EditMentionPickerPlacement = {
   maxHeight: number
   side: 'bottom' | 'top'
+}
+
+const isPointOnTextNode = (element: Element, clientX: number, clientY: number) => {
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT)
+  let currentNode = walker.nextNode()
+
+  while (currentNode) {
+    if (currentNode.textContent?.trim()) {
+      const range = document.createRange()
+
+      range.selectNodeContents(currentNode)
+
+      const isInsideText = Array.from(range.getClientRects()).some(
+        (rect) => clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom,
+      )
+
+      range.detach()
+
+      if (isInsideText) {
+        return true
+      }
+    }
+
+    currentNode = walker.nextNode()
+  }
+
+  return false
 }
 
 interface IChatItemProps {
@@ -515,6 +553,34 @@ export const ChatItem: FC<IChatItemProps> = ({
     })
   }
 
+  const handleMessageDoubleClick = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!canReplyMessage || isEditing) {
+      return
+    }
+
+    const target = event.target
+
+    if (!(target instanceof Element)) {
+      return
+    }
+
+    if (target.closest(DOUBLE_CLICK_REPLY_IGNORE_SELECTOR)) {
+      return
+    }
+
+    const textContainer = target.closest('[data-chat-message-text="true"]')
+
+    if (textContainer && isPointOnTextNode(textContainer, event.clientX, event.clientY)) {
+      return
+    }
+
+    if (window.getSelection()?.toString().trim()) {
+      return
+    }
+
+    handleReply()
+  }
+
   const copyTooltipLabel = isCopied ? t('ChatItem.copied') : t('ChatItem.copy')
   const actionIconClassName =
     'cursor-pointer w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition'
@@ -522,6 +588,7 @@ export const ChatItem: FC<IChatItemProps> = ({
   return (
     <div
       ref={handleMessageElementRef}
+      onDoubleClick={handleMessageDoubleClick}
       className={cn(
         'relative group flex items-center hover:bg-black/5 p-4 transition w-full',
         isCurrentMemberMentioned &&
@@ -530,11 +597,14 @@ export const ChatItem: FC<IChatItemProps> = ({
           'bg-violet-500/15 hover:bg-violet-500/20 dark:bg-violet-400/15 dark:hover:bg-violet-400/20',
       )}>
       <div className={'group flex gap-x-2 items-start w-full'}>
-        <div onClick={onMemberClick} className={'cursor-pointer hover:drop-shadow-md transition'}>
+        <div
+          onClick={onMemberClick}
+          data-chat-double-click-ignore="true"
+          className={'cursor-pointer hover:drop-shadow-md transition'}>
           <UserAvatar name={member.profile.name} src={member.profile.imageUrl} />
         </div>
         <div className={'flex flex-col w-full'}>
-          <div className="flex items-center gap-x-2">
+          <div data-chat-double-click-ignore="true" className="flex items-center gap-x-2">
             <div className={'flex items-center'}>
               <p onClick={onMemberClick} className={'font-semibold text-sm hover:underline cursor-pointer'}>
                 {member.profile.name}
@@ -563,6 +633,7 @@ export const ChatItem: FC<IChatItemProps> = ({
           )}
           {isImage && (
             <a
+              data-chat-double-click-ignore="true"
               href={fileAccessPath}
               target={'_blank'}
               rel={'noopener noreferrer'}
@@ -573,7 +644,7 @@ export const ChatItem: FC<IChatItemProps> = ({
             </a>
           )}
           {isPDF && (
-            <div className="relative flex items-center p-2 mt-2 rounded-md bg-background/10">
+            <div data-chat-double-click-ignore="true" className="relative flex items-center p-2 mt-2 rounded-md bg-background/10">
               <FileIcon className="h-10 w-10 fill-indigo-200 stroke-indigo-400" />
               <a
                 href={fileAccessPath}
@@ -585,7 +656,9 @@ export const ChatItem: FC<IChatItemProps> = ({
             </div>
           )}
           {isGenericFile && (
-            <div className="relative flex max-w-xl items-center p-2 mt-2 rounded-md bg-background/10">
+            <div
+              data-chat-double-click-ignore="true"
+              className="relative flex max-w-xl items-center p-2 mt-2 rounded-md bg-background/10">
               <FileIcon className="h-10 w-10 shrink-0 fill-zinc-200 stroke-zinc-500 dark:fill-zinc-700 dark:stroke-zinc-300" />
               <a
                 href={fileAccessPath}
@@ -598,6 +671,7 @@ export const ChatItem: FC<IChatItemProps> = ({
           )}
           {!fileUrl && !isEditing && (
             <p
+              data-chat-message-text="true"
               className={cn(
                 'text-accent text-zinc-600 dark:text-zinc-300 whitespace-pre-wrap break-words',
                 deleted && 'italic text-zinc-500 dark:text-zinc-400 text-xs mt-1',
@@ -619,7 +693,10 @@ export const ChatItem: FC<IChatItemProps> = ({
           )}
           {!fileUrl && isEditing && (
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleSubmit)} className={'flex items-center w-full gap-x-2 pt-2'}>
+              <form
+                data-chat-double-click-ignore="true"
+                onSubmit={form.handleSubmit(handleSubmit)}
+                className={'flex items-center w-full gap-x-2 pt-2'}>
                 <FormField
                   render={({ field }) => (
                     <FormItem className={'flex-1'}>
@@ -706,6 +783,7 @@ export const ChatItem: FC<IChatItemProps> = ({
       </div>
       {(canCopyMessage || canReplyMessage) && (
         <div
+          data-chat-double-click-ignore="true"
           className={
             'z-10 hidden group-hover:flex items-center gap-x-2 absolute p-1 -top-2 right-5 bg-white dark:bg-zinc-800 shadow-sm rounded-sm'
           }>

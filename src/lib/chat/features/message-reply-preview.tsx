@@ -95,6 +95,7 @@ export const MessageReplyPreviewBlock = ({
 
   return (
     <div
+      data-chat-double-click-ignore="true"
       className={cn(
         'flex min-w-0 max-w-xl items-start gap-2 rounded-md border-l-2 border-violet-500/80 bg-violet-500/10 px-2 py-1.5 text-xs text-zinc-600 dark:border-violet-400/80 dark:bg-violet-400/10 dark:text-zinc-300',
         className,

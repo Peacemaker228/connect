@@ -65,6 +65,7 @@ Delivered:
 - reply preview author text, hover state, keyboard focus ring, and cancel button use the same violet accent family;
 - composer reply bar reuses the shared violet reply preview style instead of overriding it with the old neutral block background;
 - reply target navigation highlight now uses a temporary violet background, not the previous orange ring-style treatment;
+- double-clicking an empty area of a non-deleted message row starts a reply, Telegram-style, while double-clicks on text, links, files, avatars, headers, reply previews, action buttons, forms, and other controls are ignored;
 - Segment 220 navigation behavior and data flow are unchanged.
 
 Kept out of scope:
@@ -97,6 +98,8 @@ bun.cmd run check:desktop:config
 - Loaded target navigation with violet highlight.
 - Unloaded target navigation through anchored context with violet highlight.
 - Composer reply bar select/cancel/send.
+- Double-click empty message row area starts reply.
+- Double-click message text, link, file row, avatar/header, reply preview, or action button does not start reply.
 - Direct-message reply preview regression.
 - Light and dark theme visual check if practical.
 
