@@ -527,7 +527,7 @@ export const ChatItem: FC<IChatItemProps> = ({
         isCurrentMemberMentioned &&
           'border-l-4 border-amber-500 bg-amber-500/10 hover:bg-amber-500/15 dark:bg-amber-400/10 dark:hover:bg-amber-400/15',
         isReplyNavigationHighlighted &&
-          'bg-mainOrange/15 ring-2 ring-inset ring-mainOrange/60 hover:bg-mainOrange/20 dark:bg-mainOrange/10 dark:hover:bg-mainOrange/15',
+          'bg-violet-500/15 hover:bg-violet-500/20 dark:bg-violet-400/15 dark:hover:bg-violet-400/20',
       )}>
       <div className={'group flex gap-x-2 items-start w-full'}>
         <div onClick={onMemberClick} className={'cursor-pointer hover:drop-shadow-md transition'}>

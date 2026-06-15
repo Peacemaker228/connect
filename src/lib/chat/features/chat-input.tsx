@@ -607,7 +607,7 @@ export const ChatInput: FC<IChatInputProps> = ({ messageApiUrl, messageQuery, na
                         deleted: t('Reply.deleted'),
                       }}
                       onCancel={handleCancelReply}
-                      className="mb-2 ml-10 mr-14 rounded-t-md bg-zinc-200/60 py-2 pr-2 dark:bg-zinc-700/50"
+                      className="mb-2 ml-10 mr-14"
                     />
                   )}
                   <div className="relative">
