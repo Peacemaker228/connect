@@ -227,9 +227,13 @@ Delivered:
 - older-message loading now triggers near the top boundary instead of only at exact `scrollTop === 0`, and preserves viewport position after prepending older rows so manual/automatic pagination does not jump to the beginning of the newly loaded block;
 - latest and anchored history ranges now auto-fill the viewport with bounded follow-up reads when the first visible range is too short for the current screen height;
 - near-boundary preload uses a viewport-aware threshold, so users can scroll a little before the next older/newer page is needed instead of immediately hitting a manual page break;
+- prepended older rows and first unloaded-target positioning use pre-paint scroll correction so users do not see an intermediate jumped layout frame while the DOM range changes;
+- chat rows are rendered in natural chronological DOM order (`oldest -> newest`) instead of `flex-col-reverse`, so browser scroll anchoring and prepend compensation operate on the same visual direction as the user scrolls;
+- programmatic loaded-target smooth scrolling temporarily suppresses boundary pagination so near-top preload does not add older rows in the middle of the scroll animation;
 - the anchored range uses a history layout instead of the normal latest `mt-auto` bottom-stick layout, preventing reply-target windows from being pushed into large empty gaps;
-- the sticky down control is visible whenever the user is away from the live bottom: it does not smooth-scroll through the whole history, but switches to the latest range and uses a short fake-smooth movement near the bottom so the transition still feels intentional;
-- reply target navigation uses deterministic container-relative centering: nearby loaded targets use native smooth scrolling, while far/newly loaded targets switch ranges and use a short fake-smooth movement around the target instead of traversing all skipped history;
+- the sticky down control is visible whenever the user is away from the live bottom: normal loaded latest ranges return with native smooth for nearby distances and a short fake-smooth jump for far loaded distances, while anchored/window-switch returns use deterministic positioning;
+- once an anchored range has loaded all newer messages and the user reaches the live bottom, the chat exits anchored mode and the down control disappears instead of staying stuck on screen;
+- reply target navigation uses deterministic container-relative centering: already loaded targets use native smooth for nearby distances and a short fake-smooth jump for far loaded distances, while newly loaded context targets switch ranges and position instantly with highlight to avoid scroll-animation races;
 - anchored history renders the same chat start/welcome state when older history reaches the beginning;
 - automatic bottom scrolling and forced scroll-to-bottom events are disabled while anchored so target scroll/highlight cannot race the latest-mode auto-scroll timers;
 - while anchored, normal latest read/near-bottom state is treated as not at latest so new messages do not force-scroll or get marked read as visible latest messages;

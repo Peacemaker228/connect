@@ -6,7 +6,7 @@ import {
   getChatMessagesRealtimeKey,
   getChatMessagesUpdateRealtimeKey,
 } from '@app-core/contracts/message-slice-realtime'
-import { ElementRef, FC, Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ElementRef, FC, Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { TChannelConversation } from '@/types'
 import { ArrowDown, Loader2, ServerCrash } from 'lucide-react'
 import { ChatItem, ChatWelcome } from '@/lib/chat/features/index'
@@ -45,21 +45,38 @@ type AnchoredHistoryState = {
 }
 
 type ReplyTargetScrollOptions = {
-  fakeSmooth?: boolean
   preferSmooth?: boolean
+}
+
+type PendingReplyTargetScroll = {
+  messageId: string
+  options: ReplyTargetScrollOptions
+}
+
+type PendingPrependScroll = {
+  previousScrollHeight: number
+  previousScrollTop: number
 }
 
 const REPLY_NAVIGATION_HIGHLIGHT_MS = 1800
 const LOCAL_SMOOTH_SCROLL_DISTANCE_MULTIPLIER = 3
 const HISTORY_LOAD_MORE_THRESHOLD_PX = 480
 const VIEWPORT_AUTO_FILL_MULTIPLIER = 1.35
-const FAKE_SMOOTH_SCROLL_OFFSET_MULTIPLIER = 0.55
+const PROGRAMMATIC_SCROLL_BOUNDARY_SUPPRESSION_MS = 1200
+const FAKE_SMOOTH_SCROLL_OFFSET_MULTIPLIER = 0.75
 
 const getTimestampValue = (value: Date | string) => new Date(value).getTime()
 
-const getMessageSortValue = (message: MessageWithMemberWithProfile) => getTimestampValue(message.createdAt)
+const compareMessagesByAscendingTime = (
+  leftMessage: MessageWithMemberWithProfile,
+  rightMessage: MessageWithMemberWithProfile,
+) => {
+  const timestampDiff = getTimestampValue(leftMessage.createdAt) - getTimestampValue(rightMessage.createdAt)
 
-const mergeChatMessagesByDescendingTime = (
+  return timestampDiff || leftMessage.id.localeCompare(rightMessage.id)
+}
+
+const mergeChatMessagesByAscendingTime = (
   currentMessages: MessageWithMemberWithProfile[],
   nextMessages: MessageWithMemberWithProfile[],
 ) => {
@@ -74,11 +91,7 @@ const mergeChatMessagesByDescendingTime = (
       seenMessageIds.add(message.id)
       return true
     })
-    .sort((leftMessage, rightMessage) => {
-      const timestampDiff = getMessageSortValue(rightMessage) - getMessageSortValue(leftMessage)
-
-      return timestampDiff || rightMessage.id.localeCompare(leftMessage.id)
-    })
+    .sort(compareMessagesByAscendingTime)
 }
 
 const NewMessagesDivider = () => (
@@ -124,6 +137,9 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const messageElementByIdRef = useRef(new Map<string, HTMLDivElement>())
   const anchoredHistoryLoadingDirectionRef = useRef<ChatHistoryDirection | null>(null)
   const olderHistoryLoadInFlightRef = useRef(false)
+  const pendingPrependScrollRef = useRef<PendingPrependScroll | null>(null)
+  const pendingReplyTargetScrollRef = useRef<PendingReplyTargetScroll | null>(null)
+  const suppressBoundaryLoadUntilRef = useRef(0)
   const viewportFillInFlightRef = useRef(false)
   const replyNavigationHighlightTimeoutRef = useRef<number | null>(null)
   const pendingReplyTargetContextIdRef = useRef<string | null>(null)
@@ -220,12 +236,17 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     const distance = Math.abs(nextScrollTop - container.scrollTop)
     const canUseNativeSmooth =
       options.preferSmooth && distance <= container.clientHeight * LOCAL_SMOOTH_SCROLL_DISTANCE_MULTIPLIER
+    const canUseFakeSmooth = options.preferSmooth && !canUseNativeSmooth && maxScrollTop > 0
 
-    if (options.fakeSmooth && !canUseNativeSmooth && maxScrollTop > 0) {
+    if (canUseNativeSmooth || canUseFakeSmooth) {
+      suppressBoundaryLoadUntilRef.current = Date.now() + PROGRAMMATIC_SCROLL_BOUNDARY_SUPPRESSION_MS
+    }
+
+    if (canUseFakeSmooth) {
       const direction = nextScrollTop >= container.scrollTop ? -1 : 1
       const fakeOffset = Math.min(
         container.clientHeight * FAKE_SMOOTH_SCROLL_OFFSET_MULTIPLIER,
-        Math.max(distance, container.clientHeight * 0.35),
+        Math.max(distance, container.clientHeight * 0.4),
       )
       const fakeStartTop = Math.max(0, Math.min(nextScrollTop + direction * fakeOffset, maxScrollTop))
 
@@ -233,7 +254,6 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         top: fakeStartTop,
         behavior: 'auto',
       })
-
       window.requestAnimationFrame(() => {
         container.scrollTo({
           top: nextScrollTop,
@@ -262,34 +282,48 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     return true
   }, [])
 
+  const applyPendingReplyTargetScroll = useCallback(() => {
+    const pendingScroll = pendingReplyTargetScrollRef.current
+
+    if (!pendingScroll) {
+      return false
+    }
+
+    if (!scrollToLoadedReplyTarget(pendingScroll.messageId, pendingScroll.options)) {
+      return false
+    }
+
+    pendingReplyTargetScrollRef.current = null
+
+    window.setTimeout(() => {
+      scrollToLoadedReplyTarget(pendingScroll.messageId, { preferSmooth: false })
+    }, 120)
+
+    return true
+  }, [scrollToLoadedReplyTarget])
+
   const scheduleReplyTargetScroll = useCallback(
     (messageId: string, options: ReplyTargetScrollOptions = {}) => {
-      const tryScrollToTarget = () => scrollToLoadedReplyTarget(messageId, options)
+      pendingReplyTargetScrollRef.current = { messageId, options }
 
       window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => {
-          if (tryScrollToTarget()) {
-            window.setTimeout(() => {
-              tryScrollToTarget()
-            }, 120)
+          if (applyPendingReplyTargetScroll()) {
+            return
           }
 
           window.setTimeout(() => {
-            if (tryScrollToTarget()) {
-              window.setTimeout(() => {
-                tryScrollToTarget()
-              }, 120)
-            }
+            applyPendingReplyTargetScroll()
           }, 50)
         })
       })
     },
-    [scrollToLoadedReplyTarget],
+    [applyPendingReplyTargetScroll],
   )
 
   const navigateToReplyTarget = useCallback(
     async (messageId: string) => {
-      if (scrollToLoadedReplyTarget(messageId, { fakeSmooth: true, preferSmooth: true })) {
+      if (scrollToLoadedReplyTarget(messageId, { preferSmooth: true })) {
         return
       }
 
@@ -307,12 +341,12 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         })
 
         setAnchoredHistory({
-          items: contextPage.items,
+          items: mergeChatMessagesByAscendingTime([], contextPage.items),
           newerCursor: contextPage.newerCursor ?? null,
           olderCursor: contextPage.olderCursor ?? null,
           targetMessageId: messageId,
         })
-        scheduleReplyTargetScroll(messageId, { fakeSmooth: true, preferSmooth: false })
+        scheduleReplyTargetScroll(messageId, { preferSmooth: false })
       } catch {
         // Failing to load a reply target context must not move the user to the wrong message.
       } finally {
@@ -348,7 +382,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
 
           return {
             ...currentHistory,
-            items: mergeChatMessagesByDescendingTime(currentHistory.items, contextPage.items),
+            items: mergeChatMessagesByAscendingTime(currentHistory.items, contextPage.items),
             newerCursor: direction === 'newer' ? (contextPage.newerCursor ?? null) : currentHistory.newerCursor,
             olderCursor: direction === 'older' ? (contextPage.olderCursor ?? null) : currentHistory.olderCursor,
           }
@@ -373,35 +407,31 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
       const previousScrollHeight = container?.scrollHeight ?? 0
       const previousScrollTop = container?.scrollTop ?? 0
 
+      pendingPrependScrollRef.current = {
+        previousScrollHeight,
+        previousScrollTop,
+      }
       olderHistoryLoadInFlightRef.current = true
 
       try {
         await loadMessages()
       } finally {
-        window.requestAnimationFrame(() => {
-          window.requestAnimationFrame(() => {
-            const nextContainer = chatRef.current
-
-            if (!nextContainer) {
-              olderHistoryLoadInFlightRef.current = false
-              return
-            }
-
-            const scrollHeightDelta = nextContainer.scrollHeight - previousScrollHeight
-
-            if (scrollHeightDelta > 0) {
-              nextContainer.scrollTop = previousScrollTop + scrollHeightDelta
-            }
-
+        window.setTimeout(() => {
+          if (pendingPrependScrollRef.current?.previousScrollHeight === previousScrollHeight) {
+            pendingPrependScrollRef.current = null
             olderHistoryLoadInFlightRef.current = false
-          })
-        })
+          }
+        }, 120)
       }
     },
     [],
   )
 
   const loadOlderMessages = useCallback(async (options: { preserveViewport?: boolean } = {}) => {
+    if (Date.now() < suppressBoundaryLoadUntilRef.current) {
+      return
+    }
+
     const loadMessages = () => {
       if (anchoredHistory) {
         return loadAnchoredHistoryMessages('older')
@@ -419,10 +449,13 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   }, [anchoredHistory, fetchNextPage, loadAnchoredHistoryMessages, loadOlderMessagesPreservingViewport])
 
   const jumpToLatestMessages = useCallback(() => {
-    const wasAnchored = Boolean(anchoredHistory)
-    anchoredHistoryLoadingDirectionRef.current = null
-    setAnchoredHistory(null)
-    setAnchoredHistoryLoadingDirection(null)
+    const shouldExitAnchoredWindow = Boolean(anchoredHistory?.newerCursor)
+
+    if (shouldExitAnchoredWindow) {
+      anchoredHistoryLoadingDirectionRef.current = null
+      setAnchoredHistory(null)
+      setAnchoredHistoryLoadingDirection(null)
+    }
     setReplyNavigationHighlightedMessageId(null)
 
     window.requestAnimationFrame(() => {
@@ -435,31 +468,38 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
       const maxScrollTop = Math.max(container.scrollHeight - container.clientHeight, 0)
       const distance = Math.abs(maxScrollTop - container.scrollTop)
       const canUseNativeSmooth =
-        !wasAnchored && distance <= container.clientHeight * LOCAL_SMOOTH_SCROLL_DISTANCE_MULTIPLIER
+        !shouldExitAnchoredWindow && distance <= container.clientHeight * LOCAL_SMOOTH_SCROLL_DISTANCE_MULTIPLIER
+      const canUseFakeSmooth = !shouldExitAnchoredWindow && !canUseNativeSmooth && maxScrollTop > 0
 
-      if (canUseNativeSmooth) {
+      if (canUseNativeSmooth || canUseFakeSmooth) {
+        suppressBoundaryLoadUntilRef.current = Date.now() + PROGRAMMATIC_SCROLL_BOUNDARY_SUPPRESSION_MS
+      }
+
+      if (canUseFakeSmooth) {
+        const fakeOffset = Math.min(container.clientHeight * FAKE_SMOOTH_SCROLL_OFFSET_MULTIPLIER, maxScrollTop)
+        const fakeStartTop = Math.max(0, maxScrollTop - fakeOffset)
+
         container.scrollTo({
-          top: container.scrollHeight,
-          behavior: 'smooth',
+          top: fakeStartTop,
+          behavior: 'auto',
         })
-        bottomRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })
+        window.requestAnimationFrame(() => {
+          container.scrollTo({
+            top: maxScrollTop,
+            behavior: 'smooth',
+          })
+          bottomRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })
+        })
         return
       }
 
-      const fakeOffset = Math.min(container.clientHeight * 0.85, maxScrollTop)
-      const fakeStartTop = Math.max(0, maxScrollTop - fakeOffset)
+      const behavior: ScrollBehavior = canUseNativeSmooth ? 'smooth' : 'auto'
 
       container.scrollTo({
-        top: fakeStartTop,
-        behavior: 'auto',
+        top: maxScrollTop,
+        behavior,
       })
-      window.requestAnimationFrame(() => {
-        container.scrollTo({
-          top: container.scrollHeight,
-          behavior: 'smooth',
-        })
-        bottomRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })
-      })
+      bottomRef.current?.scrollIntoView({ block: 'end', behavior })
     })
   }, [anchoredHistory])
 
@@ -554,7 +594,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     }
 
     const handleAnchoredHistoryScroll = () => {
-      if (anchoredHistoryLoadingDirectionRef.current) {
+      if (anchoredHistoryLoadingDirectionRef.current || Date.now() < suppressBoundaryLoadUntilRef.current) {
         return
       }
 
@@ -575,8 +615,11 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
 
   const t = useTranslations('ChannelPage')
   const commonTranslation = useTranslations('Common')
-  const visiblePages = useMemo(
-    () => (anchoredHistory ? [{ items: anchoredHistory.items }] : (data?.pages ?? [])),
+  const visibleMessages = useMemo(
+    () =>
+      anchoredHistory
+        ? anchoredHistory.items
+        : mergeChatMessagesByAscendingTime([], data?.pages?.flatMap((page) => page.items) ?? []),
     [anchoredHistory, data?.pages],
   )
   const canLoadOlderMessages = anchoredHistory ? Boolean(anchoredHistory.olderCursor) : hasNextPage
@@ -584,7 +627,51 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const canLoadNewerAnchoredMessages = Boolean(anchoredHistory?.newerCursor)
   const hasReachedHistoryStart = anchoredHistory ? !anchoredHistory.olderCursor : !hasNextPage
   const isLoadingNewerAnchoredMessages = anchoredHistoryLoadingDirection === 'newer'
-  const shouldShowJumpToLatestControl = Boolean(anchoredHistory) || !isNearBottom
+  const shouldShowJumpToLatestControl = Boolean(anchoredHistory?.newerCursor) || !isNearBottom
+
+  useEffect(() => {
+    if (!anchoredHistory || anchoredHistory.newerCursor || !isNearBottom) {
+      return
+    }
+
+    anchoredHistoryLoadingDirectionRef.current = null
+    setAnchoredHistory(null)
+    setAnchoredHistoryLoadingDirection(null)
+
+    window.requestAnimationFrame(() => {
+      const container = chatRef.current
+
+      if (!container) {
+        return
+      }
+
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'auto',
+      })
+      bottomRef.current?.scrollIntoView({ block: 'end', behavior: 'auto' })
+    })
+  }, [anchoredHistory, bottomRef, isNearBottom])
+
+  useLayoutEffect(() => {
+    const pendingPrependScroll = pendingPrependScrollRef.current
+
+    if (pendingPrependScroll) {
+      const container = chatRef.current
+
+      if (container) {
+        const scrollHeightDelta = container.scrollHeight - pendingPrependScroll.previousScrollHeight
+
+        if (scrollHeightDelta > 0) {
+          container.scrollTop = pendingPrependScroll.previousScrollTop + scrollHeightDelta
+          pendingPrependScrollRef.current = null
+          olderHistoryLoadInFlightRef.current = false
+        }
+      }
+    }
+
+    applyPendingReplyTargetScroll()
+  }, [applyPendingReplyTargetScroll, visibleMessages])
 
   useEffect(() => {
     const container = chatRef.current
@@ -673,7 +760,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     loadAnchoredHistoryMessages,
     loadOlderMessages,
     status,
-    visiblePages,
+    visibleMessages,
   ])
 
   const unreadDividerMessageId = useMemo(() => {
@@ -732,7 +819,6 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
 
   return (
     <div ref={chatRef} className="flex-1 flex flex-col py-4 overflow-y-auto">
-      {hasReachedHistoryStart && <div className="flex-1" />}
       {hasReachedHistoryStart && <ChatWelcome name={name} type={type} />}
       {canLoadOlderMessages && (
         <div className="flex justify-center">
@@ -751,49 +837,45 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
           )}
         </div>
       )}
-      <div className={cn('flex flex-col-reverse', !anchoredHistory && 'mt-auto')}>
-        {visiblePages.map((page, i) => (
-          <Fragment key={i}>
-            {page.items.map((m: MessageWithMemberWithProfile) => (
-              <Fragment key={m.id}>
-                <ChatItem
-                  fileUrl={m.fileUrl}
-                  messageApiUrl={messageApiUrl}
-                  messageQuery={messageQuery}
-                  currentMember={member}
-                  id={m.id}
-                  member={m.member}
-                  createdAt={m.createdAt}
-                  content={m.content}
-                  mentions={m.mentions}
-                  replyTo={m.replyTo}
-                  replyToDirectMessageId={m.replyToDirectMessageId}
-                  replyToMessageId={m.replyToMessageId}
-                  serverId={serverId}
-                  deleted={m.deleted}
-                  isUpdated={m.updatedAt !== m.createdAt}
-                  isEditing={editingMessageId === m.id}
-                  isReplyNavigationHighlighted={replyNavigationHighlightedMessageId === m.id}
-                  onStartEditing={() => setEditingMessageId(m.id)}
-                  onCancelEditing={() => {
-                    setEditingMessageId((currentEditingMessageId) =>
-                      currentEditingMessageId === m.id ? null : currentEditingMessageId,
-                    )
-                  }}
-                  onFinishEditing={() => {
-                    setEditingMessageId((currentEditingMessageId) =>
-                      currentEditingMessageId === m.id ? null : currentEditingMessageId,
-                    )
-                  }}
-                  onReply={handleReply}
-                  onNavigateToReplyTarget={navigateToReplyTarget}
-                  onRegisterMessageElement={registerMessageElement}
-                  mentionSuggestions={mentionSuggestions}
-                  timestamp={format(new Date(m.createdAt), EDateFormat.MESSAGE_ITEM)}
-                />
-                {unreadDividerMessageId === m.id && <NewMessagesDivider />}
-              </Fragment>
-            ))}
+      <div className={cn('flex flex-col', !anchoredHistory && 'mt-auto')}>
+        {visibleMessages.map((m: MessageWithMemberWithProfile) => (
+          <Fragment key={m.id}>
+            {unreadDividerMessageId === m.id && <NewMessagesDivider />}
+            <ChatItem
+              fileUrl={m.fileUrl}
+              messageApiUrl={messageApiUrl}
+              messageQuery={messageQuery}
+              currentMember={member}
+              id={m.id}
+              member={m.member}
+              createdAt={m.createdAt}
+              content={m.content}
+              mentions={m.mentions}
+              replyTo={m.replyTo}
+              replyToDirectMessageId={m.replyToDirectMessageId}
+              replyToMessageId={m.replyToMessageId}
+              serverId={serverId}
+              deleted={m.deleted}
+              isUpdated={m.updatedAt !== m.createdAt}
+              isEditing={editingMessageId === m.id}
+              isReplyNavigationHighlighted={replyNavigationHighlightedMessageId === m.id}
+              onStartEditing={() => setEditingMessageId(m.id)}
+              onCancelEditing={() => {
+                setEditingMessageId((currentEditingMessageId) =>
+                  currentEditingMessageId === m.id ? null : currentEditingMessageId,
+                )
+              }}
+              onFinishEditing={() => {
+                setEditingMessageId((currentEditingMessageId) =>
+                  currentEditingMessageId === m.id ? null : currentEditingMessageId,
+                )
+              }}
+              onReply={handleReply}
+              onNavigateToReplyTarget={navigateToReplyTarget}
+              onRegisterMessageElement={registerMessageElement}
+              mentionSuggestions={mentionSuggestions}
+              timestamp={format(new Date(m.createdAt), EDateFormat.MESSAGE_ITEM)}
+            />
           </Fragment>
         ))}
       </div>
