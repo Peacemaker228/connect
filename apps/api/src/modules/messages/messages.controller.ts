@@ -41,8 +41,9 @@ export class MessagesController {
     @CurrentProfileId() profileId: string,
     @Query('channelId') channelId: string | undefined,
     @Query('cursor') cursor: string | undefined,
+    @Query('limit') limit: string | undefined,
   ) {
-    return this.messagesService.getMessages(profileId, channelId, cursor)
+    return this.messagesService.getMessages(profileId, channelId, cursor, limit)
   }
 
   @Get(':messageId/context')

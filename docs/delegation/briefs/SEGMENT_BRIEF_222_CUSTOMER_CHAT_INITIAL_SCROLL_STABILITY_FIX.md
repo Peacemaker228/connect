@@ -19,6 +19,9 @@ Expected behavior:
 - mark-read, active-chat read boundary, jump-to-latest visibility, viewport auto-fill, and latest-mode auto-scroll must not race the initial positioning.
 
 Implemented:
+- added a bounded `limit` query parameter to channel and direct message list endpoints, with server-side clamping;
+- the chat client now sends a viewport-estimated initial page size instead of always starting from a tiny fixed latest page;
+- server-entry prefetch uses a larger bounded message limit so cached navigation does not seed an underfilled chat window;
 - added an explicit initial-scroll settled state in `ChatMessages`;
 - disabled latest-mode auto-scroll, boundary load-more, viewport auto-fill, active read-state publication, and mark-read until initial positioning is complete;
 - bounded initial unread context loading to avoid infinite older-page fetches;
@@ -30,7 +33,7 @@ Implemented:
 - changed latest viewport auto-fill to preserve viewport position when older rows are prepended.
 
 Out of scope:
-- no backend/API/SDK/DB changes;
+- no DB/schema/migration changes;
 - no reply navigation model changes;
 - no virtualization;
 - no link preview work;
@@ -39,6 +42,7 @@ Out of scope:
 Manual smoke required:
 - production/staging chat with no unread and long history opens at latest bottom;
 - short-message histories load enough initial rows to avoid a large empty top gap when older pages still exist;
+- first chat message request should include a viewport-sized `limit`, not a tiny fixed page followed by visible catch-up;
 - the scrollbar should not visibly run through intermediate top/bottom states during initial fill;
 - real content should appear directly at the final initial position, without a visible smooth-scroll from older rows to bottom;
 - production/staging chat with unread opens around the first unread and shows `New`;

@@ -1102,6 +1102,8 @@ Reason:
 
 Delivered:
 - `ChatMessages` now has a single initial-scroll owner before normal read/scroll side effects are enabled;
+- channel/direct message list endpoints now accept a bounded `limit` parameter, and the chat client uses a viewport-estimated initial limit so desktop panes do not start from an underfilled fixed page;
+- server-entry chat prefetch uses a larger bounded message limit to avoid seeding low-count cached pages before navigation;
 - unread chats can perform bounded older-page loading before settling on the first loaded unread non-own message;
 - chats without unread settle at latest bottom;
 - initial latest windows also load bounded older pages when rendered rows are shorter than the viewport, avoiding a large empty top gap while older history still exists;

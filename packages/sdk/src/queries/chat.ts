@@ -23,6 +23,7 @@ export type ChatReplyTargetContextParams = {
 export type ChatQueryParams = {
   queryKey: string
   apiUrl: string
+  initialLimit?: number
   paramKey: 'channelId' | 'conversationId'
   paramValue: string
   isConnected: boolean
@@ -32,6 +33,7 @@ const createChatQueryPath = (
   apiUrl: string,
   params: {
     cursor?: string
+    limit?: number
     paramKey: ChatQueryParams['paramKey']
     paramValue: string
   },
@@ -39,6 +41,10 @@ const createChatQueryPath = (
   const searchParams = new URLSearchParams({
     [params.paramKey]: params.paramValue,
   })
+
+  if (params.limit) {
+    searchParams.set('limit', String(params.limit))
+  }
 
   if (params.cursor) {
     searchParams.set('cursor', params.cursor)
@@ -52,17 +58,20 @@ export const getChatQueryKey = (queryKey: string) => [queryKey] as const
 export const fetchChatMessagesPage = async ({
   apiUrl,
   cursor,
+  limit,
   paramKey,
   paramValue,
 }: {
   apiUrl: string
   cursor?: string
+  limit?: number
   paramKey: ChatQueryParams['paramKey']
   paramValue: string
 }) => {
   const response = await privateApiInstance.get<ChatMessagesPage>(
     createChatQueryPath(apiUrl, {
       cursor,
+      limit,
       paramKey,
       paramValue,
     }),
@@ -90,7 +99,7 @@ export const fetchChatReplyTargetContext = async ({
   return response.data
 }
 
-export const useChatQuery = ({ queryKey, paramKey, paramValue, apiUrl, isConnected }: ChatQueryParams) => {
+export const useChatQuery = ({ queryKey, paramKey, paramValue, apiUrl, initialLimit, isConnected }: ChatQueryParams) => {
   const { data, fetchNextPage, hasNextPage, status, isFetchingNextPage } = useInfiniteQuery({
     initialPageParam: undefined as string | undefined,
     queryKey: getChatQueryKey(queryKey),
@@ -98,6 +107,7 @@ export const useChatQuery = ({ queryKey, paramKey, paramValue, apiUrl, isConnect
       fetchChatMessagesPage({
         apiUrl,
         cursor: pageParam,
+        limit: initialLimit,
         paramKey,
         paramValue,
       }),

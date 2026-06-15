@@ -64,10 +64,32 @@ const LOCAL_SMOOTH_SCROLL_DISTANCE_MULTIPLIER = 3
 const HISTORY_LOAD_MORE_THRESHOLD_PX = 480
 const VIEWPORT_AUTO_FILL_MULTIPLIER = 1.35
 const INITIAL_VIEWPORT_FILL_MULTIPLIER = 1.25
+const INITIAL_MESSAGE_LIMIT_MIN = 28
+const INITIAL_MESSAGE_LIMIT_MAX = 64
+const INITIAL_MESSAGE_ESTIMATED_ROW_HEIGHT_PX = 72
+const INITIAL_MESSAGE_VIEWPORT_RESERVED_HEIGHT_PX = 180
+const INITIAL_MESSAGE_VIEWPORT_FILL_MULTIPLIER = 2.2
 const PROGRAMMATIC_SCROLL_BOUNDARY_SUPPRESSION_MS = 1200
 const FAKE_SMOOTH_SCROLL_OFFSET_MULTIPLIER = 0.75
 const INITIAL_UNREAD_CONTEXT_PAGE_LIMIT = 8
 const INITIAL_SCROLL_BOUNDARY_SUPPRESSION_MS = 900
+
+const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(value, max))
+
+const getInitialMessageLimit = () => {
+  if (typeof window === 'undefined') {
+    return INITIAL_MESSAGE_LIMIT_MIN
+  }
+
+  const estimatedViewportHeight = Math.max(window.innerHeight - INITIAL_MESSAGE_VIEWPORT_RESERVED_HEIGHT_PX, 360)
+  const estimatedVisibleRows = Math.ceil(estimatedViewportHeight / INITIAL_MESSAGE_ESTIMATED_ROW_HEIGHT_PX)
+
+  return clamp(
+    Math.ceil(estimatedVisibleRows * INITIAL_MESSAGE_VIEWPORT_FILL_MULTIPLIER),
+    INITIAL_MESSAGE_LIMIT_MIN,
+    INITIAL_MESSAGE_LIMIT_MAX,
+  )
+}
 
 const getTimestampValue = (value: Date | string) => new Date(value).getTime()
 
@@ -212,10 +234,12 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
   const [replyNavigationHighlightedMessageId, setReplyNavigationHighlightedMessageId] = useState<string | null>(null)
   const { setReplyTo } = useChatReply()
+  const initialMessageLimit = getInitialMessageLimit()
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useChatQuery({
     queryKey,
     apiUrl: messageApiUrl,
+    initialLimit: initialMessageLimit,
     paramKey,
     paramValue,
   })

@@ -6,11 +6,12 @@ import {
 
 type IChatQuery = Omit<ChatQueryParams, 'isConnected'>
 
-export const useChatQuery = ({ queryKey, paramKey, paramValue, apiUrl }: IChatQuery) => {
+export const useChatQuery = ({ queryKey, initialLimit, paramKey, paramValue, apiUrl }: IChatQuery) => {
   const { isConnected } = useSocket()
 
   return useBackendAwareChatQuery({
     queryKey,
+    initialLimit,
     paramKey,
     paramValue,
     apiUrl,
