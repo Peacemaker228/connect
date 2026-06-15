@@ -217,6 +217,11 @@ Problem:
 - pasted URLs are not clearly rendered as clickable links.
 - users expect shared links to be easy to open and, when possible, to show a useful preview.
 
+Current priority decision:
+- basic safe link rendering is already implemented;
+- backend-owned link previews/unfurl are deferred to the last customer-priority slot;
+- do not start link preview work until the desktop staging/release validation pass is complete and the current chat/reply/file work has settled on staging.
+
 Required behavior:
 - URLs in messages render as clickable links;
 - links open safely in a new browser tab/window or desktop-safe external browser flow;
@@ -416,6 +421,24 @@ Minimum desktop checks for relevant features:
 - multiline input works;
 - mentions UI works;
 - media route/fallback UI does not break desktop shell.
+
+### Desktop Staging Release Gate
+
+Current decision:
+- before starting link previews or other lower-priority product polish, run a global desktop pass for the current customer-priority chat stack;
+- produce a staging-oriented desktop build/release candidate and verify it against the same staging backend/data path used by active users, without resetting staging data;
+- inspect the desktop-specific code paths before claiming pass, especially clipboard, external links/downloads, auth/session persistence, realtime/unread behavior, notifications/sound, attachment handling, and reply/mention composer flows;
+- keep this as the next focused track after Segment 221 deploy/smoke.
+
+Required desktop smoke:
+- login/logout/session restore;
+- channel and direct message send;
+- unread badges, sound toggle, per-chat mute, and idle/reconnect sanity;
+- mentions, `@all`, mention picker, edit mention picker, and mention chip navigation;
+- replies, double-click reply, Escape cancel, reply navigation, and jump-to-latest;
+- screenshots via paste, generic file attachments up to the MVP limit, downloads/opening files, and message copy;
+- clickable links opening through the desktop-safe external navigation path;
+- light/dark theme and basic window resize/narrow-width checks.
 
 ## Deferred WebRTC Resume Brief
 
@@ -1060,7 +1083,9 @@ Delivered:
 - metadata-backed reply preview mentions, click/keyboard navigation, anchored history navigation, unread/reply attention behavior, and backend/API/SDK/DB/realtime/auth/storage/media remain unchanged.
 
 Next after Segment 221:
-- run visual smoke for channel/DM reply previews, deleted-original fallback, loaded/unloaded target navigation highlight, composer reply bar, Escape cancel, double-click empty-area reply, double-click ignored controls/text, jump-arrow size, and light/dark theme contrast.
+- deploy and smoke Segment 221 on staging;
+- start the desktop staging release validation track before new lower-priority features;
+- keep backend-owned link previews/unfurl as the last customer-priority product slot, after desktop validation and higher-priority stability work.
 
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 
