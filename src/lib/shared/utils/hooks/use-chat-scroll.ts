@@ -5,7 +5,6 @@ interface IUseChatScroll {
   autoScrollEnabled?: boolean
   chatId: string
   chatRef: RefObject<HTMLDivElement>
-  bottomRef: RefObject<HTMLDivElement>
   shouldLoadMore: boolean
   loadMore: () => Promise<void> | void
   loadMoreThreshold?: number
@@ -17,7 +16,6 @@ export const useChatScroll = ({
   autoScrollEnabled = true,
   chatId,
   chatRef,
-  bottomRef,
   shouldLoadMore,
   loadMore,
   loadMoreThreshold = 240,
@@ -52,9 +50,8 @@ export const useChatScroll = ({
       top: container.scrollHeight,
       behavior,
     })
-    bottomRef.current?.scrollIntoView({ block: 'end', behavior })
     updateNearBottomState(true)
-  }, [bottomRef, chatRef, updateNearBottomState])
+  }, [chatRef, updateNearBottomState])
 
   const scheduleScrollToBottom = useCallback(() => {
     requestAnimationFrame(() => scrollToBottom())
@@ -129,7 +126,7 @@ export const useChatScroll = ({
     }
 
     scheduleScrollToBottom()
-  }, [autoScrollEnabled, bottomRef, chatRef, count, hasInitialized, scheduleScrollToBottom])
+  }, [autoScrollEnabled, chatRef, count, hasInitialized, scheduleScrollToBottom])
 
   useEffect(() => {
     const handleForcedScroll = (event: Event) => {

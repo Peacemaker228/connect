@@ -59,6 +59,15 @@ type PendingPrependScroll = {
   previousScrollTop: number
 }
 
+type PendingInitialScrollTarget =
+  | {
+      type: 'bottom'
+    }
+  | {
+      messageId: string
+      type: 'message'
+    }
+
 const REPLY_NAVIGATION_HIGHLIGHT_MS = 1800
 const LOCAL_SMOOTH_SCROLL_DISTANCE_MULTIPLIER = 3
 const HISTORY_LOAD_MORE_THRESHOLD_PX = 480
@@ -209,13 +218,13 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const updateKey = getChatMessagesUpdateRealtimeKey(chatId)
 
   const chatRef = useRef<ElementRef<'div'>>(null)
-  const bottomRef = useRef<ElementRef<'div'>>(null)
   const messageListRef = useRef<ElementRef<'div'>>(null)
   const capturedChatKeyRef = useRef<string | null>(null)
   const messageElementByIdRef = useRef(new Map<string, HTMLDivElement>())
   const anchoredHistoryLoadingDirectionRef = useRef<ChatHistoryDirection | null>(null)
   const olderHistoryLoadInFlightRef = useRef(false)
   const pendingPrependScrollRef = useRef<PendingPrependScroll | null>(null)
+  const pendingInitialScrollTargetRef = useRef<PendingInitialScrollTarget | null>(null)
   const pendingReplyTargetScrollRef = useRef<PendingReplyTargetScroll | null>(null)
   const suppressBoundaryLoadUntilRef = useRef(0)
   const viewportFillInFlightRef = useRef(false)
@@ -224,6 +233,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const initialUnreadLoadAttemptsRef = useRef(0)
   const initialScrollRevealFrameRef = useRef<number | null>(null)
   const initialScrollFallbackTimeoutRef = useRef<number | null>(null)
+  const warmInitialChatKeyRef = useRef<string | null>(null)
   const [unreadAnchor, setUnreadAnchor] = useState<UnreadAnchor | null>(null)
   const [anchoredHistory, setAnchoredHistory] = useState<AnchoredHistoryState | null>(null)
   const [anchoredHistoryLoadingDirection, setAnchoredHistoryLoadingDirection] = useState<ChatHistoryDirection | null>(
@@ -236,7 +246,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const { setReplyTo } = useChatReply()
   const initialMessageLimit = getInitialMessageLimit()
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = useChatQuery({
+  const { data, fetchNextPage, hasNextPage, isFetchedAfterMount, isFetchingNextPage, status } = useChatQuery({
     queryKey,
     apiUrl: messageApiUrl,
     initialLimit: initialMessageLimit,
@@ -292,6 +302,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     suppressBoundaryLoadUntilRef.current = 0
     viewportFillInFlightRef.current = false
     pendingPrependScrollRef.current = null
+    pendingInitialScrollTargetRef.current = null
     pendingReplyTargetScrollRef.current = null
     setAnchoredHistory(null)
     setAnchoredHistoryLoadingDirection(null)
@@ -619,7 +630,6 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
             top: maxScrollTop,
             behavior: 'smooth',
           })
-          bottomRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })
         })
         return
       }
@@ -630,7 +640,6 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         top: maxScrollTop,
         behavior,
       })
-      bottomRef.current?.scrollIntoView({ block: 'end', behavior })
     })
   }, [anchoredHistory])
 
@@ -670,6 +679,15 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         : mergeChatMessagesByAscendingTime([], data?.pages?.flatMap((page) => page.items) ?? []),
     [anchoredHistory, data?.pages],
   )
+  const hasWarmInitialChatDataNow =
+    !anchoredHistory && status === 'success' && visibleMessages.length > 0 && !isFetchedAfterMount
+
+  if (hasWarmInitialChatDataNow) {
+    warmInitialChatKeyRef.current = chatReadKey
+  }
+
+  const shouldBypassInitialSkeleton =
+    warmInitialChatKeyRef.current === chatReadKey && status === 'success' && visibleMessages.length > 0
   const loadedUnreadMessages = useMemo(() => {
     if (!currentUnreadItem || currentUnreadItem.unreadCount <= 0) {
       return []
@@ -693,7 +711,6 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     autoScrollEnabled: !isAnchoredHistoryMode && isInitialScrollSettled,
     chatId,
     chatRef,
-    bottomRef,
     loadMore: loadOlderMessages,
     loadMoreThreshold: HISTORY_LOAD_MORE_THRESHOLD_PX,
     shouldLoadMore:
@@ -780,7 +797,8 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const canLoadNewerAnchoredMessages = Boolean(anchoredHistory?.newerCursor)
   const hasReachedHistoryStart = anchoredHistory ? !anchoredHistory.olderCursor : !hasNextPage
   const isLoadingNewerAnchoredMessages = anchoredHistoryLoadingDirection === 'newer'
-  const shouldShowInitialScrollSkeleton = !isInitialScrollSettled && !isAnchoredHistoryMode
+  const shouldShowInitialScrollSkeleton =
+    !isInitialScrollSettled && !isAnchoredHistoryMode && !shouldBypassInitialSkeleton
   const shouldShowJumpToLatestControl =
     isInitialScrollSettled && (Boolean(anchoredHistory?.newerCursor) || !isNearBottom)
 
@@ -808,8 +826,16 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
       isInitialScrollSettled ||
       isAnchoredHistoryMode ||
       status !== 'success' ||
-      unreadSummaryStatus === 'pending'
+      (unreadSummaryStatus === 'pending' && !shouldBypassInitialSkeleton)
     ) {
+      return
+    }
+
+    if (unreadSummaryStatus === 'pending' && shouldBypassInitialSkeleton) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'auto',
+      })
       return
     }
 
@@ -837,12 +863,19 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     suppressBoundaryLoadUntilRef.current = Date.now() + INITIAL_SCROLL_BOUNDARY_SUPPRESSION_MS
 
     if (hasUnreadTarget && loadedUnreadMessages[0]) {
+      pendingInitialScrollTargetRef.current = {
+        messageId: loadedUnreadMessages[0].id,
+        type: 'message',
+      }
       setUnreadAnchor({
         chatKey: chatReadKey,
         lastReadAt: currentUnreadItem!.lastReadAt,
       })
       scrollMessageToCenter(loadedUnreadMessages[0].id, 'auto')
     } else {
+      pendingInitialScrollTargetRef.current = {
+        type: 'bottom',
+      }
       setUnreadAnchor(null)
       container.scrollTo({
         top: container.scrollHeight,
@@ -863,6 +896,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     loadedUnreadMessages,
     revealInitialScroll,
     scrollMessageToCenter,
+    shouldBypassInitialSkeleton,
     status,
     unreadSummaryStatus,
   ])
@@ -896,6 +930,46 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   }, [chatReadKey, revealInitialScroll, shouldShowInitialScrollSkeleton])
 
   useEffect(() => {
+    if (!isInitialScrollSettled) {
+      return
+    }
+
+    const timeoutIds: number[] = []
+    const frameId = window.requestAnimationFrame(() => {
+      const correctInitialTarget = () => {
+        const container = chatRef.current
+        const pendingTarget = pendingInitialScrollTargetRef.current
+
+        if (!container || !pendingTarget) {
+          return
+        }
+
+        if (pendingTarget.type === 'bottom') {
+          container.scrollTo({
+            top: container.scrollHeight,
+            behavior: 'auto',
+          })
+          return
+        }
+
+        scrollMessageToCenter(pendingTarget.messageId, 'auto')
+      }
+
+      correctInitialTarget()
+      timeoutIds.push(window.setTimeout(correctInitialTarget, 120))
+      timeoutIds.push(window.setTimeout(() => {
+        correctInitialTarget()
+        pendingInitialScrollTargetRef.current = null
+      }, 900))
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+      timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId))
+    }
+  }, [isInitialScrollSettled, scrollMessageToCenter, visibleMessages.length])
+
+  useEffect(() => {
     if (!anchoredHistory || anchoredHistory.newerCursor || !isNearBottom) {
       return
     }
@@ -915,9 +989,8 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         top: container.scrollHeight,
         behavior: 'auto',
       })
-      bottomRef.current?.scrollIntoView({ block: 'end', behavior: 'auto' })
     })
-  }, [anchoredHistory, bottomRef, isNearBottom])
+  }, [anchoredHistory, isNearBottom])
 
   useLayoutEffect(() => {
     const pendingPrependScroll = pendingPrependScrollRef.current
@@ -1083,8 +1156,6 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
       </div>
     )
   }
-  console.log(shouldShowInitialScrollSkeleton)
-
   return (
     <div className="relative min-h-0 flex-1">
       {shouldShowInitialScrollSkeleton && <ChatInitialScrollSkeleton />}
@@ -1180,7 +1251,6 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
             <ArrowDown className="h-4 w-4" />
           </Button>
         )}
-        <div ref={bottomRef} />
       </div>
     </div>
   )

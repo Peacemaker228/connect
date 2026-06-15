@@ -28,6 +28,7 @@ Implemented:
 - bounded viewport-aware initial loading so short-message histories do not leave a large empty top gap while older pages still exist;
 - added a shared shadcn-style `Skeleton` component and a chat initial skeleton layer that approximates text, image, and file message rows while the real list remains mounted for measurement;
 - initial placement uses instant container `scrollTop` positioning and reveals real content on the next animation frame, avoiding a visible "upper messages then smooth-scroll down" transition;
+- repeat navigation to a chat with valid React Query cache now follows stale-while-revalidate behavior: cached messages are shown immediately instead of being hidden behind the cold-load skeleton, while unread/read side effects still wait for normal initial positioning and unread summary reconciliation;
 - set the `New` divider anchor from the same initial unread decision;
 - updated `useChatScroll` so re-enabling auto-scroll after a deliberate disabled phase does not perform a surprise first auto-scroll to bottom;
 - changed latest viewport auto-fill to preserve viewport position when older rows are prepended.
@@ -45,6 +46,7 @@ Manual smoke required:
 - first chat message request should include a viewport-sized `limit`, not a tiny fixed page followed by visible catch-up;
 - the scrollbar should not visibly run through intermediate top/bottom states during initial fill;
 - real content should appear directly at the final initial position, without a visible smooth-scroll from older rows to bottom;
+- repeat channel/DM navigation with cached messages should show cached content immediately and reconcile in the background, not get stuck on the initial skeleton;
 - production/staging chat with unread opens around the first unread and shows `New`;
 - opening a chat no longer visibly jumps bottom -> top -> middle;
 - older-history auto-fill does not move the user away from the selected initial target;
