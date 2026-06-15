@@ -2,21 +2,25 @@ import { RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { CHAT_SCROLL_TO_BOTTOM_EVENT } from '@/lib/shared/utils/chat-events'
 
 interface IUseChatScroll {
+  autoScrollEnabled?: boolean
   chatId: string
   chatRef: RefObject<HTMLDivElement>
   bottomRef: RefObject<HTMLDivElement>
   shouldLoadMore: boolean
-  loadMore: () => void
+  loadMore: () => Promise<void> | void
+  loadMoreThreshold?: number
   count: number
   onNearBottomChange?: (isNearBottom: boolean) => void
 }
 
 export const useChatScroll = ({
+  autoScrollEnabled = true,
   chatId,
   chatRef,
   bottomRef,
   shouldLoadMore,
   loadMore,
+  loadMoreThreshold = 240,
   count,
   onNearBottomChange,
 }: IUseChatScroll) => {
@@ -77,12 +81,18 @@ export const useChatScroll = ({
     }
 
     const handleScroll = () => {
-      const scrollTop = topDiv?.scrollTop
+      if (!topDiv) {
+        return
+      }
+
+      const scrollTop = topDiv.scrollTop
 
       updateIsNearBottom()
 
-      if (scrollTop === 0 && shouldLoadMore) {
-        loadMore()
+      const effectiveLoadMoreThreshold = Math.max(loadMoreThreshold, topDiv.clientHeight * 0.75)
+
+      if (typeof scrollTop === 'number' && scrollTop <= effectiveLoadMoreThreshold && shouldLoadMore) {
+        void loadMore()
       }
     }
 
@@ -92,10 +102,14 @@ export const useChatScroll = ({
     return () => {
       topDiv?.removeEventListener('scroll', handleScroll)
     }
-  }, [chatRef, loadMore, shouldLoadMore, updateNearBottomState])
+  }, [chatRef, loadMore, loadMoreThreshold, shouldLoadMore, updateNearBottomState])
 
   useEffect(() => {
     const topDiv = chatRef?.current
+
+    if (!autoScrollEnabled) {
+      return
+    }
 
     const shouldAutoScroll = () => {
       if (!hasInitialized) {
@@ -111,11 +125,15 @@ export const useChatScroll = ({
     }
 
     scheduleScrollToBottom()
-  }, [bottomRef, chatRef, count, hasInitialized, scheduleScrollToBottom])
+  }, [autoScrollEnabled, bottomRef, chatRef, count, hasInitialized, scheduleScrollToBottom])
 
   useEffect(() => {
     const handleForcedScroll = (event: Event) => {
       if (!(event instanceof CustomEvent) || event.detail?.chatId !== chatId) {
+        return
+      }
+
+      if (!autoScrollEnabled) {
         return
       }
 
@@ -127,7 +145,7 @@ export const useChatScroll = ({
     return () => {
       window.removeEventListener(CHAT_SCROLL_TO_BOTTOM_EVENT, handleForcedScroll)
     }
-  }, [chatId, scheduleScrollToBottom])
+  }, [autoScrollEnabled, chatId, scheduleScrollToBottom])
 
   return {
     isNearBottom,

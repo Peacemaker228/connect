@@ -23,8 +23,10 @@ type ResolvedMessageMention = {
   memberId: string
 }
 
+type MessageContextDirection = 'newer' | 'older'
+
 const MESSAGE_BATCH_SIZE = 10
-const MESSAGE_CONTEXT_RADIUS = 5
+const MESSAGE_CONTEXT_RADIUS = MESSAGE_BATCH_SIZE
 const MESSAGE_INCLUDE = {
   member: {
     include: {
@@ -106,11 +108,13 @@ export class MessagesService {
     serverId: string | undefined,
     channelId: string | undefined,
     messageId: string | undefined,
+    direction: string | undefined,
   ) {
     const resolvedProfileId = this.requireProfileId(profileId)
     const resolvedServerId = this.requireValue(serverId, 'Server ID Missing')
     const resolvedChannelId = this.requireValue(channelId, 'Channel ID Missing')
     const resolvedMessageId = this.requireValue(messageId, 'Message ID Missing')
+    const contextDirection = this.normalizeContextDirection(direction)
 
     const channel = await this.prisma.channel.findFirst({
       where: {
@@ -143,6 +147,28 @@ export class MessagesService {
 
     if (!targetMessage) {
       throw new HttpException('Message Not Found', HttpStatus.NOT_FOUND)
+    }
+
+    if (contextDirection === 'newer') {
+      const messages = await this.findNewerMessages(resolvedChannelId, targetMessage, MESSAGE_BATCH_SIZE)
+
+      return {
+        items: messages.map((message) => this.toChatMessage(message)),
+        newerCursor: messages.length === MESSAGE_BATCH_SIZE ? messages[0].id : null,
+        olderCursor: null,
+        nextCursor: null,
+      }
+    }
+
+    if (contextDirection === 'older') {
+      const messages = await this.findOlderMessages(resolvedChannelId, targetMessage, MESSAGE_BATCH_SIZE)
+
+      return {
+        items: messages.map((message) => this.toChatMessage(message)),
+        newerCursor: null,
+        olderCursor: messages.length === MESSAGE_BATCH_SIZE ? messages[messages.length - 1].id : null,
+        nextCursor: null,
+      }
     }
 
     const newerMessages = await this.prisma.message.findMany({
@@ -191,6 +217,8 @@ export class MessagesService {
 
     return {
       items: messages.map((message) => this.toChatMessage(message)),
+      newerCursor: newerMessages.length === MESSAGE_CONTEXT_RADIUS ? messages[0].id : null,
+      olderCursor: olderMessages.length === MESSAGE_CONTEXT_RADIUS ? messages[messages.length - 1].id : null,
       nextCursor: null,
     }
   }
@@ -504,6 +532,68 @@ export class MessagesService {
     }
 
     return value
+  }
+
+  private normalizeContextDirection(direction: string | undefined): MessageContextDirection | null {
+    if (!direction) {
+      return null
+    }
+
+    if (direction === 'newer' || direction === 'older') {
+      return direction
+    }
+
+    throw new HttpException('Invalid Context Direction', HttpStatus.BAD_REQUEST)
+  }
+
+  private async findNewerMessages(channelId: string, cursorMessage: MessageWithRelations, take: number) {
+    const messages = await this.prisma.message.findMany({
+      take,
+      where: {
+        channelId,
+        OR: [
+          {
+            createdAt: {
+              gt: cursorMessage.createdAt,
+            },
+          },
+          {
+            createdAt: cursorMessage.createdAt,
+            id: {
+              gt: cursorMessage.id,
+            },
+          },
+        ],
+      },
+      include: MESSAGE_INCLUDE,
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    })
+
+    return messages.reverse()
+  }
+
+  private findOlderMessages(channelId: string, cursorMessage: MessageWithRelations, take: number) {
+    return this.prisma.message.findMany({
+      take,
+      where: {
+        channelId,
+        OR: [
+          {
+            createdAt: {
+              lt: cursorMessage.createdAt,
+            },
+          },
+          {
+            createdAt: cursorMessage.createdAt,
+            id: {
+              lt: cursorMessage.id,
+            },
+          },
+        ],
+      },
+      include: MESSAGE_INCLUDE,
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    })
   }
 
   private resolveMessageMentions(content: string, members: MentionCandidateMember[]): ResolvedMessageMention[] {

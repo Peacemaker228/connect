@@ -7,10 +7,15 @@ export type ChatMessage = ChatMessageDto
 export type ChatMessagesPage = {
   items: ChatMessage[]
   nextCursor?: string | null
+  newerCursor?: string | null
+  olderCursor?: string | null
 }
+
+export type ChatHistoryDirection = 'newer' | 'older'
 
 export type ChatReplyTargetContextParams = {
   apiUrl: string
+  direction?: ChatHistoryDirection
   messageId: string
   query: Record<string, string>
 }
@@ -68,10 +73,16 @@ export const fetchChatMessagesPage = async ({
 
 export const fetchChatReplyTargetContext = async ({
   apiUrl,
+  direction,
   messageId,
   query,
 }: ChatReplyTargetContextParams) => {
   const searchParams = new URLSearchParams(query)
+
+  if (direction) {
+    searchParams.set('direction', direction)
+  }
+
   const response = await privateApiInstance.get<ChatMessagesPage>(
     `${apiUrl}/${messageId}/context?${searchParams.toString()}`,
   )

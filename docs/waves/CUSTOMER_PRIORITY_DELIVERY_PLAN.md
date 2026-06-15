@@ -999,7 +999,7 @@ Brief:
 - `docs/delegation/briefs/SEGMENT_BRIEF_220_CUSTOMER_CHAT_ANCHOR_CONTEXT_HISTORY_NAVIGATION.md`
 
 Status:
-- `planned / ready for runtime implementation`
+- `implemented locally / command verification passed; manual smoke pending`
 
 Decision:
 - Segment 219 is a correct bounded technical step, but its context overlay can create a visible gap between the old reply target context and the current latest-message range;
@@ -1014,6 +1014,23 @@ Expected behavior:
 - realtime while away from latest: do not force-scroll; surface new-message state through existing unread/new-message affordances or the jump control;
 - deleted targets: keep navigation to accessible deleted fallback rows;
 - wrong-chat/inaccessible targets: keep backend rejection and safe no-scroll behavior.
+
+Delivered:
+- context endpoints keep the Segment 219 access checks and now return `olderCursor` / `newerCursor` for anchored history windows;
+- SDK `fetchChatReplyTargetContext()` accepts optional `direction=older|newer` for bounded adjacent reads;
+- normal latest mode keeps the existing infinite-query `nextCursor` path and loaded-target scroll/highlight behavior;
+- unloaded targets enter anchored history mode, replacing the visible range rather than overlaying old context rows onto latest messages;
+- reply target navigation uses deterministic container-relative centering: already loaded targets use native smooth for nearby distances and a short fake-smooth jump for far loaded distances, while newly loaded context jumps switch ranges first and position instantly with highlight;
+- the initial anchored context window uses the normal bounded page size on each side of the target, so desktop reply navigation has enough surrounding rows without loading the entire gap to latest;
+- latest and anchored ranges auto-fill the current viewport with bounded follow-up reads when the first loaded range is too short for the screen height;
+- older/newer history loading triggers near the viewport boundary and preserves position when older rows are prepended, keeping normal latest and anchored history pagination from jumping to the beginning of a newly loaded block;
+- prepended older rows and first unloaded-target positioning use pre-paint scroll correction to avoid a visible intermediate layout jump during DOM range changes;
+- message rows render in natural chronological DOM order (`oldest -> newest`) rather than `flex-col-reverse`, removing the inverted-list behavior that made old-message pagination and anchor correction visually unstable;
+- programmatic loaded-target smooth scrolling suppresses boundary pagination briefly so preloading older rows does not interrupt a reply-preview scroll animation;
+- the sticky down control appears whenever the user is away from the live bottom, returning normal scrolled-up loaded chats to latest with native smooth for nearby distances and a short fake-smooth jump for far loaded distances while exiting anchored history with deterministic positioning;
+- when anchored history has loaded through to the live bottom, reaching bottom exits anchored mode and hides the down control so it cannot remain stuck after the user has already returned to latest;
+- anchored mode supports older and newer adjacent loading, shows the chat start/welcome state when the beginning is reached, disables latest-mode auto-scroll/forced-bottom scrolling while anchored, and keeps realtime update/delete patching for anchored rows/reply previews;
+- virtualization, reply visual redesign, reply attention/unread changes, DB schema/migrations, auth/storage/media/WebRTC, realtime transport hardening, deep links, and thread UI remain out of scope.
 
 Virtualization note:
 - full message-list virtualization is not part of Segment 220;

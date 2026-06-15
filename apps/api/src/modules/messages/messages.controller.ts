@@ -49,10 +49,11 @@ export class MessagesController {
   getMessageContext(
     @CurrentProfileId() profileId: string,
     @Param('messageId') messageId: string,
+    @Query('direction') direction: string | undefined,
     @Query('serverId') serverId: string | undefined,
     @Query('channelId') channelId: string | undefined,
   ) {
-    return this.messagesService.getMessageContext(profileId, serverId, channelId, messageId)
+    return this.messagesService.getMessageContext(profileId, serverId, channelId, messageId, direction)
   }
 
   @Post()

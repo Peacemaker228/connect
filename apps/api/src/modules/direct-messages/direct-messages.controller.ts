@@ -49,9 +49,10 @@ export class DirectMessagesController {
   getMessageContext(
     @CurrentProfileId() profileId: string,
     @Param('directMessageId') directMessageId: string,
+    @Query('direction') direction: string | undefined,
     @Query('conversationId') conversationId: string | undefined,
   ) {
-    return this.directMessagesService.getMessageContext(profileId, conversationId, directMessageId)
+    return this.directMessagesService.getMessageContext(profileId, conversationId, directMessageId, direction)
   }
 
   @Post('conversations/:memberId')
