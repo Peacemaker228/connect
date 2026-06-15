@@ -13,7 +13,7 @@ type DirectMessageMutationBody = {
 type MessageContextDirection = 'newer' | 'older'
 
 const MESSAGE_BATCH_SIZE = 10
-const MESSAGE_CONTEXT_RADIUS = 5
+const MESSAGE_CONTEXT_RADIUS = MESSAGE_BATCH_SIZE
 const DIRECT_MESSAGE_INCLUDE = {
   member: {
     include: {

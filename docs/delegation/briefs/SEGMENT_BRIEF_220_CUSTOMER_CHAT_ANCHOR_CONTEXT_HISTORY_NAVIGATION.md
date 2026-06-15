@@ -222,8 +222,15 @@ Delivered:
 - backend access checks and same channel/conversation validation remain authoritative for initial target context and adjacent cursor reads;
 - loaded reply targets keep the Segment 218 local scroll/highlight fast path with no context request;
 - unloaded reply targets replace the visible range with a target-centered anchored history window instead of rendering a separate overlay island beside latest messages;
+- initial anchored context now uses the same bounded page size as normal chat history on each side of the target, reducing short "island" windows on desktop viewports without loading the whole gap to latest;
 - anchored history can load older adjacent messages from the top and newer adjacent messages from the bottom without loading all history between target and latest;
-- a sticky down control exits anchored history and returns to the latest range/live bottom;
+- older-message loading now triggers near the top boundary instead of only at exact `scrollTop === 0`, and preserves viewport position after prepending older rows so manual/automatic pagination does not jump to the beginning of the newly loaded block;
+- latest and anchored history ranges now auto-fill the viewport with bounded follow-up reads when the first visible range is too short for the current screen height;
+- near-boundary preload uses a viewport-aware threshold, so users can scroll a little before the next older/newer page is needed instead of immediately hitting a manual page break;
+- the anchored range uses a history layout instead of the normal latest `mt-auto` bottom-stick layout, preventing reply-target windows from being pushed into large empty gaps;
+- the sticky down control is visible whenever the user is away from the live bottom: it does not smooth-scroll through the whole history, but switches to the latest range and uses a short fake-smooth movement near the bottom so the transition still feels intentional;
+- reply target navigation uses deterministic container-relative centering: nearby loaded targets use native smooth scrolling, while far/newly loaded targets switch ranges and use a short fake-smooth movement around the target instead of traversing all skipped history;
+- anchored history renders the same chat start/welcome state when older history reaches the beginning;
 - automatic bottom scrolling and forced scroll-to-bottom events are disabled while anchored so target scroll/highlight cannot race the latest-mode auto-scroll timers;
 - while anchored, normal latest read/near-bottom state is treated as not at latest so new messages do not force-scroll or get marked read as visible latest messages;
 - anchored rows and their reply previews are patched by the existing realtime update/delete payload path;

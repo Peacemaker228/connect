@@ -7,7 +7,8 @@ interface IUseChatScroll {
   chatRef: RefObject<HTMLDivElement>
   bottomRef: RefObject<HTMLDivElement>
   shouldLoadMore: boolean
-  loadMore: () => void
+  loadMore: () => Promise<void> | void
+  loadMoreThreshold?: number
   count: number
   onNearBottomChange?: (isNearBottom: boolean) => void
 }
@@ -19,6 +20,7 @@ export const useChatScroll = ({
   bottomRef,
   shouldLoadMore,
   loadMore,
+  loadMoreThreshold = 240,
   count,
   onNearBottomChange,
 }: IUseChatScroll) => {
@@ -79,12 +81,18 @@ export const useChatScroll = ({
     }
 
     const handleScroll = () => {
-      const scrollTop = topDiv?.scrollTop
+      if (!topDiv) {
+        return
+      }
+
+      const scrollTop = topDiv.scrollTop
 
       updateIsNearBottom()
 
-      if (scrollTop === 0 && shouldLoadMore) {
-        loadMore()
+      const effectiveLoadMoreThreshold = Math.max(loadMoreThreshold, topDiv.clientHeight * 0.75)
+
+      if (typeof scrollTop === 'number' && scrollTop <= effectiveLoadMoreThreshold && shouldLoadMore) {
+        void loadMore()
       }
     }
 
@@ -94,7 +102,7 @@ export const useChatScroll = ({
     return () => {
       topDiv?.removeEventListener('scroll', handleScroll)
     }
-  }, [chatRef, loadMore, shouldLoadMore, updateNearBottomState])
+  }, [chatRef, loadMore, loadMoreThreshold, shouldLoadMore, updateNearBottomState])
 
   useEffect(() => {
     const topDiv = chatRef?.current

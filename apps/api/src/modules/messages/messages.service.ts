@@ -26,7 +26,7 @@ type ResolvedMessageMention = {
 type MessageContextDirection = 'newer' | 'older'
 
 const MESSAGE_BATCH_SIZE = 10
-const MESSAGE_CONTEXT_RADIUS = 5
+const MESSAGE_CONTEXT_RADIUS = MESSAGE_BATCH_SIZE
 const MESSAGE_INCLUDE = {
   member: {
     include: {

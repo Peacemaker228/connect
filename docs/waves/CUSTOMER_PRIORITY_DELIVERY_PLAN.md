@@ -1020,7 +1020,12 @@ Delivered:
 - SDK `fetchChatReplyTargetContext()` accepts optional `direction=older|newer` for bounded adjacent reads;
 - normal latest mode keeps the existing infinite-query `nextCursor` path and loaded-target scroll/highlight behavior;
 - unloaded targets enter anchored history mode, replacing the visible range rather than overlaying old context rows onto latest messages;
-- anchored mode supports older and newer adjacent loading, disables latest-mode auto-scroll/forced-bottom scrolling while anchored, keeps realtime update/delete patching for anchored rows/reply previews, and provides a sticky jump-to-latest/down control;
+- reply target navigation uses deterministic container-relative centering, avoids long smooth traversal for far/newly loaded jumps, and keeps smooth movement only for short local jumps;
+- the initial anchored context window uses the normal bounded page size on each side of the target, so desktop reply navigation has enough surrounding rows without loading the entire gap to latest;
+- latest and anchored ranges auto-fill the current viewport with bounded follow-up reads when the first loaded range is too short for the screen height;
+- older/newer history loading triggers near the viewport boundary and preserves position when older rows are prepended, keeping normal latest and anchored history pagination from jumping to the beginning of a newly loaded block;
+- the sticky down control appears whenever the user is away from the live bottom, returning normal scrolled-up chats to latest and exiting anchored history with a short fake-smooth transition near the destination instead of animating through all skipped messages;
+- anchored mode supports older and newer adjacent loading, shows the chat start/welcome state when the beginning is reached, disables latest-mode auto-scroll/forced-bottom scrolling while anchored, and keeps realtime update/delete patching for anchored rows/reply previews;
 - virtualization, reply visual redesign, reply attention/unread changes, DB schema/migrations, auth/storage/media/WebRTC, realtime transport hardening, deep links, and thread UI remain out of scope.
 
 Virtualization note:
