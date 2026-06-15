@@ -1004,100 +1004,102 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   console.log(shouldShowInitialScrollSkeleton)
 
   return (
-    <div
-      ref={chatRef}
-      className={cn(
-        'relative flex-1 flex flex-col py-4',
-        shouldShowInitialScrollSkeleton ? 'overflow-hidden' : 'overflow-y-auto',
-      )}>
+    <div className="relative min-h-0 flex-1">
       {shouldShowInitialScrollSkeleton && <ChatInitialScrollSkeleton />}
-      {hasReachedHistoryStart && <ChatWelcome name={name} type={type} />}
-      {canLoadOlderMessages && (
-        <div className="flex justify-center">
-          {isLoadingOlderMessages ? (
-            <Loader2 className="h-6 w-6 text-zinc-500 animate-spin my-4" />
-          ) : (
-            <button
-              onClick={() => {
-                void loadOlderMessages()
-              }}
-              className={
-                'text-zinc-500 hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-300 transition text-xs my-4'
-              }>
-              {t('loadMessages')}
-            </button>
-          )}
+      <div
+        ref={chatRef}
+        className={cn(
+          'flex h-full flex-col py-4',
+          shouldShowInitialScrollSkeleton ? 'invisible absolute inset-0 overflow-hidden' : 'overflow-y-auto',
+        )}>
+        {hasReachedHistoryStart && <ChatWelcome name={name} type={type} />}
+        {canLoadOlderMessages && (
+          <div className="flex justify-center">
+            {isLoadingOlderMessages ? (
+              <Loader2 className="h-6 w-6 text-zinc-500 animate-spin my-4" />
+            ) : (
+              <button
+                onClick={() => {
+                  void loadOlderMessages()
+                }}
+                className={
+                  'text-zinc-500 hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-300 transition text-xs my-4'
+                }>
+                {t('loadMessages')}
+              </button>
+            )}
+          </div>
+        )}
+        <div ref={messageListRef} className={cn('flex flex-col', !anchoredHistory && 'mt-auto')}>
+          {visibleMessages.map((m: MessageWithMemberWithProfile) => (
+            <Fragment key={m.id}>
+              {unreadDividerMessageId === m.id && <NewMessagesDivider />}
+              <ChatItem
+                fileUrl={m.fileUrl}
+                messageApiUrl={messageApiUrl}
+                messageQuery={messageQuery}
+                currentMember={member}
+                id={m.id}
+                member={m.member}
+                createdAt={m.createdAt}
+                content={m.content}
+                mentions={m.mentions}
+                replyTo={m.replyTo}
+                replyToDirectMessageId={m.replyToDirectMessageId}
+                replyToMessageId={m.replyToMessageId}
+                serverId={serverId}
+                deleted={m.deleted}
+                isUpdated={m.updatedAt !== m.createdAt}
+                isEditing={editingMessageId === m.id}
+                isReplyNavigationHighlighted={replyNavigationHighlightedMessageId === m.id}
+                onStartEditing={() => setEditingMessageId(m.id)}
+                onCancelEditing={() => {
+                  setEditingMessageId((currentEditingMessageId) =>
+                    currentEditingMessageId === m.id ? null : currentEditingMessageId,
+                  )
+                }}
+                onFinishEditing={() => {
+                  setEditingMessageId((currentEditingMessageId) =>
+                    currentEditingMessageId === m.id ? null : currentEditingMessageId,
+                  )
+                }}
+                onReply={handleReply}
+                onNavigateToReplyTarget={navigateToReplyTarget}
+                onRegisterMessageElement={registerMessageElement}
+                mentionSuggestions={mentionSuggestions}
+                timestamp={format(new Date(m.createdAt), EDateFormat.MESSAGE_ITEM)}
+              />
+            </Fragment>
+          ))}
         </div>
-      )}
-      <div ref={messageListRef} className={cn('flex flex-col', !anchoredHistory && 'mt-auto')}>
-        {visibleMessages.map((m: MessageWithMemberWithProfile) => (
-          <Fragment key={m.id}>
-            {unreadDividerMessageId === m.id && <NewMessagesDivider />}
-            <ChatItem
-              fileUrl={m.fileUrl}
-              messageApiUrl={messageApiUrl}
-              messageQuery={messageQuery}
-              currentMember={member}
-              id={m.id}
-              member={m.member}
-              createdAt={m.createdAt}
-              content={m.content}
-              mentions={m.mentions}
-              replyTo={m.replyTo}
-              replyToDirectMessageId={m.replyToDirectMessageId}
-              replyToMessageId={m.replyToMessageId}
-              serverId={serverId}
-              deleted={m.deleted}
-              isUpdated={m.updatedAt !== m.createdAt}
-              isEditing={editingMessageId === m.id}
-              isReplyNavigationHighlighted={replyNavigationHighlightedMessageId === m.id}
-              onStartEditing={() => setEditingMessageId(m.id)}
-              onCancelEditing={() => {
-                setEditingMessageId((currentEditingMessageId) =>
-                  currentEditingMessageId === m.id ? null : currentEditingMessageId,
-                )
-              }}
-              onFinishEditing={() => {
-                setEditingMessageId((currentEditingMessageId) =>
-                  currentEditingMessageId === m.id ? null : currentEditingMessageId,
-                )
-              }}
-              onReply={handleReply}
-              onNavigateToReplyTarget={navigateToReplyTarget}
-              onRegisterMessageElement={registerMessageElement}
-              mentionSuggestions={mentionSuggestions}
-              timestamp={format(new Date(m.createdAt), EDateFormat.MESSAGE_ITEM)}
-            />
-          </Fragment>
-        ))}
+        {anchoredHistory && canLoadNewerAnchoredMessages && (
+          <div className="flex justify-center py-2">
+            {isLoadingNewerAnchoredMessages ? (
+              <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
+            ) : (
+              <button
+                type="button"
+                onClick={() => void loadAnchoredHistoryMessages('newer')}
+                className="text-xs text-zinc-500 transition hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-300">
+                {t('loadMessages')}
+              </button>
+            )}
+          </div>
+        )}
+        {shouldShowJumpToLatestControl && (
+          <Button
+            type="button"
+            size="icon"
+            variant="primary"
+            aria-label="Jump to latest messages"
+            title="Jump to latest messages"
+            onClick={jumpToLatestMessages}
+            className="sticky bottom-3 z-20 ml-auto mr-4 aspect-square h-9 min-h-9 w-9 min-w-9 shrink-0 rounded-full p-0 shadow-md">
+            <ArrowDown className="h-4 w-4" />
+          </Button>
+        )}
+        <div ref={bottomRef} />
       </div>
-      {anchoredHistory && canLoadNewerAnchoredMessages && (
-        <div className="flex justify-center py-2">
-          {isLoadingNewerAnchoredMessages ? (
-            <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
-          ) : (
-            <button
-              type="button"
-              onClick={() => void loadAnchoredHistoryMessages('newer')}
-              className="text-xs text-zinc-500 transition hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-300">
-              {t('loadMessages')}
-            </button>
-          )}
-        </div>
-      )}
-      {shouldShowJumpToLatestControl && (
-        <Button
-          type="button"
-          size="icon"
-          variant="primary"
-          aria-label="Jump to latest messages"
-          title="Jump to latest messages"
-          onClick={jumpToLatestMessages}
-          className="sticky bottom-3 z-20 ml-auto mr-4 aspect-square h-9 min-h-9 w-9 min-w-9 shrink-0 rounded-full p-0 shadow-md">
-          <ArrowDown className="h-4 w-4" />
-        </Button>
-      )}
-      <div ref={bottomRef} />
     </div>
   )
 }
