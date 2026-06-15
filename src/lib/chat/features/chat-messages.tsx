@@ -28,6 +28,7 @@ import { useChatReply } from '@/lib/chat/features/chat-reply-context'
 import { CHAT_COMPOSER_FOCUS_EVENT } from '@/lib/shared/utils/chat-events'
 import { patchChatMessagesPages } from '@/lib/shared/data-access/chat/chat-message-page-patch'
 import { Button } from '@/lib/shared/ui/button'
+import { Skeleton } from '@/lib/shared/ui/skeleton'
 import { cn } from '@/lib/shared/utils/utils'
 
 type MessageWithMemberWithProfile = ChatMessageDto
@@ -104,6 +105,57 @@ const NewMessagesDivider = () => (
       Новое
     </span>
     <div className="h-px flex-1 bg-rose-500/70" />
+  </div>
+)
+
+const ChatInitialScrollSkeleton = () => (
+  <div
+    className="absolute inset-0 z-10 flex flex-col justify-end gap-y-5 bg-white px-4 py-6 dark:bg-[#313338]"
+    aria-hidden="true">
+    <div className="flex gap-x-3">
+      <Skeleton className="h-10 w-10 shrink-0 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="flex items-center gap-x-2">
+          <Skeleton className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700" />
+          <Skeleton className="h-3 w-28 bg-zinc-200/80 dark:bg-zinc-700/80" />
+        </div>
+        <Skeleton className="h-4 w-64 max-w-[70%] bg-zinc-200 dark:bg-zinc-700" />
+      </div>
+    </div>
+
+    <div className="flex gap-x-3">
+      <Skeleton className="h-10 w-10 shrink-0 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="flex items-center gap-x-2">
+          <Skeleton className="h-4 w-20 bg-zinc-200 dark:bg-zinc-700" />
+          <Skeleton className="h-3 w-24 bg-zinc-200/80 dark:bg-zinc-700/80" />
+        </div>
+        <Skeleton className="h-28 w-48 rounded-lg bg-zinc-200 dark:bg-zinc-700" />
+      </div>
+    </div>
+
+    <div className="flex gap-x-3">
+      <Skeleton className="h-10 w-10 shrink-0 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="flex items-center gap-x-2">
+          <Skeleton className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700" />
+          <Skeleton className="h-3 w-28 bg-zinc-200/80 dark:bg-zinc-700/80" />
+        </div>
+        <Skeleton className="h-12 w-full max-w-2xl rounded-lg bg-zinc-200 dark:bg-zinc-700" />
+      </div>
+    </div>
+
+    <div className="flex gap-x-3">
+      <Skeleton className="h-10 w-10 shrink-0 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="flex items-center gap-x-2">
+          <Skeleton className="h-4 w-16 bg-zinc-200 dark:bg-zinc-700" />
+          <Skeleton className="h-3 w-24 bg-zinc-200/80 dark:bg-zinc-700/80" />
+        </div>
+        <Skeleton className="h-4 w-80 max-w-[82%] bg-zinc-200 dark:bg-zinc-700" />
+        <Skeleton className="h-4 w-48 max-w-[56%] bg-zinc-200 dark:bg-zinc-700" />
+      </div>
+    </div>
   </div>
 )
 
@@ -589,10 +641,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
       const messageTime = getTimestampValue(message.createdAt)
 
       return (
-        !message.deleted &&
-        message.memberId !== member.id &&
-        Number.isFinite(messageTime) &&
-        messageTime > anchorTime
+        !message.deleted && message.memberId !== member.id && Number.isFinite(messageTime) && messageTime > anchorTime
       )
     })
   }, [currentUnreadItem, member.id, visibleMessages])
@@ -687,6 +736,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const canLoadNewerAnchoredMessages = Boolean(anchoredHistory?.newerCursor)
   const hasReachedHistoryStart = anchoredHistory ? !anchoredHistory.olderCursor : !hasNextPage
   const isLoadingNewerAnchoredMessages = anchoredHistoryLoadingDirection === 'newer'
+  const shouldShowInitialScrollSkeleton = !isInitialScrollSettled && !isAnchoredHistoryMode
   const shouldShowJumpToLatestControl =
     isInitialScrollSettled && (Boolean(anchoredHistory?.newerCursor) || !isNearBottom)
 
@@ -940,9 +990,16 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
       </div>
     )
   }
+  console.log(shouldShowInitialScrollSkeleton)
 
   return (
-    <div ref={chatRef} className="flex-1 flex flex-col py-4 overflow-y-auto">
+    <div
+      ref={chatRef}
+      className={cn(
+        'relative flex-1 flex flex-col py-4',
+        shouldShowInitialScrollSkeleton ? 'overflow-hidden' : 'overflow-y-auto',
+      )}>
+      {shouldShowInitialScrollSkeleton && <ChatInitialScrollSkeleton />}
       {hasReachedHistoryStart && <ChatWelcome name={name} type={type} />}
       {canLoadOlderMessages && (
         <div className="flex justify-center">
