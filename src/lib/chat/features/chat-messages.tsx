@@ -54,9 +54,15 @@ type PendingReplyTargetScroll = {
   options: ReplyTargetScrollOptions
 }
 
+type PrependViewportAnchor = {
+  messageId: string
+  top: number
+}
+
 type PendingPrependScroll = {
+  anchor: PrependViewportAnchor | null
+  latestScrollTop: number
   previousScrollHeight: number
-  previousScrollTop: number
 }
 
 type PendingInitialScrollTarget =
@@ -343,6 +349,39 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     messageElementByIdRef.current.set(messageId, element)
   }, [])
 
+  const capturePrependViewportAnchor = useCallback((): PrependViewportAnchor | null => {
+    const container = chatRef.current
+
+    if (!container) {
+      return null
+    }
+
+    const containerRect = container.getBoundingClientRect()
+    const viewportTop = containerRect.top + 8
+    let closestAnchor: PrependViewportAnchor | null = null
+    let closestDistance = Number.POSITIVE_INFINITY
+
+    messageElementByIdRef.current.forEach((element, messageId) => {
+      const elementRect = element.getBoundingClientRect()
+
+      if (elementRect.bottom <= viewportTop || elementRect.top >= containerRect.bottom) {
+        return
+      }
+
+      const distance = Math.abs(elementRect.top - viewportTop)
+
+      if (distance < closestDistance) {
+        closestDistance = distance
+        closestAnchor = {
+          messageId,
+          top: elementRect.top,
+        }
+      }
+    })
+
+    return closestAnchor
+  }, [])
+
   const scrollMessageToCenter = useCallback((messageId: string, behavior: ScrollBehavior = 'auto') => {
     const container = chatRef.current
     const targetElement = messageElementByIdRef.current.get(messageId)
@@ -553,8 +592,9 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     const previousScrollTop = container?.scrollTop ?? 0
 
     pendingPrependScrollRef.current = {
+      anchor: capturePrependViewportAnchor(),
+      latestScrollTop: previousScrollTop,
       previousScrollHeight,
-      previousScrollTop,
     }
     olderHistoryLoadInFlightRef.current = true
 
@@ -568,7 +608,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         }
       }, 120)
     }
-  }, [])
+  }, [capturePrependViewportAnchor])
 
   const loadOlderMessages = useCallback(
     async (options: { preserveViewport?: boolean } = {}) => {
@@ -738,6 +778,12 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         ? Boolean(anchoredHistory.olderCursor) && anchoredHistoryLoadingDirection !== 'older'
         : !isFetchingNextPage && hasNextPage),
     count: isAnchoredHistoryMode ? 0 : (data?.pages?.[0]?.items?.length ?? 0),
+    onScrollPositionChange: (scrollTop) => {
+      if (pendingPrependScrollRef.current) {
+        pendingPrependScrollRef.current.latestScrollTop = scrollTop
+        pendingPrependScrollRef.current.anchor = capturePrependViewportAnchor()
+      }
+    },
   })
   useMarkChatRead({
     beforeMarkRead: captureUnreadAnchor,
@@ -1016,7 +1062,24 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         const scrollHeightDelta = container.scrollHeight - pendingPrependScroll.previousScrollHeight
 
         if (scrollHeightDelta > 0) {
-          container.scrollTop = pendingPrependScroll.previousScrollTop + scrollHeightDelta
+          const anchorElement = pendingPrependScroll.anchor
+            ? messageElementByIdRef.current.get(pendingPrependScroll.anchor.messageId)
+            : null
+
+          if (anchorElement && pendingPrependScroll.anchor) {
+            const anchorTopDelta = anchorElement.getBoundingClientRect().top - pendingPrependScroll.anchor.top
+
+            if (Math.abs(anchorTopDelta) > 2) {
+              container.scrollTop += anchorTopDelta
+            }
+          } else {
+            const expectedScrollTop = pendingPrependScroll.latestScrollTop + scrollHeightDelta
+
+            if (Math.abs(container.scrollTop - expectedScrollTop) > 2) {
+              container.scrollTop = expectedScrollTop
+            }
+          }
+
           pendingPrependScrollRef.current = null
           olderHistoryLoadInFlightRef.current = false
         }
@@ -1253,19 +1316,19 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
             )}
           </div>
         )}
-        {shouldShowJumpToLatestControl && (
-          <Button
-            type="button"
-            size="icon"
-            variant="primary"
-            aria-label="Jump to latest messages"
-            title="Jump to latest messages"
-            onClick={jumpToLatestMessages}
-            className="sticky bottom-3 z-20 ml-auto mr-4 aspect-square h-9 min-h-9 w-9 min-w-9 shrink-0 rounded-full p-0 shadow-md">
-            <ArrowDown className="h-4 w-4" />
-          </Button>
-        )}
       </div>
+      {shouldShowJumpToLatestControl && (
+        <Button
+          type="button"
+          size="icon"
+          variant="primary"
+          aria-label="Jump to latest messages"
+          title="Jump to latest messages"
+          onClick={jumpToLatestMessages}
+          className="absolute bottom-3 right-4 z-20 aspect-square h-9 min-h-9 w-9 min-w-9 shrink-0 rounded-full p-0 shadow-md">
+          <ArrowDown className="h-4 w-4" />
+        </Button>
+      )}
     </div>
   )
 }

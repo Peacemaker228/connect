@@ -1,6 +1,8 @@
 import { RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { CHAT_SCROLL_TO_BOTTOM_EVENT } from '@/lib/shared/utils/chat-events'
 
+const OLDER_HISTORY_LOAD_DEBOUNCE_MS = 80
+
 interface IUseChatScroll {
   autoScrollEnabled?: boolean
   chatId: string
@@ -10,6 +12,7 @@ interface IUseChatScroll {
   loadMoreThreshold?: number
   count: number
   onNearBottomChange?: (isNearBottom: boolean) => void
+  onScrollPositionChange?: (scrollTop: number) => void
 }
 
 export const useChatScroll = ({
@@ -21,10 +24,22 @@ export const useChatScroll = ({
   loadMoreThreshold = 240,
   count,
   onNearBottomChange,
+  onScrollPositionChange,
 }: IUseChatScroll) => {
   const [hasInitialized, setHasInitialized] = useState(false)
   const [isNearBottom, setIsNearBottom] = useState(true)
   const isNearBottomRef = useRef(true)
+  const lastScrollTopRef = useRef<number | null>(null)
+  const pendingLoadMoreTimeoutRef = useRef<number | null>(null)
+
+  const clearPendingLoadMore = useCallback(() => {
+    if (pendingLoadMoreTimeoutRef.current === null) {
+      return
+    }
+
+    window.clearTimeout(pendingLoadMoreTimeoutRef.current)
+    pendingLoadMoreTimeoutRef.current = null
+  }, [])
 
   const updateNearBottomState = useCallback(
     (nextIsNearBottom: boolean) => {
@@ -61,8 +76,10 @@ export const useChatScroll = ({
 
   useEffect(() => {
     setHasInitialized(false)
+    lastScrollTopRef.current = null
+    clearPendingLoadMore()
     updateNearBottomState(true)
-  }, [chatId, updateNearBottomState])
+  }, [chatId, clearPendingLoadMore, updateNearBottomState])
 
   useEffect(() => {
     const topDiv = chatRef?.current
@@ -83,23 +100,59 @@ export const useChatScroll = ({
       }
 
       const scrollTop = topDiv.scrollTop
+      const previousScrollTop = lastScrollTopRef.current
+      const isScrollingTowardOlderHistory = previousScrollTop === null || scrollTop <= previousScrollTop
+      lastScrollTopRef.current = scrollTop
+      onScrollPositionChange?.(scrollTop)
 
       updateIsNearBottom()
 
       const effectiveLoadMoreThreshold = Math.max(loadMoreThreshold, topDiv.clientHeight * 0.75)
+      const shouldRequestOlderHistory =
+        typeof scrollTop === 'number' &&
+        scrollTop <= effectiveLoadMoreThreshold &&
+        shouldLoadMore &&
+        isScrollingTowardOlderHistory
 
-      if (typeof scrollTop === 'number' && scrollTop <= effectiveLoadMoreThreshold && shouldLoadMore) {
-        void loadMore()
+      if (!shouldRequestOlderHistory) {
+        clearPendingLoadMore()
+        return
       }
+
+      if (pendingLoadMoreTimeoutRef.current !== null) {
+        return
+      }
+
+      pendingLoadMoreTimeoutRef.current = window.setTimeout(() => {
+        pendingLoadMoreTimeoutRef.current = null
+
+        const latestScrollTop = topDiv.scrollTop
+        const isStillAtOlderBoundary = latestScrollTop <= effectiveLoadMoreThreshold
+        const didNotReverseTowardLatest = latestScrollTop <= (lastScrollTopRef.current ?? latestScrollTop)
+
+        if (isStillAtOlderBoundary && didNotReverseTowardLatest && shouldLoadMore) {
+          void loadMore()
+        }
+      }, OLDER_HISTORY_LOAD_DEBOUNCE_MS)
     }
 
     topDiv?.addEventListener('scroll', handleScroll)
+    lastScrollTopRef.current = topDiv?.scrollTop ?? null
     updateIsNearBottom()
 
     return () => {
       topDiv?.removeEventListener('scroll', handleScroll)
+      clearPendingLoadMore()
     }
-  }, [chatRef, loadMore, loadMoreThreshold, shouldLoadMore, updateNearBottomState])
+  }, [
+    chatRef,
+    clearPendingLoadMore,
+    loadMore,
+    loadMoreThreshold,
+    onScrollPositionChange,
+    shouldLoadMore,
+    updateNearBottomState,
+  ])
 
   useEffect(() => {
     const topDiv = chatRef?.current
