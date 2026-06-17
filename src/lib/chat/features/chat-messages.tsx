@@ -784,6 +784,9 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         pendingPrependScrollRef.current.anchor = capturePrependViewportAnchor()
       }
     },
+    onUserScrollIntent: () => {
+      pendingInitialScrollTargetRef.current = null
+    },
   })
   useMarkChatRead({
     beforeMarkRead: captureUnreadAnchor,

@@ -1114,6 +1114,7 @@ Delivered:
 - `useChatScroll` no longer performs a surprise first auto-scroll when auto-scroll is re-enabled after a deliberate disabled phase;
 - top-boundary older-history loading is scroll-direction aware and slightly debounced, so a brief threshold crossing while reversing toward the live bottom does not prepend old pages and jerk the viewport;
 - older-page prepend compensation preserves the nearest visible message row as an anchor when the async page arrives, with `scrollTop + height delta` kept only as a fallback if the anchor row is unavailable;
+- user scroll intent cancels pending delayed scroll-to-bottom / initial-target corrections, preventing the enter-chat-then-scroll-up snap back to live bottom;
 - the jump-to-latest button is rendered as an overlay outside the scroll content, so its visibility no longer changes chat `scrollHeight` near the live bottom;
 - latest viewport auto-fill preserves the current viewport when prepending older rows.
 
@@ -1121,6 +1122,7 @@ Targeted local smoke:
 - local production-like web/API on `3001`/`4000` opened a long-history channel at latest bottom;
 - one upward top-boundary scroll produced one older-page request and kept the visible row in place after prepend;
 - scrolling down toward live bottom produced no older-page requests and the jump-to-latest overlay did not alter scroll height;
+- six repeated enter-channel-then-immediate-scroll-up checks across two channels stayed away from bottom after delayed corrections;
 - full production/staging smoke remains required before release.
 
 Out of scope:
@@ -1130,7 +1132,7 @@ Out of scope:
 - desktop staging release pass.
 
 Manual smoke:
-- pending production/staging smoke for long-history chat entry with and without unread, short-message initial viewport fill, skeleton during initial settle, direct final-position reveal without visible smooth-scroll, first unread `New` divider, no visible bottom/top/middle jump, upward older-page prepend preserving the visible row, reply target navigation regression, and jump-to-latest regression.
+- pending production/staging smoke for long-history chat entry with and without unread, short-message initial viewport fill, skeleton during initial settle, direct final-position reveal without visible smooth-scroll, first unread `New` divider, no visible bottom/top/middle jump, immediate post-entry scroll-up not snapping back to bottom, upward older-page prepend preserving the visible row, reply target navigation regression, and jump-to-latest regression.
 
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 
