@@ -6,6 +6,13 @@ Classification: `draft / not executable end-to-end yet`
 
 This runbook records the intended desktop release process. It is not a completed release procedure until the roadmap segments close the current blockers.
 
+Current audit result:
+
+- `2026-06-18`: `bun.cmd run check:desktop:config` passed, but `bun.cmd run build:desktop` failed before producing an NSIS installer.
+- blocker: `electron-builder` cannot extract `winCodeSign-2.6.0.7z` because the current Windows user cannot create symlinks.
+- no `AxConnect-Setup-0.0.2.exe`, installer size, or SHA256 is available from this machine.
+- partial ignored output may remain under `dist-desktop\win-unpacked` and `electron\build-info.json`.
+
 ## Current App Shape
 
 - Desktop shell: `electron/*`
@@ -28,8 +35,26 @@ bun.cmd run build:desktop
 
 Known caution:
 
-- a local Windows build may fail if the current user cannot create symlinks while `electron-builder` extracts signing helper artifacts;
-- the official release path must either run on a correctly configured Windows machine or move to CI.
+- this local Windows build currently fails because the user cannot create symlinks while `electron-builder` extracts signing helper artifacts;
+- the official release path must either run on a Windows machine with symlink privilege or move to CI.
+
+PowerShell cleanup before retry:
+
+```powershell
+bun.cmd run clean:desktop
+Remove-Item -LiteralPath "$env:LOCALAPPDATA\electron-builder\Cache\winCodeSign" -Recurse -Force
+```
+
+Retry only after Windows Developer Mode is enabled, the shell is elevated with symlink privilege, or the command is moved to a Windows CI runner:
+
+```powershell
+bun.cmd run build:desktop
+```
+
+Current blocked audit:
+
+- `docs/delegation/briefs/SEGMENT_BRIEF_225_DESKTOP_BUILD_REPRODUCIBILITY_AUDIT.md`
+- do not treat this runbook as executable until a symlink-capable Windows build path produces the NSIS installer and records artifact name, size, and SHA256.
 
 ## Release Channels
 

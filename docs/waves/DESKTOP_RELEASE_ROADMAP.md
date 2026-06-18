@@ -52,7 +52,7 @@ Current code shape:
 
 Current local build concern:
 
-- Windows desktop packaging must be revalidated before claiming release readiness. A previous local `build:desktop` attempt failed while extracting `winCodeSign` because the Windows user lacked symlink privileges. This may be solved by Developer Mode/admin privileges or by moving the official build to CI, but it is a release blocker until proven.
+- Windows desktop packaging was revalidated on `2026-06-18` in `docs/delegation/briefs/SEGMENT_BRIEF_225_DESKTOP_BUILD_REPRODUCIBILITY_AUDIT.md` and is still blocked on this machine. `bun.cmd run build:desktop` fails while extracting `winCodeSign-2.6.0.7z` because the Windows user cannot create symlinks for `libcrypto.dylib` and `libssl.dylib`. This needs Windows Developer Mode, an elevated/admin build context with symlink privilege, or a Windows CI runner that can create symlinks.
 
 ## Product Requirements
 
@@ -113,7 +113,7 @@ This is a candidate until implemented and smoke-tested.
 
 Release blockers:
 
-- reproducible Windows installer build is not proven;
+- reproducible Windows installer build is blocked by local Windows symlink privilege while extracting `winCodeSign`;
 - desktop release artifact hosting is not implemented;
 - auto-update provider/metadata is absent;
 - native notification and app badge bridge are absent;
@@ -149,8 +149,13 @@ Out of scope:
 
 ### Segment 225. Desktop Build Reproducibility Audit
 
+Status: `blocked / build environment action required`
+
 Goal:
 - make `bun.cmd run build:desktop` reproducible on the chosen build machine or document why CI must own it.
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_225_DESKTOP_BUILD_REPRODUCIBILITY_AUDIT.md`
 
 Expected work:
 - re-run local Windows build with clean state;
@@ -162,6 +167,13 @@ Expected work:
 
 Acceptance:
 - desktop installer build passes on the official build path, or the blocker is documented with exact next operator action.
+
+Result:
+- `bun.cmd run check:desktop:config` passed;
+- `bun.cmd run build:desktop` failed before NSIS installer creation;
+- no installer, size, or SHA256 is available;
+- partial ignored output exists under `dist-desktop\win-unpacked` and `electron\build-info.json`;
+- next action is to enable Windows symlink privilege for the build user, run an elevated/admin PowerShell with that privilege, or move the official build to Windows CI before continuing to staging channel config.
 
 ### Segment 226. Desktop Staging Channel Config
 
