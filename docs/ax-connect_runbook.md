@@ -338,7 +338,9 @@ Expected files:
         AxConnect-Staging-Setup-0.0.2.sha256
 ```
 
-Nginx static alias to add inside the `staging.ax-connect.ru` HTTPS server block. This location must be placed before the generic Next proxy/auth location so `/downloads/desktop/*` is served by Nginx directly and cannot be redirected to `/sign-in`.
+Before changing Nginx, collect the diagnosis evidence in `docs/delegation/briefs/SEGMENT_BRIEF_228A_DESKTOP_STAGING_DOWNLOAD_NGINX_ROUTE_DIAGNOSIS.md`. Do not assume the static alias is the only possible problem: first verify files, ownership, permissions, active server block, enabled config, and route matching.
+
+Candidate Nginx static alias to add only if diagnosis proves the active `staging.ax-connect.ru` HTTPS server block is missing or misplacing the download route. This location must be placed before the generic Next proxy/auth location so `/downloads/desktop/*` is served by Nginx directly and cannot be redirected to `/sign-in`.
 
 ```nginx
 location ^~ /downloads/desktop/ {

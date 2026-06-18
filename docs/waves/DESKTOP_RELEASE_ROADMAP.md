@@ -252,7 +252,7 @@ Result:
 
 ### Segment 228. Desktop Staging Download Apply Verification
 
-Status: `blocked / staging downloads still route through web auth`
+Status: `blocked initially / closed by Segment 228A`
 
 Goal:
 - apply the staging installer download runbook and prove that users can download the staging installer from the web app.
@@ -280,10 +280,46 @@ Result:
 - public `.sha256` URL also redirects to sign-in HTML and does not contain the expected hash;
 - no server command, production change, auto-update/native notification work, or packaged desktop runtime smoke was run.
 
+Follow-up:
+- Segment 228A diagnosed and closed this blocker: files were published to `/var/www/ax-connect-desktop-downloads/desktop/staging/win/`, the active staging Nginx HTTPS server block now serves `/downloads/desktop/*` directly, GET/HEAD return `200 OK`, SHA verification passes, and the operator confirmed browser download plus Windows installation.
+
 Next operator action:
-- verify files under `/var/www/ax-connect-desktop-downloads/desktop/staging/win/`;
-- apply or move the `location ^~ /downloads/desktop/` static alias ahead of the generic Next proxy/auth path in the `staging.ax-connect.ru` HTTPS server block;
-- run `nginx -t`, reload Nginx, and repeat HTTPS/hash verification before Segment 229 runtime smoke.
+- continue with Segment 229 packaged desktop runtime smoke.
+
+### Segment 228A. Desktop Staging Download Nginx Route Diagnosis
+
+Status: `pass / staging download route fixed and verified`
+
+Goal:
+- diagnose why `/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe` returns `307` to `/sign-in` before making any Nginx change.
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_228A_DESKTOP_STAGING_DOWNLOAD_NGINX_ROUTE_DIAGNOSIS.md`
+
+Expected work:
+- verify installer files exist on the staging VPS;
+- verify ownership and permissions allow `www-data` to read the installer and hash file;
+- inspect active enabled Nginx config for the `staging.ax-connect.ru` HTTPS server block;
+- verify whether `location ^~ /downloads/desktop/` exists, is inside the staging HTTPS server block, and takes precedence over generic proxy/auth rules;
+- collect redacted `nginx -T` snippets around the staging server block and download locations;
+- propose a minimal Nginx patch only after the diagnosis evidence identifies the failure class.
+
+Result:
+- diagnosis showed the staging desktop files were initially missing from `/var/www/ax-connect-desktop-downloads/desktop/staging/win/`;
+- the versioned installer was uploaded as `AxConnect-Staging-Setup-0.0.2.exe`, `AxConnect-Staging-Setup-latest.exe` was published, and `AxConnect-Staging-Setup-0.0.2.sha256` was generated on the VPS;
+- `www-data` read access was confirmed for the latest installer;
+- the active `staging.ax-connect.ru` HTTPS Nginx server block now contains `location ^~ /downloads/desktop/` before the generic web proxy, with an alias to `/var/www/ax-connect-desktop-downloads/desktop/`;
+- `GET` and `HEAD` for `https://staging.ax-connect.ru/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe` returned `200 OK`;
+- the downloaded latest installer hash matched SHA256 `794A8DB83BAA07E47B8B018062EA2600D9C14C0CF8355EE99BA0E1C693AD1164`;
+- browser download and Windows installation were confirmed by the operator;
+- production, app code, DB/env/auth/storage/media runtime, auto-update, and native notification work were not changed;
+- packaged desktop runtime smoke was not run and remains Segment 229.
+
+Acceptance:
+- staging installer URL serves static bytes without auth redirect;
+- SHA verification passes;
+- browser download and install pass;
+- packaged runtime smoke remains separate.
 
 ### Segment 229. Desktop Runtime Smoke Pass
 

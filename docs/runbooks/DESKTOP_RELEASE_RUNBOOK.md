@@ -188,16 +188,21 @@ VPS Bash publish commands, operator only:
 ```bash
 set -euo pipefail
 
-sudo install -d -m 0755 -o www-data -g www-data /var/www/ax-connect-desktop-downloads/desktop/staging/win
+sudo install -d -m 0755 -o deploy -g www-data /var/www/ax-connect-desktop-downloads/desktop/staging/win
 
-sudo install -m 0644 -o www-data -g www-data /tmp/AxConnect-Staging-Setup-0.0.2.exe /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.2.exe
-sudo install -m 0644 -o www-data -g www-data /tmp/AxConnect-Staging-Setup-0.0.2.sha256 /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.2.sha256
-sudo cp -f /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.2.exe /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe
-sudo chown www-data:www-data /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe
-sudo chmod 0644 /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe
+sudo install -m 0644 -o deploy -g www-data /tmp/AxConnect-Staging-Setup-0.0.2.exe /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.2.exe
+cd /var/www/ax-connect-desktop-downloads/desktop/staging/win
+cp -f AxConnect-Staging-Setup-0.0.2.exe AxConnect-Staging-Setup-latest.exe
+sha256sum AxConnect-Staging-Setup-0.0.2.exe > AxConnect-Staging-Setup-0.0.2.sha256
+sudo chown -R deploy:www-data /var/www/ax-connect-desktop-downloads
+sudo find /var/www/ax-connect-desktop-downloads -type d -exec chmod 0755 {} \;
+sudo find /var/www/ax-connect-desktop-downloads -type f -exec chmod 0644 {} \;
+sudo -u www-data test -r AxConnect-Staging-Setup-latest.exe
 ```
 
-Nginx static alias to add inside the `staging.ax-connect.ru` HTTPS server block, operator only. This location must be placed before the generic Next proxy/auth location so `/downloads/desktop/*` is served by Nginx directly and cannot be redirected to `/sign-in`.
+Before changing Nginx, collect the diagnosis evidence in `docs/delegation/briefs/SEGMENT_BRIEF_228A_DESKTOP_STAGING_DOWNLOAD_NGINX_ROUTE_DIAGNOSIS.md`. Do not assume the static alias is the only possible problem: first verify files, ownership, permissions, active server block, enabled config, and route matching.
+
+Candidate Nginx static alias to add only if diagnosis proves the active `staging.ax-connect.ru` HTTPS server block is missing or misplacing the download route. This location must be placed before the generic Next proxy/auth location so `/downloads/desktop/*` is served by Nginx directly and cannot be redirected to `/sign-in`.
 
 ```nginx
 location ^~ /downloads/desktop/ {
@@ -265,6 +270,18 @@ Manual web verification after staging web rebuild:
 - confirm the desktop download button link is `/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe`;
 - download the installer and compare SHA256 with `794A8DB83BAA07E47B8B018062EA2600D9C14C0CF8355EE99BA0E1C693AD1164`;
 - do not claim packaged desktop runtime smoke until the dedicated runtime smoke segment.
+
+Applied staging evidence from 2026-06-18:
+
+- versioned installer was uploaded to `/var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.2.exe`;
+- `AxConnect-Staging-Setup-latest.exe` was published as the stable download target;
+- `AxConnect-Staging-Setup-0.0.2.sha256` was generated on the VPS;
+- `www-data` read access was confirmed;
+- active Nginx HTTPS server block for `staging.ax-connect.ru` includes `location ^~ /downloads/desktop/` before the generic web proxy;
+- `GET` and `HEAD` for `/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe` returned `200 OK`;
+- downloaded latest installer SHA256 matched `794A8DB83BAA07E47B8B018062EA2600D9C14C0CF8355EE99BA0E1C693AD1164`;
+- browser download and Windows installation were confirmed by the operator;
+- packaged desktop runtime smoke is still pending and must be handled by Segment 229.
 
 Rollback before auto-update:
 
