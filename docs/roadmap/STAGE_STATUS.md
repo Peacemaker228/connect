@@ -45,6 +45,7 @@ Current wave order:
 - `Wave 33` = `MEDIA_MVP_IMPLEMENTATION_PLAN`
 - `Wave 34` = `PRODUCTION_MEDIA_INFRA_RUNBOOK_PLAN`
 - `Wave 35` = `CUSTOMER_PRIORITY_DELIVERY_PLAN`
+- `Wave 36` = `DESKTOP_RELEASE_ROADMAP`
 
 ## Status by Stage
 
@@ -284,19 +285,20 @@ Remaining:
 
 ## Next Correct Step
 
-The active work is now `Wave 35 / CUSTOMER_PRIORITY_DELIVERY_PLAN`.
+The active product work is `Wave 35 / CUSTOMER_PRIORITY_DELIVERY_PLAN`, with `Wave 36 / DESKTOP_RELEASE_ROADMAP` now opened as the next desktop-first release track.
 
 Reason:
 - an external team is actively using `https://staging.ax-connect.ru`;
 - their requests are priority one;
 - staging must be protected as a working stand, not treated as a disposable media-smoke playground.
 - current file-transfer product decision: use a `50 MB` per-file MVP cap for generic message attachments, keep one attachment per message, keep images/PDFs on current preview/open paths, render other files as download-only rows, allow executable-like files only as download-only attachments without safety claims, and defer `300 MB` large-file transfer to a separate design.
+- current desktop decision: move desktop release readiness into `docs/waves/DESKTOP_RELEASE_ROADMAP.md` and use that track for installer build, staging/prod channel separation, download hosting, auto-update, native notifications, and packaged runtime smoke.
 
 Stage 8 remains `local complete / production blocked`.
 
 Stage 9 WebRTC production/staging hardening is paused after Segment 182. The next WebRTC resume brief is preserved in `docs/waves/CUSTOMER_PRIORITY_DELIVERY_PLAN.md` as `staging-turn-success-cleanup-convergence-fix`.
 
-The next product step is `customer-server-edit-realtime-propagation-fix`.
+The next product/release step is `desktop-build-reproducibility-audit`, unless an urgent customer-production regression appears first.
 
 The next correct Stage 6 production step remains deferred by operator decision and is not the active next track.
 
@@ -1118,6 +1120,41 @@ Next likely work:
 - new customer requirements recorded: message edit mode correctness is a focused bugfix covering readable mention text in edit mode, edit input autofocus/caret, and preventing multiple simultaneous edited messages; chat send button should follow as a separate composer UX segment; broad message file-transfer expansion has an agreed MVP policy but still needs a bounded implementation segment before runtime rollout
 - keep realtime transport hardening as last-priority backlog: staging currently shows `Socket.IO` over `transport=polling` with websocket upgrade advertised but not observed; do not start Nginx websocket/rooms/auth hardening unless a concrete incident or load/security evidence forces it earlier
 - next focused reply follow-up after Segment 219 smoke exposed the overlay/history UX issue: implement Segment 220 anchor/windowed history navigation first; reply visual redesign and target-attention polish come after that, unless Segment 220 smoke exposes another navigation/data blocker
+
+### Wave 36. Desktop Release Roadmap
+
+Status: `planning started / release blocked`
+
+Current wave:
+- `Wave 36 / DESKTOP_RELEASE_ROADMAP`
+
+Intent:
+- make desktop release work explicit and segmented;
+- keep the first release line as the current Electron remote-web shell unless a later segment proves a rewrite is necessary;
+- add a controlled staging desktop build, browser download path, installer artifact model, auto-update, native desktop notifications, packaged runtime smoke, and release hardening.
+
+Done:
+- `desktop-release-readiness-roadmap` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_224_DESKTOP_RELEASE_READINESS_ROADMAP.md`;
+- `docs/waves/DESKTOP_RELEASE_ROADMAP.md` records current implementation inventory, blockers, release model, staging/prod channel model, segment order, acceptance gates, and hard rules;
+- `docs/runbooks/DESKTOP_RELEASE_RUNBOOK.md` records the draft release process, artifact model, smoke checklist, rollback, and security checklist.
+
+Current blockers:
+- reproducible Windows desktop installer build is not proven;
+- desktop artifact hosting/download path is not implemented end-to-end;
+- staging and production desktop channels are not separated;
+- auto-update is not implemented;
+- native desktop notifications and taskbar/dock badge behavior are not implemented;
+- packaged desktop runtime smoke has not passed;
+- code signing is not configured;
+- CI/CD release pipeline does not exist;
+- security review for remote web content plus preload bridge is not complete.
+
+Next likely work:
+- `desktop-build-reproducibility-audit`;
+- then `desktop-staging-channel-config`;
+- then `desktop-artifact-download-runbook`;
+- then `desktop-runtime-smoke-pass`;
+- later `desktop-native-notification-bridge` and `desktop-auto-update-proof`.
 
 ## Historical Notes
 
