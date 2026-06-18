@@ -4,7 +4,7 @@
 
 - segment: `desktop-build-reproducibility-audit`
 - type: `desktop release / build audit`
-- status: `blocked / build environment action required`
+- status: `pass / local installer build reproduced; release pipeline pending`
 - target branch: `feature/desktop-build-reproducibility-audit`
 - source branch: latest `origin/core/reborn`
 
@@ -210,7 +210,7 @@ bun.cmd run check:desktop:config
 bun.cmd run build:desktop
 ```
 
-Results:
+Initial results:
 
 - `git status --short --branch`: branch was `feature/desktop-build-reproducibility-audit`; docs for this segment were dirty before the build audit and were not reset.
 - `git log --oneline -5`: latest commit was `d4efb45 Merge pull request #169 from Peacemaker228/feature/desktop-release-roadmap`.
@@ -240,7 +240,28 @@ Artifacts:
 - `electron\build-info.json` exists and records `isDirty: true` because the docs/brief worktree was dirty during this audit;
 - `dist-desktop/` and `electron/build-info.json` are ignored by `.gitignore` and must not be committed.
 
-Next operator action:
+Operator retry result:
+
+After the operator enabled a symlink-capable Windows build context and retried the desktop build from a clean repo state, the local installer build passed.
+
+Result:
+
+- `bun.cmd run build:desktop`: passed.
+- installer: `dist-desktop\AxConnect-Setup-0.0.2.exe`;
+- installer size: `175305456` bytes;
+- SHA256: `B307A4BFB96BABB655D13855B6A0ADC61715F6F996F182CCCBCF74D347483FDF`;
+- blockmap: `dist-desktop\AxConnect-Setup-0.0.2.exe.blockmap`;
+- update metadata: `dist-desktop\latest.yml`;
+- `electron\build-info.json`: `isDirty: false`, `branch: feature/desktop-build-reproducibility-audit`, `shortCommitHash: b43d59f`, `builtAt: 2026-06-18T17:03:38.951Z`.
+
+Classification:
+
+- local Windows build reproducibility is unblocked on a symlink-capable build context;
+- the original `winCodeSign` failure remains a required machine-precondition note for future local builds;
+- generated artifacts remain ignored and must not be committed;
+- installer launch/runtime smoke, staging channel separation, download hosting, auto-update, signing, and CI release automation are still future release-track work.
+
+Next operator action for future local rebuilds:
 
 1. Enable Windows symlink creation for the build context, preferably by enabling Windows Developer Mode or running the build in an elevated/admin PowerShell where the user has `Create symbolic links` privilege.
 2. Clean the partial local outputs and the failed `winCodeSign` cache before retrying:
@@ -251,7 +272,7 @@ Remove-Item -LiteralPath "$env:LOCALAPPDATA\electron-builder\Cache\winCodeSign" 
 bun.cmd run build:desktop
 ```
 
-3. If local symlink privilege cannot be granted, move the official desktop build to a Windows CI runner with symlink support and run the same command there:
+3. If local symlink privilege cannot be granted on a different machine, move the official desktop build to a Windows CI runner with symlink support and run the same command there:
 
 ```powershell
 bun.cmd run build:desktop
@@ -259,7 +280,11 @@ bun.cmd run build:desktop
 
 Next recommended segment:
 
-- `desktop-build-environment-fix` or explicit operator/build-machine action before `desktop-staging-channel-config`.
+- `desktop-staging-channel-config`.
+
+Later release-hardening segment:
+
+- move official builds to CI/CD once the staging channel and artifact model are defined.
 
 ## Handoff Format
 

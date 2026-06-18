@@ -1137,10 +1137,10 @@ Done:
 - `desktop-release-readiness-roadmap` is documented in `docs/delegation/briefs/SEGMENT_BRIEF_224_DESKTOP_RELEASE_READINESS_ROADMAP.md`;
 - `docs/waves/DESKTOP_RELEASE_ROADMAP.md` records current implementation inventory, blockers, release model, staging/prod channel model, segment order, acceptance gates, and hard rules;
 - `docs/runbooks/DESKTOP_RELEASE_RUNBOOK.md` records the draft release process, artifact model, smoke checklist, rollback, and security checklist.
-- `desktop-build-reproducibility-audit` is blocked in `docs/delegation/briefs/SEGMENT_BRIEF_225_DESKTOP_BUILD_REPRODUCIBILITY_AUDIT.md`: `check:desktop:config` passed, but `build:desktop` failed before installer creation because the current Windows user cannot create symlinks while `electron-builder` extracts `winCodeSign`.
+- `desktop-build-reproducibility-audit` is pass in `docs/delegation/briefs/SEGMENT_BRIEF_225_DESKTOP_BUILD_REPRODUCIBILITY_AUDIT.md`: initial `build:desktop` failed because the Windows user could not create `winCodeSign` symlinks, but after operator symlink/build-context fix the local build produced `dist-desktop\AxConnect-Setup-0.0.2.exe` (`175305456` bytes, SHA256 `B307A4BFB96BABB655D13855B6A0ADC61715F6F996F182CCCBCF74D347483FDF`).
 
 Current blockers:
-- reproducible Windows desktop installer build is blocked by local Windows symlink privilege during `winCodeSign` extraction;
+- official repeatable CI/CD desktop installer build is not implemented, though local Windows installer build now passes on a symlink-capable build context;
 - desktop artifact hosting/download path is not implemented end-to-end;
 - staging and production desktop channels are not separated;
 - auto-update is not implemented;
@@ -1151,8 +1151,7 @@ Current blockers:
 - security review for remote web content plus preload bridge is not complete.
 
 Next likely work:
-- enable Windows symlink privilege for the build context, rerun `desktop-build-reproducibility-audit`, or move the official build to Windows CI;
-- then `desktop-staging-channel-config` only after an installer artifact name, size, and SHA256 are recorded;
+- `desktop-staging-channel-config`;
 - then `desktop-artifact-download-runbook`;
 - then `desktop-runtime-smoke-pass`;
 - later `desktop-native-notification-bridge` and `desktop-auto-update-proof`.

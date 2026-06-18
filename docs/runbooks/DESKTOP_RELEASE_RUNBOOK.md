@@ -8,10 +8,13 @@ This runbook records the intended desktop release process. It is not a completed
 
 Current audit result:
 
-- `2026-06-18`: `bun.cmd run check:desktop:config` passed, but `bun.cmd run build:desktop` failed before producing an NSIS installer.
-- blocker: `electron-builder` cannot extract `winCodeSign-2.6.0.7z` because the current Windows user cannot create symlinks.
-- no `AxConnect-Setup-0.0.2.exe`, installer size, or SHA256 is available from this machine.
-- partial ignored output may remain under `dist-desktop\win-unpacked` and `electron\build-info.json`.
+- `2026-06-18`: `bun.cmd run check:desktop:config` passed.
+- Initial `bun.cmd run build:desktop` failed before producing an NSIS installer because `electron-builder` could not extract `winCodeSign-2.6.0.7z` without Windows symlink privilege.
+- After the operator used a symlink-capable Windows build context, `bun.cmd run build:desktop` produced a local installer.
+- installer: `dist-desktop\AxConnect-Setup-0.0.2.exe`;
+- installer size: `175305456` bytes;
+- SHA256: `B307A4BFB96BABB655D13855B6A0ADC61715F6F996F182CCCBCF74D347483FDF`;
+- partial/generated output remains ignored under `dist-desktop\*` and `electron\build-info.json`.
 
 ## Current App Shape
 
@@ -35,8 +38,9 @@ bun.cmd run build:desktop
 
 Known caution:
 
-- this local Windows build currently fails because the user cannot create symlinks while `electron-builder` extracts signing helper artifacts;
-- the official release path must either run on a Windows machine with symlink privilege or move to CI.
+- this local Windows build fails without symlink privilege while `electron-builder` extracts signing helper artifacts;
+- local builds require Windows Developer Mode, an elevated shell/user with `Create symbolic links` privilege, or a Windows CI runner with symlink support;
+- the official release path should still move to CI/CD once staging/prod channel and artifact hosting are defined.
 
 PowerShell cleanup before retry:
 
@@ -51,10 +55,11 @@ Retry only after Windows Developer Mode is enabled, the shell is elevated with s
 bun.cmd run build:desktop
 ```
 
-Current blocked audit:
+Current build audit:
 
 - `docs/delegation/briefs/SEGMENT_BRIEF_225_DESKTOP_BUILD_REPRODUCIBILITY_AUDIT.md`
-- do not treat this runbook as executable until a symlink-capable Windows build path produces the NSIS installer and records artifact name, size, and SHA256.
+- local installer build has been reproduced on a symlink-capable Windows build context;
+- do not treat this runbook as executable end-to-end until staging/prod channels, artifact hosting, runtime smoke, signing, rollback, and update metadata are implemented and verified.
 
 ## Release Channels
 

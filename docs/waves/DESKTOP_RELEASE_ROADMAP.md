@@ -50,9 +50,14 @@ Current code shape:
 - Electron main process handles deep links, camera/mic/display permissions, screen source picker, clipboard writes, and external URL opening;
 - there is no updater, no publish provider, no native notification bridge, no taskbar/dock badge bridge, and no release artifact hosting contract.
 
-Current local build concern:
+Current local build result:
 
-- Windows desktop packaging was revalidated on `2026-06-18` in `docs/delegation/briefs/SEGMENT_BRIEF_225_DESKTOP_BUILD_REPRODUCIBILITY_AUDIT.md` and is still blocked on this machine. `bun.cmd run build:desktop` fails while extracting `winCodeSign-2.6.0.7z` because the Windows user cannot create symlinks for `libcrypto.dylib` and `libssl.dylib`. This needs Windows Developer Mode, an elevated/admin build context with symlink privilege, or a Windows CI runner that can create symlinks.
+- Windows desktop packaging was revalidated on `2026-06-18` in `docs/delegation/briefs/SEGMENT_BRIEF_225_DESKTOP_BUILD_REPRODUCIBILITY_AUDIT.md`.
+- The first attempt failed while extracting `winCodeSign-2.6.0.7z` because the Windows user could not create symlinks for `libcrypto.dylib` and `libssl.dylib`.
+- After the operator used a symlink-capable Windows build context, `bun.cmd run build:desktop` produced `dist-desktop\AxConnect-Setup-0.0.2.exe`.
+- Installer size: `175305456` bytes.
+- SHA256: `B307A4BFB96BABB655D13855B6A0ADC61715F6F996F182CCCBCF74D347483FDF`.
+- This proves the local build path on the configured machine, but official CI/CD release automation is still not implemented.
 
 ## Product Requirements
 
@@ -113,7 +118,7 @@ This is a candidate until implemented and smoke-tested.
 
 Release blockers:
 
-- reproducible Windows installer build is blocked by local Windows symlink privilege while extracting `winCodeSign`;
+- local Windows installer build has been reproduced on a symlink-capable build context, but official repeatable CI/CD release build is not implemented;
 - desktop release artifact hosting is not implemented;
 - auto-update provider/metadata is absent;
 - native notification and app badge bridge are absent;
@@ -149,7 +154,7 @@ Out of scope:
 
 ### Segment 225. Desktop Build Reproducibility Audit
 
-Status: `blocked / build environment action required`
+Status: `pass / local installer artifact produced`
 
 Goal:
 - make `bun.cmd run build:desktop` reproducible on the chosen build machine or document why CI must own it.
@@ -170,10 +175,13 @@ Acceptance:
 
 Result:
 - `bun.cmd run check:desktop:config` passed;
-- `bun.cmd run build:desktop` failed before NSIS installer creation;
-- no installer, size, or SHA256 is available;
-- partial ignored output exists under `dist-desktop\win-unpacked` and `electron\build-info.json`;
-- next action is to enable Windows symlink privilege for the build user, run an elevated/admin PowerShell with that privilege, or move the official build to Windows CI before continuing to staging channel config.
+- initial `bun.cmd run build:desktop` failed before NSIS installer creation because the build user could not create `winCodeSign` symlinks;
+- after operator symlink/build-context fix, `bun.cmd run build:desktop` passed;
+- installer: `dist-desktop\AxConnect-Setup-0.0.2.exe`;
+- installer size: `175305456` bytes;
+- SHA256: `B307A4BFB96BABB655D13855B6A0ADC61715F6F996F182CCCBCF74D347483FDF`;
+- partial/generated output remains ignored and must not be committed;
+- next action is `desktop-staging-channel-config`.
 
 ### Segment 226. Desktop Staging Channel Config
 
