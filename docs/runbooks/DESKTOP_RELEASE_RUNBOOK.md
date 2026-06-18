@@ -197,7 +197,7 @@ sudo chown www-data:www-data /var/www/ax-connect-desktop-downloads/desktop/stagi
 sudo chmod 0644 /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe
 ```
 
-Nginx static alias to add inside the `staging.ax-connect.ru` HTTPS server block, operator only:
+Nginx static alias to add inside the `staging.ax-connect.ru` HTTPS server block, operator only. This location must be placed before the generic Next proxy/auth location so `/downloads/desktop/*` is served by Nginx directly and cannot be redirected to `/sign-in`.
 
 ```nginx
 location ^~ /downloads/desktop/ {

@@ -1143,7 +1143,7 @@ Done:
 
 Current blockers:
 - official repeatable CI/CD desktop installer build is not implemented, though local Windows installer build now passes on a symlink-capable build context;
-- desktop artifact hosting/download path is documented for staging but not implemented end-to-end on the server;
+- desktop artifact hosting/download path is documented for staging but public HTTPS verification is blocked: staging web points to `/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe`, but the URL returns `307 Temporary Redirect` to `/sign-in?...` and following it downloads sign-in HTML instead of the installer;
 - staging and production desktop packaging identity is separated, staging artifact hosting paths are documented, but update metadata separation is not implemented;
 - auto-update is not implemented;
 - native desktop notifications and taskbar/dock badge behavior are not implemented;
@@ -1153,7 +1153,7 @@ Current blockers:
 - security review for remote web content plus preload bridge is not complete.
 
 Next likely work:
-- operator apply/verification for the staging desktop download runbook, then `desktop-runtime-smoke-pass`;
+- fix/apply the staging Nginx static alias for `/downloads/desktop/` and rerun `desktop-staging-download-apply-verification`; only then continue to `desktop-runtime-smoke-pass`;
 - later `desktop-native-notification-bridge` and `desktop-auto-update-proof`.
 
 ## Historical Notes
