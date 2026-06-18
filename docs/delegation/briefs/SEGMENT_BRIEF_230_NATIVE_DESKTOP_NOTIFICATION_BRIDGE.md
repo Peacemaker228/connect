@@ -4,7 +4,7 @@
 
 - segment: `desktop-native-notification-bridge`
 - type: `desktop runtime / native notifications`
-- status: `ready for implementation`
+- status: `review / implementation added; packaged smoke pending`
 - target branch: `feature/desktop-native-notification-bridge`
 - source branch: latest `origin/core/reborn` after Segment 229 docs are merged
 - commit policy: do not commit automatically; return PowerShell-safe `git add` / `git commit` commands
@@ -206,6 +206,55 @@ Do not commit generated files from:
 - `.blockmap`;
 - `latest.yml`.
 
+## Implementation Result
+
+Status: `review / implementation added; packaged smoke pending`
+
+Changed runtime files:
+
+- `electron/main.js`;
+- `electron/preload.js`;
+- `global.d.ts`;
+- `src/lib/shared/features/desktop-deep-link-handler.tsx`;
+- `src/lib/shared/data-access/unread/use-global-unread-socket.ts`;
+- `src/lib/shared/data-access/unread/unread-native-notification.ts`;
+- `src/lib/shared/data-access/unread/unread-notification-diagnostics.ts`;
+- `src/lib/navigation/features/navigation-sidebar.tsx`.
+
+Behavior implemented:
+
+- added a narrow preload IPC bridge:
+  - `window.electron.showUnreadNotification(payload)`;
+  - `window.electron.onUnreadNotificationNavigate(callback)`;
+- Electron main process validates renderer origin and notification payload before creating a native `Notification`;
+- notification text is bounded, generic, and does not include raw message content, ids, storage URLs, secrets, or backend payloads;
+- native notifications are sent only from the existing global unread realtime path after existing own-message, duplicate, active-read, mute, global sound, and visibility decisions;
+- web/non-Electron runtime does not call the native bridge;
+- global notification sound off and per-chat mute suppress native popups in this segment;
+- Windows native notifications now set `app.setAppUserModelId(...)` from the active desktop channel `appId` before creating notifications:
+  - production: `com.axconnect.desktop`;
+  - staging: `com.axconnect.desktop.staging`;
+- click on the native notification restores/focuses the existing window and routes the renderer to the target channel or direct conversation;
+- desktop-only active-route suppression now requires focus when the native bridge is available, so an unfocused desktop window can notify while browser web behavior remains unchanged;
+- diagnostics now record native notification outcomes:
+  - `native_notification_sent`;
+  - `native_notification_unsupported`;
+  - `native_notification_failed`;
+  - `native_notification_blocked_global`;
+  - `native_notification_blocked_scope`.
+
+Verification run locally:
+
+```powershell
+bun.cmd x tsc --noEmit -p tsconfig.json
+```
+
+Packaged smoke status:
+
+- not run in this implementation pass;
+- required before classifying the segment as pass;
+- use the manual smoke checklist above with two authenticated users.
+
 ## Manual Smoke
 
 Use two authenticated users.
@@ -226,6 +275,7 @@ Required packaged desktop smoke after implementation:
    - Expected: app focuses/restores and navigates to the relevant chat.
 
 Record OS/version, desktop artifact version, and whether Windows notification settings allowed notifications.
+On Windows, also record whether the installed sender appears in Windows notification settings with the expected channel identity.
 
 ## Handoff Format
 

@@ -27,6 +27,20 @@ declare global {
         isDirty: boolean
         builtAt: string
       } | null>
+      showUnreadNotification?: (payload: {
+        attentionLevel: 'mention' | 'reply' | 'unread'
+        body: string
+        channelId?: string
+        conversationId?: string
+        messageId: string
+        routePath: string
+        serverId: string
+        title: string
+      }) => Promise<{
+        error?: string
+        status: 'failed' | 'sent' | 'unsupported'
+      }>
+      onUnreadNotificationNavigate?: (callback: (path: string) => void) => (() => void) | void
       notifyReady?: () => void
       onAuthSession?: (callback: (sessionId: string) => void) => (() => void) | void
     }

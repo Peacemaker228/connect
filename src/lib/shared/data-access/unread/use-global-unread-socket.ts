@@ -26,6 +26,11 @@ import {
   getUnreadMentionCountForMember,
   getUnreadReplyCountForMember,
 } from '@/lib/shared/data-access/unread/unread-attention'
+import {
+  canUseNativeUnreadNotifications,
+  showNativeUnreadNotification,
+  type NativeUnreadNotificationResult,
+} from '@/lib/shared/data-access/unread/unread-native-notification'
 
 const PROCESSED_GLOBAL_UNREAD_EVENT_TTL_MS = 5 * 60 * 1000
 const PROCESSED_GLOBAL_UNREAD_EVENT_MAX_SIZE = 500
@@ -36,6 +41,7 @@ type UseGlobalUnreadSocketParams = {
   activeChannelId?: string
   activeMemberId?: string
   activeServerId?: string
+  serverNameById?: ReadonlyMap<string, string>
   servers?: GlobalServerUnreadSummaryItem[]
 }
 
@@ -114,10 +120,25 @@ const getSoundResultDecisionReason = (result: UnreadNotificationSoundResult): Un
   return 'sound_played'
 }
 
+const getNativeNotificationDecisionReason = (
+  result: NativeUnreadNotificationResult,
+): UnreadNotificationDecisionReason => {
+  if (result.status === 'sent') {
+    return 'native_notification_sent'
+  }
+
+  if (result.status === 'unsupported') {
+    return 'native_notification_unsupported'
+  }
+
+  return 'native_notification_failed'
+}
+
 export const useGlobalUnreadSocket = ({
   activeChannelId,
   activeMemberId,
   activeServerId,
+  serverNameById,
   servers,
 }: UseGlobalUnreadSocketParams) => {
   const { socket } = useSocket()
@@ -212,11 +233,14 @@ export const useGlobalUnreadSocket = ({
       }
 
       const visibility = getChatVisibilitySnapshot()
+      const canUseNativeNotifications = canUseNativeUnreadNotifications()
       const isActiveRoute = isPayloadForActiveRoute(payload, {
         activeChannelId,
         activeMemberId,
         activeServerId,
       })
+      const isActiveRouteVisibleForNotificationSuppression =
+        visibility.isPageVisible && (!canUseNativeNotifications || visibility.hasFocus)
       const targetServer = servers?.find((server) => server.serverId === payload.serverId)
 
       if (!targetServer) {
@@ -251,7 +275,11 @@ export const useGlobalUnreadSocket = ({
         return
       }
 
-      if (isActiveRoute && visibility.isPageVisible && isUnreadPayloadAtActiveChatReadBoundary(payload)) {
+      if (
+        isActiveRoute &&
+        isActiveRouteVisibleForNotificationSuppression &&
+        isUnreadPayloadAtActiveChatReadBoundary(payload)
+      ) {
         recordUnreadNotificationDecision({
           globalSoundEnabled: soundEnabledRef.current,
           isActiveRoute,
@@ -264,7 +292,7 @@ export const useGlobalUnreadSocket = ({
         return
       }
 
-      if (isActiveRoute && visibility.isPageVisible) {
+      if (isActiveRoute && isActiveRouteVisibleForNotificationSuppression) {
         recordUnreadNotificationDecision({
           globalSoundEnabled: soundEnabledRef.current,
           isActiveRoute,
@@ -290,6 +318,43 @@ export const useGlobalUnreadSocket = ({
           payload,
           reason: 'hidden_active_unread_sound_eligible',
           visibility,
+        })
+      }
+
+      if (canUseNativeNotifications && (!isSoundEnabled || isScopeMuted)) {
+        recordUnreadNotificationDecision({
+          globalSoundEnabled: isSoundEnabled,
+          isActiveRoute,
+          mutedScope: isScopeMuted,
+          payload,
+          reason: !isSoundEnabled ? 'native_notification_blocked_global' : 'native_notification_blocked_scope',
+          visibility,
+        })
+      }
+
+      if (canUseNativeNotifications && isSoundEnabled && !isScopeMuted) {
+        const mentionCount = getUnreadMentionCountForMember(payload, targetServer.memberId)
+        const replyCount = getUnreadReplyCountForMember(payload, targetServer.memberId)
+        const attentionLevel = getUnreadAttentionLevel({
+          mentionCount,
+          replyCount,
+          unreadCount: payload.unreadCount,
+        })
+
+        void showNativeUnreadNotification({
+          attentionLevel: attentionLevel === 'none' ? 'unread' : attentionLevel,
+          payload,
+          serverName: serverNameById?.get(payload.serverId),
+        }).then((result) => {
+          recordUnreadNotificationDecision({
+            globalSoundEnabled: isSoundEnabled,
+            isActiveRoute,
+            mutedScope: isScopeMuted,
+            nativeError: result.status === 'failed' ? result.error : undefined,
+            payload,
+            reason: getNativeNotificationDecisionReason(result),
+            visibility,
+          })
         })
       }
 
@@ -337,6 +402,7 @@ export const useGlobalUnreadSocket = ({
     directUnreadKeys,
     incrementGlobalUnreadCache,
     scheduleGlobalUnreadReconcile,
+    serverNameById,
     serverUnreadKeys,
     servers,
     socket,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Separator } from '@/lib/shared/ui/separator'
 import { ScrollArea } from '@/lib/shared/ui/scroll-area'
 import { DesktopDownloadButton } from '@/lib/shared/features/desktop-download-button'
@@ -21,12 +21,17 @@ export const NavigationSidebar = () => {
 
   const { data: servers } = useGetServers()
   const { data: globalUnreadSummary } = useGlobalUnreadSummary()
+  const serverNameById = useMemo(
+    () => new Map(servers?.map((server) => [server.id, server.name]) ?? []),
+    [servers],
+  )
 
   useServersSocket(serverId, servers)
   useGlobalUnreadSocket({
     activeChannelId: params?.channelId,
     activeMemberId: params?.memberId,
     activeServerId: serverId,
+    serverNameById,
     servers: globalUnreadSummary?.servers,
   })
 

@@ -353,6 +353,29 @@ Additional smoke when native features are implemented:
 - auto-update check/download/restart;
 - deep link open.
 
+## Native Notification Bridge
+
+Current implementation status:
+
+- native unread notifications are requested from the existing global unread decision path only after own-message, duplicate, active-read, mute, global sound, and visibility guards;
+- web/non-Electron runtime does not call the native bridge;
+- global notification sound off and per-chat mute suppress the native popup for this segment;
+- notification text is generic and must not include raw message content, storage URLs, secrets, or backend payloads;
+- Windows native notifications require the app Start Menu registration and AppUserModelID to match the active desktop
+  channel app id: production `com.axconnect.desktop`, staging `com.axconnect.desktop.staging`;
+- notification click restores/focuses the existing app window and routes the renderer to the target channel or direct conversation;
+- diagnostics are available through the existing unread notification debug buffer and include native sent/unsupported/failed and blocked-by-global/scope outcomes.
+
+Required smoke before classifying native notifications as pass:
+
+- eligible unread in another chat shows native popup;
+- Windows notification settings lists the installed sender as the expected product name for the active channel;
+- active visible near-bottom chat does not show native popup;
+- minimized or unfocused active chat can show native popup;
+- muted channel/DM does not show native popup;
+- global notification sound off suppresses native popup;
+- notification click focuses/restores the app and navigates to the target chat.
+
 ## Rollback
 
 Before updater:

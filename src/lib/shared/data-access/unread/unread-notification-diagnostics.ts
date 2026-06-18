@@ -14,6 +14,11 @@ export type UnreadNotificationDecisionReason =
   | 'ignored_duplicate'
   | 'ignored_inaccessible_context'
   | 'ignored_own_message'
+  | 'native_notification_blocked_global'
+  | 'native_notification_blocked_scope'
+  | 'native_notification_failed'
+  | 'native_notification_sent'
+  | 'native_notification_unsupported'
   | 'read_deferred_not_near_bottom'
   | 'sound_blocked_global'
   | 'sound_blocked_scope'
@@ -31,6 +36,7 @@ type UnreadNotificationDebugEntry = {
   memberId?: string
   messageId: string
   mutedScope?: boolean
+  nativeError?: string
   reason: UnreadNotificationDecisionReason
   scope: UnreadMessageCreatedRealtimePayload['scope']
   serverId: string
@@ -84,6 +90,7 @@ export const recordUnreadNotificationDecision = (params: {
   globalSoundEnabled?: boolean
   isActiveRoute: boolean
   mutedScope?: boolean
+  nativeError?: unknown
   payload: UnreadMessageCreatedRealtimePayload
   reason: UnreadNotificationDecisionReason
   soundError?: unknown
@@ -100,6 +107,12 @@ export const recordUnreadNotificationDecision = (params: {
     memberId: payload.senderMemberId,
     messageId: payload.messageId,
     mutedScope: params.mutedScope,
+    nativeError:
+      params.nativeError instanceof Error
+        ? params.nativeError.name || params.nativeError.message
+        : typeof params.nativeError === 'string'
+          ? params.nativeError
+          : undefined,
     reason: params.reason,
     scope: payload.scope,
     serverId: payload.serverId,
