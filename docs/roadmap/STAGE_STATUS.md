@@ -1139,11 +1139,12 @@ Done:
 - `docs/runbooks/DESKTOP_RELEASE_RUNBOOK.md` records the draft release process, artifact model, smoke checklist, rollback, and security checklist.
 - `desktop-build-reproducibility-audit` is pass in `docs/delegation/briefs/SEGMENT_BRIEF_225_DESKTOP_BUILD_REPRODUCIBILITY_AUDIT.md`: initial `build:desktop` failed because the Windows user could not create `winCodeSign` symlinks, but after operator symlink/build-context fix the local build produced `dist-desktop\AxConnect-Setup-0.0.2.exe` (`175305456` bytes, SHA256 `B307A4BFB96BABB655D13855B6A0ADC61715F6F996F182CCCBCF74D347483FDF`).
 - `desktop-staging-channel-config` is pass in `docs/delegation/briefs/SEGMENT_BRIEF_226_DESKTOP_STAGING_CHANNEL_CONFIG.md`: staging packaging now uses `com.axconnect.desktop.staging`, `AxConnect Staging`, `https://staging.ax-connect.ru`, and produced `dist-desktop\AxConnect-Staging-Setup-0.0.2.exe` (`175306350` bytes, SHA256 `794A8DB83BAA07E47B8B018062EA2600D9C14C0CF8355EE99BA0E1C693AD1164`).
+- `desktop-artifact-download-runbook` is review-ready in `docs/delegation/briefs/SEGMENT_BRIEF_227_DESKTOP_ARTIFACT_DOWNLOAD_RUNBOOK.md`: Segment 226 was confirmed in latest `origin/core/reborn`, staging installer hosting is documented as an Nginx static alias outside the app repo at `/var/www/ax-connect-desktop-downloads/`, staging web should use `NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL=/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe`, and local artifact evidence was rechecked for `dist-desktop\AxConnect-Staging-Setup-0.0.2.exe` (`175306350` bytes, SHA256 `794A8DB83BAA07E47B8B018062EA2600D9C14C0CF8355EE99BA0E1C693AD1164`); operator upload/static hosting/staging web rebuild remains pending.
 
 Current blockers:
 - official repeatable CI/CD desktop installer build is not implemented, though local Windows installer build now passes on a symlink-capable build context;
-- desktop artifact hosting/download path is not implemented end-to-end;
-- staging and production desktop packaging identity is separated, but artifact hosting/update metadata separation is not implemented;
+- desktop artifact hosting/download path is documented for staging but not implemented end-to-end on the server;
+- staging and production desktop packaging identity is separated, staging artifact hosting paths are documented, but update metadata separation is not implemented;
 - auto-update is not implemented;
 - native desktop notifications and taskbar/dock badge behavior are not implemented;
 - packaged desktop runtime smoke has not passed;
@@ -1152,8 +1153,7 @@ Current blockers:
 - security review for remote web content plus preload bridge is not complete.
 
 Next likely work:
-- `desktop-artifact-download-runbook`;
-- then `desktop-runtime-smoke-pass`;
+- operator apply/verification for the staging desktop download runbook, then `desktop-runtime-smoke-pass`;
 - later `desktop-native-notification-bridge` and `desktop-auto-update-proof`.
 
 ## Historical Notes

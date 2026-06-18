@@ -122,13 +122,13 @@ This is implemented for packaging identity and artifact naming, but still needs 
 Release blockers:
 
 - local Windows installer build has been reproduced on a symlink-capable build context, but official repeatable CI/CD release build is not implemented;
-- desktop release artifact hosting is not implemented;
+- desktop release artifact hosting runbook is prepared for staging, but operator upload/static hosting is not applied yet;
 - auto-update provider/metadata is absent;
 - native notification and app badge bridge are absent;
 - packaged desktop runtime smoke is not complete;
 - code signing is not configured;
 - security review for remote web + preload bridge is not complete;
-- staging/prod desktop packaging identity is separated, but artifact hosting and update metadata separation are not implemented;
+- staging/prod desktop packaging identity is separated, staging artifact hosting paths are documented, and update metadata separation is not implemented;
 - no CI/CD path builds, verifies, signs, and uploads desktop artifacts.
 
 Product risks:
@@ -221,8 +221,13 @@ Result:
 
 ### Segment 227. Desktop Artifact Download Runbook
 
+Status: `review / runbook prepared; operator upload pending`
+
 Goal:
 - make browser download of the desktop installer real and repeatable.
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_227_DESKTOP_ARTIFACT_DOWNLOAD_RUNBOOK.md`
 
 Expected work:
 - define versioned artifact path;
@@ -235,6 +240,15 @@ Expected work:
 
 Acceptance:
 - a user can download the staging desktop installer from the web app without knowing server paths.
+
+Result:
+- Segment 226 was confirmed merged into latest `origin/core/reborn` before this branch was created;
+- staging download hosting is documented as an Nginx static alias outside the app repo at `/var/www/ax-connect-desktop-downloads/`;
+- final staging URLs are `/downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.2.exe`, `/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe`, and `/downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.2.sha256`;
+- staging web env value is `NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL=/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe`;
+- local artifact evidence was rechecked: `dist-desktop\AxConnect-Staging-Setup-0.0.2.exe`, `175306350` bytes, SHA256 `794A8DB83BAA07E47B8B018062EA2600D9C14C0CF8355EE99BA0E1C693AD1164`;
+- local PowerShell and operator-only VPS Bash commands are documented for upload, Nginx alias, env update, rebuild/restart, verification, and rollback;
+- installer upload, Nginx reload, staging web rebuild/restart, browser download verification, and packaged desktop runtime smoke were not executed.
 
 ### Segment 228. Desktop Runtime Smoke Pass
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-Classification: `draft / not executable end-to-end yet`
+Classification: `draft / staging artifact hosting runbook prepared, operator apply pending`
 
 This runbook records the intended desktop release process. It is not a completed release procedure until the roadmap segments close the current blockers.
 
@@ -106,6 +106,14 @@ Latest staging build evidence:
 
 ## Artifact Model
 
+Staging artifact hosting decision:
+
+- serve installer files through an Nginx static alias outside the app repository;
+- do not put installers under the Next `public` directory or commit them to the repo;
+- staging filesystem root: `/var/www/ax-connect-desktop-downloads/`;
+- staging public URL prefix: `https://staging.ax-connect.ru/downloads/`;
+- this segment prepares the runbook only; upload, Nginx reload, and staging web rebuild/restart are operator actions.
+
 Planned versioned artifacts:
 
 ```text
@@ -119,6 +127,159 @@ Planned versioned artifacts:
 ```
 
 Auto-update metadata paths are intentionally deferred until the updater provider is implemented.
+
+## Staging Installer Download Hosting
+
+Current staging installer evidence:
+
+- installer: `dist-desktop\AxConnect-Staging-Setup-0.0.2.exe`;
+- size: `175306350` bytes;
+- SHA256: `794A8DB83BAA07E47B8B018062EA2600D9C14C0CF8355EE99BA0E1C693AD1164`.
+
+Final staging paths:
+
+```text
+/var/www/ax-connect-desktop-downloads/
+  desktop/
+    staging/
+      win/
+        AxConnect-Staging-Setup-0.0.2.exe
+        AxConnect-Staging-Setup-latest.exe
+        AxConnect-Staging-Setup-0.0.2.sha256
+```
+
+Final staging URLs:
+
+```text
+https://staging.ax-connect.ru/downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.2.exe
+https://staging.ax-connect.ru/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe
+https://staging.ax-connect.ru/downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.2.sha256
+```
+
+Staging web env value:
+
+```env
+NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL=/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe
+```
+
+`NEXT_PUBLIC_*` values are compiled into the web bundle, so changing this value on staging requires a staging web rebuild/restart. Do not run that against the active staging server until the operator approves the maintenance window.
+
+Local PowerShell artifact check:
+
+```powershell
+$installer = Get-Item -LiteralPath '.\dist-desktop\AxConnect-Staging-Setup-0.0.2.exe'
+$installer | Select-Object FullName, Length
+Get-FileHash -Algorithm SHA256 -LiteralPath $installer.FullName
+```
+
+Local PowerShell upload preparation:
+
+```powershell
+$installer = Get-Item -LiteralPath '.\dist-desktop\AxConnect-Staging-Setup-0.0.2.exe'
+$hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $installer.FullName).Hash
+Set-Content -LiteralPath '.\dist-desktop\AxConnect-Staging-Setup-0.0.2.sha256' -Value "$hash  AxConnect-Staging-Setup-0.0.2.exe" -Encoding ascii
+$StagingSshTarget = 'connect-staging'
+scp '.\dist-desktop\AxConnect-Staging-Setup-0.0.2.exe' "$StagingSshTarget`:/tmp/AxConnect-Staging-Setup-0.0.2.exe"
+scp '.\dist-desktop\AxConnect-Staging-Setup-0.0.2.sha256' "$StagingSshTarget`:/tmp/AxConnect-Staging-Setup-0.0.2.sha256"
+```
+
+VPS Bash publish commands, operator only:
+
+```bash
+set -euo pipefail
+
+sudo install -d -m 0755 -o www-data -g www-data /var/www/ax-connect-desktop-downloads/desktop/staging/win
+
+sudo install -m 0644 -o www-data -g www-data /tmp/AxConnect-Staging-Setup-0.0.2.exe /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.2.exe
+sudo install -m 0644 -o www-data -g www-data /tmp/AxConnect-Staging-Setup-0.0.2.sha256 /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.2.sha256
+sudo cp -f /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.2.exe /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe
+sudo chown www-data:www-data /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe
+sudo chmod 0644 /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe
+```
+
+Nginx static alias to add inside the `staging.ax-connect.ru` HTTPS server block, operator only:
+
+```nginx
+location ^~ /downloads/desktop/ {
+    alias /var/www/ax-connect-desktop-downloads/desktop/;
+    default_type application/octet-stream;
+    add_header X-Content-Type-Options nosniff always;
+    autoindex off;
+}
+```
+
+VPS Bash Nginx validation/reload, operator only:
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+VPS Bash staging env update, operator only:
+
+```bash
+set -euo pipefail
+
+sudo cp /etc/ax-connect-staging/web.env /etc/ax-connect-staging/web.env.bak.$(date +%Y%m%d%H%M%S)
+if sudo grep -q '^NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL=' /etc/ax-connect-staging/web.env; then
+  sudo sed -i 's#^NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL=.*#NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL=/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe#' /etc/ax-connect-staging/web.env
+else
+  echo 'NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL=/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe' | sudo tee -a /etc/ax-connect-staging/web.env >/dev/null
+fi
+```
+
+VPS Bash staging web rebuild/restart, operator only:
+
+```bash
+set -euo pipefail
+
+cd /var/www/ax-connect-staging
+bun install
+bun run build:web
+pm2 status
+STAGING_PM2_PROCESS="replace-with-staging-pm2-process-name"
+pm2 restart "$STAGING_PM2_PROCESS"
+```
+
+Use the real staging PM2 process name from `pm2 status`; do not restart production by mistake.
+
+VPS Bash verification after operator publish, operator only:
+
+```bash
+set -euo pipefail
+
+test -f /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.2.exe
+test -f /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe
+test -f /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.2.sha256
+
+curl -I https://staging.ax-connect.ru/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe
+curl -fsS https://staging.ax-connect.ru/downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.2.sha256
+
+curl -fsS -o /tmp/AxConnect-Staging-Setup-latest.exe https://staging.ax-connect.ru/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe
+echo '794A8DB83BAA07E47B8B018062EA2600D9C14C0CF8355EE99BA0E1C693AD1164  /tmp/AxConnect-Staging-Setup-latest.exe' | sha256sum -c -
+```
+
+Manual web verification after staging web rebuild:
+
+- open `https://staging.ax-connect.ru`;
+- confirm the desktop download button link is `/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe`;
+- download the installer and compare SHA256 with `794A8DB83BAA07E47B8B018062EA2600D9C14C0CF8355EE99BA0E1C693AD1164`;
+- do not claim packaged desktop runtime smoke until the dedicated runtime smoke segment.
+
+Rollback before auto-update:
+
+```bash
+set -euo pipefail
+
+PREVIOUS_VERSION="replace-with-previous-version"
+cd /var/www/ax-connect-desktop-downloads/desktop/staging/win
+sudo cp -f "AxConnect-Staging-Setup-${PREVIOUS_VERSION}.exe" AxConnect-Staging-Setup-latest.exe
+sudo chown www-data:www-data AxConnect-Staging-Setup-latest.exe
+sudo chmod 0644 AxConnect-Staging-Setup-latest.exe
+curl -I https://staging.ax-connect.ru/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe
+```
+
+Keep versioned files for audit. Rollback only repoints the `latest` copy unless the operator intentionally removes a bad versioned artifact.
 
 ## Manual Release Order
 
