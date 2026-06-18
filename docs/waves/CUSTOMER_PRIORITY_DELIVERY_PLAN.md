@@ -1134,6 +1134,40 @@ Out of scope:
 Manual smoke:
 - pending production/staging smoke for long-history chat entry with and without unread, short-message initial viewport fill, skeleton during initial settle, direct final-position reveal without visible smooth-scroll, first unread `New` divider, no visible bottom/top/middle jump, immediate post-entry scroll-up not snapping back to bottom, upward older-page prepend preserving the visible row, reply target navigation regression, and jump-to-latest regression.
 
+## Segment 223. Customer Chat Scrollbar And New-Below Jump Badge
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_223_CUSTOMER_CHAT_SCROLLBAR_AND_NEW_BELOW_JUMP_BADGE.md`
+
+Status:
+- `implemented locally / command verification passed / targeted local smoke passed`
+
+Delivered:
+- added a shared subtle native scrollbar utility for chat scroll containers;
+- polished the shared shadcn/Radix `ScrollArea` scrollbar used by server/channel/member/sidebar-style lists;
+- added a local new-messages-below state for latest-mode chats when incoming non-own messages arrive below the current viewport;
+- the floating down control now shows a capped `99+` badge while unseen new messages exist below the viewport;
+- badge color follows existing attention priority: mention > reply > ordinary unread;
+- older-page prepends, initial load, own messages, and anchored-history rows do not increment the badge;
+- first click with unseen new messages scrolls to the first unseen new message and clears the badge;
+- if the user is still away from live bottom, the down control stays visible and the next click moves to latest.
+
+Out of scope:
+- backend/API/SDK/DB/realtime contract changes;
+- persisted unread model changes;
+- native desktop notifications/badges;
+- virtualization;
+- reply navigation redesign;
+- link previews;
+- WebRTC/media work.
+
+Targeted local smoke:
+- local production-like web/API confirmed ordinary incoming badge `1`, accumulated badge `3`, mention-priority amber badge, real backend/realtime delivery from a second authenticated user, and old-history prepend negative case with no badge.
+
+Remaining manual smoke:
+- confirm the two-step first-new-then-latest behavior in a chat where the unseen lower batch is tall enough to keep the viewport away from bottom after the first click;
+- check `99+` cap, reply-priority badge color, sidebar/list scrollbar appearance, light theme contrast, and staging behavior.
+
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 
 ## Low-Risk UX Fixes Result
