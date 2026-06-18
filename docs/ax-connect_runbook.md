@@ -314,7 +314,74 @@ sudo systemctl reload nginx
 
 ---
 
-## 14. PM2
+## 14. Staging desktop installer downloads
+
+This section is an operator runbook for the staging desktop installer only. It does not apply production downloads, auto-update metadata, signing, or packaged runtime smoke.
+
+Current staging app facts:
+
+- staging app path: `/var/www/ax-connect-staging`;
+- staging web env path: `/etc/ax-connect-staging/web.env`;
+- staging download filesystem root: `/var/www/ax-connect-desktop-downloads`;
+- staging URL prefix: `https://staging.ax-connect.ru/downloads/`;
+- staging web env value: `NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL=/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe`.
+
+Expected files:
+
+```text
+/var/www/ax-connect-desktop-downloads/
+  desktop/
+    staging/
+      win/
+        AxConnect-Staging-Setup-0.0.2.exe
+        AxConnect-Staging-Setup-latest.exe
+        AxConnect-Staging-Setup-0.0.2.sha256
+```
+
+Nginx static alias to add inside the `staging.ax-connect.ru` HTTPS server block:
+
+```nginx
+location ^~ /downloads/desktop/ {
+    alias /var/www/ax-connect-desktop-downloads/desktop/;
+    default_type application/octet-stream;
+    add_header X-Content-Type-Options nosniff always;
+    autoindex off;
+}
+```
+
+Operator-only Bash publish commands:
+
+```bash
+set -euo pipefail
+
+sudo install -d -m 0755 -o www-data -g www-data /var/www/ax-connect-desktop-downloads/desktop/staging/win
+sudo install -m 0644 -o www-data -g www-data /tmp/AxConnect-Staging-Setup-0.0.2.exe /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.2.exe
+sudo install -m 0644 -o www-data -g www-data /tmp/AxConnect-Staging-Setup-0.0.2.sha256 /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.2.sha256
+sudo cp -f /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.2.exe /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe
+sudo chown www-data:www-data /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe
+sudo chmod 0644 /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+If the staging env value changes, update `/etc/ax-connect-staging/web.env`, rebuild `/var/www/ax-connect-staging`, and restart the staging PM2 process only after confirming the real process name with `pm2 status`.
+
+Rollback is a copy back to the previous versioned installer:
+
+```bash
+set -euo pipefail
+
+PREVIOUS_VERSION="replace-with-previous-version"
+cd /var/www/ax-connect-desktop-downloads/desktop/staging/win
+sudo cp -f "AxConnect-Staging-Setup-${PREVIOUS_VERSION}.exe" AxConnect-Staging-Setup-latest.exe
+sudo chown www-data:www-data AxConnect-Staging-Setup-latest.exe
+sudo chmod 0644 AxConnect-Staging-Setup-latest.exe
+curl -I https://staging.ax-connect.ru/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe
+```
+
+---
+
+## 15. PM2
 
 ### Проверка статуса
 ```bash
@@ -338,7 +405,7 @@ pm2 save
 
 ---
 
-## 15. Как деплоить изменения
+## 16. Как деплоить изменения
 
 ### Стандартная последовательность
 
@@ -360,7 +427,7 @@ pm2 restart ax-connect
 
 ---
 
-## 16. Как запускать локально
+## 17. Как запускать локально
 
 Рекомендуемый локальный сценарий:
 
@@ -382,7 +449,7 @@ next dev -p 3000
 
 ---
 
-## 17. Что проверять при проблемах
+## 18. Что проверять при проблемах
 
 ### Если сайт не открывается
 Проверить:
@@ -417,7 +484,7 @@ sudo systemctl status nginx
 
 ---
 
-## 18. Что не хранить в git
+## 19. Что не хранить в git
 
 Нельзя хранить в репозитории:
 - production auth secrets
@@ -431,7 +498,7 @@ sudo systemctl status nginx
 
 ---
 
-## 19. Что желательно сделать позже
+## 20. Что желательно сделать позже
 
 ### Инфраструктурно
 - привести env-файлы к чистой схеме:
@@ -455,7 +522,7 @@ sudo systemctl status nginx
 
 ---
 
-## 20. Краткий operational cheat sheet
+## 21. Краткий operational cheat sheet
 
 ### Проверка сайта
 ```bash
@@ -493,7 +560,7 @@ mysql -u root -p
 
 ---
 
-## 21. Финальный смысл
+## 22. Финальный смысл
 
 Сервис уже можно сопровождать и развивать, если понимать 4 ключевых вещи:
 
