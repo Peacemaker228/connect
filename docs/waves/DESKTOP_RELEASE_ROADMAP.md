@@ -122,13 +122,13 @@ This is implemented for packaging identity and artifact naming, but still needs 
 Release blockers:
 
 - local Windows installer build has been reproduced on a symlink-capable build context, but official repeatable CI/CD release build is not implemented;
-- desktop release artifact hosting runbook is prepared for staging, but operator upload/static hosting is not applied yet;
+- desktop release artifact hosting runbook is prepared for staging, but public HTTPS verification currently shows `/downloads/desktop/` is still routed through web auth instead of static Nginx hosting;
 - auto-update provider/metadata is absent;
 - native notification and app badge bridge are absent;
 - packaged desktop runtime smoke is not complete;
 - code signing is not configured;
 - security review for remote web + preload bridge is not complete;
-- staging/prod desktop packaging identity is separated, staging artifact hosting paths are documented, and update metadata separation is not implemented;
+- staging/prod desktop packaging identity is separated, staging artifact hosting paths are documented, public static download hosting is blocked, and update metadata separation is not implemented;
 - no CI/CD path builds, verifies, signs, and uploads desktop artifacts.
 
 Product risks:
@@ -250,7 +250,42 @@ Result:
 - local PowerShell and operator-only VPS Bash commands are documented for upload, Nginx alias, env update, rebuild/restart, verification, and rollback;
 - installer upload, Nginx reload, staging web rebuild/restart, browser download verification, and packaged desktop runtime smoke were not executed.
 
-### Segment 228. Desktop Runtime Smoke Pass
+### Segment 228. Desktop Staging Download Apply Verification
+
+Status: `blocked / staging downloads still route through web auth`
+
+Goal:
+- apply the staging installer download runbook and prove that users can download the staging installer from the web app.
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_228_DESKTOP_STAGING_DOWNLOAD_APPLY_VERIFICATION.md`
+
+Expected work:
+- upload the versioned staging installer and SHA256 file to the staging VPS;
+- publish the `latest` copy;
+- apply or verify the Nginx `/downloads/desktop/` static alias;
+- verify HTTPS download and SHA256;
+- verify the staging web download button uses `NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL`;
+- record redacted evidence.
+
+Acceptance:
+- staging installer download works from `https://staging.ax-connect.ru/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe`, hash matches, and no packaged runtime smoke is claimed yet.
+
+Result:
+- branch started from latest `origin/core/reborn` after Segment 227 was merged;
+- local installer evidence still matches Segment 226: `dist-desktop\AxConnect-Staging-Setup-0.0.2.exe`, `175306350` bytes, SHA256 `794A8DB83BAA07E47B8B018062EA2600D9C14C0CF8355EE99BA0E1C693AD1164`;
+- staging web HTML contains `/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe` and does not contain fallback `/downloads/AxConnect-Setup-latest.exe`;
+- public `https://staging.ax-connect.ru/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe` returns `307 Temporary Redirect` to `/sign-in?redirect_url=...` instead of static installer bytes;
+- following the redirect downloads sign-in HTML (`26273` bytes, first bytes `<!DOCTYPE html>`) rather than the `175306350` byte installer;
+- public `.sha256` URL also redirects to sign-in HTML and does not contain the expected hash;
+- no server command, production change, auto-update/native notification work, or packaged desktop runtime smoke was run.
+
+Next operator action:
+- verify files under `/var/www/ax-connect-desktop-downloads/desktop/staging/win/`;
+- apply or move the `location ^~ /downloads/desktop/` static alias ahead of the generic Next proxy/auth path in the `staging.ax-connect.ru` HTTPS server block;
+- run `nginx -t`, reload Nginx, and repeat HTTPS/hash verification before Segment 229 runtime smoke.
+
+### Segment 229. Desktop Runtime Smoke Pass
 
 Goal:
 - prove the packaged desktop app is usable as the primary client.
@@ -272,7 +307,7 @@ Required smoke:
 Acceptance:
 - pass/review/fail report recorded with screenshots or redacted evidence where useful.
 
-### Segment 229. Native Desktop Notification Bridge
+### Segment 230. Native Desktop Notification Bridge
 
 Goal:
 - route accepted unread/attention events to OS notifications and app-level unread signals.
@@ -288,7 +323,7 @@ Expected behavior:
 Acceptance:
 - notification behavior works in packaged desktop and does not regress web notification sound behavior.
 
-### Segment 230. Desktop Auto-Update Proof
+### Segment 231. Desktop Auto-Update Proof
 
 Goal:
 - implement and prove in-app update flow.
