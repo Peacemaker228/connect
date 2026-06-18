@@ -627,6 +627,7 @@ Out of scope:
 
 Follow-up:
 - next focused targets are `customer-message-edit-mention-picker`, then `customer-chat-send-button`; neither is part of Segment 207.
+- future edit-mode polish should replace the current single-line edit control with a textarea-style editor, matching the main composer expectations for multiline messages, long text, caret behavior, Escape cancel, Enter/Shift+Enter semantics, and edit mention picker compatibility.
 
 ## Segment 208. Customer Message Edit Mention Picker
 
@@ -657,6 +658,7 @@ Product decision:
 
 Known limitation:
 - pre-existing readable mentions are not initialized as tracked stable ranges in this slice; they remain backend-parser based unless reselected through the edit picker.
+- edit mode still needs a focused textarea polish pass so editing multiline and long messages feels consistent with the chat composer rather than like a compact one-line field.
 
 Next:
 - `customer-chat-send-button` remains the next focused composer UX target.
