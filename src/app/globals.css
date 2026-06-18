@@ -41,6 +41,32 @@ body,
     .chat-message-input::-webkit-scrollbar-thumb:hover {
         background-color: hsl(var(--muted-foreground) / 0.55);
     }
+
+    .app-scrollbar {
+        scrollbar-color: hsl(var(--muted-foreground) / 0.38) transparent;
+        scrollbar-gutter: stable;
+        scrollbar-width: thin;
+    }
+
+    .app-scrollbar::-webkit-scrollbar {
+        height: 10px;
+        width: 10px;
+    }
+
+    .app-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .app-scrollbar::-webkit-scrollbar-thumb {
+        background-color: hsl(var(--muted-foreground) / 0.28);
+        border: 3px solid transparent;
+        border-radius: 9999px;
+        background-clip: content-box;
+    }
+
+    .app-scrollbar::-webkit-scrollbar-thumb:hover {
+        background-color: hsl(var(--muted-foreground) / 0.5);
+    }
 }
 
 @layer base {

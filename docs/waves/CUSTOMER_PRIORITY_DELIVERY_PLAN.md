@@ -1094,7 +1094,7 @@ Brief:
 - `docs/delegation/briefs/SEGMENT_BRIEF_222_CUSTOMER_CHAT_INITIAL_SCROLL_STABILITY_FIX.md`
 
 Status:
-- `implemented locally / verification pending`
+- `implemented locally / command verification passed / targeted local smoke passed`
 
 Reason:
 - production/staging chat entry could race between latest bottom auto-scroll, unread anchoring, viewport auto-fill, and boundary history loading;
@@ -1109,10 +1109,21 @@ Delivered:
 - initial latest windows also load bounded older pages when rendered rows are shorter than the viewport, avoiding a large empty top gap while older history still exists;
 - a message-shaped skeleton covers the chat while initial fill/positioning is still unsettled, so users do not see the scrollbar pass through intermediate states;
 - initial placement is instant and real content is revealed on the next animation frame, so opening a chat should show the final bottom/unread position directly rather than smooth-scrolling through older rows;
-- repeat navigation to a chat with valid React Query cache uses stale-while-revalidate behavior: cached messages render immediately instead of showing the cold-load skeleton, while unread/read side effects still wait for normal initial positioning and summary reconciliation;
+- repeat navigation to a chat with valid React Query cache uses stale-while-revalidate behavior: cached messages render immediately instead of showing the cold-load skeleton only after unread summary is known and there is no known unread target, but the active chat query always refetches on mount/return; if unread summary reports unread for that chat, the UI waits for latest-page reconciliation before revealing the final position so messages created while the user was away do not appear through a stale-cache jump;
 - mark-read, active read-state, jump-to-latest visibility, boundary load-more, latest auto-scroll, and viewport auto-fill are gated until initial positioning is complete;
 - `useChatScroll` no longer performs a surprise first auto-scroll when auto-scroll is re-enabled after a deliberate disabled phase;
+- top-boundary older-history loading is scroll-direction aware and slightly debounced, so a brief threshold crossing while reversing toward the live bottom does not prepend old pages and jerk the viewport;
+- older-page prepend compensation preserves the nearest visible message row as an anchor when the async page arrives, with `scrollTop + height delta` kept only as a fallback if the anchor row is unavailable;
+- user scroll intent cancels pending delayed scroll-to-bottom / initial-target corrections, preventing the enter-chat-then-scroll-up snap back to live bottom;
+- the jump-to-latest button is rendered as an overlay outside the scroll content, so its visibility no longer changes chat `scrollHeight` near the live bottom;
 - latest viewport auto-fill preserves the current viewport when prepending older rows.
+
+Targeted local smoke:
+- local production-like web/API on `3001`/`4000` opened a long-history channel at latest bottom;
+- one upward top-boundary scroll produced one older-page request and kept the visible row in place after prepend;
+- scrolling down toward live bottom produced no older-page requests and the jump-to-latest overlay did not alter scroll height;
+- six repeated enter-channel-then-immediate-scroll-up checks across two channels stayed away from bottom after delayed corrections;
+- full production/staging smoke remains required before release.
 
 Out of scope:
 - backend/API/SDK/DB changes;
@@ -1121,7 +1132,44 @@ Out of scope:
 - desktop staging release pass.
 
 Manual smoke:
-- pending production/staging smoke for long-history chat entry with and without unread, short-message initial viewport fill, skeleton during initial settle, direct final-position reveal without visible smooth-scroll, first unread `New` divider, no visible bottom/top/middle jump, reply target navigation regression, and jump-to-latest regression.
+- pending production/staging smoke for long-history chat entry with and without unread, short-message initial viewport fill, skeleton during initial settle, direct final-position reveal without visible smooth-scroll, first unread `New` divider, no visible bottom/top/middle jump, immediate post-entry scroll-up not snapping back to bottom, upward older-page prepend preserving the visible row, reply target navigation regression, and jump-to-latest regression.
+
+## Segment 223. Customer Chat Scrollbar And New-Below Jump Badge
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_223_CUSTOMER_CHAT_SCROLLBAR_AND_NEW_BELOW_JUMP_BADGE.md`
+
+Status:
+- `implemented locally / command verification passed / targeted local smoke passed`
+
+Delivered:
+- added a shared subtle native scrollbar utility for chat scroll containers;
+- polished the shared shadcn/Radix `ScrollArea` scrollbar used by server/channel/member/sidebar-style lists;
+- added a local new-messages-below state for latest-mode chats when incoming non-own messages arrive below the current viewport;
+- the floating down control now shows a capped `99+` badge while unseen new messages exist below the viewport;
+- badge color follows existing attention priority: mention > reply > ordinary unread;
+- older-page prepends, initial load, own messages, and anchored-history rows do not increment the badge;
+- first click with unseen new messages scrolls to the first unseen new message and clears the badge;
+- far first-new jumps use a short fake-smooth movement instead of native-smoothing across the whole message range;
+- if the user is still away from live bottom, the down control stays visible and the next click moves to latest.
+
+Out of scope:
+- backend/API/SDK/DB/realtime contract changes;
+- persisted unread model changes;
+- native desktop notifications/badges;
+- virtualization;
+- reply navigation redesign;
+- link previews;
+- WebRTC/media work.
+
+Targeted local smoke:
+- local production-like web/API confirmed ordinary incoming badge `1`, accumulated badge `3`, mention-priority amber badge, real backend/realtime delivery from a second authenticated user, old-history prepend negative case with no badge, and the tall lower-batch two-step behavior where the first click moves to the first unseen new message and the second click moves to live bottom.
+
+Remaining manual smoke:
+- check `99+` cap, reply-priority badge color, sidebar/list scrollbar appearance, light theme contrast, and staging behavior.
+
+Follow-up requirement:
+- progressive read decrement must be implemented as a separate focused slice: as the user scrolls through unseen new messages, the jump-anchor badge and existing unread badges should decrease, attention color should downgrade when mention/reply items are consumed, and backend unread summaries must remain the reconciliation source of truth.
 
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 

@@ -1,6 +1,6 @@
 'use client'
 
-import type { ChatMessageDto, MemberDto } from '@app-core/contracts'
+import type { ChatMessageDto, MemberDto, UnreadAttentionLevel } from '@app-core/contracts'
 import { fetchChatReplyTargetContext, type ChatHistoryDirection } from '@sdk/queries/chat'
 import {
   getChatMessagesRealtimeKey,
@@ -54,9 +54,15 @@ type PendingReplyTargetScroll = {
   options: ReplyTargetScrollOptions
 }
 
+type PrependViewportAnchor = {
+  messageId: string
+  top: number
+}
+
 type PendingPrependScroll = {
+  anchor: PrependViewportAnchor | null
+  latestScrollTop: number
   previousScrollHeight: number
-  previousScrollTop: number
 }
 
 type PendingInitialScrollTarget =
@@ -67,6 +73,12 @@ type PendingInitialScrollTarget =
       messageId: string
       type: 'message'
     }
+
+type NewMessagesBelowState = {
+  attentionLevel: Exclude<UnreadAttentionLevel, 'none'>
+  count: number
+  firstMessageId: string
+}
 
 const REPLY_NAVIGATION_HIGHLIGHT_MS = 1800
 const LOCAL_SMOOTH_SCROLL_DISTANCE_MULTIPLIER = 3
@@ -82,6 +94,7 @@ const PROGRAMMATIC_SCROLL_BOUNDARY_SUPPRESSION_MS = 1200
 const FAKE_SMOOTH_SCROLL_OFFSET_MULTIPLIER = 0.75
 const INITIAL_UNREAD_CONTEXT_PAGE_LIMIT = 8
 const INITIAL_SCROLL_BOUNDARY_SUPPRESSION_MS = 900
+const NEW_MESSAGES_JUMP_TOP_OFFSET_PX = 72
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(value, max))
 
@@ -101,6 +114,63 @@ const getInitialMessageLimit = () => {
 }
 
 const getTimestampValue = (value: Date | string) => new Date(value).getTime()
+
+const getUnreadBadgeLabel = (count: number) => (count > 99 ? '99+' : String(count))
+
+const getJumpUnreadBadgeClassName = (attentionLevel: Exclude<UnreadAttentionLevel, 'none'>) => {
+  if (attentionLevel === 'mention') {
+    return 'bg-amber-500 text-white ring-amber-200/70 dark:ring-amber-900/40'
+  }
+
+  if (attentionLevel === 'reply') {
+    return 'bg-sky-500 text-white ring-sky-200/70 dark:ring-sky-900/40'
+  }
+
+  return 'bg-rose-500 text-white ring-rose-200/70 dark:ring-rose-900/40'
+}
+
+const getAttentionPriority = (attentionLevel: UnreadAttentionLevel) => {
+  if (attentionLevel === 'mention') {
+    return 3
+  }
+
+  if (attentionLevel === 'reply') {
+    return 2
+  }
+
+  if (attentionLevel === 'unread') {
+    return 1
+  }
+
+  return 0
+}
+
+const getHighestAttentionLevel = (
+  currentAttentionLevel: Exclude<UnreadAttentionLevel, 'none'>,
+  nextAttentionLevel: Exclude<UnreadAttentionLevel, 'none'>,
+) =>
+  getAttentionPriority(nextAttentionLevel) > getAttentionPriority(currentAttentionLevel)
+    ? nextAttentionLevel
+    : currentAttentionLevel
+
+const getMessageAttentionLevelForMember = (
+  message: MessageWithMemberWithProfile,
+  currentMemberId: string,
+): Exclude<UnreadAttentionLevel, 'none'> => {
+  const mentionsCurrentMember = message.mentions?.some(
+    (mention) => mention.kind === 'ALL' || mention.memberId === currentMemberId,
+  )
+
+  if (mentionsCurrentMember) {
+    return 'mention'
+  }
+
+  if (message.replyTo?.memberId === currentMemberId) {
+    return 'reply'
+  }
+
+  return 'unread'
+}
 
 const compareMessagesByAscendingTime = (
   leftMessage: MessageWithMemberWithProfile,
@@ -234,7 +304,12 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const initialScrollRevealFrameRef = useRef<number | null>(null)
   const initialScrollFallbackTimeoutRef = useRef<number | null>(null)
   const warmInitialChatKeyRef = useRef<string | null>(null)
+  const warmCacheReconcileStartedChatKeyRef = useRef<string | null>(null)
+  const knownMessageIdsRef = useRef<Set<string>>(new Set())
+  const knownLatestMessageTimestampRef = useRef<number | null>(null)
+  const [warmCacheFreshChatKey, setWarmCacheFreshChatKey] = useState<string | null>(null)
   const [unreadAnchor, setUnreadAnchor] = useState<UnreadAnchor | null>(null)
+  const [newMessagesBelow, setNewMessagesBelow] = useState<NewMessagesBelowState | null>(null)
   const [anchoredHistory, setAnchoredHistory] = useState<AnchoredHistoryState | null>(null)
   const [anchoredHistoryLoadingDirection, setAnchoredHistoryLoadingDirection] = useState<ChatHistoryDirection | null>(
     null,
@@ -246,7 +321,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
   const { setReplyTo } = useChatReply()
   const initialMessageLimit = getInitialMessageLimit()
 
-  const { data, fetchNextPage, hasNextPage, isFetchedAfterMount, isFetchingNextPage, status } = useChatQuery({
+  const { data, fetchNextPage, hasNextPage, isFetchedAfterMount, isFetchingNextPage, refetch, status } = useChatQuery({
     queryKey,
     apiUrl: messageApiUrl,
     initialLimit: initialMessageLimit,
@@ -304,9 +379,14 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     pendingPrependScrollRef.current = null
     pendingInitialScrollTargetRef.current = null
     pendingReplyTargetScrollRef.current = null
+    warmCacheReconcileStartedChatKeyRef.current = null
+    knownMessageIdsRef.current = new Set()
+    knownLatestMessageTimestampRef.current = null
+    setWarmCacheFreshChatKey(null)
     setAnchoredHistory(null)
     setAnchoredHistoryLoadingDirection(null)
     setUnreadAnchor(null)
+    setNewMessagesBelow(null)
     setIsInitialScrollSettled(false)
     setInitialScrollRetryTick(0)
     setEditingMessageId(null)
@@ -339,6 +419,39 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     messageElementByIdRef.current.set(messageId, element)
   }, [])
 
+  const capturePrependViewportAnchor = useCallback((): PrependViewportAnchor | null => {
+    const container = chatRef.current
+
+    if (!container) {
+      return null
+    }
+
+    const containerRect = container.getBoundingClientRect()
+    const viewportTop = containerRect.top + 8
+    let closestAnchor: PrependViewportAnchor | null = null
+    let closestDistance = Number.POSITIVE_INFINITY
+
+    messageElementByIdRef.current.forEach((element, messageId) => {
+      const elementRect = element.getBoundingClientRect()
+
+      if (elementRect.bottom <= viewportTop || elementRect.top >= containerRect.bottom) {
+        return
+      }
+
+      const distance = Math.abs(elementRect.top - viewportTop)
+
+      if (distance < closestDistance) {
+        closestDistance = distance
+        closestAnchor = {
+          messageId,
+          top: elementRect.top,
+        }
+      }
+    })
+
+    return closestAnchor
+  }, [])
+
   const scrollMessageToCenter = useCallback((messageId: string, behavior: ScrollBehavior = 'auto') => {
     const container = chatRef.current
     const targetElement = messageElementByIdRef.current.get(messageId)
@@ -357,6 +470,50 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
       top: Math.max(0, Math.min(centeredTop, maxScrollTop)),
       behavior,
     })
+
+    return true
+  }, [])
+
+  const scrollMessageToReadableTop = useCallback((messageId: string, behavior: ScrollBehavior = 'auto') => {
+    const container = chatRef.current
+    const targetElement = messageElementByIdRef.current.get(messageId)
+
+    if (!container || !targetElement || !container.contains(targetElement)) {
+      return false
+    }
+
+    const containerRect = container.getBoundingClientRect()
+    const targetRect = targetElement.getBoundingClientRect()
+    const targetTop = container.scrollTop + targetRect.top - containerRect.top - NEW_MESSAGES_JUMP_TOP_OFFSET_PX
+    const maxScrollTop = Math.max(container.scrollHeight - container.clientHeight, 0)
+    const nextScrollTop = Math.max(0, Math.min(targetTop, maxScrollTop))
+    const distance = Math.abs(nextScrollTop - container.scrollTop)
+    const canUseFakeSmooth = behavior === 'smooth' && distance > container.clientHeight * LOCAL_SMOOTH_SCROLL_DISTANCE_MULTIPLIER
+
+    if (canUseFakeSmooth) {
+      const direction = nextScrollTop >= container.scrollTop ? -1 : 1
+      const fakeOffset = Math.min(
+        container.clientHeight * FAKE_SMOOTH_SCROLL_OFFSET_MULTIPLIER,
+        Math.max(distance, container.clientHeight * 0.4),
+      )
+      const fakeStartTop = Math.max(0, Math.min(nextScrollTop + direction * fakeOffset, maxScrollTop))
+
+      container.scrollTo({
+        top: fakeStartTop,
+        behavior: 'auto',
+      })
+      window.requestAnimationFrame(() => {
+        container.scrollTo({
+          top: nextScrollTop,
+          behavior: 'smooth',
+        })
+      })
+    } else {
+      container.scrollTo({
+        top: nextScrollTop,
+        behavior,
+      })
+    }
 
     return true
   }, [])
@@ -549,8 +706,9 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     const previousScrollTop = container?.scrollTop ?? 0
 
     pendingPrependScrollRef.current = {
+      anchor: capturePrependViewportAnchor(),
+      latestScrollTop: previousScrollTop,
       previousScrollHeight,
-      previousScrollTop,
     }
     olderHistoryLoadInFlightRef.current = true
 
@@ -564,7 +722,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         }
       }, 120)
     }
-  }, [])
+  }, [capturePrependViewportAnchor])
 
   const loadOlderMessages = useCallback(
     async (options: { preserveViewport?: boolean } = {}) => {
@@ -592,6 +750,15 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
 
   const jumpToLatestMessages = useCallback(() => {
     const shouldExitAnchoredWindow = Boolean(anchoredHistory?.newerCursor)
+
+    if (!shouldExitAnchoredWindow && newMessagesBelow?.firstMessageId) {
+      if (scrollMessageToReadableTop(newMessagesBelow.firstMessageId, 'smooth')) {
+        setNewMessagesBelow(null)
+        return
+      }
+
+      setNewMessagesBelow(null)
+    }
 
     if (shouldExitAnchoredWindow) {
       anchoredHistoryLoadingDirectionRef.current = null
@@ -641,7 +808,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         behavior,
       })
     })
-  }, [anchoredHistory])
+  }, [anchoredHistory, newMessagesBelow?.firstMessageId, scrollMessageToReadableTop])
 
   const handleReply = useCallback(
     (message: MessageWithMemberWithProfile['replyTo']) => {
@@ -679,6 +846,18 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         : mergeChatMessagesByAscendingTime([], data?.pages?.flatMap((page) => page.items) ?? []),
     [anchoredHistory, data?.pages],
   )
+  const syncKnownLatestMessages = useCallback((messages: MessageWithMemberWithProfile[]) => {
+    knownMessageIdsRef.current = new Set(messages.map((message) => message.id))
+    knownLatestMessageTimestampRef.current = messages.reduce<number | null>((latestTimestamp, message) => {
+      const messageTimestamp = getTimestampValue(message.createdAt)
+
+      if (!Number.isFinite(messageTimestamp)) {
+        return latestTimestamp
+      }
+
+      return latestTimestamp === null ? messageTimestamp : Math.max(latestTimestamp, messageTimestamp)
+    }, null)
+  }, [])
   const hasWarmInitialChatDataNow =
     !anchoredHistory && status === 'success' && visibleMessages.length > 0 && !isFetchedAfterMount
 
@@ -686,8 +865,23 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     warmInitialChatKeyRef.current = chatReadKey
   }
 
-  const shouldBypassInitialSkeleton =
+  const shouldReconcileWarmCache =
     warmInitialChatKeyRef.current === chatReadKey && status === 'success' && visibleMessages.length > 0
+  const hasKnownUnreadTarget = Boolean(currentUnreadItem && currentUnreadItem.unreadCount > 0)
+  const isWarmCacheReconcilePending = shouldReconcileWarmCache && warmCacheFreshChatKey !== chatReadKey
+  const shouldBypassInitialSkeleton =
+    shouldReconcileWarmCache && unreadSummaryStatus !== 'pending' && !hasKnownUnreadTarget
+
+  useEffect(() => {
+    if (!shouldReconcileWarmCache || warmCacheReconcileStartedChatKeyRef.current === chatReadKey) {
+      return
+    }
+
+    warmCacheReconcileStartedChatKeyRef.current = chatReadKey
+    void refetch().finally(() => {
+      setWarmCacheFreshChatKey(chatReadKey)
+    })
+  }, [chatReadKey, refetch, shouldReconcileWarmCache])
   const loadedUnreadMessages = useMemo(() => {
     if (!currentUnreadItem || currentUnreadItem.unreadCount <= 0) {
       return []
@@ -719,7 +913,84 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         ? Boolean(anchoredHistory.olderCursor) && anchoredHistoryLoadingDirection !== 'older'
         : !isFetchingNextPage && hasNextPage),
     count: isAnchoredHistoryMode ? 0 : (data?.pages?.[0]?.items?.length ?? 0),
+    onScrollPositionChange: (scrollTop) => {
+      if (pendingPrependScrollRef.current) {
+        pendingPrependScrollRef.current.latestScrollTop = scrollTop
+        pendingPrependScrollRef.current.anchor = capturePrependViewportAnchor()
+      }
+    },
+    onUserScrollIntent: () => {
+      pendingInitialScrollTargetRef.current = null
+    },
   })
+
+  useEffect(() => {
+    if (isAnchoredHistoryMode) {
+      return
+    }
+
+    if (!isInitialScrollSettled) {
+      syncKnownLatestMessages(visibleMessages)
+      return
+    }
+
+    const previousKnownMessageIds = knownMessageIdsRef.current
+    const previousLatestMessageTimestamp = knownLatestMessageTimestampRef.current
+
+    if (previousLatestMessageTimestamp === null) {
+      syncKnownLatestMessages(visibleMessages)
+      return
+    }
+
+    const newlyAppendedIncomingMessages = visibleMessages
+      .filter((message) => {
+        const messageTimestamp = getTimestampValue(message.createdAt)
+
+        return (
+          !previousKnownMessageIds.has(message.id) &&
+          message.memberId !== member.id &&
+          Number.isFinite(messageTimestamp) &&
+          messageTimestamp > previousLatestMessageTimestamp
+        )
+      })
+      .sort(compareMessagesByAscendingTime)
+
+    syncKnownLatestMessages(visibleMessages)
+
+    if (newlyAppendedIncomingMessages.length === 0 || isNearBottom) {
+      return
+    }
+
+    setNewMessagesBelow((currentState) => {
+      const nextAttentionLevel = newlyAppendedIncomingMessages.reduce<Exclude<UnreadAttentionLevel, 'none'>>(
+        (currentAttentionLevel, message) =>
+          getHighestAttentionLevel(currentAttentionLevel, getMessageAttentionLevelForMember(message, member.id)),
+        currentState?.attentionLevel ?? 'unread',
+      )
+
+      return {
+        attentionLevel: nextAttentionLevel,
+        count: (currentState?.count ?? 0) + newlyAppendedIncomingMessages.length,
+        firstMessageId: currentState?.firstMessageId ?? newlyAppendedIncomingMessages[0].id,
+      }
+    })
+  }, [
+    isAnchoredHistoryMode,
+    isInitialScrollSettled,
+    isNearBottom,
+    member.id,
+    syncKnownLatestMessages,
+    visibleMessages,
+  ])
+
+  useEffect(() => {
+    if (!isNearBottom) {
+      return
+    }
+
+    setNewMessagesBelow(null)
+  }, [isNearBottom])
+
   useMarkChatRead({
     beforeMarkRead: captureUnreadAnchor,
     enabled: !isAnchoredHistoryMode && isInitialScrollSettled && unreadSummaryStatus !== 'pending',
@@ -826,16 +1097,9 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
       isInitialScrollSettled ||
       isAnchoredHistoryMode ||
       status !== 'success' ||
+      (isWarmCacheReconcilePending && hasKnownUnreadTarget) ||
       (unreadSummaryStatus === 'pending' && !shouldBypassInitialSkeleton)
     ) {
-      return
-    }
-
-    if (unreadSummaryStatus === 'pending' && shouldBypassInitialSkeleton) {
-      container.scrollTo({
-        top: container.scrollHeight,
-        behavior: 'auto',
-      })
       return
     }
 
@@ -888,9 +1152,11 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     chatReadKey,
     currentUnreadItem,
     hasNextPage,
+    hasKnownUnreadTarget,
     isAnchoredHistoryMode,
     isFetchingNextPage,
     isInitialScrollSettled,
+    isWarmCacheReconcilePending,
     initialScrollRetryTick,
     loadOlderMessages,
     loadedUnreadMessages,
@@ -929,7 +1195,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     }
   }, [chatReadKey, revealInitialScroll, shouldShowInitialScrollSkeleton])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isInitialScrollSettled) {
       return
     }
@@ -1002,7 +1268,24 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
         const scrollHeightDelta = container.scrollHeight - pendingPrependScroll.previousScrollHeight
 
         if (scrollHeightDelta > 0) {
-          container.scrollTop = pendingPrependScroll.previousScrollTop + scrollHeightDelta
+          const anchorElement = pendingPrependScroll.anchor
+            ? messageElementByIdRef.current.get(pendingPrependScroll.anchor.messageId)
+            : null
+
+          if (anchorElement && pendingPrependScroll.anchor) {
+            const anchorTopDelta = anchorElement.getBoundingClientRect().top - pendingPrependScroll.anchor.top
+
+            if (Math.abs(anchorTopDelta) > 2) {
+              container.scrollTop += anchorTopDelta
+            }
+          } else {
+            const expectedScrollTop = pendingPrependScroll.latestScrollTop + scrollHeightDelta
+
+            if (Math.abs(container.scrollTop - expectedScrollTop) > 2) {
+              container.scrollTop = expectedScrollTop
+            }
+          }
+
           pendingPrependScrollRef.current = null
           olderHistoryLoadInFlightRef.current = false
         }
@@ -1162,7 +1445,7 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
       <div
         ref={chatRef}
         className={cn(
-          'flex h-full flex-col py-4',
+          'app-scrollbar flex h-full flex-col py-4',
           shouldShowInitialScrollSkeleton ? 'invisible absolute inset-0 overflow-hidden' : 'overflow-y-auto',
         )}>
         {hasReachedHistoryStart && <ChatWelcome name={name} type={type} />}
@@ -1239,19 +1522,28 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
             )}
           </div>
         )}
-        {shouldShowJumpToLatestControl && (
-          <Button
-            type="button"
-            size="icon"
-            variant="primary"
-            aria-label="Jump to latest messages"
-            title="Jump to latest messages"
-            onClick={jumpToLatestMessages}
-            className="sticky bottom-3 z-20 ml-auto mr-4 aspect-square h-9 min-h-9 w-9 min-w-9 shrink-0 rounded-full p-0 shadow-md">
-            <ArrowDown className="h-4 w-4" />
-          </Button>
-        )}
       </div>
+      {shouldShowJumpToLatestControl && (
+        <Button
+          type="button"
+          size="icon"
+          variant="primary"
+          aria-label="Jump to latest messages"
+          title="Jump to latest messages"
+          onClick={jumpToLatestMessages}
+          className="absolute bottom-3 right-4 z-20 aspect-square h-9 min-h-9 w-9 min-w-9 shrink-0 rounded-full p-0 shadow-md">
+          <ArrowDown className="h-4 w-4" />
+          {newMessagesBelow && (
+            <span
+              className={cn(
+                'absolute -bottom-1 -right-1 min-w-5 rounded-full px-1 text-center text-[10px] font-bold leading-5 shadow-sm ring-2 ring-background',
+                getJumpUnreadBadgeClassName(newMessagesBelow.attentionLevel),
+              )}>
+              {getUnreadBadgeLabel(newMessagesBelow.count)}
+            </span>
+          )}
+        </Button>
+      )}
     </div>
   )
 }

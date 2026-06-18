@@ -1,9 +1,9 @@
 # Segment 222: Customer Chat Initial Scroll Stability Fix
 
-Status: implemented locally / verification pending
+Status: implemented locally / command verification passed / targeted local smoke passed
 
 Branch:
-- `feature/customer-reply-telegram-visual-polish`
+- `feature/customer-chat-initial-scroll-stability-fix`
 
 Context:
 - after Segment 220/221, production/staging showed an entry-time chat scroll race on chats with history;
@@ -28,10 +28,24 @@ Implemented:
 - bounded viewport-aware initial loading so short-message histories do not leave a large empty top gap while older pages still exist;
 - added a shared shadcn-style `Skeleton` component and a chat initial skeleton layer that approximates text, image, and file message rows while the real list remains mounted for measurement;
 - initial placement uses instant container `scrollTop` positioning and reveals real content on the next animation frame, avoiding a visible "upper messages then smooth-scroll down" transition;
-- repeat navigation to a chat with valid React Query cache now follows stale-while-revalidate behavior: cached messages are shown immediately instead of being hidden behind the cold-load skeleton, while unread/read side effects still wait for normal initial positioning and unread summary reconciliation;
+- repeat navigation to a chat with valid React Query cache now follows stale-while-revalidate behavior: cached messages are shown immediately only after unread summary is known and no unread target is reported, while the active chat query always refetches on mount/return so missed inactive-chat realtime events cannot leave the latest page stale;
+- when unread summary already says the returning chat has unread messages, warm cached rows are not revealed as the final state until the latest page reconciliation completes, preventing a visible stale-cache jump before the new message appears;
+- unread/read side effects still wait for normal initial positioning and unread summary reconciliation;
 - set the `New` divider anchor from the same initial unread decision;
 - updated `useChatScroll` so re-enabling auto-scroll after a deliberate disabled phase does not perform a surprise first auto-scroll to bottom;
+- updated top-boundary load-more to be scroll-direction aware and slightly debounced, so older pages are not prepended after a brief threshold crossing when the user is already scrolling back down; this avoids bottom-edge/layout jerk caused by unexpected scroll-height growth;
+- changed older-page prepend compensation to preserve the nearest visible message row as an anchor when async older pages arrive; the `scrollTop + height delta` fallback remains only for cases where the anchor row is no longer available;
+- user scroll intent (`wheel`, scrollbar/pointer drag, touch) now cancels pending delayed scroll-to-bottom / initial-target corrections, so entering a chat and immediately scrolling upward does not snap back to the live bottom;
+- moved the jump-to-latest button out of the scroll content flow into an absolute overlay, so showing/hiding it no longer changes chat `scrollHeight` near the live bottom;
 - changed latest viewport auto-fill to preserve viewport position when older rows are prepended.
+
+Targeted local smoke:
+- local production-like web/API: `http://localhost:3001` + `http://localhost:4000`;
+- authenticated channel with long history opened at latest bottom;
+- one upward scroll into the top-boundary triggered exactly one older-page request and preserved the logical visible row position after prepend;
+- scrolling back down to latest triggered no extra older-page requests and reached bottom with the jump control out of scroll flow;
+- six repeated enter-channel-then-immediate-scroll-up checks across two long-history channels stayed away from bottom after delayed corrections (`dist` stayed around the simulated user scroll distance instead of returning to `0`);
+- local web process had to be restarted after `build:web` because the running Next server held stale `.next` assets; after restart the smoke passed.
 
 Out of scope:
 - no DB/schema/migration changes;
@@ -47,6 +61,10 @@ Manual smoke required:
 - the scrollbar should not visibly run through intermediate top/bottom states during initial fill;
 - real content should appear directly at the final initial position, without a visible smooth-scroll from older rows to bottom;
 - repeat channel/DM navigation with cached messages should show cached content immediately and reconcile in the background, not get stuck on the initial skeleton;
+- if another user sends a message while the current user is away from that channel/DM, returning to the chat must refetch the latest page and show the new message without requiring a full page reload;
+- fast wheel/scrollbar movement down toward the live bottom should not trigger older-page prepends or visible layout jerk;
+- entering/re-entering a chat and immediately scrolling upward with wheel or scrollbar drag should not snap back to the latest bottom;
+- scrolling upward into older-page loading should keep the visible row anchored instead of throwing the user down after each page prepend;
 - production/staging chat with unread opens around the first unread and shows `New`;
 - opening a chat no longer visibly jumps bottom -> top -> middle;
 - older-history auto-fill does not move the user away from the selected initial target;
