@@ -22,6 +22,7 @@ Current audit result:
 - Root package entry: `electron/main.js`
 - Packaged app URL source: `electron/app-config.json`
 - Current production URL: `https://ax-connect.ru`
+- Current staging URL: `https://staging.ax-connect.ru`
 - Default browser download path: `/downloads/AxConnect-Setup-latest.exe`
 - Build output directory: `dist-desktop`
 - Current installer target: Windows NSIS
@@ -33,7 +34,10 @@ Local PowerShell:
 ```powershell
 git status --short --branch
 bun.cmd run check:desktop:config
+bun.cmd run check:desktop:production-config
+bun.cmd run check:desktop:staging-config
 bun.cmd run build:desktop
+bun.cmd run build:desktop:staging
 ```
 
 Known caution:
@@ -76,8 +80,29 @@ Candidate separation:
 - production app id: `com.axconnect.desktop`
 - staging renderer URL: `https://staging.ax-connect.ru`
 - production renderer URL: `https://ax-connect.ru`
+- staging artifact name: `AxConnect-Staging-Setup-<version>.exe`
+- production artifact name: `AxConnect-Setup-<version>.exe`
 
 Do not let staging update metadata update production installs, and do not let production update metadata update staging installs.
+
+Implemented local channel commands:
+
+```powershell
+bun.cmd run check:desktop:production-config
+bun.cmd run build:desktop
+```
+
+```powershell
+bun.cmd run check:desktop:staging-config
+bun.cmd run build:desktop:staging
+```
+
+Latest staging build evidence:
+
+- installer: `dist-desktop\AxConnect-Staging-Setup-0.0.2.exe`;
+- size: `175306350` bytes;
+- SHA256: `794A8DB83BAA07E47B8B018062EA2600D9C14C0CF8355EE99BA0E1C693AD1164`;
+- generated `latest.yml`, blockmap, `builder-debug.yml`, `dist-desktop\win-unpacked`, and `electron\build-info.json` are local ignored outputs only.
 
 ## Artifact Model
 

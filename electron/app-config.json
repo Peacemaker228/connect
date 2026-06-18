@@ -1,3 +1,18 @@
 {
-  "productionUrl": "https://ax-connect.ru"
+  "defaultChannel": "production",
+  "productionUrl": "https://ax-connect.ru",
+  "channels": {
+    "production": {
+      "productionUrl": "https://ax-connect.ru",
+      "appId": "com.axconnect.desktop",
+      "productName": "AxConnect",
+      "protocol": "axconnect"
+    },
+    "staging": {
+      "productionUrl": "https://staging.ax-connect.ru",
+      "appId": "com.axconnect.desktop.staging",
+      "productName": "AxConnect Staging",
+      "protocol": "axconnect-staging"
+    }
+  }
 }
