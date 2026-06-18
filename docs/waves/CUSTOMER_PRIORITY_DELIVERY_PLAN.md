@@ -1150,6 +1150,7 @@ Delivered:
 - badge color follows existing attention priority: mention > reply > ordinary unread;
 - older-page prepends, initial load, own messages, and anchored-history rows do not increment the badge;
 - first click with unseen new messages scrolls to the first unseen new message and clears the badge;
+- far first-new jumps use a short fake-smooth movement instead of native-smoothing across the whole message range;
 - if the user is still away from live bottom, the down control stays visible and the next click moves to latest.
 
 Out of scope:
@@ -1162,10 +1163,9 @@ Out of scope:
 - WebRTC/media work.
 
 Targeted local smoke:
-- local production-like web/API confirmed ordinary incoming badge `1`, accumulated badge `3`, mention-priority amber badge, real backend/realtime delivery from a second authenticated user, and old-history prepend negative case with no badge.
+- local production-like web/API confirmed ordinary incoming badge `1`, accumulated badge `3`, mention-priority amber badge, real backend/realtime delivery from a second authenticated user, old-history prepend negative case with no badge, and the tall lower-batch two-step behavior where the first click moves to the first unseen new message and the second click moves to live bottom.
 
 Remaining manual smoke:
-- confirm the two-step first-new-then-latest behavior in a chat where the unseen lower batch is tall enough to keep the viewport away from bottom after the first click;
 - check `99+` cap, reply-priority badge color, sidebar/list scrollbar appearance, light theme contrast, and staging behavior.
 
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.

@@ -486,11 +486,34 @@ export const ChatMessages: FC<IChatMessagesProps> = ({
     const targetRect = targetElement.getBoundingClientRect()
     const targetTop = container.scrollTop + targetRect.top - containerRect.top - NEW_MESSAGES_JUMP_TOP_OFFSET_PX
     const maxScrollTop = Math.max(container.scrollHeight - container.clientHeight, 0)
+    const nextScrollTop = Math.max(0, Math.min(targetTop, maxScrollTop))
+    const distance = Math.abs(nextScrollTop - container.scrollTop)
+    const canUseFakeSmooth = behavior === 'smooth' && distance > container.clientHeight * LOCAL_SMOOTH_SCROLL_DISTANCE_MULTIPLIER
 
-    container.scrollTo({
-      top: Math.max(0, Math.min(targetTop, maxScrollTop)),
-      behavior,
-    })
+    if (canUseFakeSmooth) {
+      const direction = nextScrollTop >= container.scrollTop ? -1 : 1
+      const fakeOffset = Math.min(
+        container.clientHeight * FAKE_SMOOTH_SCROLL_OFFSET_MULTIPLIER,
+        Math.max(distance, container.clientHeight * 0.4),
+      )
+      const fakeStartTop = Math.max(0, Math.min(nextScrollTop + direction * fakeOffset, maxScrollTop))
+
+      container.scrollTo({
+        top: fakeStartTop,
+        behavior: 'auto',
+      })
+      window.requestAnimationFrame(() => {
+        container.scrollTo({
+          top: nextScrollTop,
+          behavior: 'smooth',
+        })
+      })
+    } else {
+      container.scrollTo({
+        top: nextScrollTop,
+        behavior,
+      })
+    }
 
     return true
   }, [])

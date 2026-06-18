@@ -39,6 +39,7 @@ Behavior:
   - reply: sky;
   - ordinary unread: rose;
 - first click with unseen new messages scrolls to the first unseen new message and clears the badge;
+- far first-new jumps use a short fake-smooth movement instead of native-smoothing across the whole message range;
 - if the user is still away from live bottom, the down control remains visible and the next click moves to latest.
 
 ## Out Of Scope
@@ -74,10 +75,10 @@ Targeted local browser smoke passed:
 - confirmed `@alek` mention promoted the badge color to amber;
 - confirmed old-history load/prepend did not create a badge;
 - confirmed clicking the down control cleared the badge and reached live bottom in the tested short lower-batch case.
+- confirmed a tall 18-message lower batch uses the two-step behavior: first click moves to the first unseen new message and keeps the down control visible; second click moves to live bottom.
 
 Remaining manual smoke:
 
-- confirm the two-step first-new-then-latest behavior in a chat where the unseen lower batch is tall enough to keep the viewport away from bottom after the first click;
 - check sidebar/server/channel/member list scrollbar appearance in light theme;
 - repeat on staging before release.
 

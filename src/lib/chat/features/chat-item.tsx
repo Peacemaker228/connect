@@ -644,7 +644,9 @@ export const ChatItem: FC<IChatItemProps> = ({
             </a>
           )}
           {isPDF && (
-            <div data-chat-double-click-ignore="true" className="relative flex items-center p-2 mt-2 rounded-md bg-background/10">
+            <div
+              data-chat-double-click-ignore="true"
+              className="relative flex items-center p-2 mt-2 rounded-md bg-background/10">
               <FileIcon className="h-10 w-10 fill-indigo-200 stroke-indigo-400" />
               <a
                 href={fileAccessPath}
@@ -781,6 +783,7 @@ export const ChatItem: FC<IChatItemProps> = ({
           )}
         </div>
       </div>
+
       {(canCopyMessage || canReplyMessage) && (
         <div
           data-chat-double-click-ignore="true"
@@ -798,6 +801,7 @@ export const ChatItem: FC<IChatItemProps> = ({
               </button>
             </ActionTooltip>
           )}
+
           <ActionTooltip label={copyTooltipLabel}>
             <button
               type="button"
@@ -811,6 +815,7 @@ export const ChatItem: FC<IChatItemProps> = ({
               )}
             </button>
           </ActionTooltip>
+
           {canEditMessage && (
             <ActionTooltip label={t('ChatItem.edit')}>
               <button
@@ -822,6 +827,7 @@ export const ChatItem: FC<IChatItemProps> = ({
               </button>
             </ActionTooltip>
           )}
+
           {canDeleteMessage && (
             <ActionTooltip label={t('ChatItem.delete')}>
               <button
