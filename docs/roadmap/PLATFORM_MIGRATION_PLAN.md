@@ -971,6 +971,32 @@ Future hardening scope:
 - add smoke coverage for self-mentions, `@all`, sender negative unread/sound behavior, inactive recipients, active-visible auto-read, hidden/scrolled-up attention, and reload/reconnect restore;
 - investigate any idle/reconnect case where a self-mention such as `@alek` produces yellow mention badges for other users until refresh; classify it as realtime/cache reconciliation drift unless backend summaries reproduce the same false mention state.
 
+## 15C. Desktop Release Track
+
+Context:
+- the project is `desktop-first`, but the current desktop runtime is still a thin Electron remote-web shell;
+- that shell can be a valid first release line if packaging, download, update, notification, and smoke-test ownership are explicit;
+- desktop release work must not be hidden inside unrelated chat/product feature segments.
+
+Current dedicated docs:
+- `docs/waves/DESKTOP_RELEASE_ROADMAP.md`
+- `docs/runbooks/DESKTOP_RELEASE_RUNBOOK.md`
+- `docs/delegation/briefs/SEGMENT_BRIEF_224_DESKTOP_RELEASE_READINESS_ROADMAP.md`
+
+Direction:
+- keep the first desktop release line on the current Electron remote-web shell;
+- do not start a full `Next -> React/Vite` renderer rewrite for this track;
+- add staging/production desktop channel separation;
+- make Windows installer builds reproducible;
+- add real browser-download artifact hosting;
+- add native desktop notifications and app/taskbar/dock unread signals;
+- add in-app auto-update;
+- run packaged desktop runtime smoke before claiming desktop pass;
+- move or restructure `electron/*` into `apps/desktop` only as a later dedicated packaging-structure segment, not as part of the first release readiness pass.
+
+Hard rule:
+- `bun.cmd run check:desktop:config` is not desktop runtime proof. A desktop pass requires a packaged app launch and smoke against the active backend/web deploy.
+
 ## 16. Final Recommendation
 
 Проекту нужен не ещё один rewrite, а управляемый переход к:

@@ -429,6 +429,10 @@ Current decision:
 - produce a staging-oriented desktop build/release candidate and verify it against the same staging backend/data path used by active users, without resetting staging data;
 - inspect the desktop-specific code paths before claiming pass, especially clipboard, external links/downloads, auth/session persistence, realtime/unread behavior, notifications/sound, attachment handling, and reply/mention composer flows;
 - keep this as the next focused track after Segment 221 deploy/smoke.
+- desktop release work now has a dedicated roadmap and runbook:
+  - `docs/waves/DESKTOP_RELEASE_ROADMAP.md`;
+  - `docs/runbooks/DESKTOP_RELEASE_RUNBOOK.md`.
+- use that track for packaging, staging/prod channel separation, browser downloads, auto-update, native notifications, and desktop release smoke instead of adding those concerns to individual chat feature segments.
 
 Required desktop smoke:
 - login/logout/session restore;
