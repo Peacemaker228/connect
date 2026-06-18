@@ -1138,11 +1138,12 @@ Done:
 - `docs/waves/DESKTOP_RELEASE_ROADMAP.md` records current implementation inventory, blockers, release model, staging/prod channel model, segment order, acceptance gates, and hard rules;
 - `docs/runbooks/DESKTOP_RELEASE_RUNBOOK.md` records the draft release process, artifact model, smoke checklist, rollback, and security checklist.
 - `desktop-build-reproducibility-audit` is pass in `docs/delegation/briefs/SEGMENT_BRIEF_225_DESKTOP_BUILD_REPRODUCIBILITY_AUDIT.md`: initial `build:desktop` failed because the Windows user could not create `winCodeSign` symlinks, but after operator symlink/build-context fix the local build produced `dist-desktop\AxConnect-Setup-0.0.2.exe` (`175305456` bytes, SHA256 `B307A4BFB96BABB655D13855B6A0ADC61715F6F996F182CCCBCF74D347483FDF`).
+- `desktop-staging-channel-config` is pass in `docs/delegation/briefs/SEGMENT_BRIEF_226_DESKTOP_STAGING_CHANNEL_CONFIG.md`: staging packaging now uses `com.axconnect.desktop.staging`, `AxConnect Staging`, `https://staging.ax-connect.ru`, and produced `dist-desktop\AxConnect-Staging-Setup-0.0.2.exe` (`175306350` bytes, SHA256 `794A8DB83BAA07E47B8B018062EA2600D9C14C0CF8355EE99BA0E1C693AD1164`).
 
 Current blockers:
 - official repeatable CI/CD desktop installer build is not implemented, though local Windows installer build now passes on a symlink-capable build context;
 - desktop artifact hosting/download path is not implemented end-to-end;
-- staging and production desktop channels are not separated;
+- staging and production desktop packaging identity is separated, but artifact hosting/update metadata separation is not implemented;
 - auto-update is not implemented;
 - native desktop notifications and taskbar/dock badge behavior are not implemented;
 - packaged desktop runtime smoke has not passed;
@@ -1151,8 +1152,7 @@ Current blockers:
 - security review for remote web content plus preload bridge is not complete.
 
 Next likely work:
-- `desktop-staging-channel-config`;
-- then `desktop-artifact-download-runbook`;
+- `desktop-artifact-download-runbook`;
 - then `desktop-runtime-smoke-pass`;
 - later `desktop-native-notification-bridge` and `desktop-auto-update-proof`.
 

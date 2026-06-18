@@ -38,13 +38,16 @@ Current code shape:
 
 - desktop code lives in `electron/*`, not yet in a real `apps/desktop` package;
 - root `package.json` points `main` to `electron/main.js`;
-- packaged desktop opens `productionUrl` from `electron/app-config.json`;
-- current `productionUrl` is `https://ax-connect.ru`;
+- packaged desktop opens the channel-selected URL from `electron/app-config.json`;
+- default production `productionUrl` is `https://ax-connect.ru`;
+- staging packaged builds select `https://staging.ax-connect.ru`;
 - dev desktop opens `http://localhost:3005`;
 - the desktop app is a remote web shell, not a locally bundled renderer;
 - `DesktopDownloadButton` exists and defaults to `/downloads/AxConnect-Setup-latest.exe`;
-- `check:desktop:config` verifies only URL/version config;
-- `build:desktop` exists through `electron-builder`;
+- `check:desktop:config` verifies the production channel config;
+- `check:desktop:staging-config` verifies the staging channel config;
+- `build:desktop` exists through `electron-builder` for production;
+- `build:desktop:staging` exists through `electron-builder.staging.json`;
 - `release:desktop` currently runs config check plus desktop build;
 - preload exposes a small bridge: external links, clipboard text, build info, renderer-ready, auth session callback;
 - Electron main process handles deep links, camera/mic/display permissions, screen source picker, clipboard writes, and external URL opening;
@@ -112,7 +115,7 @@ Candidate channel shape:
 - staging product name: `AxConnect Staging`;
 - separate artifact paths and update metadata per channel.
 
-This is a candidate until implemented and smoke-tested.
+This is implemented for packaging identity and artifact naming, but still needs packaged runtime smoke and later separate update metadata before release readiness.
 
 ## Blocking Risks
 
@@ -125,7 +128,7 @@ Release blockers:
 - packaged desktop runtime smoke is not complete;
 - code signing is not configured;
 - security review for remote web + preload bridge is not complete;
-- staging/prod desktop channel separation is not implemented;
+- staging/prod desktop packaging identity is separated, but artifact hosting and update metadata separation are not implemented;
 - no CI/CD path builds, verifies, signs, and uploads desktop artifacts.
 
 Product risks:
@@ -181,12 +184,17 @@ Result:
 - installer size: `175305456` bytes;
 - SHA256: `B307A4BFB96BABB655D13855B6A0ADC61715F6F996F182CCCBCF74D347483FDF`;
 - partial/generated output remains ignored and must not be committed;
-- next action is `desktop-staging-channel-config`.
+- next action is `desktop-artifact-download-runbook`.
 
 ### Segment 226. Desktop Staging Channel Config
 
+Status: `pass / staging channel config implemented; runtime smoke pending`
+
 Goal:
 - create a staging desktop release candidate path that points to `https://staging.ax-connect.ru`.
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_226_DESKTOP_STAGING_CHANNEL_CONFIG.md`
 
 Expected work:
 - choose staging app id/product name/channel;
@@ -197,6 +205,19 @@ Expected work:
 
 Acceptance:
 - packaged staging desktop opens staging and can coexist with or safely replace a previous local test build according to the documented decision.
+
+Result:
+- `electron/app-config.json` now stores public production and staging channel metadata;
+- production remains the default channel and still targets `https://ax-connect.ru`;
+- staging builds are selected by `electron-builder.staging.json` `extraMetadata.axConnectDesktopChannel=staging`;
+- staging app id is `com.axconnect.desktop.staging`;
+- staging product name is `AxConnect Staging`;
+- staging protocol is `axconnect-staging`;
+- staging artifact is `dist-desktop\AxConnect-Staging-Setup-0.0.2.exe`;
+- staging installer size is `175306350` bytes;
+- staging installer SHA256 is `794A8DB83BAA07E47B8B018062EA2600D9C14C0CF8355EE99BA0E1C693AD1164`;
+- generated `dist-desktop/*` and `electron/build-info.json` remain ignored and must not be committed;
+- packaged runtime smoke was not claimed.
 
 ### Segment 227. Desktop Artifact Download Runbook
 

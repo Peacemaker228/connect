@@ -1,0 +1,41 @@
+{
+  "appId": "com.axconnect.desktop.staging",
+  "productName": "AxConnect Staging",
+  "icon": "electron/assets/icon.ico",
+  "protocols": [
+    {
+      "name": "AxConnect Staging",
+      "schemes": [
+        "axconnect-staging"
+      ]
+    }
+  ],
+  "npmRebuild": false,
+  "nodeGypRebuild": false,
+  "nodeVersion": "22.18.0",
+  "directories": {
+    "app": "electron",
+    "output": "dist-desktop"
+  },
+  "files": [
+    "**/*"
+  ],
+  "extraMetadata": {
+    "axConnectDesktopChannel": "staging"
+  },
+  "win": {
+    "icon": "electron/assets/icon.ico",
+    "target": [
+      "nsis"
+    ],
+    "artifactName": "AxConnect-Staging-Setup-${version}.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "allowElevation": true,
+    "perMachine": false,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true
+  }
+}

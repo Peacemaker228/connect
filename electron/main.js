@@ -6,7 +6,8 @@ import { app, BrowserWindow, clipboard, desktopCapturer, ipcMain, session, shell
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const APP_PROTOCOL = 'axconnect'
+const DEFAULT_APP_PROTOCOL = 'axconnect'
+const DEFAULT_DESKTOP_CHANNEL = 'production'
 const DEFAULT_DEV_URL = 'http://localhost:3005'
 const DEFAULT_INITIAL_PATH = '/'
 const DEV_LOAD_RETRIES = 60
@@ -372,14 +373,65 @@ const readDesktopConfig = () => {
   }
 }
 
+const readDesktopPackage = () => {
+  const packagePath = path.join(__dirname, 'package.json')
+
+  if (!fs.existsSync(packagePath)) {
+    return {}
+  }
+
+  try {
+    return JSON.parse(fs.readFileSync(packagePath, 'utf8'))
+  } catch (error) {
+    console.error('[desktop] Failed to read package.json', error)
+    return {}
+  }
+}
+
+const getDesktopChannel = (config = readDesktopConfig()) => {
+  const packageChannel = readDesktopPackage()?.axConnectDesktopChannel
+
+  if (typeof packageChannel === 'string' && packageChannel.trim() !== '') {
+    return packageChannel.trim()
+  }
+
+  if (typeof config.defaultChannel === 'string' && config.defaultChannel.trim() !== '') {
+    return config.defaultChannel.trim()
+  }
+
+  return DEFAULT_DESKTOP_CHANNEL
+}
+
+const getDesktopChannelConfig = (config = readDesktopConfig()) => {
+  const channel = getDesktopChannel(config)
+  const channelConfig = config.channels?.[channel]
+
+  return {
+    channel,
+    config: channelConfig && typeof channelConfig === 'object' ? channelConfig : null,
+  }
+}
+
+const getAppProtocol = () => {
+  const channelConfig = getDesktopChannelConfig().config
+  const protocol = channelConfig?.protocol
+
+  if (typeof protocol === 'string' && protocol.trim() !== '') {
+    return protocol.trim()
+  }
+
+  return DEFAULT_APP_PROTOCOL
+}
+
 const getRendererUrl = () => {
   if (!app.isPackaged) {
     return process.env.ELECTRON_RENDERER_URL || DEFAULT_DEV_URL
   }
 
   const config = readDesktopConfig()
+  const channelConfig = getDesktopChannelConfig(config).config
 
-  return config.productionUrl || process.env.ELECTRON_RENDERER_URL || process.env.NEXT_PUBLIC_SITE_URL || ''
+  return channelConfig?.productionUrl || config.productionUrl || process.env.ELECTRON_RENDERER_URL || process.env.NEXT_PUBLIC_SITE_URL || ''
 }
 
 const getInitialRendererUrl = () => {
@@ -404,7 +456,7 @@ const getAppPathFromDeepLink = (urlString) => {
   try {
     const url = new URL(urlString)
 
-    if (url.protocol !== `${APP_PROTOCOL}:`) {
+    if (url.protocol !== `${getAppProtocol()}:`) {
       return null
     }
 
@@ -494,16 +546,20 @@ const restoreMainWindow = () => {
 }
 
 const extractDeepLinkFromArgv = (argv) => {
-  return argv.find((value) => typeof value === 'string' && value.startsWith(`${APP_PROTOCOL}://`)) || null
+  const appProtocol = getAppProtocol()
+
+  return argv.find((value) => typeof value === 'string' && value.startsWith(`${appProtocol}://`)) || null
 }
 
 const registerProtocol = () => {
+  const appProtocol = getAppProtocol()
+
   if (process.defaultApp && process.argv[1]) {
-    app.setAsDefaultProtocolClient(APP_PROTOCOL, process.execPath, [path.resolve(process.argv[1])])
+    app.setAsDefaultProtocolClient(appProtocol, process.execPath, [path.resolve(process.argv[1])])
     return
   }
 
-  app.setAsDefaultProtocolClient(APP_PROTOCOL)
+  app.setAsDefaultProtocolClient(appProtocol)
 }
 
 const buildErrorHtml = (title, description) => {
@@ -728,6 +784,8 @@ app.whenReady().then(async () => {
     appVersion: app.getVersion(),
     isPackaged: app.isPackaged,
     execPath: process.execPath,
+    desktopChannel: getDesktopChannel(),
+    appProtocol: getAppProtocol(),
     buildInfo: readBuildInfo(),
   })
 

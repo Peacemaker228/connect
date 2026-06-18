@@ -11,6 +11,18 @@ const buildInfoPath = path.join(__dirname, 'build-info.json')
 
 const readJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'))
 
+const getArgValue = (name, fallback) => {
+  const index = process.argv.indexOf(name)
+
+  if (index === -1) {
+    return fallback
+  }
+
+  const value = process.argv[index + 1]
+
+  return typeof value === 'string' && value.trim() !== '' ? value.trim() : fallback
+}
+
 const runGit = (args) => {
   const result = spawnSync('git', args, {
     cwd: projectRoot,
@@ -26,6 +38,7 @@ const runGit = (args) => {
 }
 
 const packageJson = readJson(rootPackagePath)
+const channel = getArgValue('--channel', 'production')
 const commitHash = runGit(['rev-parse', 'HEAD'])
 const shortCommitHash = runGit(['rev-parse', '--short', 'HEAD'])
 const branch = runGit(['rev-parse', '--abbrev-ref', 'HEAD'])
@@ -33,6 +46,7 @@ const isDirty = Boolean(runGit(['status', '--short']))
 
 const buildInfo = {
   version: packageJson.version,
+  channel,
   commitHash,
   shortCommitHash,
   branch,

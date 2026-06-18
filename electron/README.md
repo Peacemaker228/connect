@@ -46,6 +46,39 @@ bun run dev:desktop
 NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL=/downloads/AxConnect-Setup-latest.exe
 ```
 
+## Desktop Channels
+
+Production remains the default desktop build:
+
+```powershell
+bun.cmd run check:desktop:production-config
+bun.cmd run build:desktop
+```
+
+Production identity:
+
+- app id: `com.axconnect.desktop`
+- product name: `AxConnect`
+- renderer URL: `https://ax-connect.ru`
+- artifact: `AxConnect-Setup-<version>.exe`
+
+Staging uses a separate Electron Builder config:
+
+```powershell
+bun.cmd run check:desktop:staging-config
+bun.cmd run build:desktop:staging
+```
+
+Staging identity:
+
+- app id: `com.axconnect.desktop.staging`
+- product name: `AxConnect Staging`
+- renderer URL: `https://staging.ax-connect.ru`
+- protocol: `axconnect-staging`
+- artifact: `AxConnect-Staging-Setup-<version>.exe`
+
+Generated installer output under `dist-desktop/*` and `electron/build-info.json` is ignored and must not be committed.
+
 ## Команды
 
 - `bun run dev:desktop` — desktop dev
