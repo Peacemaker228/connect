@@ -323,8 +323,13 @@ Acceptance:
 
 ### Segment 229. Desktop Runtime Smoke Pass
 
+Status: `pass / operator-smoked`
+
 Goal:
 - prove the packaged desktop app is usable as the primary client.
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_229_DESKTOP_RUNTIME_SMOKE_PASS.md`
 
 Required smoke:
 - login/logout/session restore and idle recovery;
@@ -343,10 +348,22 @@ Required smoke:
 Acceptance:
 - pass/review/fail report recorded with screenshots or redacted evidence where useful.
 
+Result:
+- installed `AxConnect Staging` desktop app was manually smoke-tested by the operator;
+- no critical runtime blockers were found;
+- browser download and Windows installation had already passed in Segment 228A;
+- known UX issue: generic non-image/non-PDF file open/download in Electron is awkward because it can open an extra window/native save flow without clear completion state; this is deferred to a focused future `desktop-file-download-ux-polish` segment;
+- native OS notifications, taskbar/dock badge behavior, auto-update, signing, and CI/CD release pipeline remain pending.
+
 ### Segment 230. Native Desktop Notification Bridge
+
+Status: `ready for implementation`
 
 Goal:
 - route accepted unread/attention events to OS notifications and app-level unread signals.
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_230_NATIVE_DESKTOP_NOTIFICATION_BRIDGE.md`
 
 Expected behavior:
 - native popup for eligible incoming unread events when app/window is not actively showing the chat;

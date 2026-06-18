@@ -339,6 +339,12 @@ Minimum smoke before a staging desktop release candidate:
 - app resize and theme switch;
 - logout.
 
+Current staging evidence:
+
+- `AxConnect Staging` installer `0.0.2` was downloaded, installed, and manually smoke-tested by the operator on Windows;
+- no critical runtime blockers were found in the installed app;
+- known UX issue: generic non-image/non-PDF file open/download in Electron can open an extra window/native save flow without clear completion state; keep this as `review / UX issue` for a later desktop file-download UX segment, not as a blocker for the first staging desktop runtime smoke.
+
 Additional smoke when native features are implemented:
 
 - native notification popup;
