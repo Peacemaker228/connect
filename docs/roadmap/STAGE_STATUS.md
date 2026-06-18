@@ -1139,22 +1139,24 @@ Done:
 - `docs/runbooks/DESKTOP_RELEASE_RUNBOOK.md` records the draft release process, artifact model, smoke checklist, rollback, and security checklist.
 - `desktop-build-reproducibility-audit` is pass in `docs/delegation/briefs/SEGMENT_BRIEF_225_DESKTOP_BUILD_REPRODUCIBILITY_AUDIT.md`: initial `build:desktop` failed because the Windows user could not create `winCodeSign` symlinks, but after operator symlink/build-context fix the local build produced `dist-desktop\AxConnect-Setup-0.0.2.exe` (`175305456` bytes, SHA256 `B307A4BFB96BABB655D13855B6A0ADC61715F6F996F182CCCBCF74D347483FDF`).
 - `desktop-staging-channel-config` is pass in `docs/delegation/briefs/SEGMENT_BRIEF_226_DESKTOP_STAGING_CHANNEL_CONFIG.md`: staging packaging now uses `com.axconnect.desktop.staging`, `AxConnect Staging`, `https://staging.ax-connect.ru`, and produced `dist-desktop\AxConnect-Staging-Setup-0.0.2.exe` (`175306350` bytes, SHA256 `794A8DB83BAA07E47B8B018062EA2600D9C14C0CF8355EE99BA0E1C693AD1164`).
-- `desktop-artifact-download-runbook` is review-ready in `docs/delegation/briefs/SEGMENT_BRIEF_227_DESKTOP_ARTIFACT_DOWNLOAD_RUNBOOK.md`: Segment 226 was confirmed in latest `origin/core/reborn`, staging installer hosting is documented as an Nginx static alias outside the app repo at `/var/www/ax-connect-desktop-downloads/`, staging web should use `NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL=/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe`, and local artifact evidence was rechecked for `dist-desktop\AxConnect-Staging-Setup-0.0.2.exe` (`175306350` bytes, SHA256 `794A8DB83BAA07E47B8B018062EA2600D9C14C0CF8355EE99BA0E1C693AD1164`); operator upload/static hosting/staging web rebuild remains pending.
+- `desktop-artifact-download-runbook` is review-ready in `docs/delegation/briefs/SEGMENT_BRIEF_227_DESKTOP_ARTIFACT_DOWNLOAD_RUNBOOK.md`: Segment 226 was confirmed in latest `origin/core/reborn`, staging installer hosting is documented as an Nginx static alias outside the app repo at `/var/www/ax-connect-desktop-downloads/`, staging web should use `NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL=/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe`, and local artifact evidence was rechecked for `dist-desktop\AxConnect-Staging-Setup-0.0.2.exe` (`175306350` bytes, SHA256 `794A8DB83BAA07E47B8B018062EA2600D9C14C0CF8355EE99BA0E1C693AD1164`).
+- `desktop-staging-download-nginx-route-diagnosis` is pass in `docs/delegation/briefs/SEGMENT_BRIEF_228A_DESKTOP_STAGING_DOWNLOAD_NGINX_ROUTE_DIAGNOSIS.md`: operator uploaded the staging installer to `/var/www/ax-connect-desktop-downloads/desktop/staging/win/`, published `AxConnect-Staging-Setup-latest.exe`, generated the SHA file, confirmed `www-data` read access, added the active Nginx `location ^~ /downloads/desktop/` static alias for staging, verified `GET`/`HEAD` `200 OK`, verified SHA256 `794A8DB83BAA07E47B8B018062EA2600D9C14C0CF8355EE99BA0E1C693AD1164`, and confirmed browser download plus Windows installation.
+- `desktop-runtime-smoke-pass` is pass in `docs/delegation/briefs/SEGMENT_BRIEF_229_DESKTOP_RUNTIME_SMOKE_PASS.md`: the installed `AxConnect Staging` app passed operator manual smoke with no critical blockers; known UX issue is generic non-image/non-PDF file open/download in Electron, which should be addressed in a later focused file-download UX segment.
 
 Current blockers:
 - official repeatable CI/CD desktop installer build is not implemented, though local Windows installer build now passes on a symlink-capable build context;
-- desktop artifact hosting/download path is documented for staging but public HTTPS verification is blocked: staging web points to `/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe`, but the URL returns `307 Temporary Redirect` to `/sign-in?...` and following it downloads sign-in HTML instead of the installer;
+- desktop artifact hosting/download path is working for the current staging installer, but the process is still manual and not backed by CI/CD or auto-update metadata;
 - staging and production desktop packaging identity is separated, staging artifact hosting paths are documented, but update metadata separation is not implemented;
 - auto-update is not implemented;
 - native desktop notifications and taskbar/dock badge behavior are not implemented;
-- packaged desktop runtime smoke has not passed;
+- packaged desktop runtime smoke has passed for the current staging installer, but it must be repeated after native notifications, auto-update, signing, or major renderer changes;
 - code signing is not configured;
 - CI/CD release pipeline does not exist;
 - security review for remote web content plus preload bridge is not complete.
 
 Next likely work:
-- fix/apply the staging Nginx static alias for `/downloads/desktop/` and rerun `desktop-staging-download-apply-verification`; only then continue to `desktop-runtime-smoke-pass`;
-- later `desktop-native-notification-bridge` and `desktop-auto-update-proof`.
+- implement `desktop-native-notification-bridge` using `docs/delegation/briefs/SEGMENT_BRIEF_230_NATIVE_DESKTOP_NOTIFICATION_BRIDGE.md`;
+- later `desktop-auto-update-proof`, desktop file-download UX polish, and production release hardening.
 
 ## Historical Notes
 
