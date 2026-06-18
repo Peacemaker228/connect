@@ -1168,6 +1168,9 @@ Targeted local smoke:
 Remaining manual smoke:
 - check `99+` cap, reply-priority badge color, sidebar/list scrollbar appearance, light theme contrast, and staging behavior.
 
+Follow-up requirement:
+- progressive read decrement must be implemented as a separate focused slice: as the user scrolls through unseen new messages, the jump-anchor badge and existing unread badges should decrease, attention color should downgrade when mention/reply items are consumed, and backend unread summaries must remain the reconciliation source of truth.
+
 15. Keep realtime transport hardening as a last-priority backlog item unless a concrete incident appears: staging currently shows `Socket.IO` traffic over `transport=polling` while websocket upgrade is advertised but not observed; future work should verify Nginx websocket upgrade and replace broad emit-by-key with authenticated rooms/subscriptions.
 
 ## Low-Risk UX Fixes Result

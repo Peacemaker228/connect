@@ -82,6 +82,15 @@ Remaining manual smoke:
 - check sidebar/server/channel/member list scrollbar appearance in light theme;
 - repeat on staging before release.
 
+## Follow-Up Requirement
+
+Progressive read decrement is not implemented in this segment and must be handled as a separate focused slice:
+
+- when the user gradually scrolls through unseen new messages, the local jump-anchor badge count should decrease as messages become visibly read;
+- the same read-progress semantics should reconcile with server rail, channel row, member row, tab title, and other unread badges;
+- attention color should downgrade as mention/reply messages are consumed, while preserving priority among still-unseen messages;
+- backend unread summaries remain the source of truth, so the implementation must avoid purely visual count drift after reconnect/refetch.
+
 ## Notes
 
 This segment is deliberately frontend-only. It uses already loaded chat messages and existing metadata (`mentions`, `replyTo`) to derive local jump-badge attention. It does not replace persisted unread state, server rail badges, or channel/member row badges.
