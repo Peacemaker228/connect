@@ -6,6 +6,16 @@ Classification: `draft / not executable end-to-end yet`
 
 This runbook records the intended desktop release process. It is not a completed release procedure until the roadmap segments close the current blockers.
 
+Current audit result:
+
+- `2026-06-18`: `bun.cmd run check:desktop:config` passed.
+- Initial `bun.cmd run build:desktop` failed before producing an NSIS installer because `electron-builder` could not extract `winCodeSign-2.6.0.7z` without Windows symlink privilege.
+- After the operator used a symlink-capable Windows build context, `bun.cmd run build:desktop` produced a local installer.
+- installer: `dist-desktop\AxConnect-Setup-0.0.2.exe`;
+- installer size: `175305456` bytes;
+- SHA256: `B307A4BFB96BABB655D13855B6A0ADC61715F6F996F182CCCBCF74D347483FDF`;
+- partial/generated output remains ignored under `dist-desktop\*` and `electron\build-info.json`.
+
 ## Current App Shape
 
 - Desktop shell: `electron/*`
@@ -28,8 +38,28 @@ bun.cmd run build:desktop
 
 Known caution:
 
-- a local Windows build may fail if the current user cannot create symlinks while `electron-builder` extracts signing helper artifacts;
-- the official release path must either run on a correctly configured Windows machine or move to CI.
+- this local Windows build fails without symlink privilege while `electron-builder` extracts signing helper artifacts;
+- local builds require Windows Developer Mode, an elevated shell/user with `Create symbolic links` privilege, or a Windows CI runner with symlink support;
+- the official release path should still move to CI/CD once staging/prod channel and artifact hosting are defined.
+
+PowerShell cleanup before retry:
+
+```powershell
+bun.cmd run clean:desktop
+Remove-Item -LiteralPath "$env:LOCALAPPDATA\electron-builder\Cache\winCodeSign" -Recurse -Force
+```
+
+Retry only after Windows Developer Mode is enabled, the shell is elevated with symlink privilege, or the command is moved to a Windows CI runner:
+
+```powershell
+bun.cmd run build:desktop
+```
+
+Current build audit:
+
+- `docs/delegation/briefs/SEGMENT_BRIEF_225_DESKTOP_BUILD_REPRODUCIBILITY_AUDIT.md`
+- local installer build has been reproduced on a symlink-capable Windows build context;
+- do not treat this runbook as executable end-to-end until staging/prod channels, artifact hosting, runtime smoke, signing, rollback, and update metadata are implemented and verified.
 
 ## Release Channels
 
