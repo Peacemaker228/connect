@@ -32,7 +32,7 @@ const getUpdateStatusLabel = (status: DesktopUpdateStatus) => {
   }
 
   if (status.status === 'error') {
-    return 'Update check failed'
+    return 'Retry update check'
   }
 
   return 'Check for updates'

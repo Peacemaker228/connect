@@ -25,6 +25,7 @@ const SHOULD_DISABLE_MEDIA_FOUNDATION_VIDEO_CAPTURE =
 const BUILD_INFO_PATH = path.join(__dirname, 'build-info.json')
 const DESKTOP_SOURCE_PICKER_PROTOCOL = 'axconnect-picker:'
 const STAGING_UPDATE_URL = 'https://staging.ax-connect.ru/downloads/desktop/staging/win/'
+const DESKTOP_UPDATE_PERIODIC_CHECK_INTERVAL_MS = 45 * 60 * 1000
 const UNREAD_NOTIFICATION_TITLE_MAX_LENGTH = 80
 const UNREAD_NOTIFICATION_BODY_MAX_LENGTH = 160
 const ALLOWED_UNREAD_ATTENTION_LEVELS = new Set(['mention', 'reply', 'unread'])
@@ -39,6 +40,7 @@ let pendingAuthSessionId = null
 let pendingRendererNavigationPath = null
 let isDesktopUpdaterConfigured = false
 let isUpdateCheckInFlight = false
+let desktopUpdatePeriodicCheckTimer = null
 let isRendererReady = false
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -661,22 +663,31 @@ const getUpdateErrorMessage = (error) => {
 
 const createDesktopUpdateStatus = (status, extra = {}) => {
   const support = getDesktopUpdateSupport()
+  const previous = desktopUpdateStatus
+  const now = new Date().toISOString()
+  const isCheckStart = status === 'checking'
+  const isSuccessfulCheck = status === 'available' || status === 'not_available'
+  const isError = status === 'error'
 
   return {
     channel: support.channel,
     currentVersion: app.getVersion(),
     error: null,
-    progressPercent: null,
+    lastCheckedAt: isCheckStart ? now : previous?.lastCheckedAt ?? null,
+    lastErrorAt: isError ? now : previous?.lastErrorAt ?? null,
+    lastSuccessfulCheckAt: isSuccessfulCheck ? now : previous?.lastSuccessfulCheckAt ?? null,
+    progressPercent: previous?.progressPercent ?? null,
     status,
     supported: support.supported,
     updateUrl: support.updateUrl,
-    updateVersion: null,
-    updatedAt: new Date().toISOString(),
+    updateVersion: previous?.updateVersion ?? null,
+    updatedAt: now,
     ...extra,
   }
 }
 
-let desktopUpdateStatus = createDesktopUpdateStatus('idle')
+let desktopUpdateStatus = null
+desktopUpdateStatus = createDesktopUpdateStatus(getDesktopUpdateSupport().supported ? 'idle' : 'unsupported')
 
 const getDesktopUpdateStatusSnapshot = () => ({ ...desktopUpdateStatus })
 
@@ -708,7 +719,11 @@ const configureDesktopUpdater = () => {
   autoUpdater.autoInstallOnAppQuit = false
 
   autoUpdater.on('checking-for-update', () => {
-    setDesktopUpdateStatus('checking')
+    setDesktopUpdateStatus('checking', {
+      error: null,
+      progressPercent: null,
+      updateVersion: null,
+    })
   })
 
   autoUpdater.on('update-available', (info) => {
@@ -746,22 +761,35 @@ const configureDesktopUpdater = () => {
   })
 }
 
-const checkForDesktopUpdate = async () => {
+const isDesktopUpdateCheckBlocked = () => {
+  return (
+    isUpdateCheckInFlight ||
+    ['checking', 'available', 'downloading', 'downloaded'].includes(desktopUpdateStatus.status)
+  )
+}
+
+const checkForDesktopUpdate = async (_reason = 'manual') => {
   const support = getDesktopUpdateSupport()
 
   if (!support.supported) {
-    return setDesktopUpdateStatus('idle', {
+    return setDesktopUpdateStatus('unsupported', {
       error: app.isPackaged ? 'updates_are_only_configured_for_staging' : 'updates_are_only_available_in_packaged_app',
+      progressPercent: null,
+      updateVersion: null,
     })
   }
 
-  if (isUpdateCheckInFlight || ['checking', 'available', 'downloading', 'downloaded'].includes(desktopUpdateStatus.status)) {
+  if (isDesktopUpdateCheckBlocked()) {
     return getDesktopUpdateStatusSnapshot()
   }
 
   configureDesktopUpdater()
   isUpdateCheckInFlight = true
-  setDesktopUpdateStatus('checking')
+  setDesktopUpdateStatus('checking', {
+    error: null,
+    progressPercent: null,
+    updateVersion: null,
+  })
 
   try {
     await autoUpdater.checkForUpdates()
@@ -778,11 +806,35 @@ const checkForDesktopUpdate = async () => {
 
 const installDownloadedDesktopUpdate = () => {
   if (desktopUpdateStatus.status !== 'downloaded') {
-    return getDesktopUpdateStatusSnapshot()
+    return {
+      ...getDesktopUpdateStatusSnapshot(),
+      error: 'update_not_downloaded',
+    }
   }
 
   autoUpdater.quitAndInstall(false, true)
   return getDesktopUpdateStatusSnapshot()
+}
+
+const startDesktopUpdatePeriodicChecks = () => {
+  if (desktopUpdatePeriodicCheckTimer || !getDesktopUpdateSupport().supported) {
+    return
+  }
+
+  desktopUpdatePeriodicCheckTimer = setInterval(() => {
+    if (!isDesktopUpdateCheckBlocked()) {
+      void checkForDesktopUpdate('periodic')
+    }
+  }, DESKTOP_UPDATE_PERIODIC_CHECK_INTERVAL_MS)
+}
+
+const stopDesktopUpdatePeriodicChecks = () => {
+  if (!desktopUpdatePeriodicCheckTimer) {
+    return
+  }
+
+  clearInterval(desktopUpdatePeriodicCheckTimer)
+  desktopUpdatePeriodicCheckTimer = null
 }
 
 const handleDeepLink = (urlString) => {
@@ -1229,6 +1281,7 @@ app.whenReady().then(async () => {
   await createWindow()
 
   if (getDesktopUpdateSupport().supported) {
+    startDesktopUpdatePeriodicChecks()
     void checkForDesktopUpdate()
   }
 
@@ -1257,4 +1310,8 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+app.on('before-quit', () => {
+  stopDesktopUpdatePeriodicChecks()
 })
