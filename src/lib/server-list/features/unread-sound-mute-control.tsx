@@ -45,8 +45,7 @@ export const UnreadSoundMuteControl: FC<UnreadSoundMuteControlProps> = ({ classN
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         role="button"
-        tabIndex={0}
-      >
+        tabIndex={0}>
         <Icon className="h-4 w-4" aria-hidden="true" />
       </span>
     </ActionTooltip>

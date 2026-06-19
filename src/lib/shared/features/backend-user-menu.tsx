@@ -70,11 +70,7 @@ export function BackendUserMenu({ email, imageUrl, name }: BackendUserMenuProps)
 
   if (!hasProfileSnapshot) {
     return (
-      <button
-        aria-label="Account is loading"
-        className="rounded-full opacity-80"
-        disabled
-        type="button">
+      <button aria-label="Account is loading" className="rounded-full opacity-80" disabled type="button">
         <Avatar className="h-[48px] w-[48px]">
           <AvatarFallback className="bg-neutral-700 text-sm font-semibold text-white">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -99,13 +95,17 @@ export function BackendUserMenu({ email, imageUrl, name }: BackendUserMenuProps)
           </Avatar>
         </button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent align="start" className="w-56 dark:bg-gray1E" side="top">
         <DropdownMenuLabel className="space-y-1">
           <div className="font-medium text-black dark:text-white">{displayName}</div>
           {email ? <div className="text-xs font-normal text-neutral-500">{email}</div> : null}
         </DropdownMenuLabel>
+
         <DropdownMenuSeparator />
+
         <DropdownMenuCheckboxItem
+          withCheckIcon={false}
           checked={isUnreadNotificationSoundEnabled}
           className="cursor-pointer gap-2 dark:focus:bg-gray21"
           onCheckedChange={(checked) => setUnreadNotificationSoundEnabled(Boolean(checked))}
@@ -117,8 +117,11 @@ export function BackendUserMenu({ email, imageUrl, name }: BackendUserMenuProps)
           )}
           Notification sound
         </DropdownMenuCheckboxItem>
+
         <DesktopUpdateMenuItem />
+
         <DropdownMenuSeparator />
+
         <DropdownMenuItem
           className="cursor-pointer dark:focus:bg-gray21"
           disabled={isSigningOut}
