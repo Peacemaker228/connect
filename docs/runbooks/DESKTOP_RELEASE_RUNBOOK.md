@@ -169,6 +169,22 @@ Hardened updater lifecycle:
 - account-menu retry remains available after `error` or `not_available`;
 - production provider remains unconfigured.
 
+Latest staging rollout evidence:
+
+- staging desktop/web/api were rolled forward to version `0.0.5`;
+- installer: `AxConnect-Staging-Setup-0.0.5.exe`;
+- size: `94294597` bytes;
+- SHA256: `7FB31ED52ED3431A2FD822F6822A641CCD464F60039B4A46B017706E6C48DD9B`;
+- desktop build info for that rollout reported `version: "0.0.5"`, `channel: "staging"`, `commitHash: "2bf12af..."`, and `isDirty: false`.
+
+Latest hardening smoke result:
+
+- no-update check returned `not_available`;
+- repeated concurrent manual checks did not start a visible check/download storm;
+- missing `latest.yml` moved status to `error`;
+- restoring `latest.yml` allowed manual retry recovery back to `not_available`;
+- later full staging desktop update/deploy completed successfully.
+
 Local proof artifacts:
 
 - `0.0.3` installer: `AxConnect-Staging-Setup-0.0.3.exe`, `94294315` bytes, SHA256 `6CF9EA77BD1F6DFB7AA06CE271D01DCD709508E0B17FD6892D584FFF1D977E27`;

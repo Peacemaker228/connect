@@ -14,7 +14,7 @@ This roadmap exists so desktop work is shipped as bounded segments instead of ad
 - current implementation: `Electron remote-web shell`
 - desktop release readiness: `review / staging line forming`
 - desktop staging release candidate: `partial / installer, notifications, and auto-update proof exist`
-- desktop auto-update: `technical proof passed / flow hardening implementation added; packaged smoke pending`
+- desktop auto-update: `technical proof and flow hardening smoke passed / update-ready UX pending`
 - native desktop notifications: `implemented / staging smoke and user soak ongoing`
 - desktop runtime smoke: `basic staging smoke passed / repeat after release changes`
 - link previews and other lower-priority polish: `deferred until desktop release validation`
@@ -484,12 +484,12 @@ Product UX gap:
 - next update UX work should add a clear, non-invasive update-ready signal and keep restart explicit.
 
 Recommended follow-up sequence:
-- packaged smoke for `desktop-auto-update-flow-hardening`;
-- then `desktop-update-ready-ux-polish`.
+- `desktop-update-ready-ux-polish`;
+- then desktop file-download UX polish, desktop security/link hardening, and CI/CD release pipeline.
 
 ### Segment 231A. Desktop Auto-Update Flow Hardening
 
-Status: `review / implementation added; packaged smoke pending`
+Status: `pass / implementation and packaged smoke passed`
 
 Goal:
 - harden the internal desktop updater lifecycle before adding prominent user-facing update UX.
@@ -528,6 +528,43 @@ Result:
 - `downloaded` remains stable until explicit restart/update;
 - install/restart returns a safe `update_not_downloaded` error unless an update is downloaded;
 - existing account-menu item keeps retry available without adding banner/toast/native prompt/polished update-ready UI.
+
+Smoke result:
+- operator smoke passed for no-update, concurrent manual checks, missing `latest.yml` error, metadata restore/retry recovery, and explicit update flow;
+- staging desktop/web/api were later rolled forward to `0.0.5`;
+- latest staged desktop build evidence for the rollout: `AxConnect-Staging-Setup-0.0.5.exe`, `94294597` bytes, SHA256 `7FB31ED52ED3431A2FD822F6822A641CCD464F60039B4A46B017706E6C48DD9B`.
+
+### Segment 231B. Desktop Update-Ready UX Polish
+
+Status: `ready`
+
+Goal:
+- make downloaded desktop updates obvious without requiring users to open the account menu.
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_231B_DESKTOP_UPDATE_READY_UX_POLISH.md`
+
+Expected work:
+- add a compact desktop-only visible update-ready affordance for `downloaded` update status;
+- preserve explicit restart/update;
+- keep no-update/unsupported states quiet;
+- keep ordinary browser web unchanged;
+- preserve existing account-menu update action;
+- update docs and smoke checklist.
+
+Out of scope:
+- CI/CD release pipeline;
+- production update provider;
+- signing/notarization;
+- server/Nginx publishing;
+- native update-ready notification unless explicitly minimal and non-spammy;
+- DB/storage/media/WebRTC/chat changes.
+
+Acceptance:
+- installed packaged staging desktop shows a visible update-ready action when update status is `downloaded`;
+- clicking the visible action restarts/updates through the existing `installUpdate()` bridge;
+- browser web shows no updater UI;
+- account-menu updater remains functional.
 
 ### Segment 231. Desktop Security And Link Hardening
 
