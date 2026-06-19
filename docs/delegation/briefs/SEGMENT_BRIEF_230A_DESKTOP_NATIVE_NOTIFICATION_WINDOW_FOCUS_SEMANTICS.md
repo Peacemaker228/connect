@@ -266,6 +266,7 @@ Window-state API added:
 - `window.electron.onWindowStateChange(callback)` subscribes to focused/blurred/minimized/restored/shown/hidden state changes;
 - Electron main process validates the caller origin for the snapshot IPC read;
 - renderer caches the latest state through `src/lib/shared/data-access/unread/unread-desktop-window-state.ts` so realtime unread callbacks do not perform async IPC in the hot path.
+- main-process focus/blur/minimize/restore/show/hide events publish the snapshot on the next tick, so renderer state is captured after Electron applies the actual window-state transition.
 
 Decision behavior:
 

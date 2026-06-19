@@ -632,6 +632,10 @@ const sendWindowStateToRenderer = () => {
   mainWindow.webContents.send('desktop:window-state-change', getDesktopWindowState())
 }
 
+const scheduleWindowStateToRenderer = () => {
+  setTimeout(sendWindowStateToRenderer, 0)
+}
+
 const handleDeepLink = (urlString) => {
   const appPath = getAppPathFromDeepLink(urlString)
   const sessionId = getSessionIdFromDeepLink(urlString)
@@ -842,7 +846,7 @@ const createWindow = async () => {
   })
 
   for (const eventName of ['focus', 'blur', 'minimize', 'restore', 'show', 'hide']) {
-    mainWindow.on(eventName, sendWindowStateToRenderer)
+    mainWindow.on(eventName, scheduleWindowStateToRenderer)
   }
 
   await loadRenderer()
