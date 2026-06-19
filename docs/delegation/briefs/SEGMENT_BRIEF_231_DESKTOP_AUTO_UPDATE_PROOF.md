@@ -4,7 +4,7 @@
 
 - segment: `desktop-auto-update-proof`
 - type: `desktop release / update pipeline proof`
-- status: `brief ready`
+- status: `review / implementation added; N and N+1 artifacts built; operator update smoke pending`
 - target branch: `feature/desktop-auto-update-proof`
 - source branch: latest `origin/core/reborn`
 - commit policy: do not commit automatically; return PowerShell-safe git commands
@@ -231,6 +231,124 @@ bun.cmd run build:desktop:staging
 
 Do not add generated files.
 
+## Implementation Result
+
+Status:
+
+- staging-only updater implementation added on `feature/desktop-auto-update-proof`;
+- production update publishing was not configured;
+- generated artifacts are local/ignored and must not be committed;
+- real install/update/relaunch smoke is pending operator publish and Windows GUI validation.
+
+Code/config changes:
+
+- `electron-updater` added as a runtime dependency;
+- package version bumped to `0.0.3` for the staging proof baseline version `N`;
+- `electron-builder.staging.json` now has a generic publish provider:
+  - `https://staging.ax-connect.ru/downloads/desktop/staging/win/`;
+- `electron/app-config.json` staging channel records the same `updateUrl`;
+- Electron main process initializes updater only when packaged and channel is `staging`;
+- preload exposes a narrow desktop update bridge:
+  - `window.electron.getUpdateStatus()`;
+  - `window.electron.checkForUpdate()`;
+  - `window.electron.installUpdate()`;
+  - `window.electron.onUpdateStatus(callback)`;
+- renderer account menu shows desktop-only update status/action and only calls restart/update after status is `downloaded`.
+
+Local artifact evidence:
+
+Version `N = 0.0.3` was built with updater support:
+
+- installer: `AxConnect-Staging-Setup-0.0.3.exe`;
+- size: `94294315` bytes;
+- SHA256: `0F7200E964CE1D44E1244A244E6FE8F93806B66653560B978DAF7E78B68FAAE9`;
+- blockmap: `AxConnect-Staging-Setup-0.0.3.exe.blockmap`;
+- blockmap size: `184199` bytes;
+- blockmap SHA256: `2C9774D26DC520346F5DCF23C6F5DA775D205F62538E25AB2C6BA261E35A7BBE`;
+- generated `latest.yml` size: `363` bytes;
+- generated `latest.yml` SHA256: `FAD7A26A03B835302DB96613E32E019822F37F225C02D1D4C3EB64928098D0F7`.
+
+Temporary version `N+1 = 0.0.4` was built only to produce update proof artifacts, then tracked source files were restored to `0.0.3`:
+
+- installer: `AxConnect-Staging-Setup-0.0.4.exe`;
+- size: `94294242` bytes;
+- SHA256: `C7328AB5C5CAD04FF0D7D43D55BCFF2CEEC51E2320D252332B30A63CB4817F06`;
+- blockmap: `AxConnect-Staging-Setup-0.0.4.exe.blockmap`;
+- blockmap size: `184261` bytes;
+- blockmap SHA256: `22FB2E07566A1E55514C7DA086AE261EB3B9C70553D7C1C8B2FCE9CB88A78FB0`;
+- generated `latest.yml` size: `363` bytes;
+- generated `latest.yml` SHA256: `0BFD1362322A9F5C041B1A96E28F176E8AFA82CD014DFB5276301FBBC8F25122`.
+
+Local temporary proof artifact folders:
+
+```text
+%TEMP%\ax-connect-desktop-update-proof\0.0.3\
+%TEMP%\ax-connect-desktop-update-proof\0.0.4\
+```
+
+Local PowerShell upload preparation:
+
+```powershell
+$ProofRoot = Join-Path $env:TEMP 'ax-connect-desktop-update-proof'
+$StagingSshTarget = 'connect-staging'
+
+scp (Join-Path $ProofRoot '0.0.3\AxConnect-Staging-Setup-0.0.3.exe') "$StagingSshTarget`:/tmp/AxConnect-Staging-Setup-0.0.3.exe"
+scp (Join-Path $ProofRoot '0.0.3\AxConnect-Staging-Setup-0.0.3.sha256') "$StagingSshTarget`:/tmp/AxConnect-Staging-Setup-0.0.3.sha256"
+
+scp (Join-Path $ProofRoot '0.0.4\AxConnect-Staging-Setup-0.0.4.exe') "$StagingSshTarget`:/tmp/AxConnect-Staging-Setup-0.0.4.exe"
+scp (Join-Path $ProofRoot '0.0.4\AxConnect-Staging-Setup-0.0.4.exe.blockmap') "$StagingSshTarget`:/tmp/AxConnect-Staging-Setup-0.0.4.exe.blockmap"
+scp (Join-Path $ProofRoot '0.0.4\AxConnect-Staging-Setup-0.0.4.sha256') "$StagingSshTarget`:/tmp/AxConnect-Staging-Setup-0.0.4.sha256"
+scp (Join-Path $ProofRoot '0.0.4\latest.yml') "$StagingSshTarget`:/tmp/latest.yml"
+```
+
+VPS Bash publish commands, operator only:
+
+```bash
+set -euo pipefail
+
+sudo install -d -m 0755 -o deploy -g www-data /var/www/ax-connect-desktop-downloads/desktop/staging/win
+
+sudo install -m 0644 -o deploy -g www-data /tmp/AxConnect-Staging-Setup-0.0.3.exe /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.3.exe
+sudo install -m 0644 -o deploy -g www-data /tmp/AxConnect-Staging-Setup-0.0.3.sha256 /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.3.sha256
+
+sudo install -m 0644 -o deploy -g www-data /tmp/AxConnect-Staging-Setup-0.0.4.exe /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.4.exe
+sudo install -m 0644 -o deploy -g www-data /tmp/AxConnect-Staging-Setup-0.0.4.exe.blockmap /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.4.exe.blockmap
+sudo install -m 0644 -o deploy -g www-data /tmp/AxConnect-Staging-Setup-0.0.4.sha256 /var/www/ax-connect-desktop-downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.4.sha256
+sudo install -m 0644 -o deploy -g www-data /tmp/latest.yml /var/www/ax-connect-desktop-downloads/desktop/staging/win/latest.yml
+
+cd /var/www/ax-connect-desktop-downloads/desktop/staging/win
+cp -f AxConnect-Staging-Setup-0.0.4.exe AxConnect-Staging-Setup-latest.exe
+
+sudo chown -R deploy:www-data /var/www/ax-connect-desktop-downloads
+sudo find /var/www/ax-connect-desktop-downloads -type d -exec chmod 0755 {} \;
+sudo find /var/www/ax-connect-desktop-downloads -type f -exec chmod 0644 {} \;
+
+sudo -u www-data test -r latest.yml
+sudo -u www-data test -r AxConnect-Staging-Setup-0.0.4.exe
+sudo -u www-data test -r AxConnect-Staging-Setup-0.0.4.exe.blockmap
+```
+
+VPS Bash verification, operator only:
+
+```bash
+set -euo pipefail
+
+curl -fsS https://staging.ax-connect.ru/downloads/desktop/staging/win/latest.yml
+curl -fsS -o /tmp/AxConnect-Staging-Setup-0.0.4.exe https://staging.ax-connect.ru/downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.4.exe
+echo 'C7328AB5C5CAD04FF0D7D43D55BCFF2CEEC51E2320D252332B30A63CB4817F06  /tmp/AxConnect-Staging-Setup-0.0.4.exe' | sha256sum -c -
+```
+
+Required operator smoke:
+
+- install `0.0.3`;
+- verify `window.electron.getBuildInfo()` reports `version: "0.0.3"` and `channel: "staging"`;
+- publish `0.0.4` installer, blockmap, and `latest.yml`;
+- start `0.0.3`;
+- use account menu update action or startup auto-check;
+- verify status reaches `downloaded`;
+- click `Restart and update`;
+- verify relaunched app reports `version: "0.0.4"`.
+
 ## Manual Smoke
 
 1. Install staging desktop version `N`.
@@ -258,4 +376,3 @@ Return:
 - manual smoke result;
 - remaining risks;
 - PowerShell-safe `git add` and `git commit` commands.
-

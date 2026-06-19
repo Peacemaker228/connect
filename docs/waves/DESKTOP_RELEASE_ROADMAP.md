@@ -442,7 +442,7 @@ Result:
 
 ### Segment 231. Desktop Auto-Update Proof
 
-Status: `brief ready`
+Status: `review / implementation added; N and N+1 artifacts built; operator update smoke pending`
 
 Goal:
 - implement and prove in-app update flow.
@@ -451,7 +451,7 @@ Brief:
 - `docs/delegation/briefs/SEGMENT_BRIEF_231_DESKTOP_AUTO_UPDATE_PROOF.md`
 
 Candidate direction:
-- use `electron-updater` with a generic static provider unless a better release hosting target is chosen;
+- use `electron-updater` with the staging generic static provider;
 - maintain separate staging/production update metadata;
 - check updates on app start and periodically;
 - download in background;
@@ -465,7 +465,17 @@ Current constraints:
 - staging is the active channel for proof;
 - production is currently inactive/dead and must not receive an update rollout;
 - current staging static hosting can serve installer bytes under `/downloads/desktop/staging/win/`;
-- updater dependency/config/runtime bridge are not implemented yet.
+- generated artifacts must remain ignored and uncommitted.
+
+Result:
+- `electron-updater` was added as a runtime dependency;
+- source package/app version was bumped to `0.0.3` for staging proof baseline `N`;
+- staging builder config now has generic publish URL `https://staging.ax-connect.ru/downloads/desktop/staging/win/`;
+- packaged staging main process enables updater only for channel `staging`, never ordinary browser runtime;
+- preload exposes narrow update status/check/install/status-subscribe APIs;
+- account menu shows desktop-only update status and explicit restart/update action after download;
+- local `0.0.3` and temporary `0.0.4` staging artifacts plus `latest.yml`/blockmap were built; `0.0.4` source bump was reverted after artifact generation;
+- real install/publish/update/relaunch smoke remains pending and is required before this segment can be pass.
 
 ### Segment 231. Desktop Security And Link Hardening
 

@@ -19,6 +19,7 @@ declare global {
       isDesktop: boolean
       openExternal: (url: string) => Promise<boolean>
       writeClipboardText?: (text: string) => Promise<boolean>
+      checkForUpdate?: () => Promise<DesktopUpdateStatus>
       getBuildInfo?: () => Promise<{
         version: string
         commitHash: string | null
@@ -27,11 +28,14 @@ declare global {
         isDirty: boolean
         builtAt: string
       } | null>
+      getUpdateStatus?: () => Promise<DesktopUpdateStatus>
       getWindowState?: () => Promise<{
         focused: boolean
         minimized: boolean
         visible: boolean
       } | null>
+      installUpdate?: () => Promise<DesktopUpdateStatus>
+      onUpdateStatus?: (callback: (status: DesktopUpdateStatus) => void) => (() => void) | void
       onWindowStateChange?: (
         callback: (state: { focused: boolean; minimized: boolean; visible: boolean }) => void,
       ) => (() => void) | void
@@ -52,5 +56,17 @@ declare global {
       notifyReady?: () => void
       onAuthSession?: (callback: (sessionId: string) => void) => (() => void) | void
     }
+  }
+
+  type DesktopUpdateStatus = {
+    channel: string
+    currentVersion: string
+    error?: string | null
+    progressPercent?: number | null
+    status: 'idle' | 'checking' | 'available' | 'not_available' | 'downloading' | 'downloaded' | 'error'
+    supported: boolean
+    updateUrl?: string | null
+    updateVersion?: string | null
+    updatedAt: string
   }
 }

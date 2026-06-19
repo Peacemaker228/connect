@@ -79,6 +79,19 @@ Staging identity:
 
 Generated installer output under `dist-desktop/*` and `electron/build-info.json` is ignored and must not be committed.
 
+## Staging Auto-Update
+
+Staging desktop has a proof-only auto-update path:
+
+- runtime dependency: `electron-updater`;
+- provider: generic static URL `https://staging.ax-connect.ru/downloads/desktop/staging/win/`;
+- metadata/artifacts: `latest.yml`, `AxConnect-Staging-Setup-<version>.exe`, and `.exe.blockmap`;
+- main process enables updater only when the packaged desktop channel is `staging`;
+- preload exposes only narrow status/check/install APIs;
+- renderer shows a desktop-only account-menu action and requires explicit `Restart and update` after download.
+
+Production update publishing is not configured in this segment.
+
 ## Native Notifications
 
 The desktop shell exposes a narrow unread-notification bridge through preload:

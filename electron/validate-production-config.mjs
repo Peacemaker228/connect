@@ -22,6 +22,7 @@ const EXPECTED_CHANNELS = {
     artifactName: 'AxConnect-Staging-Setup-${version}.${ext}',
     productName: 'AxConnect Staging',
     protocol: 'axconnect-staging',
+    updateUrl: 'https://staging.ax-connect.ru/downloads/desktop/staging/win/',
     url: 'https://staging.ax-connect.ru',
   },
 }
@@ -122,6 +123,14 @@ if (channelConfig.protocol !== expected.protocol) {
   fail(`Expected ${channel} protocol to be ${expected.protocol}`)
 }
 
+if (channel === 'staging') {
+  assertUrl(channelConfig.updateUrl, 'electron/app-config.json channels.staging.updateUrl')
+
+  if (channelConfig.updateUrl !== expected.updateUrl) {
+    fail(`Expected staging updateUrl to be ${expected.updateUrl}`)
+  }
+}
+
 if (channel === 'production') {
   const buildConfig = rootPackage?.build
 
@@ -155,6 +164,18 @@ if (channel === 'staging') {
 
   if (stagingBuilderConfig.extraMetadata?.axConnectDesktopChannel !== 'staging') {
     fail('Expected staging builder extraMetadata.axConnectDesktopChannel to be staging')
+  }
+
+  const publish = Array.isArray(stagingBuilderConfig.publish)
+    ? stagingBuilderConfig.publish.find((item) => item?.provider === 'generic')
+    : null
+
+  if (!publish) {
+    fail('Expected staging builder publish generic provider')
+  }
+
+  if (publish.url !== expected.updateUrl) {
+    fail(`Expected staging builder publish url to be ${expected.updateUrl}`)
   }
 }
 

@@ -126,7 +126,44 @@ Planned versioned artifacts:
 /downloads/desktop/production/win/AxConnect-Setup-<version>.sha256
 ```
 
-Auto-update metadata paths are intentionally deferred until the updater provider is implemented.
+Staging auto-update metadata path is implemented for the proof channel:
+
+```text
+/downloads/desktop/staging/win/latest.yml
+/downloads/desktop/staging/win/AxConnect-Staging-Setup-<version>.exe
+/downloads/desktop/staging/win/AxConnect-Staging-Setup-<version>.exe.blockmap
+```
+
+Production auto-update metadata remains unconfigured until a production rollout segment explicitly enables it.
+
+## Staging Auto-Update Proof
+
+Current proof implementation:
+
+- package/app version baseline: `0.0.3`;
+- staging updater provider: generic static URL `https://staging.ax-connect.ru/downloads/desktop/staging/win/`;
+- updater runtime is enabled only for packaged `staging` desktop channel;
+- renderer exposes a desktop-only account-menu update action;
+- restart/update is explicit and only available after update status reaches `downloaded`.
+
+Local proof artifacts:
+
+- `0.0.3` installer: `AxConnect-Staging-Setup-0.0.3.exe`, `94294315` bytes, SHA256 `0F7200E964CE1D44E1244A244E6FE8F93806B66653560B978DAF7E78B68FAAE9`;
+- `0.0.3` blockmap: `184199` bytes, SHA256 `2C9774D26DC520346F5DCF23C6F5DA775D205F62538E25AB2C6BA261E35A7BBE`;
+- `0.0.4` installer: `AxConnect-Staging-Setup-0.0.4.exe`, `94294242` bytes, SHA256 `C7328AB5C5CAD04FF0D7D43D55BCFF2CEEC51E2320D252332B30A63CB4817F06`;
+- `0.0.4` blockmap: `184261` bytes, SHA256 `22FB2E07566A1E55514C7DA086AE261EB3B9C70553D7C1C8B2FCE9CB88A78FB0`;
+- `0.0.4` `latest.yml`: `363` bytes, SHA256 `0BFD1362322A9F5C041B1A96E28F176E8AFA82CD014DFB5276301FBBC8F25122`.
+
+Operator proof sequence:
+
+1. Install `AxConnect-Staging-Setup-0.0.3.exe`.
+2. Confirm `window.electron.getBuildInfo()` reports `version: "0.0.3"` and `channel: "staging"`.
+3. Publish `0.0.4` installer, blockmap, and `latest.yml` to `/var/www/ax-connect-desktop-downloads/desktop/staging/win/`.
+4. Start installed `0.0.3`.
+5. Use startup auto-check or the account-menu update action.
+6. Confirm update status reaches `downloaded`.
+7. Click `Restart and update`.
+8. Confirm relaunched app reports `version: "0.0.4"`.
 
 ## Staging Installer Download Hosting
 

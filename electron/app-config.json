@@ -10,6 +10,7 @@
     },
     "staging": {
       "productionUrl": "https://staging.ax-connect.ru",
+      "updateUrl": "https://staging.ax-connect.ru/downloads/desktop/staging/win/",
       "appId": "com.axconnect.desktop.staging",
       "productName": "AxConnect Staging",
       "protocol": "axconnect-staging"

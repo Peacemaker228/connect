@@ -1,7 +1,10 @@
 {
   "name": "ax-connect-desktop",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "module",
   "main": "main.js",
-  "description": "Desktop shell for AxConnect"
+  "description": "Desktop shell for AxConnect",
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  }
 }

@@ -6,6 +6,18 @@ contextBridge.exposeInMainWorld('electron', {
   writeClipboardText: (text) => ipcRenderer.invoke('desktop:write-clipboard', text),
   getBuildInfo: () => ipcRenderer.invoke('desktop:get-build-info'),
   getWindowState: () => ipcRenderer.invoke('desktop:get-window-state'),
+  getUpdateStatus: () => ipcRenderer.invoke('desktop:get-update-status'),
+  checkForUpdate: () => ipcRenderer.invoke('desktop:check-for-update'),
+  installUpdate: () => ipcRenderer.invoke('desktop:install-update'),
+  onUpdateStatus: (callback) => {
+    const listener = (_event, status) => callback(status)
+
+    ipcRenderer.on('desktop:update-status', listener)
+
+    return () => {
+      ipcRenderer.removeListener('desktop:update-status', listener)
+    }
+  },
   onWindowStateChange: (callback) => {
     const listener = (_event, state) => callback(state)
 
