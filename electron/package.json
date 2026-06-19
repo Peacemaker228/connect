@@ -1,6 +1,6 @@
 {
   "name": "ax-connect-desktop",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "type": "module",
   "main": "main.js",
   "description": "Desktop shell for AxConnect",

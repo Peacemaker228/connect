@@ -1,6 +1,6 @@
 {
   "name": "ax-connect",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "type": "module",
   "main": "electron/main.js",
   "private": true,
