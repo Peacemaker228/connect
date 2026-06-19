@@ -387,6 +387,25 @@ Result:
 - local TypeScript check passed;
 - packaged native notification smoke was not run yet, so this segment is not classified as pass.
 
+### Segment 230A. Desktop Native Notification Window Focus Semantics
+
+Status: `brief / ready`
+
+Goal:
+- make native notification eligibility use desktop window focus/minimize state instead of relying only on renderer `document.visibilityState` / `document.hasFocus()`.
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_230A_DESKTOP_NATIVE_NOTIFICATION_WINDOW_FOCUS_SEMANTICS.md`
+
+Expected behavior:
+- active same chat with focused desktop window does not show a native popup;
+- active same chat with minimized or unfocused desktop window can show a native popup if not muted;
+- different channel/server/DM can show a native popup if not muted;
+- browser web behavior remains unchanged.
+
+Reason:
+- Segment 230 proved the Electron native notification bridge can work, but packaged smoke showed the decision path needs a desktop-aware window-state signal so "actively reading" is not guessed from renderer-only visibility/focus state.
+
 ### Segment 231. Desktop Auto-Update Proof
 
 Goal:
