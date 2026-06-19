@@ -1151,7 +1151,8 @@ Current blockers:
 - official repeatable CI/CD desktop installer build is not implemented, though local Windows installer build now passes on a symlink-capable build context;
 - desktop artifact hosting/download path is working for the current staging installer, but the process is still manual and not backed by CI/CD or auto-update metadata;
 - staging and production desktop packaging identity is separated; staging auto-update metadata path is configured for proof, while production update metadata remains unconfigured;
-- auto-update implementation is proven for packaged staging `0.0.3 -> 0.0.4`, but the process is still manual and not backed by CI/CD;
+- auto-update implementation is proven for packaged staging `0.0.3 -> 0.0.4`, but the process is still manual, not backed by CI/CD, and the visible update UX is minimal;
+- update discovery currently lives in the desktop account menu; a Discord/Telegram-like update-ready button/banner/toast/native prompt is not implemented yet and should be handled by a focused `desktop-update-ready-ux-polish` segment;
 - native desktop notification bridge plus desktop window focus/minimize/foreground-read semantics are deployed to staging and passed initial operator smoke; broader user soak is pending, and taskbar/dock badge behavior remains best-effort and not guaranteed;
 - packaged desktop runtime smoke has passed for the current staging installer, but it must be repeated after native notifications, auto-update, signing, or major renderer changes;
 - code signing is not configured;
@@ -1159,7 +1160,7 @@ Current blockers:
 - security review for remote web content plus preload bridge is not complete.
 
 Next likely work:
-- continue desktop file-download UX polish and production release hardening while monitoring staging user feedback on native/web notification behavior; next release-track work should move the proven manual auto-update path toward a repeatable CI/operator release process.
+- discuss and scope `desktop-update-ready-ux-polish`, then continue desktop file-download UX polish and production release hardening while monitoring staging user feedback on native/web notification behavior; the release track also needs to move the proven manual auto-update path toward a repeatable CI/operator release process.
 
 ## Historical Notes
 

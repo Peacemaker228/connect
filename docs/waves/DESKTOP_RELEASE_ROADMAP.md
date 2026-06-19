@@ -12,11 +12,11 @@ This roadmap exists so desktop work is shipped as bounded segments instead of ad
 
 - desktop product direction: `primary / desktop-first`
 - current implementation: `Electron remote-web shell`
-- desktop release readiness: `blocked / planning started`
-- desktop staging release candidate: `not ready`
-- desktop auto-update: `not implemented`
-- native desktop notifications: `not implemented`
-- desktop runtime smoke: `not complete`
+- desktop release readiness: `review / staging line forming`
+- desktop staging release candidate: `partial / installer, notifications, and auto-update proof exist`
+- desktop auto-update: `technical proof passed / product UX pending`
+- native desktop notifications: `implemented / staging smoke and user soak ongoing`
+- desktop runtime smoke: `basic staging smoke passed / repeat after release changes`
 - link previews and other lower-priority polish: `deferred until desktop release validation`
 
 ## Source Of Truth
@@ -476,6 +476,15 @@ Result:
 - account menu shows desktop-only update status and explicit restart/update action after download;
 - local `0.0.3` and temporary `0.0.4` staging artifacts plus `latest.yml`/blockmap were built; `0.0.4` source bump was reverted after artifact generation;
 - operator installed `0.0.3`, published `0.0.4` update metadata/artifacts to staging static hosting, verified hosted installer SHA256, triggered the update flow, restarted, and confirmed the relaunched desktop reported `version: "0.0.4"`.
+
+Product UX gap:
+- the update path is technically proven, but the visible user-facing UX is still minimal;
+- users currently discover update state through the desktop account-menu item/status;
+- a Discord/Telegram-like update-ready affordance is not implemented yet: no persistent green/restart button, toast/banner, badge, or native update-ready notification;
+- next update UX work should add a clear, non-invasive update-ready signal and keep restart explicit.
+
+Recommended follow-up segment:
+- `desktop-update-ready-ux-polish`.
 
 ### Segment 231. Desktop Security And Link Hardening
 

@@ -146,6 +146,12 @@ Current proof implementation:
 - renderer exposes a desktop-only account-menu update action;
 - restart/update is explicit and only available after update status reaches `downloaded`.
 
+Current UX limitation:
+
+- update state is visible through the desktop account menu only;
+- a prominent update-ready affordance similar to Discord/Telegram is not implemented yet;
+- future `desktop-update-ready-ux-polish` should add a clear update-ready signal, such as a persistent restart/update control, banner/toast, badge, or native prompt, without making restart surprising.
+
 Local proof artifacts:
 
 - `0.0.3` installer: `AxConnect-Staging-Setup-0.0.3.exe`, `94294315` bytes, SHA256 `6CF9EA77BD1F6DFB7AA06CE271D01DCD709508E0B17FD6892D584FFF1D977E27`;
