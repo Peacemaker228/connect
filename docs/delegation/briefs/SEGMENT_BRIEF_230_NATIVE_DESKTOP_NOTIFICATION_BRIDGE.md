@@ -235,7 +235,7 @@ Behavior implemented:
   - production: `com.axconnect.desktop`;
   - staging: `com.axconnect.desktop.staging`;
 - click on the native notification restores/focuses the existing window and routes the renderer to the target channel or direct conversation;
-- Segment 230A refines desktop-only active-route suppression through Electron window state, so a focused/visible active chat suppresses native popup/sound while minimized, hidden, or unfocused desktop can notify; browser web behavior remains unchanged;
+- Segment 230A refines desktop active-route suppression through Electron window state, and Segment 230B unifies foreground-read semantics across web and desktop so minimized or unfocused active chats can notify when not muted;
 - diagnostics now record native notification outcomes:
   - `native_notification_sent`;
   - `native_notification_unsupported`;

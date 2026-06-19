@@ -401,7 +401,7 @@ Expected behavior:
 - active same chat with focused desktop window does not show a native popup;
 - active same chat with minimized or unfocused desktop window can show a native popup if not muted;
 - different channel/server/DM can show a native popup if not muted;
-- browser web behavior remains unchanged.
+- browser foreground-read behavior is finalized by Segment 230B.
 
 Reason:
 - Segment 230 proved the Electron native notification bridge can work, but packaged smoke showed the decision path needs a desktop-aware window-state signal so "actively reading" is not guessed from renderer-only visibility/focus state.
@@ -409,10 +409,34 @@ Reason:
 Result:
 - Electron main process now exposes a narrow window-state bridge: `getWindowState()` plus `onWindowStateChange(...)` for focus/blur/minimize/restore/show/hide state;
 - renderer caches the latest desktop window state for synchronous realtime notification decisions;
-- browser web behavior remains unchanged because non-Electron runtime keeps the existing renderer visibility path;
+- browser web behavior remained unchanged in Segment 230A, but Segment 230B supersedes the foreground-read rule for both web and desktop;
 - desktop active same-chat suppression now requires focused, visible, non-minimized Electron window state;
 - diagnostics include desktop-focused auto-read, desktop-focused scrolled-up suppression, background active-chat eligibility, and the focused/visible/minimized snapshot fields;
 - packaged smoke remains pending before classifying native notifications as pass.
+
+### Segment 230B. Unread Foreground Read Semantics Unification
+
+Status: `implementation added / verification pending`
+
+Goal:
+- use one foreground-read rule across web and desktop so minimized/unfocused active chats are notification-eligible instead of being treated as already visible.
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_230B_UNREAD_FOREGROUND_READ_SEMANTICS_UNIFICATION.md`
+
+Expected behavior:
+- foreground active chat near bottom is read and suppresses sound/native notification;
+- foreground active chat while scrolled up keeps visual unread/new-below and suppresses sound/native notification;
+- minimized, hidden, or unfocused active chat is treated as background and can play sound/native notification if not muted;
+- global sound off and per-chat mute still block sound/native notification but preserve visual unread.
+
+Result:
+- shared foreground helper added for unread read/suppression decisions;
+- browser foreground requires visible document plus focused window;
+- desktop foreground uses the Electron focused/visible/minimized bridge when available;
+- active mark-read re-evaluates on desktop window-state changes;
+- backend/API/DB/storage/media/update pipeline were not changed;
+- packaged desktop and browser two-user smoke remain pending.
 
 ### Segment 231. Desktop Auto-Update Proof
 
