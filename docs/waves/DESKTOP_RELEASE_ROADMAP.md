@@ -442,8 +442,13 @@ Result:
 
 ### Segment 231. Desktop Auto-Update Proof
 
+Status: `brief ready`
+
 Goal:
 - implement and prove in-app update flow.
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_231_DESKTOP_AUTO_UPDATE_PROOF.md`
 
 Candidate direction:
 - use `electron-updater` with a generic static provider unless a better release hosting target is chosen;
@@ -455,6 +460,12 @@ Candidate direction:
 
 Acceptance:
 - install version N, publish version N+1 to staging update channel, desktop detects update, installs/restarts, and reports new version.
+
+Current constraints:
+- staging is the active channel for proof;
+- production is currently inactive/dead and must not receive an update rollout;
+- current staging static hosting can serve installer bytes under `/downloads/desktop/staging/win/`;
+- updater dependency/config/runtime bridge are not implemented yet.
 
 ### Segment 231. Desktop Security And Link Hardening
 

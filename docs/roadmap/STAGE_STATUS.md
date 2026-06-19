@@ -1158,7 +1158,7 @@ Current blockers:
 - security review for remote web content plus preload bridge is not complete.
 
 Next likely work:
-- continue to `desktop-auto-update-proof`, desktop file-download UX polish, and production release hardening while monitoring staging user feedback on native/web notification behavior.
+- `desktop-auto-update-proof` is the next prepared segment in `docs/delegation/briefs/SEGMENT_BRIEF_231_DESKTOP_AUTO_UPDATE_PROOF.md`: prove staging desktop `N -> N+1` update through static update metadata and explicit restart/update UX, without production rollout. After that, continue desktop file-download UX polish and production release hardening while monitoring staging user feedback on native/web notification behavior.
 
 ## Historical Notes
 
