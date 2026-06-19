@@ -4,7 +4,7 @@
 
 - segment: `unread-foreground-read-semantics-unification`
 - type: `notification/read-semantics correctness`
-- status: `implementation added / verification pending`
+- status: `review / staging deploy and initial operator smoke passed; user soak pending`
 - target branch: `feature/unread-foreground-read-semantics-unification`
 - source branch: latest `origin/core/reborn`
 - commit policy: do not commit automatically
@@ -87,3 +87,9 @@ bun.cmd run check:desktop:config
 bun.cmd run check:desktop:staging-config
 ```
 
+## Result
+
+- Staging web deploy was completed after merge to `core/reborn`.
+- Initial operator smoke passed for the corrected foreground behavior: active-chat notifications/sound are no longer broadly suppressed just because the user is routed to that chat.
+- Broader validation is intentionally left to staging web and packaged desktop users, because the affected behavior depends on real window focus/minimize and user workflow patterns.
+- No DB/schema/migrations, backend API, storage, media/WebRTC, auto-update, or installer rebuild was required for this segment.

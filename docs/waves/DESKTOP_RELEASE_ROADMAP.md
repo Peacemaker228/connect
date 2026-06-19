@@ -416,7 +416,7 @@ Result:
 
 ### Segment 230B. Unread Foreground Read Semantics Unification
 
-Status: `implementation added / verification pending`
+Status: `review / staging deploy and initial operator smoke passed; user soak pending`
 
 Goal:
 - use one foreground-read rule across web and desktop so minimized/unfocused active chats are notification-eligible instead of being treated as already visible.
@@ -436,7 +436,9 @@ Result:
 - desktop foreground uses the Electron focused/visible/minimized bridge when available;
 - active mark-read re-evaluates on desktop window-state changes;
 - backend/API/DB/storage/media/update pipeline were not changed;
-- packaged desktop and browser two-user smoke remain pending.
+- staging web deploy was completed after merge to `core/reborn`;
+- initial operator smoke passed for the corrected foreground notification behavior;
+- broader staging web and packaged desktop user soak remains pending.
 
 ### Segment 231. Desktop Auto-Update Proof
 
