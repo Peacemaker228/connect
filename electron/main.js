@@ -1,13 +1,14 @@
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { app, BrowserWindow, clipboard, desktopCapturer, ipcMain, session, shell } from 'electron'
+import { app, BrowserWindow, Notification, clipboard, desktopCapturer, ipcMain, session, shell } from 'electron'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const DEFAULT_APP_PROTOCOL = 'axconnect'
 const DEFAULT_DESKTOP_CHANNEL = 'production'
+const DEFAULT_WINDOWS_APP_USER_MODEL_ID = 'com.axconnect.desktop'
 const DEFAULT_DEV_URL = 'http://localhost:3005'
 const DEFAULT_INITIAL_PATH = '/'
 const DEV_LOAD_RETRIES = 60
@@ -20,6 +21,9 @@ const SHOULD_DISABLE_MEDIA_FOUNDATION_VIDEO_CAPTURE =
     process.env.AXCONNECT_USE_MEDIA_FOUNDATION_VIDEO_CAPTURE === '0')
 const BUILD_INFO_PATH = path.join(__dirname, 'build-info.json')
 const DESKTOP_SOURCE_PICKER_PROTOCOL = 'axconnect-picker:'
+const UNREAD_NOTIFICATION_TITLE_MAX_LENGTH = 80
+const UNREAD_NOTIFICATION_BODY_MAX_LENGTH = 160
+const ALLOWED_UNREAD_ATTENTION_LEVELS = new Set(['mention', 'reply', 'unread'])
 
 if (SHOULD_DISABLE_MEDIA_FOUNDATION_VIDEO_CAPTURE) {
   app.commandLine.appendSwitch('disable-features', 'MediaFoundationVideoCapture')
@@ -28,6 +32,7 @@ if (SHOULD_DISABLE_MEDIA_FOUNDATION_VIDEO_CAPTURE) {
 let mainWindow = null
 let pendingNavigationPath = null
 let pendingAuthSessionId = null
+let pendingRendererNavigationPath = null
 let isRendererReady = false
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -373,6 +378,65 @@ const readDesktopConfig = () => {
   }
 }
 
+const sanitizeNotificationText = (value, maxLength) => {
+  if (typeof value !== 'string') {
+    return ''
+  }
+
+  const normalized = value.replace(/\s+/g, ' ').trim()
+
+  if (normalized.length <= maxLength) {
+    return normalized
+  }
+
+  return `${normalized.slice(0, Math.max(0, maxLength - 3)).trim()}...`
+}
+
+const isSafeRendererPath = (value) => {
+  return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//')
+}
+
+const getValidatedUnreadNotificationPayload = (payload) => {
+  if (!payload || typeof payload !== 'object') {
+    return null
+  }
+
+  const title = sanitizeNotificationText(payload.title, UNREAD_NOTIFICATION_TITLE_MAX_LENGTH)
+  const body = sanitizeNotificationText(payload.body, UNREAD_NOTIFICATION_BODY_MAX_LENGTH)
+  const messageId = typeof payload.messageId === 'string' ? payload.messageId.trim() : ''
+  const serverId = typeof payload.serverId === 'string' ? payload.serverId.trim() : ''
+  const channelId = typeof payload.channelId === 'string' ? payload.channelId.trim() : undefined
+  const conversationId = typeof payload.conversationId === 'string' ? payload.conversationId.trim() : undefined
+  const routePath = typeof payload.routePath === 'string' ? payload.routePath.trim() : ''
+  const attentionLevel = typeof payload.attentionLevel === 'string' ? payload.attentionLevel.trim() : ''
+
+  if (
+    !title ||
+    !body ||
+    !messageId ||
+    !serverId ||
+    !isSafeRendererPath(routePath) ||
+    !ALLOWED_UNREAD_ATTENTION_LEVELS.has(attentionLevel)
+  ) {
+    return null
+  }
+
+  if (!channelId && !conversationId) {
+    return null
+  }
+
+  return {
+    attentionLevel,
+    body,
+    channelId,
+    conversationId,
+    messageId,
+    routePath,
+    serverId,
+    title,
+  }
+}
+
 const readDesktopPackage = () => {
   const packagePath = path.join(__dirname, 'package.json')
 
@@ -410,6 +474,26 @@ const getDesktopChannelConfig = (config = readDesktopConfig()) => {
     channel,
     config: channelConfig && typeof channelConfig === 'object' ? channelConfig : null,
   }
+}
+
+const getDesktopAppUserModelId = (config = readDesktopConfig()) => {
+  const appId = getDesktopChannelConfig(config).config?.appId
+
+  if (typeof appId === 'string' && appId.trim() !== '') {
+    return appId.trim()
+  }
+
+  return DEFAULT_WINDOWS_APP_USER_MODEL_ID
+}
+
+const configureWindowsAppUserModelId = () => {
+  if (process.platform !== 'win32') {
+    return null
+  }
+
+  const appUserModelId = getDesktopAppUserModelId()
+  app.setAppUserModelId(appUserModelId)
+  return appUserModelId
 }
 
 const getAppProtocol = () => {
@@ -509,6 +593,19 @@ const sendAuthSessionToRenderer = (sessionId) => {
   }
 
   mainWindow.webContents.send('auth:session', sessionId)
+}
+
+const sendNavigationPathToRenderer = (pathToNavigate) => {
+  if (!isSafeRendererPath(pathToNavigate)) {
+    return
+  }
+
+  if (!mainWindow || mainWindow.isDestroyed() || !isRendererReady) {
+    pendingRendererNavigationPath = pathToNavigate
+    return
+  }
+
+  mainWindow.webContents.send('desktop:navigate', pathToNavigate)
 }
 
 const handleDeepLink = (urlString) => {
@@ -766,6 +863,53 @@ ipcMain.handle('desktop:get-build-info', async () => {
   return readBuildInfo()
 })
 
+ipcMain.handle('desktop:show-unread-notification', async (event, payload) => {
+  const senderUrl = event.senderFrame?.url || event.sender?.getURL?.() || ''
+
+  if (!isTrustedOrigin(senderUrl)) {
+    return { status: 'failed', error: 'untrusted_origin' }
+  }
+
+  const notificationPayload = getValidatedUnreadNotificationPayload(payload)
+
+  if (!notificationPayload) {
+    return { status: 'failed', error: 'invalid_payload' }
+  }
+
+  if (!Notification.isSupported()) {
+    return { status: 'unsupported' }
+  }
+
+  try {
+    const notification = new Notification({
+      body: notificationPayload.body,
+      silent: true,
+      title: notificationPayload.title,
+    })
+
+    notification.on('click', () => {
+      restoreMainWindow()
+      sendNavigationPathToRenderer(notificationPayload.routePath)
+    })
+
+    notification.show()
+
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isFocused()) {
+      mainWindow.flashFrame(true)
+      mainWindow.once('focus', () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.flashFrame(false)
+        }
+      })
+    }
+
+    return { status: 'sent' }
+  } catch (error) {
+    console.error('[desktop] Failed to show unread notification', error)
+    return { status: 'failed', error: error instanceof Error ? error.message : 'unknown_error' }
+  }
+})
+
 ipcMain.on('desktop:renderer-ready', () => {
   isRendererReady = true
 
@@ -774,9 +918,17 @@ ipcMain.on('desktop:renderer-ready', () => {
     pendingAuthSessionId = null
     sendAuthSessionToRenderer(sessionId)
   }
+
+  if (pendingRendererNavigationPath) {
+    const pathToNavigate = pendingRendererNavigationPath
+    pendingRendererNavigationPath = null
+    sendNavigationPathToRenderer(pathToNavigate)
+  }
 })
 
 app.whenReady().then(async () => {
+  const windowsAppUserModelId = configureWindowsAppUserModelId()
+
   registerProtocol()
 
   console.log('[desktop][app-info]', {
@@ -786,6 +938,7 @@ app.whenReady().then(async () => {
     execPath: process.execPath,
     desktopChannel: getDesktopChannel(),
     appProtocol: getAppProtocol(),
+    windowsAppUserModelId,
     buildInfo: readBuildInfo(),
   })
 

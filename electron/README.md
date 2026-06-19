@@ -79,6 +79,24 @@ Staging identity:
 
 Generated installer output under `dist-desktop/*` and `electron/build-info.json` is ignored and must not be committed.
 
+## Native Notifications
+
+The desktop shell exposes a narrow unread-notification bridge through preload:
+
+- renderer calls `window.electron.showUnreadNotification(payload)` only from the existing unread decision path;
+- main process validates origin and payload before creating an Electron `Notification`;
+- notification click sends a narrow navigation event back to the existing renderer window;
+- browser web runtime does not call this bridge when `window.electron?.isDesktop` is false.
+
+Windows native notifications require a Start Menu registered AppUserModelID. On `win32`, the main process sets
+`app.setAppUserModelId(...)` from the active desktop channel `appId` in `electron/app-config.json` before notifications are
+created:
+
+- production: `com.axconnect.desktop`
+- staging: `com.axconnect.desktop.staging`
+
+Packaged smoke is required before marking the native notification segment as pass.
+
 ## Команды
 
 - `bun run dev:desktop` — desktop dev

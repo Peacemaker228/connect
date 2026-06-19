@@ -1142,21 +1142,21 @@ Done:
 - `desktop-artifact-download-runbook` is review-ready in `docs/delegation/briefs/SEGMENT_BRIEF_227_DESKTOP_ARTIFACT_DOWNLOAD_RUNBOOK.md`: Segment 226 was confirmed in latest `origin/core/reborn`, staging installer hosting is documented as an Nginx static alias outside the app repo at `/var/www/ax-connect-desktop-downloads/`, staging web should use `NEXT_PUBLIC_DESKTOP_DOWNLOAD_URL=/downloads/desktop/staging/win/AxConnect-Staging-Setup-latest.exe`, and local artifact evidence was rechecked for `dist-desktop\AxConnect-Staging-Setup-0.0.2.exe` (`175306350` bytes, SHA256 `794A8DB83BAA07E47B8B018062EA2600D9C14C0CF8355EE99BA0E1C693AD1164`).
 - `desktop-staging-download-nginx-route-diagnosis` is pass in `docs/delegation/briefs/SEGMENT_BRIEF_228A_DESKTOP_STAGING_DOWNLOAD_NGINX_ROUTE_DIAGNOSIS.md`: operator uploaded the staging installer to `/var/www/ax-connect-desktop-downloads/desktop/staging/win/`, published `AxConnect-Staging-Setup-latest.exe`, generated the SHA file, confirmed `www-data` read access, added the active Nginx `location ^~ /downloads/desktop/` static alias for staging, verified `GET`/`HEAD` `200 OK`, verified SHA256 `794A8DB83BAA07E47B8B018062EA2600D9C14C0CF8355EE99BA0E1C693AD1164`, and confirmed browser download plus Windows installation.
 - `desktop-runtime-smoke-pass` is pass in `docs/delegation/briefs/SEGMENT_BRIEF_229_DESKTOP_RUNTIME_SMOKE_PASS.md`: the installed `AxConnect Staging` app passed operator manual smoke with no critical blockers; known UX issue is generic non-image/non-PDF file open/download in Electron, which should be addressed in a later focused file-download UX segment.
+- `desktop-native-notification-bridge` is implemented locally and review-pending packaged smoke in `docs/delegation/briefs/SEGMENT_BRIEF_230_NATIVE_DESKTOP_NOTIFICATION_BRIDGE.md`: a narrow Electron preload/main-process bridge now shows native unread notifications from the existing global unread decision path after existing own-message, duplicate, active-read, mute, global sound, and visibility guards; web/non-Electron runtime does not call the bridge; notification click routes back into the existing window; diagnostics record native sent/unsupported/failed and native blocked-by-global/scope outcomes.
 
 Current blockers:
 - official repeatable CI/CD desktop installer build is not implemented, though local Windows installer build now passes on a symlink-capable build context;
 - desktop artifact hosting/download path is working for the current staging installer, but the process is still manual and not backed by CI/CD or auto-update metadata;
 - staging and production desktop packaging identity is separated, staging artifact hosting paths are documented, but update metadata separation is not implemented;
 - auto-update is not implemented;
-- native desktop notifications and taskbar/dock badge behavior are not implemented;
+- native desktop notification bridge is implemented locally but not yet packaged-smoked; taskbar/dock badge behavior remains best-effort and not guaranteed;
 - packaged desktop runtime smoke has passed for the current staging installer, but it must be repeated after native notifications, auto-update, signing, or major renderer changes;
 - code signing is not configured;
 - CI/CD release pipeline does not exist;
 - security review for remote web content plus preload bridge is not complete.
 
 Next likely work:
-- implement `desktop-native-notification-bridge` using `docs/delegation/briefs/SEGMENT_BRIEF_230_NATIVE_DESKTOP_NOTIFICATION_BRIDGE.md`;
-- later `desktop-auto-update-proof`, desktop file-download UX polish, and production release hardening.
+- run packaged two-user smoke for `desktop-native-notification-bridge`, then continue to `desktop-auto-update-proof`, desktop file-download UX polish, and production release hardening.
 
 ## Historical Notes
 

@@ -5,6 +5,16 @@ contextBridge.exposeInMainWorld('electron', {
   openExternal: (url) => ipcRenderer.invoke('desktop:open-external', url),
   writeClipboardText: (text) => ipcRenderer.invoke('desktop:write-clipboard', text),
   getBuildInfo: () => ipcRenderer.invoke('desktop:get-build-info'),
+  showUnreadNotification: (payload) => ipcRenderer.invoke('desktop:show-unread-notification', payload),
+  onUnreadNotificationNavigate: (callback) => {
+    const listener = (_event, path) => callback(path)
+
+    ipcRenderer.on('desktop:navigate', listener)
+
+    return () => {
+      ipcRenderer.removeListener('desktop:navigate', listener)
+    }
+  },
   notifyReady: () => ipcRenderer.send('desktop:renderer-ready'),
   onAuthSession: (callback) => {
     const listener = (_event, sessionId) => callback(sessionId)

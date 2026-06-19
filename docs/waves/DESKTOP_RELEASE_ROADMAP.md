@@ -51,7 +51,7 @@ Current code shape:
 - `release:desktop` currently runs config check plus desktop build;
 - preload exposes a small bridge: external links, clipboard text, build info, renderer-ready, auth session callback;
 - Electron main process handles deep links, camera/mic/display permissions, screen source picker, clipboard writes, and external URL opening;
-- there is no updater, no publish provider, no native notification bridge, no taskbar/dock badge bridge, and no release artifact hosting contract.
+- there is no updater, no publish provider, native notification bridge implementation is under review pending packaged smoke, no taskbar/dock badge bridge is guaranteed, and no release artifact hosting automation exists.
 
 Current local build result:
 
@@ -124,7 +124,7 @@ Release blockers:
 - local Windows installer build has been reproduced on a symlink-capable build context, but official repeatable CI/CD release build is not implemented;
 - desktop release artifact hosting runbook is prepared for staging, but public HTTPS verification currently shows `/downloads/desktop/` is still routed through web auth instead of static Nginx hosting;
 - auto-update provider/metadata is absent;
-- native notification and app badge bridge are absent;
+- native notification bridge implementation exists locally but still needs packaged smoke; app badge behavior remains best-effort and not guaranteed;
 - packaged desktop runtime smoke is not complete;
 - code signing is not configured;
 - security review for remote web + preload bridge is not complete;
@@ -357,7 +357,7 @@ Result:
 
 ### Segment 230. Native Desktop Notification Bridge
 
-Status: `ready for implementation`
+Status: `review / implementation added; packaged smoke pending`
 
 Goal:
 - route accepted unread/attention events to OS notifications and app-level unread signals.
@@ -375,6 +375,17 @@ Expected behavior:
 
 Acceptance:
 - notification behavior works in packaged desktop and does not regress web notification sound behavior.
+
+Result:
+- narrow preload IPC APIs were added for native unread notifications and notification-click navigation;
+- Electron main process validates trusted origin and notification payload before using main-process `Notification`;
+- native notification requests are emitted only from the existing global unread realtime path after existing own-message, duplicate, active-read, mute, global sound, and visibility decisions;
+- web/non-Electron runtime does not call the native bridge;
+- global notification sound off and per-chat mute suppress native popups in this segment;
+- notification click restores/focuses the existing app window and routes to the target channel or direct conversation;
+- diagnostics record native sent/unsupported/failed and native blocked-by-global/blocked-by-scope outcomes;
+- local TypeScript check passed;
+- packaged native notification smoke was not run yet, so this segment is not classified as pass.
 
 ### Segment 231. Desktop Auto-Update Proof
 
