@@ -62,8 +62,11 @@ declare global {
     channel: string
     currentVersion: string
     error?: string | null
+    lastCheckedAt?: string | null
+    lastErrorAt?: string | null
+    lastSuccessfulCheckAt?: string | null
     progressPercent?: number | null
-    status: 'idle' | 'checking' | 'available' | 'not_available' | 'downloading' | 'downloaded' | 'error'
+    status: 'unsupported' | 'idle' | 'checking' | 'available' | 'not_available' | 'downloading' | 'downloaded' | 'error'
     supported: boolean
     updateUrl?: string | null
     updateVersion?: string | null

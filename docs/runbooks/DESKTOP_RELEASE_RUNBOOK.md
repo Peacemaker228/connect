@@ -152,6 +152,23 @@ Current UX limitation:
 - a prominent update-ready affordance similar to Discord/Telegram is not implemented yet;
 - future `desktop-update-ready-ux-polish` should add a clear update-ready signal, such as a persistent restart/update control, banner/toast, badge, or native prompt, without making restart surprising.
 
+Current lifecycle hardening gap:
+
+- the staging `0.0.3 -> 0.0.4` proof passed, and the updater flow now has focused internal hardening before prominent UX is added;
+- `desktop-auto-update-flow-hardening` normalizes status states, guards concurrent checks/downloads, adds bounded packaged-staging periodic checks, preserves manual retry, and ensures missing metadata/network/download errors move to `error` instead of crashing the app or leaving the updater stuck;
+- this is separate from CI/CD: CI/CD will automate building and publishing artifacts, while flow hardening makes the installed app's internal update behavior reliable.
+
+Hardened updater lifecycle:
+
+- statuses: `unsupported`, `idle`, `checking`, `available`, `not_available`, `downloading`, `downloaded`, `error`;
+- safe fields: `currentVersion`, `updateVersion`, `channel`, `progressPercent`, `lastCheckedAt`, `lastSuccessfulCheckAt`, `lastErrorAt`, sanitized `error`, `updatedAt`;
+- packaged staging periodic interval: `45` minutes;
+- checks are skipped while status is `checking`, `available`, `downloading`, or `downloaded`;
+- `downloaded` remains stable until explicit restart/update;
+- `installUpdate()` returns safe `update_not_downloaded` unless an update is downloaded;
+- account-menu retry remains available after `error` or `not_available`;
+- production provider remains unconfigured.
+
 Local proof artifacts:
 
 - `0.0.3` installer: `AxConnect-Staging-Setup-0.0.3.exe`, `94294315` bytes, SHA256 `6CF9EA77BD1F6DFB7AA06CE271D01DCD709508E0B17FD6892D584FFF1D977E27`;

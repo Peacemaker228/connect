@@ -14,7 +14,7 @@ This roadmap exists so desktop work is shipped as bounded segments instead of ad
 - current implementation: `Electron remote-web shell`
 - desktop release readiness: `review / staging line forming`
 - desktop staging release candidate: `partial / installer, notifications, and auto-update proof exist`
-- desktop auto-update: `technical proof passed / product UX pending`
+- desktop auto-update: `technical proof passed / flow hardening implementation added; packaged smoke pending`
 - native desktop notifications: `implemented / staging smoke and user soak ongoing`
 - desktop runtime smoke: `basic staging smoke passed / repeat after release changes`
 - link previews and other lower-priority polish: `deferred until desktop release validation`
@@ -483,8 +483,51 @@ Product UX gap:
 - a Discord/Telegram-like update-ready affordance is not implemented yet: no persistent green/restart button, toast/banner, badge, or native update-ready notification;
 - next update UX work should add a clear, non-invasive update-ready signal and keep restart explicit.
 
-Recommended follow-up segment:
-- `desktop-update-ready-ux-polish`.
+Recommended follow-up sequence:
+- packaged smoke for `desktop-auto-update-flow-hardening`;
+- then `desktop-update-ready-ux-polish`.
+
+### Segment 231A. Desktop Auto-Update Flow Hardening
+
+Status: `review / implementation added; packaged smoke pending`
+
+Goal:
+- harden the internal desktop updater lifecycle before adding prominent user-facing update UX.
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_231A_DESKTOP_AUTO_UPDATE_FLOW_HARDENING.md`
+
+Expected work:
+- normalize updater status states;
+- prevent concurrent checks/download storms;
+- add bounded packaged-staging periodic checks;
+- keep manual retry available;
+- handle missing metadata, network errors, invalid metadata, same-version/no-update, and download/hash failures without crashing or getting stuck;
+- keep install/restart explicit;
+- update runbook/status after implementation.
+
+Out of scope:
+- update-ready visual polish such as green button/banner/toast/native prompt;
+- CI/CD release pipeline;
+- production update provider;
+- code signing;
+- server artifact publishing;
+- DB/storage/media/WebRTC/chat changes.
+
+Acceptance:
+- packaged staging desktop has reliable updater state and retry behavior;
+- browser web does not expose updater controls;
+- production/default channel does not consume staging metadata;
+- future update-ready UX has a dependable status source.
+
+Result:
+- updater status lifecycle now includes `unsupported`, `idle`, `checking`, `available`, `not_available`, `downloading`, `downloaded`, and `error`;
+- status snapshots include current/update version, channel, progress, sanitized error, `lastCheckedAt`, `lastSuccessfulCheckAt`, `lastErrorAt`, and `updatedAt`;
+- manual and periodic checks share the same guard and do not run while checking, available, downloading, or downloaded;
+- packaged staging periodic check interval is `45` minutes;
+- `downloaded` remains stable until explicit restart/update;
+- install/restart returns a safe `update_not_downloaded` error unless an update is downloaded;
+- existing account-menu item keeps retry available without adding banner/toast/native prompt/polished update-ready UI.
 
 ### Segment 231. Desktop Security And Link Hardening
 
