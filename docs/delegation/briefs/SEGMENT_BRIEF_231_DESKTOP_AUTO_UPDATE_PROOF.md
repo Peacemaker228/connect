@@ -261,7 +261,7 @@ Version `N = 0.0.3` was built with updater support:
 
 - installer: `AxConnect-Staging-Setup-0.0.3.exe`;
 - size: `94294315` bytes;
-- SHA256: `0F7200E964CE1D44E1244A244E6FE8F93806B66653560B978DAF7E78B68FAAE9`;
+- SHA256: `1BDC2EC868CAC04C77F98214E5C3F51422CE69EB64211855A18B3642B6264C71`;
 - blockmap: `AxConnect-Staging-Setup-0.0.3.exe.blockmap`;
 - blockmap size: `184199` bytes;
 - blockmap SHA256: `2C9774D26DC520346F5DCF23C6F5DA775D205F62538E25AB2C6BA261E35A7BBE`;
@@ -271,8 +271,8 @@ Version `N = 0.0.3` was built with updater support:
 Temporary version `N+1 = 0.0.4` was built only to produce update proof artifacts, then tracked source files were restored to `0.0.3`:
 
 - installer: `AxConnect-Staging-Setup-0.0.4.exe`;
-- size: `94294242` bytes;
-- SHA256: `C7328AB5C5CAD04FF0D7D43D55BCFF2CEEC51E2320D252332B30A63CB4817F06`;
+- size: `94294218` bytes;
+- SHA256: `1255F2BF86A05A198DF8BC4276EDC87849F2850F43382CC3FA3904389100A7C4`;
 - blockmap: `AxConnect-Staging-Setup-0.0.4.exe.blockmap`;
 - blockmap size: `184261` bytes;
 - blockmap SHA256: `22FB2E07566A1E55514C7DA086AE261EB3B9C70553D7C1C8B2FCE9CB88A78FB0`;
@@ -335,7 +335,7 @@ set -euo pipefail
 
 curl -fsS https://staging.ax-connect.ru/downloads/desktop/staging/win/latest.yml
 curl -fsS -o /tmp/AxConnect-Staging-Setup-0.0.4.exe https://staging.ax-connect.ru/downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.4.exe
-echo 'C7328AB5C5CAD04FF0D7D43D55BCFF2CEEC51E2320D252332B30A63CB4817F06  /tmp/AxConnect-Staging-Setup-0.0.4.exe' | sha256sum -c -
+echo '1255F2BF86A05A198DF8BC4276EDC87849F2850F43382CC3FA3904389100A7C4  /tmp/AxConnect-Staging-Setup-0.0.4.exe' | sha256sum -c -
 ```
 
 Required operator smoke:
