@@ -1143,21 +1143,21 @@ Done:
 - `desktop-staging-download-nginx-route-diagnosis` is pass in `docs/delegation/briefs/SEGMENT_BRIEF_228A_DESKTOP_STAGING_DOWNLOAD_NGINX_ROUTE_DIAGNOSIS.md`: operator uploaded the staging installer to `/var/www/ax-connect-desktop-downloads/desktop/staging/win/`, published `AxConnect-Staging-Setup-latest.exe`, generated the SHA file, confirmed `www-data` read access, added the active Nginx `location ^~ /downloads/desktop/` static alias for staging, verified `GET`/`HEAD` `200 OK`, verified SHA256 `794A8DB83BAA07E47B8B018062EA2600D9C14C0CF8355EE99BA0E1C693AD1164`, and confirmed browser download plus Windows installation.
 - `desktop-runtime-smoke-pass` is pass in `docs/delegation/briefs/SEGMENT_BRIEF_229_DESKTOP_RUNTIME_SMOKE_PASS.md`: the installed `AxConnect Staging` app passed operator manual smoke with no critical blockers; known UX issue is generic non-image/non-PDF file open/download in Electron, which should be addressed in a later focused file-download UX segment.
 - `desktop-native-notification-bridge` is implemented locally and review-pending packaged smoke in `docs/delegation/briefs/SEGMENT_BRIEF_230_NATIVE_DESKTOP_NOTIFICATION_BRIDGE.md`: a narrow Electron preload/main-process bridge now shows native unread notifications from the existing global unread decision path after existing own-message, duplicate, active-read, mute, global sound, and visibility guards; web/non-Electron runtime does not call the bridge; notification click routes back into the existing window; diagnostics record native sent/unsupported/failed and native blocked-by-global/scope outcomes.
-- `desktop-native-notification-window-focus-semantics` is prepared in `docs/delegation/briefs/SEGMENT_BRIEF_230A_DESKTOP_NATIVE_NOTIFICATION_WINDOW_FOCUS_SEMANTICS.md`: Segment 230 packaged/manual diagnostics proved the native bridge can produce Windows notifications, but the active-chat eligibility must be refined with explicit Electron window focus/minimize state before classifying native notifications as pass.
+- `desktop-native-notification-window-focus-semantics` is implemented locally and review-pending packaged smoke in `docs/delegation/briefs/SEGMENT_BRIEF_230A_DESKTOP_NATIVE_NOTIFICATION_WINDOW_FOCUS_SEMANTICS.md`: Electron main/preload now expose a narrow focused/visible/minimized window-state bridge, renderer caches that state for synchronous unread notification decisions, browser web behavior keeps the existing visibility path, and diagnostics record desktop-focused suppression/background eligibility plus focused/visible/minimized snapshot fields.
 
 Current blockers:
 - official repeatable CI/CD desktop installer build is not implemented, though local Windows installer build now passes on a symlink-capable build context;
 - desktop artifact hosting/download path is working for the current staging installer, but the process is still manual and not backed by CI/CD or auto-update metadata;
 - staging and production desktop packaging identity is separated, staging artifact hosting paths are documented, but update metadata separation is not implemented;
 - auto-update is not implemented;
-- native desktop notification bridge is implemented locally but not yet packaged-smoked; taskbar/dock badge behavior remains best-effort and not guaranteed;
+- native desktop notification bridge plus desktop window focus/minimize semantics are implemented locally but not yet packaged-smoked; taskbar/dock badge behavior remains best-effort and not guaranteed;
 - packaged desktop runtime smoke has passed for the current staging installer, but it must be repeated after native notifications, auto-update, signing, or major renderer changes;
 - code signing is not configured;
 - CI/CD release pipeline does not exist;
 - security review for remote web content plus preload bridge is not complete.
 
 Next likely work:
-- implement and smoke `desktop-native-notification-window-focus-semantics`, then continue to `desktop-auto-update-proof`, desktop file-download UX polish, and production release hardening.
+- smoke `desktop-native-notification-window-focus-semantics`, then continue to `desktop-auto-update-proof`, desktop file-download UX polish, and production release hardening.
 
 ## Historical Notes
 

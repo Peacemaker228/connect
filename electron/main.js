@@ -608,6 +608,30 @@ const sendNavigationPathToRenderer = (pathToNavigate) => {
   mainWindow.webContents.send('desktop:navigate', pathToNavigate)
 }
 
+const getDesktopWindowState = () => {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return {
+      focused: false,
+      minimized: false,
+      visible: false,
+    }
+  }
+
+  return {
+    focused: mainWindow.isFocused(),
+    minimized: mainWindow.isMinimized(),
+    visible: mainWindow.isVisible(),
+  }
+}
+
+const sendWindowStateToRenderer = () => {
+  if (!mainWindow || mainWindow.isDestroyed() || !isRendererReady) {
+    return
+  }
+
+  mainWindow.webContents.send('desktop:window-state-change', getDesktopWindowState())
+}
+
 const handleDeepLink = (urlString) => {
   const appPath = getAppPathFromDeepLink(urlString)
   const sessionId = getSessionIdFromDeepLink(urlString)
@@ -786,6 +810,7 @@ const createWindow = async () => {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show()
+    sendWindowStateToRenderer()
   })
 
   mainWindow.webContents.on('did-start-loading', () => {
@@ -815,6 +840,10 @@ const createWindow = async () => {
     mainWindow = null
     isRendererReady = false
   })
+
+  for (const eventName of ['focus', 'blur', 'minimize', 'restore', 'show', 'hide']) {
+    mainWindow.on(eventName, sendWindowStateToRenderer)
+  }
 
   await loadRenderer()
 }
@@ -861,6 +890,16 @@ ipcMain.handle('desktop:write-clipboard', async (event, text) => {
 
 ipcMain.handle('desktop:get-build-info', async () => {
   return readBuildInfo()
+})
+
+ipcMain.handle('desktop:get-window-state', async (event) => {
+  const senderUrl = event.senderFrame?.url || event.sender?.getURL?.() || ''
+
+  if (!isTrustedOrigin(senderUrl)) {
+    return null
+  }
+
+  return getDesktopWindowState()
 })
 
 ipcMain.handle('desktop:show-unread-notification', async (event, payload) => {
@@ -912,6 +951,7 @@ ipcMain.handle('desktop:show-unread-notification', async (event, payload) => {
 
 ipcMain.on('desktop:renderer-ready', () => {
   isRendererReady = true
+  sendWindowStateToRenderer()
 
   if (pendingAuthSessionId) {
     const sessionId = pendingAuthSessionId

@@ -4,7 +4,7 @@
 
 - segment: `desktop-native-notification-window-focus-semantics`
 - type: `desktop runtime / notification decision correctness`
-- status: `brief / ready`
+- status: `review / implementation added; packaged smoke pending`
 - target branch: `feature/desktop-native-notification-window-focus-semantics`
 - source branch: latest `origin/core/reborn`
 - commit policy: do not commit automatically; return PowerShell-safe `git add` / `git commit` commands
@@ -252,6 +252,36 @@ Inspect:
 ```js
 window.__axUnreadNotificationDebug?.getEntries?.().slice(-20)
 ```
+
+## Implementation Result
+
+Status:
+
+- implementation added on `feature/desktop-native-notification-window-focus-semantics`;
+- packaged smoke is still required before classifying native notifications as pass.
+
+Window-state API added:
+
+- `window.electron.getWindowState()` returns `{ focused, visible, minimized } | null`;
+- `window.electron.onWindowStateChange(callback)` subscribes to focused/blurred/minimized/restored/shown/hidden state changes;
+- Electron main process validates the caller origin for the snapshot IPC read;
+- renderer caches the latest state through `src/lib/shared/data-access/unread/unread-desktop-window-state.ts` so realtime unread callbacks do not perform async IPC in the hot path.
+
+Decision behavior:
+
+- browser web path remains based on existing renderer visibility behavior and does not use the Electron window-state bridge;
+- desktop active-route suppression now requires Electron window state `focused === true`, `visible === true`, and `minimized === false`;
+- if Electron window state is not available yet, desktop falls back conservatively to the previous renderer visibility/focus behavior;
+- focused/visible active chat near bottom remains auto-read with no native popup/sound;
+- focused/visible active chat while scrolled up keeps visual unread/new-below behavior with no native popup/sound;
+- minimized, hidden, or unfocused active chat is eligible for native popup/sound when global sound is enabled and the scope is not muted.
+
+Diagnostics added:
+
+- `active_desktop_window_focused_auto_read`;
+- `active_desktop_window_focused_scrolled_up_unread`;
+- `desktop_window_background_active_unread_sound_eligible`;
+- debug entries now include `desktopWindowFocused`, `desktopWindowVisible`, and `desktopWindowMinimized` when the bridge is available.
 
 ## Handoff Format
 
