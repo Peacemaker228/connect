@@ -4,7 +4,7 @@
 
 - segment: `desktop-auto-update-proof`
 - type: `desktop release / update pipeline proof`
-- status: `review / implementation added; N and N+1 artifacts built; operator update smoke pending`
+- status: `pass / staging auto-update proof passed`
 - target branch: `feature/desktop-auto-update-proof`
 - source branch: latest `origin/core/reborn`
 - commit policy: do not commit automatically; return PowerShell-safe git commands
@@ -238,7 +238,7 @@ Status:
 - staging-only updater implementation added on `feature/desktop-auto-update-proof`;
 - production update publishing was not configured;
 - generated artifacts are local/ignored and must not be committed;
-- real install/update/relaunch smoke is pending operator publish and Windows GUI validation.
+- real install/update/relaunch smoke passed on Windows through staging static update metadata.
 
 Code/config changes:
 
@@ -261,7 +261,7 @@ Version `N = 0.0.3` was built with updater support:
 
 - installer: `AxConnect-Staging-Setup-0.0.3.exe`;
 - size: `94294315` bytes;
-- SHA256: `1BDC2EC868CAC04C77F98214E5C3F51422CE69EB64211855A18B3642B6264C71`;
+- SHA256: `6CF9EA77BD1F6DFB7AA06CE271D01DCD709508E0B17FD6892D584FFF1D977E27`;
 - blockmap: `AxConnect-Staging-Setup-0.0.3.exe.blockmap`;
 - blockmap size: `184199` bytes;
 - blockmap SHA256: `2C9774D26DC520346F5DCF23C6F5DA775D205F62538E25AB2C6BA261E35A7BBE`;
@@ -271,8 +271,8 @@ Version `N = 0.0.3` was built with updater support:
 Temporary version `N+1 = 0.0.4` was built only to produce update proof artifacts, then tracked source files were restored to `0.0.3`:
 
 - installer: `AxConnect-Staging-Setup-0.0.4.exe`;
-- size: `94294218` bytes;
-- SHA256: `1255F2BF86A05A198DF8BC4276EDC87849F2850F43382CC3FA3904389100A7C4`;
+- size: `94294272` bytes;
+- SHA256: `3F82312FFF09641CA8E30BF69BDE2F1E58F303D180DC3D85D5774B2585D9702F`;
 - blockmap: `AxConnect-Staging-Setup-0.0.4.exe.blockmap`;
 - blockmap size: `184261` bytes;
 - blockmap SHA256: `22FB2E07566A1E55514C7DA086AE261EB3B9C70553D7C1C8B2FCE9CB88A78FB0`;
@@ -335,21 +335,24 @@ set -euo pipefail
 
 curl -fsS https://staging.ax-connect.ru/downloads/desktop/staging/win/latest.yml
 curl -fsS -o /tmp/AxConnect-Staging-Setup-0.0.4.exe https://staging.ax-connect.ru/downloads/desktop/staging/win/AxConnect-Staging-Setup-0.0.4.exe
-echo '1255F2BF86A05A198DF8BC4276EDC87849F2850F43382CC3FA3904389100A7C4  /tmp/AxConnect-Staging-Setup-0.0.4.exe' | sha256sum -c -
+echo '3F82312FFF09641CA8E30BF69BDE2F1E58F303D180DC3D85D5774B2585D9702F  /tmp/AxConnect-Staging-Setup-0.0.4.exe' | sha256sum -c -
 ```
 
 Required operator smoke:
 
-- install `0.0.3`;
-- verify `window.electron.getBuildInfo()` reports `version: "0.0.3"` and `channel: "staging"`;
-- publish `0.0.4` installer, blockmap, and `latest.yml`;
-- start `0.0.3`;
-- use account menu update action or startup auto-check;
-- verify status reaches `downloaded`;
-- click `Restart and update`;
-- verify relaunched app reports `version: "0.0.4"`.
+- result: `pass`;
+- installed `0.0.3`;
+- verified `window.electron.getBuildInfo()` reported `version: "0.0.3"` and `channel: "staging"`;
+- published `0.0.4` installer, blockmap, and `latest.yml` to staging static update path;
+- verified hosted `0.0.4` installer SHA256 matched `3F82312FFF09641CA8E30BF69BDE2F1E58F303D180DC3D85D5774B2585D9702F`;
+- started installed `0.0.3`;
+- used desktop update path;
+- update downloaded and restarted successfully;
+- verified relaunched app reported `version: "0.0.4"`.
 
 ## Manual Smoke
+
+Latest operator result: `pass` for staging desktop `0.0.3 -> 0.0.4` update.
 
 1. Install staging desktop version `N`.
 2. Confirm app opens staging.

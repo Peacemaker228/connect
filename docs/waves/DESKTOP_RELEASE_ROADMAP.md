@@ -442,7 +442,7 @@ Result:
 
 ### Segment 231. Desktop Auto-Update Proof
 
-Status: `review / implementation added; N and N+1 artifacts built; operator update smoke pending`
+Status: `pass / staging auto-update proof passed`
 
 Goal:
 - implement and prove in-app update flow.
@@ -475,7 +475,7 @@ Result:
 - preload exposes narrow update status/check/install/status-subscribe APIs;
 - account menu shows desktop-only update status and explicit restart/update action after download;
 - local `0.0.3` and temporary `0.0.4` staging artifacts plus `latest.yml`/blockmap were built; `0.0.4` source bump was reverted after artifact generation;
-- real install/publish/update/relaunch smoke remains pending and is required before this segment can be pass.
+- operator installed `0.0.3`, published `0.0.4` update metadata/artifacts to staging static hosting, verified hosted installer SHA256, triggered the update flow, restarted, and confirmed the relaunched desktop reported `version: "0.0.4"`.
 
 ### Segment 231. Desktop Security And Link Hardening
 

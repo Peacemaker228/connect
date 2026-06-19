@@ -148,9 +148,9 @@ Current proof implementation:
 
 Local proof artifacts:
 
-- `0.0.3` installer: `AxConnect-Staging-Setup-0.0.3.exe`, `94294315` bytes, SHA256 `1BDC2EC868CAC04C77F98214E5C3F51422CE69EB64211855A18B3642B6264C71`;
+- `0.0.3` installer: `AxConnect-Staging-Setup-0.0.3.exe`, `94294315` bytes, SHA256 `6CF9EA77BD1F6DFB7AA06CE271D01DCD709508E0B17FD6892D584FFF1D977E27`;
 - `0.0.3` blockmap: `184199` bytes, SHA256 `2C9774D26DC520346F5DCF23C6F5DA775D205F62538E25AB2C6BA261E35A7BBE`;
-- `0.0.4` installer: `AxConnect-Staging-Setup-0.0.4.exe`, `94294218` bytes, SHA256 `1255F2BF86A05A198DF8BC4276EDC87849F2850F43382CC3FA3904389100A7C4`;
+- `0.0.4` installer: `AxConnect-Staging-Setup-0.0.4.exe`, `94294272` bytes, SHA256 `3F82312FFF09641CA8E30BF69BDE2F1E58F303D180DC3D85D5774B2585D9702F`;
 - `0.0.4` blockmap: `184261` bytes, SHA256 `22FB2E07566A1E55514C7DA086AE261EB3B9C70553D7C1C8B2FCE9CB88A78FB0`;
 - `0.0.4` `latest.yml`: `363` bytes, SHA256 `0BFD1362322A9F5C041B1A96E28F176E8AFA82CD014DFB5276301FBBC8F25122`.
 
@@ -164,6 +164,8 @@ Operator proof sequence:
 6. Confirm update status reaches `downloaded`.
 7. Click `Restart and update`.
 8. Confirm relaunched app reports `version: "0.0.4"`.
+
+Latest operator result: `pass`. The installed staging desktop `0.0.3` detected hosted `0.0.4`, downloaded it, restarted through the explicit update action, and relaunched with `window.electron.getBuildInfo()` reporting `version: "0.0.4"`.
 
 ## Staging Installer Download Hosting
 
