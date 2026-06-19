@@ -11,6 +11,12 @@ import { useSocket } from '@/lib/shared/providers'
 import { getChatVisibilitySnapshot } from '@/lib/shared/data-access/unread/unread-notification-visibility'
 import { isUnreadPayloadAtActiveChatReadBoundary } from '@/lib/shared/data-access/unread/active-chat-read-state'
 import { recordUnreadNotificationDecision } from '@/lib/shared/data-access/unread/unread-notification-diagnostics'
+import { canUseNativeUnreadNotifications } from '@/lib/shared/data-access/unread/unread-native-notification'
+import {
+  useDesktopWindowStateSnapshot,
+  type DesktopWindowStateSnapshot,
+} from '@/lib/shared/data-access/unread/unread-desktop-window-state'
+import { isForegroundActiveChatReadable } from '@/lib/shared/data-access/unread/unread-foreground-state'
 import {
   getUnreadAttentionLevel,
   getUnreadMentionCountForMember,
@@ -76,6 +82,8 @@ export const useUnreadSocket = ({
   const reconcileTimeoutRef = useRef<number | null>(null)
   const { mutate: markChannelRead } = useMarkChannelRead()
   const { mutate: markConversationRead } = useMarkConversationRead()
+  const desktopWindowState = useDesktopWindowStateSnapshot()
+  const desktopWindowStateRef = useRef<DesktopWindowStateSnapshot | null>(desktopWindowState)
 
   const scheduleUnreadSummaryReconcile = useCallback(
     (delayMs = 500) => {
@@ -105,6 +113,10 @@ export const useUnreadSocket = ({
   }, [serverId])
 
   useEffect(() => {
+    desktopWindowStateRef.current = desktopWindowState
+  }, [desktopWindowState])
+
+  useEffect(() => {
     if (!socket || !serverId || !currentMemberId) {
       return
     }
@@ -131,10 +143,18 @@ export const useUnreadSocket = ({
         }
 
         const visibility = getChatVisibilitySnapshot()
+        const canUseNativeNotifications = canUseNativeUnreadNotifications()
+        const desktopWindowStateSnapshot = desktopWindowStateRef.current
+        const isActiveChatForeground = isForegroundActiveChatReadable({
+          canUseNativeNotifications,
+          desktopWindowState: desktopWindowStateSnapshot,
+          visibility,
+        })
         const isActiveChannel = payload.channelId === activeChannelId
 
-        if (isActiveChannel && visibility.isPageVisible && isUnreadPayloadAtActiveChatReadBoundary(payload)) {
+        if (isActiveChannel && isActiveChatForeground && isUnreadPayloadAtActiveChatReadBoundary(payload)) {
           recordUnreadNotificationDecision({
+            desktopWindowState: desktopWindowStateSnapshot,
             isActiveRoute: true,
             payload,
             reason: 'active_visible_auto_read',
@@ -145,8 +165,9 @@ export const useUnreadSocket = ({
           return summary
         }
 
-        if (isActiveChannel && visibility.isPageVisible) {
+        if (isActiveChannel && isActiveChatForeground) {
           recordUnreadNotificationDecision({
+            desktopWindowState: desktopWindowStateSnapshot,
             isActiveRoute: true,
             payload,
             reason: 'read_deferred_not_near_bottom',
@@ -204,10 +225,18 @@ export const useUnreadSocket = ({
         }
 
         const visibility = getChatVisibilitySnapshot()
+        const canUseNativeNotifications = canUseNativeUnreadNotifications()
+        const desktopWindowStateSnapshot = desktopWindowStateRef.current
+        const isActiveChatForeground = isForegroundActiveChatReadable({
+          canUseNativeNotifications,
+          desktopWindowState: desktopWindowStateSnapshot,
+          visibility,
+        })
         const isActiveConversation = payload.senderMemberId === activeMemberId
 
-        if (isActiveConversation && visibility.isPageVisible && isUnreadPayloadAtActiveChatReadBoundary(payload)) {
+        if (isActiveConversation && isActiveChatForeground && isUnreadPayloadAtActiveChatReadBoundary(payload)) {
           recordUnreadNotificationDecision({
+            desktopWindowState: desktopWindowStateSnapshot,
             isActiveRoute: true,
             payload,
             reason: 'active_visible_auto_read',
@@ -218,8 +247,9 @@ export const useUnreadSocket = ({
           return summary
         }
 
-        if (isActiveConversation && visibility.isPageVisible) {
+        if (isActiveConversation && isActiveChatForeground) {
           recordUnreadNotificationDecision({
+            desktopWindowState: desktopWindowStateSnapshot,
             isActiveRoute: true,
             payload,
             reason: 'read_deferred_not_near_bottom',

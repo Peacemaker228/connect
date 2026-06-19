@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useMarkChannelRead, useMarkConversationRead } from '@sdk/queries/unread'
-import { isPageVisibleForChatRead } from '@/lib/shared/data-access/unread/unread-notification-visibility'
+import { getChatVisibilitySnapshot } from '@/lib/shared/data-access/unread/unread-notification-visibility'
+import { canUseNativeUnreadNotifications } from '@/lib/shared/data-access/unread/unread-native-notification'
+import {
+  useDesktopWindowStateSnapshot,
+  type DesktopWindowStateSnapshot,
+} from '@/lib/shared/data-access/unread/unread-desktop-window-state'
+import { isForegroundActiveChatReadable } from '@/lib/shared/data-access/unread/unread-foreground-state'
 
 type UseMarkChatReadParams = {
   beforeMarkRead?: () => void
@@ -22,17 +28,31 @@ export const useMarkChatRead = ({
   const { mutate: markChannelRead } = useMarkChannelRead()
   const { mutate: markConversationRead } = useMarkConversationRead()
   const beforeMarkReadRef = useRef(beforeMarkRead)
+  const desktopWindowState = useDesktopWindowStateSnapshot()
+  const desktopWindowStateRef = useRef<DesktopWindowStateSnapshot | null>(desktopWindowState)
 
   useEffect(() => {
     beforeMarkReadRef.current = beforeMarkRead
   }, [beforeMarkRead])
+
+  useEffect(() => {
+    desktopWindowStateRef.current = desktopWindowState
+  }, [desktopWindowState])
 
   const markActiveChatRead = useCallback(() => {
     if (!enabled || !isNearBottom || !serverId || !paramValue) {
       return
     }
 
-    if (!isPageVisibleForChatRead()) {
+    const visibility = getChatVisibilitySnapshot()
+
+    if (
+      !isForegroundActiveChatReadable({
+        canUseNativeNotifications: canUseNativeUnreadNotifications(),
+        desktopWindowState: desktopWindowStateRef.current,
+        visibility,
+      })
+    ) {
       return
     }
 
@@ -60,5 +80,5 @@ export const useMarkChatRead = ({
       window.removeEventListener('focus', handleVisibleFocus)
       document.removeEventListener('visibilitychange', handleVisibleFocus)
     }
-  }, [markActiveChatRead])
+  }, [desktopWindowState, markActiveChatRead])
 }

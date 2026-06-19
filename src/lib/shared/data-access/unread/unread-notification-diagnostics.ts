@@ -89,7 +89,7 @@ const getActiveContext = (params: {
     return 'inactive'
   }
 
-  return params.visibility.isPageVisible ? 'active-visible' : 'active-hidden'
+  return params.visibility.isActuallyVisible ? 'active-visible' : 'active-hidden'
 }
 
 export const recordUnreadNotificationDecision = (params: {

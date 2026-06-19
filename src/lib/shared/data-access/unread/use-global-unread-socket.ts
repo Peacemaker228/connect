@@ -32,10 +32,10 @@ import {
   type NativeUnreadNotificationResult,
 } from '@/lib/shared/data-access/unread/unread-native-notification'
 import {
-  isDesktopWindowFocusedVisible,
   useDesktopWindowStateSnapshot,
   type DesktopWindowStateSnapshot,
 } from '@/lib/shared/data-access/unread/unread-desktop-window-state'
+import { isForegroundActiveChatReadable } from '@/lib/shared/data-access/unread/unread-foreground-state'
 
 const PROCESSED_GLOBAL_UNREAD_EVENT_TTL_MS = 5 * 60 * 1000
 const PROCESSED_GLOBAL_UNREAD_EVENT_MAX_SIZE = 500
@@ -144,15 +144,7 @@ const isActiveRouteSuppressedByForegroundState = (params: {
   desktopWindowState: DesktopWindowStateSnapshot | null
   visibility: ReturnType<typeof getChatVisibilitySnapshot>
 }) => {
-  if (!params.canUseNativeNotifications) {
-    return params.visibility.isPageVisible
-  }
-
-  if (params.desktopWindowState) {
-    return isDesktopWindowFocusedVisible(params.desktopWindowState)
-  }
-
-  return params.visibility.isPageVisible && params.visibility.hasFocus
+  return isForegroundActiveChatReadable(params)
 }
 
 const getActiveRouteAutoReadReason = (params: {
