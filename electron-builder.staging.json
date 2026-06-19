@@ -23,6 +23,12 @@
   "extraMetadata": {
     "axConnectDesktopChannel": "staging"
   },
+  "publish": [
+    {
+      "provider": "generic",
+      "url": "https://staging.ax-connect.ru/downloads/desktop/staging/win/"
+    }
+  ],
   "win": {
     "icon": "electron/assets/icon.ico",
     "target": [

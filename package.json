@@ -1,6 +1,6 @@
 {
   "name": "ax-connect",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "module",
   "main": "electron/main.js",
   "private": true,
@@ -81,6 +81,7 @@
     "cmdk": "1.0.0",
     "date-fns": "^4.1.0",
     "dotenv": "17.4.1",
+    "electron-updater": "^6.8.9",
     "emoji-mart": "^5.6.0",
     "install": "^0.13.0",
     "js-cookie": "^3.0.5",

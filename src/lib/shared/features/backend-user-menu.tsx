@@ -6,6 +6,7 @@ import { Loader2, LogOut, Volume2, VolumeX } from 'lucide-react'
 import { logoutSession } from '@sdk/actions/auth'
 import { getProfileQueryKey } from '@sdk/queries/profile'
 import { useUnreadNotificationSoundPreference } from '@/lib/shared/data-access/unread/unread-notification-sound'
+import { DesktopUpdateMenuItem } from '@/lib/shared/features/desktop-update-menu-item'
 
 import {
   DropdownMenu,
@@ -116,6 +117,7 @@ export function BackendUserMenu({ email, imageUrl, name }: BackendUserMenuProps)
           )}
           Notification sound
         </DropdownMenuCheckboxItem>
+        <DesktopUpdateMenuItem />
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="cursor-pointer dark:focus:bg-gray21"

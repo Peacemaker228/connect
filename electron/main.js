@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { app, BrowserWindow, Notification, clipboard, desktopCapturer, ipcMain, session, shell } from 'electron'
+import { autoUpdater } from 'electron-updater'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -21,6 +22,7 @@ const SHOULD_DISABLE_MEDIA_FOUNDATION_VIDEO_CAPTURE =
     process.env.AXCONNECT_USE_MEDIA_FOUNDATION_VIDEO_CAPTURE === '0')
 const BUILD_INFO_PATH = path.join(__dirname, 'build-info.json')
 const DESKTOP_SOURCE_PICKER_PROTOCOL = 'axconnect-picker:'
+const STAGING_UPDATE_URL = 'https://staging.ax-connect.ru/downloads/desktop/staging/win/'
 const UNREAD_NOTIFICATION_TITLE_MAX_LENGTH = 80
 const UNREAD_NOTIFICATION_BODY_MAX_LENGTH = 160
 const ALLOWED_UNREAD_ATTENTION_LEVELS = new Set(['mention', 'reply', 'unread'])
@@ -33,6 +35,8 @@ let mainWindow = null
 let pendingNavigationPath = null
 let pendingAuthSessionId = null
 let pendingRendererNavigationPath = null
+let isDesktopUpdaterConfigured = false
+let isUpdateCheckInFlight = false
 let isRendererReady = false
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -636,6 +640,149 @@ const scheduleWindowStateToRenderer = () => {
   setTimeout(sendWindowStateToRenderer, 0)
 }
 
+const getDesktopUpdateSupport = () => {
+  const { channel, config } = getDesktopChannelConfig()
+  const updateUrl = typeof config?.updateUrl === 'string' && config.updateUrl.trim() !== '' ? config.updateUrl.trim() : null
+
+  return {
+    channel,
+    supported: app.isPackaged && channel === 'staging',
+    updateUrl: updateUrl || (channel === 'staging' ? STAGING_UPDATE_URL : null),
+  }
+}
+
+const getUpdateErrorMessage = (error) => {
+  const message = error instanceof Error ? error.message : typeof error === 'string' ? error : 'unknown_error'
+
+  return message.replace(/\s+/g, ' ').trim().slice(0, 240)
+}
+
+const createDesktopUpdateStatus = (status, extra = {}) => {
+  const support = getDesktopUpdateSupport()
+
+  return {
+    channel: support.channel,
+    currentVersion: app.getVersion(),
+    error: null,
+    progressPercent: null,
+    status,
+    supported: support.supported,
+    updateUrl: support.updateUrl,
+    updateVersion: null,
+    updatedAt: new Date().toISOString(),
+    ...extra,
+  }
+}
+
+let desktopUpdateStatus = createDesktopUpdateStatus('idle')
+
+const getDesktopUpdateStatusSnapshot = () => ({ ...desktopUpdateStatus })
+
+const sendDesktopUpdateStatusToRenderer = () => {
+  if (!mainWindow || mainWindow.isDestroyed() || !isRendererReady) {
+    return
+  }
+
+  mainWindow.webContents.send('desktop:update-status', getDesktopUpdateStatusSnapshot())
+}
+
+const setDesktopUpdateStatus = (status, extra = {}) => {
+  desktopUpdateStatus = createDesktopUpdateStatus(status, extra)
+  sendDesktopUpdateStatusToRenderer()
+  return getDesktopUpdateStatusSnapshot()
+}
+
+const getUpdaterInfoVersion = (info) => {
+  return typeof info?.version === 'string' && info.version.trim() !== '' ? info.version.trim() : null
+}
+
+const configureDesktopUpdater = () => {
+  if (isDesktopUpdaterConfigured) {
+    return
+  }
+
+  isDesktopUpdaterConfigured = true
+  autoUpdater.autoDownload = true
+  autoUpdater.autoInstallOnAppQuit = false
+
+  autoUpdater.on('checking-for-update', () => {
+    setDesktopUpdateStatus('checking')
+  })
+
+  autoUpdater.on('update-available', (info) => {
+    setDesktopUpdateStatus('available', {
+      updateVersion: getUpdaterInfoVersion(info),
+    })
+  })
+
+  autoUpdater.on('update-not-available', (info) => {
+    setDesktopUpdateStatus('not_available', {
+      updateVersion: getUpdaterInfoVersion(info),
+    })
+  })
+
+  autoUpdater.on('download-progress', (progress) => {
+    const progressPercent = typeof progress?.percent === 'number' ? Math.max(0, Math.min(100, progress.percent)) : null
+
+    setDesktopUpdateStatus('downloading', {
+      progressPercent,
+    })
+  })
+
+  autoUpdater.on('update-downloaded', (info) => {
+    setDesktopUpdateStatus('downloaded', {
+      progressPercent: 100,
+      updateVersion: getUpdaterInfoVersion(info),
+    })
+  })
+
+  autoUpdater.on('error', (error) => {
+    isUpdateCheckInFlight = false
+    setDesktopUpdateStatus('error', {
+      error: getUpdateErrorMessage(error),
+    })
+  })
+}
+
+const checkForDesktopUpdate = async () => {
+  const support = getDesktopUpdateSupport()
+
+  if (!support.supported) {
+    return setDesktopUpdateStatus('idle', {
+      error: app.isPackaged ? 'updates_are_only_configured_for_staging' : 'updates_are_only_available_in_packaged_app',
+    })
+  }
+
+  if (isUpdateCheckInFlight || ['checking', 'available', 'downloading', 'downloaded'].includes(desktopUpdateStatus.status)) {
+    return getDesktopUpdateStatusSnapshot()
+  }
+
+  configureDesktopUpdater()
+  isUpdateCheckInFlight = true
+  setDesktopUpdateStatus('checking')
+
+  try {
+    await autoUpdater.checkForUpdates()
+  } catch (error) {
+    setDesktopUpdateStatus('error', {
+      error: getUpdateErrorMessage(error),
+    })
+  } finally {
+    isUpdateCheckInFlight = false
+  }
+
+  return getDesktopUpdateStatusSnapshot()
+}
+
+const installDownloadedDesktopUpdate = () => {
+  if (desktopUpdateStatus.status !== 'downloaded') {
+    return getDesktopUpdateStatusSnapshot()
+  }
+
+  autoUpdater.quitAndInstall(false, true)
+  return getDesktopUpdateStatusSnapshot()
+}
+
 const handleDeepLink = (urlString) => {
   const appPath = getAppPathFromDeepLink(urlString)
   const sessionId = getSessionIdFromDeepLink(urlString)
@@ -906,6 +1053,42 @@ ipcMain.handle('desktop:get-window-state', async (event) => {
   return getDesktopWindowState()
 })
 
+ipcMain.handle('desktop:get-update-status', async (event) => {
+  const senderUrl = event.senderFrame?.url || event.sender?.getURL?.() || ''
+
+  if (!isTrustedOrigin(senderUrl)) {
+    return createDesktopUpdateStatus('error', {
+      error: 'untrusted_origin',
+    })
+  }
+
+  return getDesktopUpdateStatusSnapshot()
+})
+
+ipcMain.handle('desktop:check-for-update', async (event) => {
+  const senderUrl = event.senderFrame?.url || event.sender?.getURL?.() || ''
+
+  if (!isTrustedOrigin(senderUrl)) {
+    return createDesktopUpdateStatus('error', {
+      error: 'untrusted_origin',
+    })
+  }
+
+  return checkForDesktopUpdate()
+})
+
+ipcMain.handle('desktop:install-update', async (event) => {
+  const senderUrl = event.senderFrame?.url || event.sender?.getURL?.() || ''
+
+  if (!isTrustedOrigin(senderUrl)) {
+    return createDesktopUpdateStatus('error', {
+      error: 'untrusted_origin',
+    })
+  }
+
+  return installDownloadedDesktopUpdate()
+})
+
 ipcMain.handle('desktop:show-unread-notification', async (event, payload) => {
   const senderUrl = event.senderFrame?.url || event.sender?.getURL?.() || ''
 
@@ -956,6 +1139,7 @@ ipcMain.handle('desktop:show-unread-notification', async (event, payload) => {
 ipcMain.on('desktop:renderer-ready', () => {
   isRendererReady = true
   sendWindowStateToRenderer()
+  sendDesktopUpdateStatusToRenderer()
 
   if (pendingAuthSessionId) {
     const sessionId = pendingAuthSessionId
@@ -1041,6 +1225,10 @@ app.whenReady().then(async () => {
   )
 
   await createWindow()
+
+  if (getDesktopUpdateSupport().supported) {
+    void checkForDesktopUpdate()
+  }
 
   app.on('activate', async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
