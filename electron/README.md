@@ -86,6 +86,7 @@ The desktop shell exposes a narrow unread-notification bridge through preload:
 - renderer calls `window.electron.showUnreadNotification(payload)` only from the existing unread decision path;
 - main process validates origin and payload before creating an Electron `Notification`;
 - notification click sends a narrow navigation event back to the existing renderer window;
+- renderer caches `window.electron.getWindowState()` / `window.electron.onWindowStateChange(...)` so desktop unread decisions know whether the Electron window is focused, visible, or minimized;
 - browser web runtime does not call this bridge when `window.electron?.isDesktop` is false.
 
 Windows native notifications require a Start Menu registered AppUserModelID. On `win32`, the main process sets
@@ -96,6 +97,7 @@ created:
 - staging: `com.axconnect.desktop.staging`
 
 Packaged smoke is required before marking the native notification segment as pass.
+On Windows desktop, active-chat notification suppression should only happen when the Electron window is focused, visible, and not minimized.
 
 ## Команды
 

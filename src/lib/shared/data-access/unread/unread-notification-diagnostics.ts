@@ -7,9 +7,12 @@ const UNREAD_NOTIFICATION_DEBUG_STORAGE_KEY = 'ax-connect:debug-unread-notificat
 const DEBUG_BUFFER_LIMIT = 100
 
 export type UnreadNotificationDecisionReason =
+  | 'active_desktop_window_focused_auto_read'
+  | 'active_desktop_window_focused_scrolled_up_unread'
   | 'active_visible_auto_read'
   | 'active_visible_scrolled_up_unread'
   | 'active_visible_suppressed'
+  | 'desktop_window_background_active_unread_sound_eligible'
   | 'hidden_active_unread_sound_eligible'
   | 'ignored_duplicate'
   | 'ignored_inaccessible_context'
@@ -31,6 +34,9 @@ type UnreadNotificationDebugEntry = {
   activeContext: 'active-hidden' | 'active-visible' | 'inactive'
   channelId?: string
   conversationId?: string
+  desktopWindowFocused?: boolean
+  desktopWindowMinimized?: boolean
+  desktopWindowVisible?: boolean
   focusState: boolean
   globalSoundEnabled?: boolean
   memberId?: string
@@ -87,6 +93,11 @@ const getActiveContext = (params: {
 }
 
 export const recordUnreadNotificationDecision = (params: {
+  desktopWindowState?: {
+    focused: boolean
+    minimized: boolean
+    visible: boolean
+  } | null
   globalSoundEnabled?: boolean
   isActiveRoute: boolean
   mutedScope?: boolean
@@ -103,6 +114,9 @@ export const recordUnreadNotificationDecision = (params: {
       visibility,
     }),
     focusState: visibility.hasFocus,
+    desktopWindowFocused: params.desktopWindowState?.focused,
+    desktopWindowMinimized: params.desktopWindowState?.minimized,
+    desktopWindowVisible: params.desktopWindowState?.visible,
     globalSoundEnabled: params.globalSoundEnabled,
     memberId: payload.senderMemberId,
     messageId: payload.messageId,

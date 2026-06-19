@@ -389,7 +389,7 @@ Result:
 
 ### Segment 230A. Desktop Native Notification Window Focus Semantics
 
-Status: `brief / ready`
+Status: `review / implementation added; packaged smoke pending`
 
 Goal:
 - make native notification eligibility use desktop window focus/minimize state instead of relying only on renderer `document.visibilityState` / `document.hasFocus()`.
@@ -405,6 +405,14 @@ Expected behavior:
 
 Reason:
 - Segment 230 proved the Electron native notification bridge can work, but packaged smoke showed the decision path needs a desktop-aware window-state signal so "actively reading" is not guessed from renderer-only visibility/focus state.
+
+Result:
+- Electron main process now exposes a narrow window-state bridge: `getWindowState()` plus `onWindowStateChange(...)` for focus/blur/minimize/restore/show/hide state;
+- renderer caches the latest desktop window state for synchronous realtime notification decisions;
+- browser web behavior remains unchanged because non-Electron runtime keeps the existing renderer visibility path;
+- desktop active same-chat suppression now requires focused, visible, non-minimized Electron window state;
+- diagnostics include desktop-focused auto-read, desktop-focused scrolled-up suppression, background active-chat eligibility, and the focused/visible/minimized snapshot fields;
+- packaged smoke remains pending before classifying native notifications as pass.
 
 ### Segment 231. Desktop Auto-Update Proof
 

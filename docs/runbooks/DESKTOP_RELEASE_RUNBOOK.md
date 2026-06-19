@@ -363,6 +363,8 @@ Current implementation status:
 - notification text is generic and must not include raw message content, storage URLs, secrets, or backend payloads;
 - Windows native notifications require the app Start Menu registration and AppUserModelID to match the active desktop
   channel app id: production `com.axconnect.desktop`, staging `com.axconnect.desktop.staging`;
+- desktop active-chat suppression uses Electron window state from the narrow preload bridge:
+  focused, visible, and not minimized suppresses popup/sound; minimized, hidden, or unfocused active chat can notify if not muted;
 - notification click restores/focuses the existing app window and routes the renderer to the target channel or direct conversation;
 - diagnostics are available through the existing unread notification debug buffer and include native sent/unsupported/failed and blocked-by-global/scope outcomes.
 
@@ -372,6 +374,7 @@ Required smoke before classifying native notifications as pass:
 - Windows notification settings lists the installed sender as the expected product name for the active channel;
 - active visible near-bottom chat does not show native popup;
 - minimized or unfocused active chat can show native popup;
+- debug entries include `desktopWindowFocused`, `desktopWindowVisible`, and `desktopWindowMinimized` for desktop decisions;
 - muted channel/DM does not show native popup;
 - global notification sound off suppresses native popup;
 - notification click focuses/restores the app and navigates to the target chat.

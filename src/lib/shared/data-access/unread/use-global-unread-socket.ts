@@ -31,6 +31,11 @@ import {
   showNativeUnreadNotification,
   type NativeUnreadNotificationResult,
 } from '@/lib/shared/data-access/unread/unread-native-notification'
+import {
+  isDesktopWindowFocusedVisible,
+  useDesktopWindowStateSnapshot,
+  type DesktopWindowStateSnapshot,
+} from '@/lib/shared/data-access/unread/unread-desktop-window-state'
 
 const PROCESSED_GLOBAL_UNREAD_EVENT_TTL_MS = 5 * 60 * 1000
 const PROCESSED_GLOBAL_UNREAD_EVENT_MAX_SIZE = 500
@@ -134,6 +139,49 @@ const getNativeNotificationDecisionReason = (
   return 'native_notification_failed'
 }
 
+const isActiveRouteSuppressedByForegroundState = (params: {
+  canUseNativeNotifications: boolean
+  desktopWindowState: DesktopWindowStateSnapshot | null
+  visibility: ReturnType<typeof getChatVisibilitySnapshot>
+}) => {
+  if (!params.canUseNativeNotifications) {
+    return params.visibility.isPageVisible
+  }
+
+  if (params.desktopWindowState) {
+    return isDesktopWindowFocusedVisible(params.desktopWindowState)
+  }
+
+  return params.visibility.isPageVisible && params.visibility.hasFocus
+}
+
+const getActiveRouteAutoReadReason = (params: {
+  canUseNativeNotifications: boolean
+  desktopWindowState: DesktopWindowStateSnapshot | null
+}): UnreadNotificationDecisionReason => {
+  return params.canUseNativeNotifications && params.desktopWindowState
+    ? 'active_desktop_window_focused_auto_read'
+    : 'active_visible_auto_read'
+}
+
+const getActiveRouteScrolledUpReason = (params: {
+  canUseNativeNotifications: boolean
+  desktopWindowState: DesktopWindowStateSnapshot | null
+}): UnreadNotificationDecisionReason => {
+  return params.canUseNativeNotifications && params.desktopWindowState
+    ? 'active_desktop_window_focused_scrolled_up_unread'
+    : 'active_visible_scrolled_up_unread'
+}
+
+const getActiveRouteBackgroundEligibleReason = (params: {
+  canUseNativeNotifications: boolean
+  desktopWindowState: DesktopWindowStateSnapshot | null
+}): UnreadNotificationDecisionReason => {
+  return params.canUseNativeNotifications && params.desktopWindowState
+    ? 'desktop_window_background_active_unread_sound_eligible'
+    : 'hidden_active_unread_sound_eligible'
+}
+
 export const useGlobalUnreadSocket = ({
   activeChannelId,
   activeMemberId,
@@ -146,6 +194,8 @@ export const useGlobalUnreadSocket = ({
   const reconcileTimeoutRef = useRef<number | null>(null)
   const { enabled: isUnreadNotificationSoundEnabled } = useUnreadNotificationSoundPreference()
   const soundEnabledRef = useRef(isUnreadNotificationSoundEnabled)
+  const desktopWindowState = useDesktopWindowStateSnapshot()
+  const desktopWindowStateRef = useRef(desktopWindowState)
 
   const serverUnreadKeys = useMemo(
     () => Array.from(new Set(servers?.map((server) => getServerUnreadRealtimeKey(server.serverId)) ?? [])),
@@ -223,6 +273,10 @@ export const useGlobalUnreadSocket = ({
   }, [isUnreadNotificationSoundEnabled])
 
   useEffect(() => {
+    desktopWindowStateRef.current = desktopWindowState
+  }, [desktopWindowState])
+
+  useEffect(() => {
     if (!socket || serverUnreadKeys.length === 0) {
       return
     }
@@ -234,17 +288,22 @@ export const useGlobalUnreadSocket = ({
 
       const visibility = getChatVisibilitySnapshot()
       const canUseNativeNotifications = canUseNativeUnreadNotifications()
+      const desktopWindowStateSnapshot = desktopWindowStateRef.current
       const isActiveRoute = isPayloadForActiveRoute(payload, {
         activeChannelId,
         activeMemberId,
         activeServerId,
       })
-      const isActiveRouteVisibleForNotificationSuppression =
-        visibility.isPageVisible && (!canUseNativeNotifications || visibility.hasFocus)
+      const isActiveRouteVisibleForNotificationSuppression = isActiveRouteSuppressedByForegroundState({
+        canUseNativeNotifications,
+        desktopWindowState: desktopWindowStateSnapshot,
+        visibility,
+      })
       const targetServer = servers?.find((server) => server.serverId === payload.serverId)
 
       if (!targetServer) {
         recordUnreadNotificationDecision({
+          desktopWindowState: desktopWindowStateSnapshot,
           isActiveRoute,
           payload,
           reason: 'ignored_inaccessible_context',
@@ -256,6 +315,7 @@ export const useGlobalUnreadSocket = ({
 
       if (payload.senderMemberId === targetServer.memberId) {
         recordUnreadNotificationDecision({
+          desktopWindowState: desktopWindowStateSnapshot,
           isActiveRoute,
           payload,
           reason: 'ignored_own_message',
@@ -266,6 +326,7 @@ export const useGlobalUnreadSocket = ({
 
       if (!shouldProcessGlobalUnreadEvent(getGlobalUnreadEventId(payload))) {
         recordUnreadNotificationDecision({
+          desktopWindowState: desktopWindowStateSnapshot,
           isActiveRoute,
           payload,
           reason: 'ignored_duplicate',
@@ -281,11 +342,15 @@ export const useGlobalUnreadSocket = ({
         isUnreadPayloadAtActiveChatReadBoundary(payload)
       ) {
         recordUnreadNotificationDecision({
+          desktopWindowState: desktopWindowStateSnapshot,
           globalSoundEnabled: soundEnabledRef.current,
           isActiveRoute,
           mutedScope: false,
           payload,
-          reason: 'active_visible_auto_read',
+          reason: getActiveRouteAutoReadReason({
+            canUseNativeNotifications,
+            desktopWindowState: desktopWindowStateSnapshot,
+          }),
           visibility,
         })
         scheduleGlobalUnreadReconcile(1000)
@@ -294,11 +359,15 @@ export const useGlobalUnreadSocket = ({
 
       if (isActiveRoute && isActiveRouteVisibleForNotificationSuppression) {
         recordUnreadNotificationDecision({
+          desktopWindowState: desktopWindowStateSnapshot,
           globalSoundEnabled: soundEnabledRef.current,
           isActiveRoute,
           mutedScope: false,
           payload,
-          reason: 'active_visible_scrolled_up_unread',
+          reason: getActiveRouteScrolledUpReason({
+            canUseNativeNotifications,
+            desktopWindowState: desktopWindowStateSnapshot,
+          }),
           visibility,
         })
         incrementGlobalUnreadCache(payload)
@@ -312,17 +381,22 @@ export const useGlobalUnreadSocket = ({
 
       if (isActiveRoute) {
         recordUnreadNotificationDecision({
+          desktopWindowState: desktopWindowStateSnapshot,
           globalSoundEnabled: isSoundEnabled,
           isActiveRoute,
           mutedScope: isScopeMuted,
           payload,
-          reason: 'hidden_active_unread_sound_eligible',
+          reason: getActiveRouteBackgroundEligibleReason({
+            canUseNativeNotifications,
+            desktopWindowState: desktopWindowStateSnapshot,
+          }),
           visibility,
         })
       }
 
       if (canUseNativeNotifications && (!isSoundEnabled || isScopeMuted)) {
         recordUnreadNotificationDecision({
+          desktopWindowState: desktopWindowStateSnapshot,
           globalSoundEnabled: isSoundEnabled,
           isActiveRoute,
           mutedScope: isScopeMuted,
@@ -347,6 +421,7 @@ export const useGlobalUnreadSocket = ({
           serverName: serverNameById?.get(payload.serverId),
         }).then((result) => {
           recordUnreadNotificationDecision({
+            desktopWindowState: desktopWindowStateSnapshot,
             globalSoundEnabled: isSoundEnabled,
             isActiveRoute,
             mutedScope: isScopeMuted,
@@ -366,6 +441,7 @@ export const useGlobalUnreadSocket = ({
             : getSoundResultDecisionReason(result)
 
         recordUnreadNotificationDecision({
+          desktopWindowState: desktopWindowStateSnapshot,
           globalSoundEnabled: isSoundEnabled,
           isActiveRoute,
           mutedScope: isScopeMuted,

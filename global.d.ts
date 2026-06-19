@@ -27,6 +27,14 @@ declare global {
         isDirty: boolean
         builtAt: string
       } | null>
+      getWindowState?: () => Promise<{
+        focused: boolean
+        minimized: boolean
+        visible: boolean
+      } | null>
+      onWindowStateChange?: (
+        callback: (state: { focused: boolean; minimized: boolean; visible: boolean }) => void,
+      ) => (() => void) | void
       showUnreadNotification?: (payload: {
         attentionLevel: 'mention' | 'reply' | 'unread'
         body: string
