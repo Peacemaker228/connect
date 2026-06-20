@@ -4,7 +4,7 @@
 
 - segment: `desktop-update-ready-ux-polish`
 - type: `desktop release / updater product UX`
-- status: `ready for implementation`
+- status: `review / implementation added; packaged smoke pending`
 - target branch: `feature/desktop-update-ready-ux-polish`
 - source branch: latest `origin/core/reborn`
 - commit policy: do not commit automatically; return PowerShell-safe git commands
@@ -49,8 +49,8 @@ The staging desktop auto-update path is now technically proven:
 
 The remaining UX gap is product visibility:
 
-- update status currently lives mainly in the account menu;
-- users do not get a clear Discord/Telegram-like signal that an update is ready;
+- update status no longer lives only in the account menu after this implementation pass;
+- users now get a compact visible desktop-only signal when an update is downloading or ready;
 - restart/update must stay explicit and non-surprising.
 
 ## Goal
@@ -160,6 +160,17 @@ If the selected top-level placement is not obvious, document the reason in the h
 - Update UI reacts to `onUpdateStatus` changes without requiring a full reload.
 - Layout remains stable on common desktop widths and does not obscure chat controls.
 - Docs record the final behavior and smoke requirements.
+
+## Implementation Result
+
+- Added `useDesktopUpdateStatus()` so renderer update UI shares one bridge snapshot/subscription path.
+- Refactored `DesktopUpdateMenuItem` to use the shared hook while preserving check/retry/restart behavior.
+- Added `DesktopUpdateReadyAction` in the server sidebar footer, next to account controls.
+- `downloading` renders compact desktop-only progress; `downloaded` renders an explicit `Restart` button that calls `installUpdate()`.
+- `idle`, `not_available`, `unsupported`, and `error` render no global update UI; retry stays in the account menu.
+- Browser web renders no updater UI because the component requires the Electron update bridge.
+- Electron main/preload, production update provider, CI/CD, signing, DB/storage/media/WebRTC/chat logic were not changed.
+- Packaged staging N -> N+1 smoke was not run during implementation and remains required before marking this segment `pass`.
 
 ## Verification Commands
 

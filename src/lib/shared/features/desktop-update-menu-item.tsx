@@ -1,12 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { AlertTriangle, CheckCircle2, Download, RefreshCw, RotateCw } from 'lucide-react'
 import { DropdownMenuItem } from '@/lib/shared/ui/dropdown-menu'
-
-const isDesktopUpdateBridgeAvailable = () => {
-  return typeof window !== 'undefined' && Boolean(window.electron?.isDesktop && window.electron.getUpdateStatus)
-}
+import { useDesktopUpdateStatus } from '@/lib/shared/features/use-desktop-update-status'
 
 const getUpdateStatusLabel = (status: DesktopUpdateStatus) => {
   if (status.status === 'checking') {
@@ -63,32 +60,10 @@ const getUpdateStatusIcon = (status?: DesktopUpdateStatus | null) => {
 }
 
 export const DesktopUpdateMenuItem = () => {
-  const [status, setStatus] = useState<DesktopUpdateStatus | null>(null)
+  const { isBridgeAvailable, setStatus, status } = useDesktopUpdateStatus()
   const [isActionPending, setIsActionPending] = useState(false)
 
-  useEffect(() => {
-    if (!isDesktopUpdateBridgeAvailable()) {
-      return
-    }
-
-    let isMounted = true
-    const cleanupUpdateStatus = window.electron?.onUpdateStatus?.((nextStatus) => {
-      setStatus(nextStatus)
-    })
-
-    void window.electron?.getUpdateStatus?.().then((nextStatus) => {
-      if (isMounted) {
-        setStatus(nextStatus)
-      }
-    })
-
-    return () => {
-      isMounted = false
-      cleanupUpdateStatus?.()
-    }
-  }, [])
-
-  if (!isDesktopUpdateBridgeAvailable() || !status?.supported) {
+  if (!isBridgeAvailable || !status?.supported) {
     return null
   }
 

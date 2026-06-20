@@ -24,6 +24,7 @@ import { useGetProfile } from '@sdk/queries/profile'
 import { useParams, useRouter } from 'next/navigation'
 import { ERoutes } from '@app-core/routing/routes'
 import { BackendUserMenu } from '@/lib/shared/features/backend-user-menu'
+import { DesktopUpdateReadyAction } from '@/lib/shared/features/desktop-update-ready-action'
 import { getGlobalUnreadSummaryQueryKey, getUnreadSummaryQueryKey, useUnreadSummary } from '@sdk/queries/unread'
 import { useUnreadSocket } from '@/lib/shared/data-access/unread/use-unread-socket'
 import { useActiveChatReadStateSnapshot } from '@/lib/shared/data-access/unread/active-chat-read-state'
@@ -285,11 +286,12 @@ export const ServerSidebar: FC<IServerSidebarProps> = ({ serverId }) => {
         </div>
       </ScrollArea>
       <Separator className={'h-[2px] bg-white dark:bg-[#232428] rounded-md'} />
-      <div className="px-[16px] py-[12px] flex justify-between items-center dark:bg-[#2B2D31] bg-[#E3E5E8]">
+      <div className="px-[16px] py-[12px] flex items-center gap-3 dark:bg-[#2B2D31] bg-[#E3E5E8]">
         <BackendUserMenu email={profile.email} imageUrl={profile.imageUrl} name={profile.name} />
+        <DesktopUpdateReadyAction />
         <div
           className={
-            'flex justify-center items-center mx-3 h-[36px] w-[36px] rounded-[24px] cursor-pointer bg-background dark:bg-neutral-700'
+            'ml-auto flex justify-center items-center h-[36px] w-[36px] rounded-[24px] cursor-pointer bg-background dark:bg-neutral-700'
           }>
           <Settings className={'w-5 h-5'} />
         </div>

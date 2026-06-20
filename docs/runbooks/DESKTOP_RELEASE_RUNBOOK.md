@@ -144,13 +144,17 @@ Current proof implementation:
 - staging updater provider: generic static URL `https://staging.ax-connect.ru/downloads/desktop/staging/win/`;
 - updater runtime is enabled only for packaged `staging` desktop channel;
 - renderer exposes a desktop-only account-menu update action;
+- renderer also shows a compact desktop-only visible restart/update control near the account controls when update status
+  reaches `downloaded`;
 - restart/update is explicit and only available after update status reaches `downloaded`.
 
-Current UX limitation:
+Current UX behavior:
 
-- update state is visible through the desktop account menu only;
-- a prominent update-ready affordance similar to Discord/Telegram is not implemented yet;
-- future `desktop-update-ready-ux-polish` should add a clear update-ready signal, such as a persistent restart/update control, banner/toast, badge, or native prompt, without making restart surprising.
+- `idle`, `not_available`, `unsupported`, and `error` remain quiet outside the account menu;
+- `downloading` can show compact desktop-only progress near the account controls;
+- `downloaded` shows a compact desktop-only `Restart` action near the account controls;
+- the visible action calls the existing `installUpdate()` bridge and does not restart/update without an explicit user click;
+- account-menu check/retry/restart remains available.
 
 Current lifecycle hardening gap:
 
@@ -167,6 +171,7 @@ Hardened updater lifecycle:
 - `downloaded` remains stable until explicit restart/update;
 - `installUpdate()` returns safe `update_not_downloaded` unless an update is downloaded;
 - account-menu retry remains available after `error` or `not_available`;
+- visible update-ready UX remains desktop-only and uses the same status snapshot/subscription path as the account menu;
 - production provider remains unconfigured.
 
 Latest staging rollout evidence:
