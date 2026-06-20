@@ -181,6 +181,10 @@ Latest staging rollout evidence:
 - size: `94294597` bytes;
 - SHA256: `7FB31ED52ED3431A2FD822F6822A641CCD464F60039B4A46B017706E6C48DD9B`;
 - desktop build info for that rollout reported `version: "0.0.5"`, `channel: "staging"`, `commitHash: "2bf12af..."`, and `isDirty: false`.
+- update-ready UX smoke later used `0.0.6 -> 0.0.7`;
+- `0.0.7` installer: `AxConnect-Staging-Setup-0.0.7.exe`;
+- `0.0.7` size: `94294749` bytes;
+- `0.0.7` SHA256: `D1AF57AC134D6277ED17E1017914FBCCF0E74C22FEF8C94AE21C6E2F8DA2AF77`.
 
 Latest hardening smoke result:
 
@@ -189,6 +193,8 @@ Latest hardening smoke result:
 - missing `latest.yml` moved status to `error`;
 - restoring `latest.yml` allowed manual retry recovery back to `not_available`;
 - later full staging desktop update/deploy completed successfully.
+- visible update-ready UX smoke passed after staging web deploy: installed desktop `0.0.6` detected hosted `0.0.7`, rendered the compact `Restart` action for `downloaded` status, and completed update/restart.
+- note for future remote-web desktop checks: renderer UI changes require staging web deploy; desktop installer/update artifacts alone do not update the React UI.
 
 Local proof artifacts:
 

@@ -4,7 +4,7 @@
 
 - segment: `desktop-update-ready-ux-polish`
 - type: `desktop release / updater product UX`
-- status: `review / implementation added; packaged smoke pending`
+- status: `pass / implemented and smoke-tested`
 - target branch: `feature/desktop-update-ready-ux-polish`
 - source branch: latest `origin/core/reborn`
 - commit policy: do not commit automatically; return PowerShell-safe git commands
@@ -45,7 +45,7 @@ The staging desktop auto-update path is now technically proven:
 
 - `0.0.3 -> 0.0.4` update/restart proof passed;
 - updater lifecycle hardening was implemented and smoke-tested for no-update, concurrent checks, missing metadata error, retry recovery, and explicit update flow;
-- staging app was later rolled forward to `0.0.5` through the desktop/web/api rollout path.
+- staging app was later rolled forward through the desktop/web/api rollout path.
 
 The remaining UX gap is product visibility:
 
@@ -170,7 +170,7 @@ If the selected top-level placement is not obvious, document the reason in the h
 - `idle`, `not_available`, `unsupported`, and `error` render no global update UI; retry stays in the account menu.
 - Browser web renders no updater UI because the component requires the Electron update bridge.
 - Electron main/preload, production update provider, CI/CD, signing, DB/storage/media/WebRTC/chat logic were not changed.
-- Packaged staging N -> N+1 smoke was not run during implementation and remains required before marking this segment `pass`.
+- Packaged staging smoke passed after the remote-web requirement was handled: the desktop shell updated from `0.0.6` to `0.0.7`, staging web was deployed with this renderer UI, the visible `Restart` action appeared for downloaded update status, and update/restart completed successfully.
 
 ## Verification Commands
 

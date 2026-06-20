@@ -14,7 +14,7 @@ This roadmap exists so desktop work is shipped as bounded segments instead of ad
 - current implementation: `Electron remote-web shell`
 - desktop release readiness: `review / staging line forming`
 - desktop staging release candidate: `partial / installer, notifications, and auto-update proof exist`
-- desktop auto-update: `technical proof and flow hardening smoke passed / update-ready UX implemented, packaged smoke pending`
+- desktop auto-update: `technical proof, flow hardening, and update-ready UX smoke passed`
 - native desktop notifications: `implemented / staging smoke and user soak ongoing`
 - desktop runtime smoke: `basic staging smoke passed / repeat after release changes`
 - link previews and other lower-priority polish: `deferred until desktop release validation`
@@ -480,11 +480,10 @@ Result:
 Product UX gap:
 - the update path is technically proven, and a compact desktop-only update-ready action now makes downloaded updates visible without opening the account menu;
 - the visible action is intentionally narrow: `downloading` can show compact progress, `downloaded` shows `Restart`, and idle/no-update/error states stay quiet outside the account menu;
-- packaged staging smoke still needs to prove the visible action during a real N -> N+1 flow.
+- packaged staging smoke proved the visible action during a real N -> N+1 flow after staging web was deployed with the renderer UI.
 
 Recommended follow-up sequence:
-- packaged smoke for `desktop-update-ready-ux-polish`;
-- then desktop file-download UX polish, desktop security/link hardening, and CI/CD release pipeline.
+- desktop file-download UX polish, desktop security/link hardening, and CI/CD release pipeline.
 
 ### Segment 231A. Desktop Auto-Update Flow Hardening
 
@@ -530,12 +529,13 @@ Result:
 
 Smoke result:
 - operator smoke passed for no-update, concurrent manual checks, missing `latest.yml` error, metadata restore/retry recovery, and explicit update flow;
-- staging desktop/web/api were later rolled forward to `0.0.5`;
-- latest staged desktop build evidence for the rollout: `AxConnect-Staging-Setup-0.0.5.exe`, `94294597` bytes, SHA256 `7FB31ED52ED3431A2FD822F6822A641CCD464F60039B4A46B017706E6C48DD9B`.
+- staging desktop/web/api were later rolled forward to `0.0.5`, then the desktop update-ready UX smoke used `0.0.6 -> 0.0.7`.
+- `0.0.5` staged desktop build evidence: `AxConnect-Staging-Setup-0.0.5.exe`, `94294597` bytes, SHA256 `7FB31ED52ED3431A2FD822F6822A641CCD464F60039B4A46B017706E6C48DD9B`.
+- `0.0.7` staged desktop update evidence: `AxConnect-Staging-Setup-0.0.7.exe`, `94294749` bytes, SHA256 `D1AF57AC134D6277ED17E1017914FBCCF0E74C22FEF8C94AE21C6E2F8DA2AF77`.
 
 ### Segment 231B. Desktop Update-Ready UX Polish
 
-Status: `review / implementation added; packaged smoke pending`
+Status: `pass / implemented and smoke-tested`
 
 Goal:
 - make downloaded desktop updates obvious without requiring users to open the account menu.
@@ -572,7 +572,7 @@ Result:
 - `downloading` shows quiet compact progress, `downloaded` shows an explicit `Restart` action, and idle/no-update/unsupported/error render nothing globally;
 - browser web remains quiet because the visible control only renders when the Electron update bridge is available;
 - Electron main/preload, production update provider, CI/CD, signing, DB/storage/media/WebRTC/chat logic were not changed;
-- packaged staging N -> N+1 smoke was not run in this implementation pass and remains required before classifying the segment as pass.
+- packaged staging smoke passed after staging web deploy: installed desktop `0.0.6` detected hosted `0.0.7`, the compact visible `Restart` action appeared for `downloaded` status, and update/restart completed successfully.
 
 ### Segment 231. Desktop Security And Link Hardening
 
