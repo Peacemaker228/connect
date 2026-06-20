@@ -1148,14 +1148,14 @@ Done:
 - `desktop-auto-update-proof` is pass in `docs/delegation/briefs/SEGMENT_BRIEF_231_DESKTOP_AUTO_UPDATE_PROOF.md`: staging packaged desktop now has `electron-updater`, generic static update provider config, narrow update status/check/install bridge, desktop-only account-menu update action, baseline version `0.0.3`, and the operator verified installed-app update/restart from `0.0.3` to hosted `0.0.4`.
 - `desktop-auto-update-flow-hardening` is pass in `docs/delegation/briefs/SEGMENT_BRIEF_231A_DESKTOP_AUTO_UPDATE_FLOW_HARDENING.md`: updater status now includes `unsupported`, safe timestamp/error/progress fields, concurrent-check guards, explicit safe install behavior, manual retry after error/no-update, and a 45-minute packaged-staging periodic check; packaged smoke passed for no-update, concurrent checks, missing metadata error, restore/retry recovery, and explicit update flow; no update-ready UX polish, production provider, signing, or CI/CD was added.
 - staging desktop/web/api were rolled forward to `0.0.5`; latest staging desktop rollout evidence was `AxConnect-Staging-Setup-0.0.5.exe`, `94294597` bytes, SHA256 `7FB31ED52ED3431A2FD822F6822A641CCD464F60039B4A46B017706E6C48DD9B`.
-- `desktop-update-ready-ux-polish` is ready in `docs/delegation/briefs/SEGMENT_BRIEF_231B_DESKTOP_UPDATE_READY_UX_POLISH.md`: next focused segment should add a compact desktop-only visible update-ready action while preserving explicit restart/update and quiet no-update behavior.
+- `desktop-update-ready-ux-polish` is review/pending packaged smoke in `docs/delegation/briefs/SEGMENT_BRIEF_231B_DESKTOP_UPDATE_READY_UX_POLISH.md`: a shared renderer update-status hook now feeds both the account-menu updater and a compact desktop-only footer action near the account controls; `downloaded` shows explicit `Restart`, `downloading` can show quiet progress, and browser web/no-update/error states remain quiet outside the account menu.
 
 Current blockers:
 - official repeatable CI/CD desktop installer build is not implemented, though local Windows installer build now passes on a symlink-capable build context;
 - desktop artifact hosting/download path is working for the current staging installer, but the process is still manual and not backed by CI/CD or auto-update metadata;
 - staging and production desktop packaging identity is separated; staging auto-update metadata path is configured for proof, while production update metadata remains unconfigured;
-- auto-update implementation is proven for packaged staging `0.0.3 -> 0.0.4`, updater lifecycle hardening smoke passed, and staging was rolled forward to `0.0.5`; the process is still manual, not backed by CI/CD, and the visible update UX is minimal;
-- update discovery currently lives in the desktop account menu; a Discord/Telegram-like update-ready button/banner/toast/native prompt is not implemented yet and should be handled by a focused `desktop-update-ready-ux-polish` segment;
+- auto-update implementation is proven for packaged staging `0.0.3 -> 0.0.4`, updater lifecycle hardening smoke passed, and staging was rolled forward to `0.0.5`; the process is still manual, not backed by CI/CD, and the new visible update-ready UX still needs packaged N -> N+1 smoke;
+- update discovery no longer depends only on the desktop account menu after Segment 231B implementation, but the compact visible `Restart` action must still be validated in an installed staging desktop update flow;
 - native desktop notification bridge plus desktop window focus/minimize/foreground-read semantics are deployed to staging and passed initial operator smoke; broader user soak is pending, and taskbar/dock badge behavior remains best-effort and not guaranteed;
 - packaged desktop runtime smoke has passed for the current staging installer, but it must be repeated after native notifications, auto-update, signing, or major renderer changes;
 - code signing is not configured;
@@ -1163,7 +1163,7 @@ Current blockers:
 - security review for remote web content plus preload bridge is not complete.
 
 Next likely work:
-- continue to `desktop-update-ready-ux-polish`; after that, continue desktop file-download UX polish, desktop security/link hardening, and production release hardening while monitoring staging user feedback on native/web notification behavior. The release track still needs to move the proven manual auto-update path toward a repeatable CI/operator release process.
+- run packaged smoke for `desktop-update-ready-ux-polish`; after that, continue desktop file-download UX polish, desktop security/link hardening, and production release hardening while monitoring staging user feedback on native/web notification behavior. The release track still needs to move the proven manual auto-update path toward a repeatable CI/operator release process.
 
 ## Historical Notes
 

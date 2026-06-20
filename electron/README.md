@@ -88,7 +88,9 @@ Staging desktop has a proof-only auto-update path:
 - metadata/artifacts: `latest.yml`, `AxConnect-Staging-Setup-<version>.exe`, and `.exe.blockmap`;
 - main process enables updater only when the packaged desktop channel is `staging`;
 - preload exposes only narrow status/check/install APIs;
-- renderer shows a desktop-only account-menu action and requires explicit `Restart and update` after download.
+- renderer shows a desktop-only account-menu action plus a compact visible restart/update control near the account controls
+  when an update reaches `downloaded`;
+- restart/update remains explicit and requires a user click after download.
 - lifecycle statuses are bounded to `unsupported`, `idle`, `checking`, `available`, `not_available`, `downloading`, `downloaded`, and `error`;
 - packaged staging checks run on startup and then every `45` minutes unless a check/download/downloaded update is already in progress;
 - manual retry remains available from the account menu after `error` or `not_available`.
