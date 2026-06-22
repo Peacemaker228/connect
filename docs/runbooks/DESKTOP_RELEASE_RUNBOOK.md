@@ -444,6 +444,18 @@ Desktop file download UX implementation:
 - ordinary browser web, image inline preview, PDF behavior, and message copy are expected to stay unchanged;
 - packaged desktop smoke for this specific UX is still required before classifying Segment 231C as pass.
 
+Current recommended scope:
+
+- keep generic/executable-like attachments download-only in Electron and show explicit success/error feedback;
+- keep image inline preview and PDF browser-viewer behavior unchanged for this staging rollout;
+- treat PDF/image save completion feedback as a follow-up UX issue if operator smoke confirms user confusion remains.
+
+Ideal later UX:
+
+- use one consistent desktop attachment action surface across generic files, PDFs, and images;
+- expose explicit `Download` and safe secondary actions without auto-opening executable-like files;
+- provide clear completion feedback for every desktop download path, including browser-viewer PDF saves and image saves.
+
 Additional smoke when native features are implemented:
 
 - native notification popup;
