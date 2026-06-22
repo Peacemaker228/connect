@@ -438,7 +438,7 @@ Current staging evidence:
 Desktop file download UX implementation:
 
 - generic non-image/non-PDF attachment rows use a desktop-only controlled download bridge when running inside Electron;
-- the bridge accepts only same-origin `/api/storage/access` `messageFile` URLs from trusted renderer origins;
+- the bridge accepts only trusted renderer/configured API `/api/storage/access` `messageFile` URLs;
 - files are saved to the OS Downloads directory with sanitized unique filenames;
 - success feedback may offer `Show in folder`, but the app must not auto-open or execute downloaded generic/executable-like files;
 - ordinary browser web, image inline preview, PDF behavior, and message copy are expected to stay unchanged;

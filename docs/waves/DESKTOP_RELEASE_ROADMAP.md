@@ -607,7 +607,7 @@ Acceptance:
 - browser web remains functional.
 
 Result:
-- Electron preload/main now expose a narrow controlled download bridge for same-origin `/api/storage/access` `messageFile` URLs only;
+- Electron preload/main now expose a narrow controlled download bridge for trusted renderer/configured API `/api/storage/access` `messageFile` URLs only;
 - downloads are saved to the OS Downloads directory with sanitized unique filenames and no auto-open/execute behavior;
 - renderer generic attachment rows use the desktop bridge only when available and show pending/success/error feedback;
 - success toast offers `Show in folder`, not `Open file`;

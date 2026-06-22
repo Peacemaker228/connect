@@ -104,7 +104,7 @@ Production update publishing is not configured in this segment.
 Generic non-image/non-PDF message attachments use a desktop-only controlled download path in Electron:
 
 - preload exposes `downloadFile(...)` and `showDownloadedFile(...)`;
-- main process accepts only trusted same-origin `/api/storage/access` URLs for `messageFile`;
+- main process accepts only trusted renderer/configured API `/api/storage/access` URLs for `messageFile`;
 - files are saved to the OS Downloads directory with sanitized unique filenames;
 - success UX may show the file in its folder, but the app does not auto-open or execute generic/executable-like files;
 - ordinary browser web, image preview, and PDF open behavior stay on the renderer/web path.

@@ -428,9 +428,11 @@ const sanitizeNotificationText = (value, maxLength) => {
 }
 
 const sanitizeDesktopDownloadFileName = (value) => {
-  const normalized = typeof value === 'string' ? value.replace(/[\u0000-\u001F\u007F-\u009F<>:"/\\|?*]+/g, '_').trim() : ''
+  const normalized =
+    typeof value === 'string' ? value.replace(/[\u0000-\u001F\u007F-\u009F<>:"/\\|?*]+/g, '_').trim() : ''
   const baseName = path.basename(normalized || DESKTOP_DOWNLOAD_DEFAULT_FILE_NAME).replace(/[. ]+$/g, '')
-  const limitedName = baseName.slice(0, DESKTOP_DOWNLOAD_MAX_FILE_NAME_LENGTH).trim() || DESKTOP_DOWNLOAD_DEFAULT_FILE_NAME
+  const limitedName =
+    baseName.slice(0, DESKTOP_DOWNLOAD_MAX_FILE_NAME_LENGTH).trim() || DESKTOP_DOWNLOAD_DEFAULT_FILE_NAME
   const parsedName = path.parse(limitedName)
   const stem = parsedName.name || DESKTOP_DOWNLOAD_DEFAULT_FILE_NAME
   const safeStem = WINDOWS_RESERVED_FILE_NAMES.has(stem.toUpperCase()) ? `${stem}_file` : stem
@@ -444,11 +446,40 @@ const isPathInsideDirectory = (directoryPath, candidatePath) => {
   return relativePath === '' || (!!relativePath && !relativePath.startsWith('..') && !path.isAbsolute(relativePath))
 }
 
-const isAuthEntryUrl = (value) => {
+const getDesktopDownloadAllowedOrigins = (senderUrl) => {
+  const origins = new Set(getTrustedOrigins())
+
+  for (const candidate of [process.env.NEXT_PUBLIC_API_URL, process.env.API_EXTERNAL_URL]) {
+    for (const origin of getOriginVariants(candidate)) {
+      origins.add(origin)
+    }
+  }
+
+  if (!app.isPackaged && isTrustedOrigin(senderUrl)) {
+    const apiPort = process.env.NEXT_PUBLIC_API_PORT || process.env.API_PORT || '4000'
+
+    for (const origin of [`http://localhost:${apiPort}`, `http://127.0.0.1:${apiPort}`]) {
+      origins.add(origin)
+    }
+  }
+
+  return origins
+}
+
+const isAllowedDesktopDownloadOrigin = (value, senderUrl) => {
+  const origin = getUrlOrigin(value)
+
+  return Boolean(origin && getDesktopDownloadAllowedOrigins(senderUrl).has(origin))
+}
+
+const isAuthEntryUrl = (value, senderUrl) => {
   try {
     const url = new URL(value)
 
-    return isTrustedOrigin(url.toString()) && (url.pathname.startsWith('/sign-in') || url.pathname.startsWith('/sign-up'))
+    return (
+      isAllowedDesktopDownloadOrigin(url.toString(), senderUrl) &&
+      (url.pathname.startsWith('/sign-in') || url.pathname.startsWith('/sign-up'))
+    )
   } catch {
     return false
   }
@@ -460,8 +491,7 @@ const getUniqueDesktopDownloadPath = async (fileName) => {
   const parsedFileName = path.parse(safeFileName)
 
   for (let attempt = 0; attempt < 100; attempt += 1) {
-    const nextFileName =
-      attempt === 0 ? safeFileName : `${parsedFileName.name} (${attempt})${parsedFileName.ext}`
+    const nextFileName = attempt === 0 ? safeFileName : `${parsedFileName.name} (${attempt})${parsedFileName.ext}`
     const filePath = path.join(downloadsDirectory, nextFileName)
 
     try {
@@ -498,7 +528,7 @@ const getValidatedDesktopDownloadRequest = (senderUrl, payload) => {
 
     if (
       !isHttpUrl(downloadUrl.toString()) ||
-      !isTrustedOrigin(downloadUrl.toString()) ||
+      !isAllowedDesktopDownloadOrigin(downloadUrl.toString(), senderUrl) ||
       downloadUrl.pathname !== DESKTOP_DOWNLOAD_ACCESS_PATH ||
       downloadUrl.searchParams.get('endpoint') !== 'messageFile' ||
       (!downloadUrl.searchParams.get('fileKey') && !downloadUrl.searchParams.get('fileUrl'))
@@ -521,7 +551,7 @@ const getCookieHeaderForUrl = async (url) => {
   return cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; ')
 }
 
-const fetchDesktopDownloadResponse = async (downloadUrl) => {
+const fetchDesktopDownloadResponse = async (downloadUrl, senderUrl) => {
   const cookieHeader = await getCookieHeaderForUrl(downloadUrl.toString())
   const response = await fetch(downloadUrl, {
     headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
@@ -537,7 +567,7 @@ const fetchDesktopDownloadResponse = async (downloadUrl) => {
 
     const redirectedUrl = new URL(location, downloadUrl)
 
-    if (!isHttpUrl(redirectedUrl.toString()) || isAuthEntryUrl(redirectedUrl.toString())) {
+    if (!isHttpUrl(redirectedUrl.toString()) || isAuthEntryUrl(redirectedUrl.toString(), senderUrl)) {
       throw new Error('download_redirect_rejected')
     }
 
@@ -558,13 +588,13 @@ const downloadDesktopFile = async (senderUrl, payload) => {
   let fileHandle = null
 
   try {
-    const response = await fetchDesktopDownloadResponse(request.url)
+    const response = await fetchDesktopDownloadResponse(request.url, senderUrl)
 
     if (!response.ok) {
       throw new Error(`download_http_${response.status}`)
     }
 
-    if (isAuthEntryUrl(response.url)) {
+    if (isAuthEntryUrl(response.url, senderUrl)) {
       throw new Error('download_auth_redirect')
     }
 
@@ -739,7 +769,13 @@ const getRendererUrl = () => {
   const config = readDesktopConfig()
   const channelConfig = getDesktopChannelConfig(config).config
 
-  return channelConfig?.productionUrl || config.productionUrl || process.env.ELECTRON_RENDERER_URL || process.env.NEXT_PUBLIC_SITE_URL || ''
+  return (
+    channelConfig?.productionUrl ||
+    config.productionUrl ||
+    process.env.ELECTRON_RENDERER_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    ''
+  )
 }
 
 const getInitialRendererUrl = () => {
@@ -862,7 +898,8 @@ const scheduleWindowStateToRenderer = () => {
 
 const getDesktopUpdateSupport = () => {
   const { channel, config } = getDesktopChannelConfig()
-  const updateUrl = typeof config?.updateUrl === 'string' && config.updateUrl.trim() !== '' ? config.updateUrl.trim() : null
+  const updateUrl =
+    typeof config?.updateUrl === 'string' && config.updateUrl.trim() !== '' ? config.updateUrl.trim() : null
 
   return {
     channel,
@@ -889,9 +926,9 @@ const createDesktopUpdateStatus = (status, extra = {}) => {
     channel: support.channel,
     currentVersion: app.getVersion(),
     error: null,
-    lastCheckedAt: isCheckStart ? now : previous?.lastCheckedAt ?? null,
-    lastErrorAt: isError ? now : previous?.lastErrorAt ?? null,
-    lastSuccessfulCheckAt: isSuccessfulCheck ? now : previous?.lastSuccessfulCheckAt ?? null,
+    lastCheckedAt: isCheckStart ? now : (previous?.lastCheckedAt ?? null),
+    lastErrorAt: isError ? now : (previous?.lastErrorAt ?? null),
+    lastSuccessfulCheckAt: isSuccessfulCheck ? now : (previous?.lastSuccessfulCheckAt ?? null),
     progressPercent: previous?.progressPercent ?? null,
     status,
     supported: support.supported,
@@ -979,11 +1016,11 @@ const configureDesktopUpdater = () => {
 
 const isDesktopUpdateCheckBlocked = () => {
   return (
-    isUpdateCheckInFlight ||
-    ['checking', 'available', 'downloading', 'downloaded'].includes(desktopUpdateStatus.status)
+    isUpdateCheckInFlight || ['checking', 'available', 'downloading', 'downloaded'].includes(desktopUpdateStatus.status)
   )
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const checkForDesktopUpdate = async (_reason = 'manual') => {
   const support = getDesktopUpdateSupport()
 

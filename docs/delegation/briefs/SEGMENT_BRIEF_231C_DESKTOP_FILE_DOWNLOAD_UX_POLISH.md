@@ -81,7 +81,7 @@ Note:
   - success/error feedback;
   - optional "show in folder" action after successful download if implemented safely.
 - Safe filename handling, including Cyrillic names when available from stored upload metadata.
-- Same-origin authenticated storage access through existing `/api/storage/access`.
+- Authenticated storage access through the existing backend `/api/storage/access` URL.
 - Keeping images and PDFs on their current behavior unless a small compatibility adjustment is required.
 - Docs/status updates for this segment.
 
@@ -123,7 +123,7 @@ Recommended direction:
    - Main process must validate:
      - sender origin is trusted;
      - URL is HTTP(S);
-     - URL is same-origin app URL, preferably the `/api/storage/access` path;
+    - URL belongs to the trusted renderer/configured API origins and uses the `/api/storage/access` path;
      - suggested filename is sanitized and cannot escape the Downloads directory.
    - Download to the OS Downloads directory with a safe unique filename.
    - Return structured status/result to renderer. If progress events are practical, expose bounded progress; if not, at least provide pending/success/error.
@@ -160,8 +160,8 @@ Recommended direction:
 - Added a narrow Electron download bridge:
   - `window.electron.downloadFile({ url, fileName })`;
   - `window.electron.showDownloadedFile(filePath)`.
-- Main process validates the sender origin and accepts only same-origin `/api/storage/access` URLs for `endpoint=messageFile`.
-- The authenticated storage access request uses the existing app session cookie only on the same-origin request; redirected public object download is fetched without forwarding that cookie.
+- Main process validates the sender origin and accepts only trusted renderer/configured API `/api/storage/access` URLs for `endpoint=messageFile`.
+- The authenticated storage access request uses the existing app session cookie only on the validated app/API request; redirected public object download is fetched without forwarding that cookie.
 - Files are saved to the OS Downloads directory using a sanitized unique filename; Cyrillic display names are preserved when present in upload metadata.
 - Generic desktop attachment rows now use the bridge with `downloading` / `downloaded` / `failed` row feedback and toast feedback.
 - Success feedback offers `Show in folder`, not `Open file`; generic/executable-like files are not auto-opened or executed.
