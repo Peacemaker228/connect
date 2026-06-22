@@ -11,6 +11,11 @@ const ns = {
   ChatItem: {
     copy: 'Скопировать',
     copied: 'Скопировано',
+    downloadFile: 'Скачать файл',
+    downloadingFile: 'Скачивание...',
+    downloadedFile: 'Скачано',
+    downloadFailed: 'Не удалось скачать',
+    showInFolder: 'Показать в папке',
     reply: 'Ответить',
     edit: 'Редактировать',
     delete: 'Удалить',

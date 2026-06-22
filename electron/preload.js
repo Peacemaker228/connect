@@ -4,6 +4,8 @@ contextBridge.exposeInMainWorld('electron', {
   isDesktop: true,
   openExternal: (url) => ipcRenderer.invoke('desktop:open-external', url),
   writeClipboardText: (text) => ipcRenderer.invoke('desktop:write-clipboard', text),
+  downloadFile: (payload) => ipcRenderer.invoke('desktop:download-file', payload),
+  showDownloadedFile: (filePath) => ipcRenderer.invoke('desktop:show-downloaded-file', filePath),
   getBuildInfo: () => ipcRenderer.invoke('desktop:get-build-info'),
   getWindowState: () => ipcRenderer.invoke('desktop:get-window-state'),
   getUpdateStatus: () => ipcRenderer.invoke('desktop:get-update-status'),

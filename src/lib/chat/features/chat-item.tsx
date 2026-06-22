@@ -15,17 +15,19 @@ import { UserAvatar } from '@/lib/shared/features/user-avatar'
 import { ActionTooltip } from '@/lib/shared/features/action-tooltip'
 import { roleIconMap } from '@/lib/shared/utils/role-icon-map'
 import Image from 'next/image'
-import { Check, Copy, Edit, FileIcon, Reply, Trash } from 'lucide-react'
+import { Check, Copy, Download, Edit, FileIcon, Loader2, Reply, Trash } from 'lucide-react'
 import { cn } from '@/lib/shared/utils/utils'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Form, FormControl, FormField, FormItem } from '@/lib/shared/ui/form'
 import { Input } from '@/lib/shared/ui/input'
 import { Button } from '@/lib/shared/ui/button'
+import { ToastAction } from '@/lib/shared/ui/toast'
 import { useRouter } from 'next/navigation'
 import { ERoutes } from '@app-core/routing/routes'
 import { useTranslations } from 'next-intl'
 import { useModal } from '@/lib/shared/utils/hooks/use-modal-store'
+import { toast } from '@/lib/shared/utils/hooks/use-toast'
 import { chatInputSchema, IChatInputSchema } from '@app-core/schemas/chat-input-schema'
 import { buildStorageAccessPath, getUploadValueParts } from '@/lib/shared/utils/upload-file'
 import { useUpdateMessage } from '@sdk/mutations/message'
@@ -55,6 +57,22 @@ type EditMentionPickerPlacement = {
   maxHeight: number
   side: 'bottom' | 'top'
 }
+
+type DesktopDownloadState =
+  | {
+      status: 'idle'
+    }
+  | {
+      status: 'downloading'
+    }
+  | {
+      fileName: string
+      filePath: string
+      status: 'downloaded'
+    }
+  | {
+      status: 'failed'
+    }
 
 const isPointOnTextNode = (element: Element, clientX: number, clientY: number) => {
   const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT)
@@ -151,6 +169,8 @@ export const ChatItem: FC<IChatItemProps> = ({
     maxHeight: EDIT_MENTION_PICKER_MAX_HEIGHT,
     side: 'top',
   })
+  const [isDesktopFileDownloadAvailable, setIsDesktopFileDownloadAvailable] = useState(false)
+  const [desktopDownloadState, setDesktopDownloadState] = useState<DesktopDownloadState>({ status: 'idle' })
   const copyFeedbackTimeoutRef = useRef<number | null>(null)
   const { onOpen } = useModal()
   const router = useRouter()
@@ -348,9 +368,17 @@ export const ChatItem: FC<IChatItemProps> = ({
     }
   }, [])
 
+  useEffect(() => {
+    setIsDesktopFileDownloadAvailable(Boolean(window.electron?.isDesktop && window.electron.downloadFile))
+  }, [])
+
   const { fileName, fileType, fileUrl: resolvedFileUrl } = getUploadValueParts(fileUrl ?? '', 'messageFile')
   const fileAccessPath = buildStorageAccessPath(fileUrl ?? '', 'messageFile')
   const attachmentDisplayName = fileName || resolvedFileUrl || 'Attachment'
+
+  useEffect(() => {
+    setDesktopDownloadState({ status: 'idle' })
+  }, [fileAccessPath])
 
   const isAdmin = currentMember.role === 'ADMIN'
   const isModerator = currentMember.role === 'MODERATOR'
@@ -536,6 +564,64 @@ export const ChatItem: FC<IChatItemProps> = ({
     }
   }
 
+  const handleGenericFileDownload = async () => {
+    if (!fileAccessPath || desktopDownloadState.status === 'downloading') {
+      return
+    }
+
+    const downloadFile = window.electron?.downloadFile
+
+    if (!downloadFile) {
+      window.open(fileAccessPath, '_blank', 'noopener,noreferrer')
+      return
+    }
+
+    setDesktopDownloadState({ status: 'downloading' })
+
+    try {
+      const result = await downloadFile({
+        fileName: attachmentDisplayName,
+        url: fileAccessPath,
+      })
+
+      if (result.status === 'downloaded') {
+        setDesktopDownloadState({
+          fileName: result.fileName,
+          filePath: result.filePath,
+          status: 'downloaded',
+        })
+
+        toast({
+          action: window.electron?.showDownloadedFile ? (
+            <ToastAction
+              altText={t('ChatItem.showInFolder')}
+              onClick={() => void window.electron?.showDownloadedFile?.(result.filePath)}>
+              {t('ChatItem.showInFolder')}
+            </ToastAction>
+          ) : undefined,
+          description: result.fileName,
+          title: t('ChatItem.downloadedFile'),
+        })
+        return
+      }
+
+      setDesktopDownloadState({ status: 'failed' })
+      toast({
+        description: result.error || attachmentDisplayName,
+        title: t('ChatItem.downloadFailed'),
+        variant: 'destructive',
+      })
+    } catch (error) {
+      console.error('[chat-item][desktop-download]', error)
+      setDesktopDownloadState({ status: 'failed' })
+      toast({
+        description: attachmentDisplayName,
+        title: t('ChatItem.downloadFailed'),
+        variant: 'destructive',
+      })
+    }
+  }
+
   const handleReply = () => {
     if (!canReplyMessage) {
       return
@@ -582,6 +668,14 @@ export const ChatItem: FC<IChatItemProps> = ({
   }
 
   const copyTooltipLabel = isCopied ? t('ChatItem.copied') : t('ChatItem.copy')
+  const desktopDownloadStatusLabel =
+    desktopDownloadState.status === 'downloading'
+      ? t('ChatItem.downloadingFile')
+      : desktopDownloadState.status === 'downloaded'
+        ? t('ChatItem.downloadedFile')
+        : desktopDownloadState.status === 'failed'
+          ? t('ChatItem.downloadFailed')
+          : null
   const actionIconClassName =
     'cursor-pointer w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition'
 
@@ -662,13 +756,42 @@ export const ChatItem: FC<IChatItemProps> = ({
               data-chat-double-click-ignore="true"
               className="relative flex max-w-xl items-center p-2 mt-2 rounded-md bg-background/10">
               <FileIcon className="h-10 w-10 shrink-0 fill-zinc-200 stroke-zinc-500 dark:fill-zinc-700 dark:stroke-zinc-300" />
-              <a
-                href={fileAccessPath}
-                target={'_blank'}
-                rel={'noopener noreferrer'}
-                className="ml-2 min-w-0 text-sm text-indigo-500 dark:text-indigo-400 hover:underline overflow-wrap-anywhere">
-                {attachmentDisplayName}
-              </a>
+              {isDesktopFileDownloadAvailable ? (
+                <div className="ml-2 flex min-w-0 flex-col">
+                  <Button
+                    aria-label={`${t('ChatItem.downloadFile')}: ${attachmentDisplayName}`}
+                    className="h-auto min-w-0 justify-start gap-1.5 whitespace-normal p-0 text-left text-sm font-medium text-indigo-500 hover:bg-transparent hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300"
+                    disabled={desktopDownloadState.status === 'downloading'}
+                    onClick={() => void handleGenericFileDownload()}
+                    type="button"
+                    variant="ghost">
+                    <span className="min-w-0 overflow-wrap-anywhere">{attachmentDisplayName}</span>
+                    {desktopDownloadState.status === 'downloading' ? (
+                      <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <Download className="h-4 w-4 shrink-0" aria-hidden="true" />
+                    )}
+                  </Button>
+                  {desktopDownloadStatusLabel ? (
+                    <span
+                      className={cn(
+                        'mt-1 text-xs text-zinc-500 dark:text-zinc-400',
+                        desktopDownloadState.status === 'failed' && 'text-red-500 dark:text-red-400',
+                        desktopDownloadState.status === 'downloaded' && 'text-emerald-600 dark:text-emerald-400',
+                      )}>
+                      {desktopDownloadStatusLabel}
+                    </span>
+                  ) : null}
+                </div>
+              ) : (
+                <a
+                  href={fileAccessPath}
+                  target={'_blank'}
+                  rel={'noopener noreferrer'}
+                  className="ml-2 min-w-0 text-sm text-indigo-500 dark:text-indigo-400 hover:underline overflow-wrap-anywhere">
+                  {attachmentDisplayName}
+                </a>
+              )}
             </div>
           )}
           {!fileUrl && !isEditing && (

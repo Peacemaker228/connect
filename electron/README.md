@@ -97,6 +97,16 @@ Staging desktop has a proof-only auto-update path:
 
 Production update publishing is not configured in this segment.
 
+## Desktop File Downloads
+
+Generic non-image/non-PDF message attachments use a desktop-only controlled download path in Electron:
+
+- preload exposes `downloadFile(...)` and `showDownloadedFile(...)`;
+- main process accepts only trusted same-origin `/api/storage/access` URLs for `messageFile`;
+- files are saved to the OS Downloads directory with sanitized unique filenames;
+- success UX may show the file in its folder, but the app does not auto-open or execute generic/executable-like files;
+- ordinary browser web, image preview, and PDF open behavior stay on the renderer/web path.
+
 ## Native Notifications
 
 The desktop shell exposes a narrow unread-notification bridge through preload:

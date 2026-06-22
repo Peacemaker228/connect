@@ -1150,6 +1150,7 @@ Done:
 - staging desktop/web/api were rolled forward to `0.0.5`; latest `0.0.5` staging desktop rollout evidence was `AxConnect-Staging-Setup-0.0.5.exe`, `94294597` bytes, SHA256 `7FB31ED52ED3431A2FD822F6822A641CCD464F60039B4A46B017706E6C48DD9B`.
 - source versions are now synchronized to `0.0.7` for web and desktop after the update-ready smoke exposed that remote-web desktop UI changes require a staging web deploy in addition to desktop artifact publishing.
 - `desktop-update-ready-ux-polish` is pass in `docs/delegation/briefs/SEGMENT_BRIEF_231B_DESKTOP_UPDATE_READY_UX_POLISH.md`: a shared renderer update-status hook now feeds both the account-menu updater and a compact desktop-only footer action near the account controls; `downloaded` shows explicit `Restart`, `downloading` can show quiet progress, browser web/no-update/error states remain quiet outside the account menu, and packaged smoke passed through `0.0.6 -> 0.0.7` after staging web deploy.
+- `desktop-file-download-ux-polish` is review/pending packaged smoke in `docs/delegation/briefs/SEGMENT_BRIEF_231C_DESKTOP_FILE_DOWNLOAD_UX_POLISH.md`: Electron now has a narrow controlled download bridge for trusted same-origin `/api/storage/access` `messageFile` URLs, generic desktop attachment rows show pending/success/error feedback and save to Downloads with sanitized unique filenames, success offers `Show in folder` instead of auto-open, and web/image/PDF/copy/storage policy behavior is intended to stay unchanged.
 
 Current blockers:
 - official repeatable CI/CD desktop installer build is not implemented, though local Windows installer build now passes on a symlink-capable build context;
@@ -1164,7 +1165,7 @@ Current blockers:
 - security review for remote web content plus preload bridge is not complete.
 
 Next likely work:
-- continue desktop file-download UX polish, desktop security/link hardening, and production release hardening while monitoring staging user feedback on native/web notification/update behavior. The release track still needs to move the proven manual auto-update path toward a repeatable CI/operator release process.
+- run packaged desktop smoke for `desktop-file-download-ux-polish`, then continue desktop security/link hardening and production release hardening while monitoring staging user feedback on native/web notification/update behavior. The release track still needs to move the proven manual auto-update path toward a repeatable CI/operator release process.
 
 ## Historical Notes
 
