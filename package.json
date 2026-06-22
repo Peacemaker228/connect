@@ -14,7 +14,7 @@
     "dev:full": "concurrently \"bun run dev:back\" \"bun run dev:front\"",
     "dev:desktop:web": "bun next dev -p 3005",
     "dev:desktop:app": "bun run prepare:desktop:build-info && node electron/dev-launcher.mjs",
-    "dev:desktop": "concurrently \"bun run dev:desktop:web\" \"bun run dev:desktop:app\"",
+    "dev:desktop": "concurrently \"bun run dev:api\" \"bun run dev:desktop:web\" \"bun run dev:desktop:app\"",
     "electron": "bun run prepare:desktop:build-info && electron .",
     "dev": "bun next dev",
     "build:api": "tsc -p apps/api/tsconfig.build.json",
