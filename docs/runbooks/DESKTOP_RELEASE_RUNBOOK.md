@@ -433,6 +433,16 @@ Current staging evidence:
 - `AxConnect Staging` installer `0.0.2` was downloaded, installed, and manually smoke-tested by the operator on Windows;
 - no critical runtime blockers were found in the installed app;
 - known UX issue: generic non-image/non-PDF file open/download in Electron can open an extra window/native save flow without clear completion state; keep this as `review / UX issue` for a later desktop file-download UX segment, not as a blocker for the first staging desktop runtime smoke.
+- follow-up brief exists: `docs/delegation/briefs/SEGMENT_BRIEF_231C_DESKTOP_FILE_DOWNLOAD_UX_POLISH.md`.
+
+Desktop file download UX implementation:
+
+- generic non-image/non-PDF attachment rows use a desktop-only controlled download bridge when running inside Electron;
+- the bridge accepts only trusted renderer/configured API `/api/storage/access` `messageFile` URLs;
+- files are saved to the OS Downloads directory with sanitized unique filenames;
+- success feedback may offer `Show in folder`, but the app must not auto-open or execute downloaded generic/executable-like files;
+- ordinary browser web, image inline preview, PDF behavior, and message copy are expected to stay unchanged;
+- packaged desktop smoke for this specific UX is still required before classifying Segment 231C as pass.
 
 Additional smoke when native features are implemented:
 

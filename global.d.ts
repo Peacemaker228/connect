@@ -19,6 +19,8 @@ declare global {
       isDesktop: boolean
       openExternal: (url: string) => Promise<boolean>
       writeClipboardText?: (text: string) => Promise<boolean>
+      downloadFile?: (payload: { fileName?: string | null; url: string }) => Promise<DesktopFileDownloadResult>
+      showDownloadedFile?: (filePath: string) => Promise<boolean>
       checkForUpdate?: () => Promise<DesktopUpdateStatus>
       getBuildInfo?: () => Promise<{
         version: string
@@ -72,4 +74,15 @@ declare global {
     updateVersion?: string | null
     updatedAt: string
   }
+
+  type DesktopFileDownloadResult =
+    | {
+        fileName: string
+        filePath: string
+        status: 'downloaded'
+      }
+    | {
+        error?: string | null
+        status: 'failed'
+      }
 }

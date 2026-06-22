@@ -14,18 +14,20 @@ Desktop-версия в этом проекте — это Electron-оболоч
 Electron сам по себе не рендерит ваш React/Next проект из исходников.
 Он просто открывает URL внутри desktop-окна.
 
-Поэтому для `dev` нужны два процесса:
+Поэтому для `dev` нужны три процесса:
 
+- `bun run dev:api` — поднимает локальный backend API на `4000`
 - `bun run dev:desktop:web` — поднимает локальный Next dev server на `3005`
 - `bun run dev:desktop:app` — запускает Electron и открывает этот URL
 
-Общий запуск:
+Общий запуск поднимает все три процесса:
 
 ```bash
 bun run dev:desktop
 ```
 
 Порт `3005` выбран специально, чтобы не конфликтовать с обычным web-dev на `3000`.
+API нужен для login/auth и runtime SDK requests; запуск только `dev:desktop:web` + `dev:desktop:app` может дать network error при логине.
 
 ## Конфиг production
 
@@ -96,6 +98,16 @@ Staging desktop has a proof-only auto-update path:
 - manual retry remains available from the account menu after `error` or `not_available`.
 
 Production update publishing is not configured in this segment.
+
+## Desktop File Downloads
+
+Generic non-image/non-PDF message attachments use a desktop-only controlled download path in Electron:
+
+- preload exposes `downloadFile(...)` and `showDownloadedFile(...)`;
+- main process accepts only trusted renderer/configured API `/api/storage/access` URLs for `messageFile`;
+- files are saved to the OS Downloads directory with sanitized unique filenames;
+- success UX may show the file in its folder, but the app does not auto-open or execute generic/executable-like files;
+- ordinary browser web, image preview, and PDF open behavior stay on the renderer/web path.
 
 ## Native Notifications
 

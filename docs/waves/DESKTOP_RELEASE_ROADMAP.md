@@ -574,7 +574,48 @@ Result:
 - Electron main/preload, production update provider, CI/CD, signing, DB/storage/media/WebRTC/chat logic were not changed;
 - packaged staging smoke passed after staging web deploy: installed desktop `0.0.6` detected hosted `0.0.7`, the compact visible `Restart` action appeared for `downloaded` status, and update/restart completed successfully.
 
-### Segment 231. Desktop Security And Link Hardening
+### Segment 231C. Desktop File Download UX Polish
+
+Status: `review / implementation added; packaged smoke pending`
+
+Goal:
+- make generic non-image/non-PDF message attachment downloads clear and native-feeling in packaged desktop.
+
+Brief:
+- `docs/delegation/briefs/SEGMENT_BRIEF_231C_DESKTOP_FILE_DOWNLOAD_UX_POLISH.md`
+
+Expected work:
+- inspect the current message attachment, storage access redirect, and Electron window/download behavior;
+- add a narrow desktop-only controlled download path if needed;
+- avoid opening extra blank/browser windows for generic file downloads;
+- show clear downloading/success/error feedback;
+- preserve web behavior, image inline preview, PDF behavior, storage policy, and upload limits.
+
+Out of scope:
+- CI/CD release pipeline;
+- production rollout;
+- signing;
+- storage provider/env changes;
+- DB/schema/migrations;
+- large-file `300 MB` design;
+- automatic execution/opening of downloaded executable-like files.
+
+Acceptance:
+- packaged staging desktop can download generic message attachments without the current awkward extra-window/native-save ambiguity;
+- downloaded files use useful names;
+- generic/executable-like files are download-only;
+- browser web remains functional.
+
+Result:
+- Electron preload/main now expose a narrow controlled download bridge for trusted renderer/configured API `/api/storage/access` `messageFile` URLs only;
+- downloads are saved to the OS Downloads directory with sanitized unique filenames and no auto-open/execute behavior;
+- renderer generic attachment rows use the desktop bridge only when available and show pending/success/error feedback;
+- success toast offers `Show in folder`, not `Open file`;
+- ordinary browser web keeps the existing generic attachment anchor behavior;
+- image inline preview, PDF row/open behavior, message copy, storage policy/provider/env, DB/schema/migrations, CI/CD, signing, production rollout, and WebRTC/media were not changed;
+- packaged desktop runtime smoke is still pending before this segment can be classified as pass.
+
+### Segment 232. Desktop Security And Link Hardening
 
 Goal:
 - reduce risk from remote web content running inside Electron.
@@ -588,7 +629,7 @@ Expected work:
 Acceptance:
 - security decisions are explicit and tested; no broad preload bridge expansion without origin checks.
 
-### Segment 232. Desktop CI/CD Release Pipeline
+### Segment 233. Desktop CI/CD Release Pipeline
 
 Goal:
 - move desktop release from manual local build to a repeatable release pipeline.
@@ -607,7 +648,7 @@ Expected work:
 Acceptance:
 - release can be produced from a tag/commit without local-machine-specific steps.
 
-### Segment 233. Production Desktop Rollout Report
+### Segment 234. Production Desktop Rollout Report
 
 Goal:
 - release desktop to the active team and record rollout evidence.

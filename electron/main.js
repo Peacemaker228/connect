@@ -29,6 +29,33 @@ const DESKTOP_UPDATE_PERIODIC_CHECK_INTERVAL_MS = 45 * 60 * 1000
 const UNREAD_NOTIFICATION_TITLE_MAX_LENGTH = 80
 const UNREAD_NOTIFICATION_BODY_MAX_LENGTH = 160
 const ALLOWED_UNREAD_ATTENTION_LEVELS = new Set(['mention', 'reply', 'unread'])
+const DESKTOP_DOWNLOAD_ACCESS_PATH = '/api/storage/access'
+const DESKTOP_DOWNLOAD_DEFAULT_FILE_NAME = 'attachment'
+const DESKTOP_DOWNLOAD_MAX_FILE_NAME_LENGTH = 180
+const WINDOWS_RESERVED_FILE_NAMES = new Set([
+  'CON',
+  'PRN',
+  'AUX',
+  'NUL',
+  'COM1',
+  'COM2',
+  'COM3',
+  'COM4',
+  'COM5',
+  'COM6',
+  'COM7',
+  'COM8',
+  'COM9',
+  'LPT1',
+  'LPT2',
+  'LPT3',
+  'LPT4',
+  'LPT5',
+  'LPT6',
+  'LPT7',
+  'LPT8',
+  'LPT9',
+])
 
 if (SHOULD_DISABLE_MEDIA_FOUNDATION_VIDEO_CAPTURE) {
   app.commandLine.appendSwitch('disable-features', 'MediaFoundationVideoCapture')
@@ -400,6 +427,225 @@ const sanitizeNotificationText = (value, maxLength) => {
   return `${normalized.slice(0, Math.max(0, maxLength - 3)).trim()}...`
 }
 
+const sanitizeDesktopDownloadFileName = (value) => {
+  const normalized =
+    typeof value === 'string' ? value.replace(/[\u0000-\u001F\u007F-\u009F<>:"/\\|?*]+/g, '_').trim() : ''
+  const baseName = path.basename(normalized || DESKTOP_DOWNLOAD_DEFAULT_FILE_NAME).replace(/[. ]+$/g, '')
+  const limitedName =
+    baseName.slice(0, DESKTOP_DOWNLOAD_MAX_FILE_NAME_LENGTH).trim() || DESKTOP_DOWNLOAD_DEFAULT_FILE_NAME
+  const parsedName = path.parse(limitedName)
+  const stem = parsedName.name || DESKTOP_DOWNLOAD_DEFAULT_FILE_NAME
+  const safeStem = WINDOWS_RESERVED_FILE_NAMES.has(stem.toUpperCase()) ? `${stem}_file` : stem
+
+  return `${safeStem}${parsedName.ext}`
+}
+
+const isPathInsideDirectory = (directoryPath, candidatePath) => {
+  const relativePath = path.relative(directoryPath, candidatePath)
+
+  return relativePath === '' || (!!relativePath && !relativePath.startsWith('..') && !path.isAbsolute(relativePath))
+}
+
+const getDesktopDownloadAllowedOrigins = (senderUrl) => {
+  const origins = new Set(getTrustedOrigins())
+
+  for (const candidate of [process.env.NEXT_PUBLIC_API_URL, process.env.API_EXTERNAL_URL]) {
+    for (const origin of getOriginVariants(candidate)) {
+      origins.add(origin)
+    }
+  }
+
+  if (!app.isPackaged && isTrustedOrigin(senderUrl)) {
+    const apiPort = process.env.NEXT_PUBLIC_API_PORT || process.env.API_PORT || '4000'
+
+    for (const origin of [`http://localhost:${apiPort}`, `http://127.0.0.1:${apiPort}`]) {
+      origins.add(origin)
+    }
+  }
+
+  return origins
+}
+
+const isAllowedDesktopDownloadOrigin = (value, senderUrl) => {
+  const origin = getUrlOrigin(value)
+
+  return Boolean(origin && getDesktopDownloadAllowedOrigins(senderUrl).has(origin))
+}
+
+const isAuthEntryUrl = (value, senderUrl) => {
+  try {
+    const url = new URL(value)
+
+    return (
+      isAllowedDesktopDownloadOrigin(url.toString(), senderUrl) &&
+      (url.pathname.startsWith('/sign-in') || url.pathname.startsWith('/sign-up'))
+    )
+  } catch {
+    return false
+  }
+}
+
+const getUniqueDesktopDownloadPath = async (fileName) => {
+  const downloadsDirectory = app.getPath('downloads')
+  const safeFileName = sanitizeDesktopDownloadFileName(fileName)
+  const parsedFileName = path.parse(safeFileName)
+
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const nextFileName = attempt === 0 ? safeFileName : `${parsedFileName.name} (${attempt})${parsedFileName.ext}`
+    const filePath = path.join(downloadsDirectory, nextFileName)
+
+    try {
+      const fileHandle = await fs.promises.open(filePath, 'wx')
+
+      return {
+        fileHandle,
+        fileName: nextFileName,
+        filePath,
+      }
+    } catch (error) {
+      if (error?.code !== 'EEXIST') {
+        throw error
+      }
+    }
+  }
+
+  throw new Error('download_file_name_conflict')
+}
+
+const getValidatedDesktopDownloadRequest = (senderUrl, payload) => {
+  if (!isTrustedOrigin(senderUrl) || !payload || typeof payload !== 'object') {
+    return null
+  }
+
+  const rawUrl = typeof payload.url === 'string' ? payload.url.trim() : ''
+
+  if (!rawUrl) {
+    return null
+  }
+
+  try {
+    const downloadUrl = new URL(rawUrl, senderUrl)
+
+    if (
+      !isHttpUrl(downloadUrl.toString()) ||
+      !isAllowedDesktopDownloadOrigin(downloadUrl.toString(), senderUrl) ||
+      downloadUrl.pathname !== DESKTOP_DOWNLOAD_ACCESS_PATH ||
+      downloadUrl.searchParams.get('endpoint') !== 'messageFile' ||
+      (!downloadUrl.searchParams.get('fileKey') && !downloadUrl.searchParams.get('fileUrl'))
+    ) {
+      return null
+    }
+
+    return {
+      fileName: sanitizeDesktopDownloadFileName(payload.fileName),
+      url: downloadUrl,
+    }
+  } catch {
+    return null
+  }
+}
+
+const getCookieHeaderForUrl = async (url) => {
+  const cookies = await session.defaultSession.cookies.get({ url })
+
+  return cookies.map((cookie) => `${cookie.name}=${cookie.value}`).join('; ')
+}
+
+const fetchDesktopDownloadResponse = async (downloadUrl, senderUrl) => {
+  const cookieHeader = await getCookieHeaderForUrl(downloadUrl.toString())
+  const response = await fetch(downloadUrl, {
+    headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+    redirect: 'manual',
+  })
+
+  if (response.status >= 300 && response.status < 400) {
+    const location = response.headers.get('location')
+
+    if (!location) {
+      throw new Error('download_redirect_missing_location')
+    }
+
+    const redirectedUrl = new URL(location, downloadUrl)
+
+    if (!isHttpUrl(redirectedUrl.toString()) || isAuthEntryUrl(redirectedUrl.toString(), senderUrl)) {
+      throw new Error('download_redirect_rejected')
+    }
+
+    return fetch(redirectedUrl, { redirect: 'follow' })
+  }
+
+  return response
+}
+
+const downloadDesktopFile = async (senderUrl, payload) => {
+  const request = getValidatedDesktopDownloadRequest(senderUrl, payload)
+
+  if (!request) {
+    return { status: 'failed', error: 'invalid_download_request' }
+  }
+
+  let createdFilePath = null
+  let fileHandle = null
+
+  try {
+    const response = await fetchDesktopDownloadResponse(request.url, senderUrl)
+
+    if (!response.ok) {
+      throw new Error(`download_http_${response.status}`)
+    }
+
+    if (isAuthEntryUrl(response.url, senderUrl)) {
+      throw new Error('download_auth_redirect')
+    }
+
+    const file = await getUniqueDesktopDownloadPath(request.fileName)
+    createdFilePath = file.filePath
+    fileHandle = file.fileHandle
+
+    const buffer = Buffer.from(await response.arrayBuffer())
+    await fileHandle.writeFile(buffer)
+    await fileHandle.close()
+    fileHandle = null
+
+    return {
+      fileName: file.fileName,
+      filePath: file.filePath,
+      status: 'downloaded',
+    }
+  } catch (error) {
+    if (fileHandle) {
+      await fileHandle.close().catch(() => undefined)
+    }
+
+    if (createdFilePath) {
+      await fs.promises.rm(createdFilePath, { force: true }).catch(() => undefined)
+    }
+
+    console.error('[desktop] Failed to download file', error)
+
+    return {
+      error: getUpdateErrorMessage(error),
+      status: 'failed',
+    }
+  }
+}
+
+const showDownloadedFileInFolder = async (senderUrl, filePath) => {
+  if (!isTrustedOrigin(senderUrl) || typeof filePath !== 'string') {
+    return false
+  }
+
+  const downloadsDirectory = app.getPath('downloads')
+  const resolvedFilePath = path.resolve(filePath)
+
+  if (!isPathInsideDirectory(downloadsDirectory, resolvedFilePath) || !fs.existsSync(resolvedFilePath)) {
+    return false
+  }
+
+  shell.showItemInFolder(resolvedFilePath)
+  return true
+}
+
 const isSafeRendererPath = (value) => {
   return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//')
 }
@@ -523,7 +769,13 @@ const getRendererUrl = () => {
   const config = readDesktopConfig()
   const channelConfig = getDesktopChannelConfig(config).config
 
-  return channelConfig?.productionUrl || config.productionUrl || process.env.ELECTRON_RENDERER_URL || process.env.NEXT_PUBLIC_SITE_URL || ''
+  return (
+    channelConfig?.productionUrl ||
+    config.productionUrl ||
+    process.env.ELECTRON_RENDERER_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    ''
+  )
 }
 
 const getInitialRendererUrl = () => {
@@ -646,7 +898,8 @@ const scheduleWindowStateToRenderer = () => {
 
 const getDesktopUpdateSupport = () => {
   const { channel, config } = getDesktopChannelConfig()
-  const updateUrl = typeof config?.updateUrl === 'string' && config.updateUrl.trim() !== '' ? config.updateUrl.trim() : null
+  const updateUrl =
+    typeof config?.updateUrl === 'string' && config.updateUrl.trim() !== '' ? config.updateUrl.trim() : null
 
   return {
     channel,
@@ -673,9 +926,9 @@ const createDesktopUpdateStatus = (status, extra = {}) => {
     channel: support.channel,
     currentVersion: app.getVersion(),
     error: null,
-    lastCheckedAt: isCheckStart ? now : previous?.lastCheckedAt ?? null,
-    lastErrorAt: isError ? now : previous?.lastErrorAt ?? null,
-    lastSuccessfulCheckAt: isSuccessfulCheck ? now : previous?.lastSuccessfulCheckAt ?? null,
+    lastCheckedAt: isCheckStart ? now : (previous?.lastCheckedAt ?? null),
+    lastErrorAt: isError ? now : (previous?.lastErrorAt ?? null),
+    lastSuccessfulCheckAt: isSuccessfulCheck ? now : (previous?.lastSuccessfulCheckAt ?? null),
     progressPercent: previous?.progressPercent ?? null,
     status,
     supported: support.supported,
@@ -763,11 +1016,11 @@ const configureDesktopUpdater = () => {
 
 const isDesktopUpdateCheckBlocked = () => {
   return (
-    isUpdateCheckInFlight ||
-    ['checking', 'available', 'downloading', 'downloaded'].includes(desktopUpdateStatus.status)
+    isUpdateCheckInFlight || ['checking', 'available', 'downloading', 'downloaded'].includes(desktopUpdateStatus.status)
   )
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const checkForDesktopUpdate = async (_reason = 'manual') => {
   const support = getDesktopUpdateSupport()
 
@@ -1091,6 +1344,18 @@ ipcMain.handle('desktop:write-clipboard', async (event, text) => {
 
   clipboard.writeText(text)
   return true
+})
+
+ipcMain.handle('desktop:download-file', async (event, payload) => {
+  const senderUrl = event.senderFrame?.url || event.sender?.getURL?.() || ''
+
+  return downloadDesktopFile(senderUrl, payload)
+})
+
+ipcMain.handle('desktop:show-downloaded-file', async (event, filePath) => {
+  const senderUrl = event.senderFrame?.url || event.sender?.getURL?.() || ''
+
+  return showDownloadedFileInFolder(senderUrl, filePath)
 })
 
 ipcMain.handle('desktop:get-build-info', async () => {
